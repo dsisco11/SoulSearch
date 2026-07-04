@@ -1,0 +1,56 @@
+# DwarfSearch TODO
+
+## Phase 1: Mod Skeleton
+- [ ] Create DFHack mod metadata in `info.txt`.
+- [ ] Create `README.md` with install and development-path notes.
+- [ ] Create `scripts_modinstalled/dwarfsearch.lua` as the public DFHack command.
+- [ ] Create `scripts_modinstalled/internal/dwarfsearch/` for internal modules.
+- [ ] Confirm the command can be loaded as a DFHack script without side effects.
+
+## Phase 2: Resident Data Model
+- [ ] Collect fortress residents with `dfhack.units.getCitizens(false, true)`.
+- [ ] Reject non-fortress or unloaded-map contexts with a clear message.
+- [ ] Build resident rows with unit pointer, readable name, profession, position, traits, and mental attributes.
+- [ ] Use DFHack readable-name helpers for display.
+- [ ] Use `dfhack.units.getMentalAttrValue()` for effective mental/soul attribute values.
+
+## Phase 3: Search and Filter Engine
+- [ ] Implement text search over resident names.
+- [ ] Define data-driven filter descriptors for personality traits.
+- [ ] Define data-driven filter descriptors for mental/soul attributes.
+- [ ] Support `>=`, `<=`, and `between` comparisons.
+- [ ] Combine multiple active filters with `AND`.
+- [ ] Add default thresholds: high is `>= 75`, low is `<= 25`.
+
+## Phase 4: In-Game Panel UI
+- [ ] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
+- [ ] Add a search field for resident name filtering.
+- [ ] Add controls for selecting trait and mental attribute filters.
+- [ ] Add a result list using DFHack GUI widgets.
+- [ ] Add a selected-resident details area.
+- [ ] Add refresh and close actions.
+- [ ] Keep filtering tied to user input or explicit refresh, not per-frame polling.
+
+## Phase 5: Result Actions
+- [ ] Add an action to center/highlight the selected unit.
+- [ ] Use `dfhack.units.getPosition()` for reliable unit coordinates.
+- [ ] Use `dfhack.gui.revealInDwarfmodeMap(pos, true, true)` for map focus.
+- [ ] Handle missing, caged, invalid, or off-map positions gracefully.
+
+## Phase 6: Validation and Polish
+- [ ] Load test with `:lua ~reqscript('dwarfsearch')`.
+- [ ] Verify the panel opens in fortress mode.
+- [ ] Verify the command fails safely outside fortress mode.
+- [ ] Verify name search changes result counts correctly.
+- [ ] Verify trait filters return plausible residents.
+- [ ] Verify mental attribute filters return plausible residents.
+- [ ] Verify zoom-to-unit works for valid map units.
+- [ ] Check performance on a large fort.
+- [ ] Update `README.md` with usage examples and known limitations.
+
+## Phase 7: Optional Follow-Ups
+- [ ] Add saved filter presets.
+- [ ] Add profession, squad, labor, health, race, and location filters.
+- [ ] Add an overlay hotspot or control-panel integration.
+- [ ] Add keyboard shortcuts for common actions.
+- [ ] Consider native C++ only if Lua profiling shows a real performance problem.
