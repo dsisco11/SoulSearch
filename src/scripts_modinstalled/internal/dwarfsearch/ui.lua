@@ -1,5 +1,13 @@
 --@ module=true
 
+local residents = reqscript('internal/dwarfsearch/residents')
+
 function open(...)
-    print('DwarfSearch is installed. The resident search panel will be implemented in Phase 4.')
+    local rows, err = residents.collect_residents()
+    if not rows then
+        print(err)
+        return
+    end
+
+    print(('DwarfSearch collected %d residents. The search panel will be implemented in Phase 4.'):format(#rows))
 end

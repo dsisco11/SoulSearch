@@ -8,11 +8,11 @@
 - [ ] Confirm the command can be loaded as a DFHack script without side effects.
 
 ## Phase 2: Resident Data Model
-- [ ] Collect fortress residents with `dfhack.units.getCitizens(false, true)`.
-- [ ] Reject non-fortress or unloaded-map contexts with a clear message.
-- [ ] Build resident rows with unit pointer, readable name, profession, position, traits, and mental attributes.
-- [ ] Use DFHack readable-name helpers for display.
-- [ ] Use `dfhack.units.getMentalAttrValue()` for effective mental/soul attribute values.
+- [x] Collect fortress residents with `dfhack.units.getCitizens(false, true)`.
+- [x] Reject non-fortress or unloaded-map contexts with a clear message.
+- [x] Build resident rows with unit pointer, readable name, profession, position, traits, and mental attributes.
+- [x] Use DFHack readable-name helpers for display.
+- [x] Use `dfhack.units.getMentalAttrValue()` for effective mental/soul attribute values.
 
 ## Phase 3: Search and Filter Engine
 - [ ] Implement text search over resident names.

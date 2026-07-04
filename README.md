@@ -16,13 +16,14 @@ Phase 1 scaffolding is in place:
 - `scripts_modinstalled/dwarfsearch.lua` defines the public DFHack command.
 - `scripts_modinstalled/internal/dwarfsearch/` contains private support modules.
 
-The command currently prints a placeholder message. Resident collection, search,
-filters, and UI are planned in later phases.
+The command currently validates fortress mode and reports how many residents it
+can collect. Search, filters, and UI are planned in later phases.
 
 ## Installation
 
-Copy this repository folder into your Dwarf Fortress `mods/` directory. DFHack
-will discover scripts from `scripts_modinstalled/` when the mod is installed.
+Copy the contents of `src/` into a Dwarf Fortress mod folder, for example
+`mods/DwarfSearch/`. DFHack will discover scripts from
+`scripts_modinstalled/` when the mod is installed.
 
 ## Development Setup
 
@@ -30,7 +31,7 @@ For local development without repeatedly copying files, add this line to
 `dfhack-config/script-paths.txt`:
 
 ```text
-+D:/CODE/DFHack/DwarfSearch/scripts_modinstalled
++D:/CODE/DFHack/DwarfSearch/src/scripts_modinstalled
 ```
 
 The leading `+` tells DFHack to search this development copy before other script
@@ -44,7 +45,8 @@ After DFHack can see the script path, run:
 dwarfsearch
 ```
 
-At this stage the command only confirms that the mod skeleton is installed.
+At this stage the command validates fortress mode and reports the number of
+residents collected for the future search panel.
 
 ## Roadmap
 
