@@ -1,10 +1,10 @@
 # DwarfSearch TODO
 
 ## Phase 1: Mod Skeleton
-- [ ] Create DFHack mod metadata in `info.txt`.
-- [ ] Create `README.md` with install and development-path notes.
-- [ ] Create `scripts_modinstalled/dwarfsearch.lua` as the public DFHack command.
-- [ ] Create `scripts_modinstalled/internal/dwarfsearch/` for internal modules.
+- [x] Create DFHack mod metadata in `info.txt`.
+- [x] Create `README.md` with install and development-path notes.
+- [x] Create `scripts_modinstalled/dwarfsearch.lua` as the public DFHack command.
+- [x] Create `scripts_modinstalled/internal/dwarfsearch/` for internal modules.
 - [ ] Confirm the command can be loaded as a DFHack script without side effects.
 
 ## Phase 2: Resident Data Model
