@@ -11,19 +11,19 @@ profiling later shows a real performance issue.
 
 ## Status
 
-Phases 1-3 are in place:
+Phases 1-4 are in place:
 
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
 - `scripts_modinstalled/dwarfsearch.lua` defines the public DFHack command.
 - `scripts_modinstalled/internal/dwarfsearch/` contains private support modules.
 - Resident collection snapshots names, professions, positions, traits, and
   mental attributes.
-- Search descriptors and relevance-ranked results are available for the future
-  UI.
+- Search descriptors and relevance-ranked results drive the panel.
+- `dwarfsearch` opens an in-game panel with name search, checkbox-driven search
+  filters, ranked results, resident details, refresh, and close controls.
 
-The command currently validates fortress mode, collects residents, and prepares
-the relevance-based search descriptors. The in-game UI is planned in later
-phases.
+The command currently validates fortress mode and opens the resident search
+panel.
 
 ## Installation
 
@@ -51,8 +51,7 @@ After DFHack can see the script path, run:
 dwarfsearch
 ```
 
-At this stage the command validates fortress mode and reports the number of
-residents collected and the number of available search filter descriptors.
+At this stage the command opens the DwarfSearch panel in fortress mode.
 
 ## Roadmap
 

@@ -25,15 +25,15 @@
 - [x] Sort by match score first, then by readable resident name for stable results.
 
 ## Phase 4: In-Game Panel UI
-- [ ] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
-- [ ] Add a search field for resident name filtering.
-- [ ] Add a Search filters panel listing available traits and mental attributes.
-- [ ] Add checkboxes for selecting which traits and mental attributes are relevant to the search.
-- [ ] Show match score/counts in the result list.
-- [ ] Add a result list using DFHack GUI widgets.
-- [ ] Add a selected-resident details area.
-- [ ] Add refresh and close actions.
-- [ ] Keep filtering tied to user input or explicit refresh, not per-frame polling.
+- [x] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
+- [x] Add a search field for resident name filtering.
+- [x] Add a Search filters panel listing available traits and mental attributes.
+- [x] Add checkboxes for selecting which traits and mental attributes are relevant to the search.
+- [x] Show match score/counts in the result list.
+- [x] Add a result list using DFHack GUI widgets.
+- [x] Add a selected-resident details area.
+- [x] Add refresh and close actions.
+- [x] Keep filtering tied to user input or explicit refresh, not per-frame polling.
 
 ## Phase 5: Result Actions
 - [ ] Add an action to center/highlight the selected unit.
