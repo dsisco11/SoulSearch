@@ -36,10 +36,10 @@
 - [x] Keep filtering tied to user input or explicit refresh, not per-frame polling.
 
 ## Phase 5: Result Actions
-- [ ] Add an action to center/highlight the selected unit.
-- [ ] Use `dfhack.units.getPosition()` for reliable unit coordinates.
-- [ ] Use `dfhack.gui.revealInDwarfmodeMap(pos, true, true)` for map focus.
-- [ ] Handle missing, caged, invalid, or off-map positions gracefully.
+- [x] Add an action to center/highlight the selected unit.
+- [x] Use `dfhack.units.getPosition()` for reliable unit coordinates.
+- [x] Use `dfhack.gui.revealInDwarfmodeMap(pos, true, true)` for map focus.
+- [x] Handle missing, caged, invalid, or off-map positions gracefully.
 
 ## Phase 6: Validation and Polish
 - [ ] Load test with `:lua ~reqscript('dwarfsearch')`.

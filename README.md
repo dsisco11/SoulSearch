@@ -11,7 +11,7 @@ profiling later shows a real performance issue.
 
 ## Status
 
-Phases 1-4 are in place:
+Phases 1-5 are in place:
 
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
 - `scripts_modinstalled/dwarfsearch.lua` defines the public DFHack command.
@@ -20,7 +20,7 @@ Phases 1-4 are in place:
   mental attributes.
 - Search descriptors and relevance-ranked results drive the panel.
 - `dwarfsearch` opens an in-game panel with name search, checkbox-driven search
-  filters, ranked results, resident details, refresh, and close controls.
+  filters, ranked results, resident details, refresh, zoom, and close controls.
 
 The command currently validates fortress mode and opens the resident search
 panel.
@@ -52,6 +52,8 @@ dwarfsearch
 ```
 
 At this stage the command opens the DwarfSearch panel in fortress mode.
+Press `z` or Enter on a selected result to center and highlight that resident on
+the fortress map.
 
 ## Roadmap
 

@@ -63,6 +63,18 @@ local function details_for_result(result)
     return table.concat(lines, '\n')
 end
 
+local function get_live_position(result)
+    if not result or not result.unit then
+        return nil
+    end
+
+    local ok, pos = pcall(dfhack.units.getPosition, result.unit)
+    if ok then
+        return pos
+    end
+    return nil
+end
+
 DwarfSearchWindow = defclass(DwarfSearchWindow, widgets.Window)
 DwarfSearchWindow.ATTRS {
     frame_title='DwarfSearch',
@@ -117,6 +129,9 @@ function DwarfSearchWindow:init()
             on_select=function(index, choice)
                 self:update_details(choice and choice.result or nil)
             end,
+            on_submit=function(index, choice)
+                self:zoom_to_result(choice and choice.result or nil)
+            end,
         },
         widgets.Label{
             view_id='details',
@@ -130,7 +145,13 @@ function DwarfSearchWindow:init()
             on_activate=function() self:refresh_residents() end,
         },
         widgets.HotkeyLabel{
-            frame={l=20, b=1, w=16, h=1},
+            frame={l=20, b=1, w=18, h=1},
+            key='CUSTOM_Z',
+            label='Zoom',
+            on_activate=function() self:zoom_to_selected_result() end,
+        },
+        widgets.HotkeyLabel{
+            frame={l=39, b=1, w=16, h=1},
             key='LEAVESCREEN',
             label='Close',
             on_activate=function() self.parent_view:dismiss() end,
@@ -189,6 +210,30 @@ function DwarfSearchWindow:update_details(result)
     self.subviews.details:setText(details_for_result(result))
 end
 
+function DwarfSearchWindow:get_selected_result()
+    local _, choice = self.subviews.result_list:getSelected()
+    return choice and choice.result or nil
+end
+
+function DwarfSearchWindow:zoom_to_selected_result()
+    self:zoom_to_result(self:get_selected_result())
+end
+
+function DwarfSearchWindow:zoom_to_result(result)
+    if not result then
+        print('DwarfSearch: no resident selected.')
+        return
+    end
+
+    local pos = get_live_position(result)
+    if not pos then
+        print(('DwarfSearch: %s does not have a valid map position.'):format(result.name))
+        return
+    end
+
+    dfhack.gui.revealInDwarfmodeMap(pos, true, true)
+end
+
 function DwarfSearchWindow:toggle_filter(filter_id)
     self.selected_filter_id_set[filter_id] = not self.selected_filter_id_set[filter_id] or nil
     local selected = self.subviews.filter_list:getSelected()
@@ -210,6 +255,10 @@ end
 function DwarfSearchWindow:onInput(keys)
     if keys.CUSTOM_R then
         self:refresh_residents()
+        return true
+    end
+    if keys.CUSTOM_Z then
+        self:zoom_to_selected_result()
         return true
     end
     return DwarfSearchWindow.super.onInput(self, keys)
