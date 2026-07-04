@@ -2,7 +2,8 @@
 
 DwarfSearch is a DFHack mod that will provide an in-game panel for searching
 fortress residents by personality traits, soul attributes, and related unit
-data.
+data. Search filters are relevance criteria: selecting multiple attributes ranks
+residents by how many criteria they match instead of excluding partial matches.
 
 The first implementation target is a Lua-only DFHack command named
 `dwarfsearch`. Native C++ plugin code is intentionally out of scope unless Lua

@@ -18,14 +18,18 @@
 - [ ] Implement text search over resident names.
 - [ ] Define data-driven filter descriptors for personality traits.
 - [ ] Define data-driven filter descriptors for mental/soul attributes.
-- [ ] Support `>=`, `<=`, and `between` comparisons.
-- [ ] Combine multiple active filters with `AND`.
-- [ ] Add default thresholds: high is `>= 75`, low is `<= 25`.
+- [ ] Treat selected trait and attribute filters as relevance criteria, not hard exclusions.
+- [ ] Score each resident by how many selected criteria they match.
+- [ ] Keep residents with partial matches in the results, sorted below stronger matches.
+- [ ] Include match counts in result rows, such as `2/3` selected criteria matched.
+- [ ] Sort by match score first, then by readable resident name for stable results.
 
 ## Phase 4: In-Game Panel UI
 - [ ] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
 - [ ] Add a search field for resident name filtering.
-- [ ] Add controls for selecting trait and mental attribute filters.
+- [ ] Add a Search filters panel listing available traits and mental attributes.
+- [ ] Add checkboxes for selecting which traits and mental attributes are relevant to the search.
+- [ ] Show match score/counts in the result list.
 - [ ] Add a result list using DFHack GUI widgets.
 - [ ] Add a selected-resident details area.
 - [ ] Add refresh and close actions.
