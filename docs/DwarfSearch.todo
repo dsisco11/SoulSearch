@@ -15,14 +15,14 @@
 - [x] Use `dfhack.units.getMentalAttrValue()` for effective mental/soul attribute values.
 
 ## Phase 3: Search and Filter Engine
-- [ ] Implement text search over resident names.
-- [ ] Define data-driven filter descriptors for personality traits.
-- [ ] Define data-driven filter descriptors for mental/soul attributes.
-- [ ] Treat selected trait and attribute filters as relevance criteria, not hard exclusions.
-- [ ] Score each resident by how many selected criteria they match.
-- [ ] Keep residents with partial matches in the results, sorted below stronger matches.
-- [ ] Include match counts in result rows, such as `2/3` selected criteria matched.
-- [ ] Sort by match score first, then by readable resident name for stable results.
+- [x] Implement text search over resident names.
+- [x] Define data-driven filter descriptors for personality traits.
+- [x] Define data-driven filter descriptors for mental/soul attributes.
+- [x] Treat selected trait and attribute filters as relevance criteria, not hard exclusions.
+- [x] Score each resident by how many selected criteria they match.
+- [x] Keep residents with partial matches in the results, sorted below stronger matches.
+- [x] Include match counts in result rows, such as `2/3` selected criteria matched.
+- [x] Sort by match score first, then by readable resident name for stable results.
 
 ## Phase 4: In-Game Panel UI
 - [ ] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
