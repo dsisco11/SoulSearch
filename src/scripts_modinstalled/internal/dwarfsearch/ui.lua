@@ -12,6 +12,8 @@ local median_cache = {}
 local NEUTRAL_PERSONALITY_TIER = personality.getTraitTier(50)
 local NEUTRAL_ATTRIBUTE_TIER = 0
 local ATTRIBUTE_TIER_WIDTH = 250
+local SECTION_DIVIDER_PEN = COLOR_DARKGREY
+local SECTION_DIVIDER_XS = {39, 93}
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -266,6 +268,15 @@ local function normalize_frame_for_drag(window)
     }
 end
 
+local function draw_section_dividers(dc)
+    local y2 = math.max(2, dc.height - 3)
+    for _, x in ipairs(SECTION_DIVIDER_XS) do
+        for y = 2, y2 do
+            dc:seek(x, y):char('|', SECTION_DIVIDER_PEN)
+        end
+    end
+end
+
 DwarfSearchWindow = defclass(DwarfSearchWindow, widgets.Window)
 DwarfSearchWindow.ATTRS {
     frame_title='DwarfSearch',
@@ -349,6 +360,11 @@ end
 function DwarfSearchWindow:onDragBegin()
     DwarfSearchWindow.super.onDragBegin(self)
     normalize_frame_for_drag(self)
+end
+
+function DwarfSearchWindow:onRenderBody(dc)
+    DwarfSearchWindow.super.onRenderBody(self, dc)
+    draw_section_dividers(dc)
 end
 
 function DwarfSearchWindow:get_selected_filter_ids()
