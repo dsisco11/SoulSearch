@@ -24,3 +24,4 @@
 ✔ Remember filters when window is closed and reopened. @done(26-07-05 00:00)
 ✔ Add a "Clear all filters" button to the search filters panel. @done(26-07-05 00:00)
 ✔ Add Skills to the search filters, but skill filters should be selected from a different panel, since there are so many skills. The skill filter panel should be opened by a button in the search filters panel. The skill filter panel should have a search field to allow the user to quickly find a skill to add as a filter. @done(26-07-05 00:00)
+☐  The skill menu needs to group displayed skills into categories, similar to how the DF unit card skill list is grouped.
