@@ -178,7 +178,6 @@ local function make_result(row, selected_descriptors)
         unit_id=row.unit_id,
         name=row.name,
         profession=row.profession,
-        position=row.position,
         matched_criteria=matched,
         matched_count=matched_count,
         criteria_count=#selected_descriptors,

@@ -2,4 +2,4 @@
 ☑ Order attributes via category: Body -> Soul -> Mind.
 ☑ Remove attribute category name prefix and use coloration to indicate category instead.
 ☐ Add right-side panel which shows the selected unit's full attribute list, with color-coded categories and values.
-☐ dont cache unit position, just read it live when the zoom button is clicked.
+☑ Dont cache unit position, just read it live when the zoom button is clicked.

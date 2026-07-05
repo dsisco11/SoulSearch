@@ -64,6 +64,18 @@ local function format_filter_choice(descriptor, selected)
     }
 end
 
+local function get_live_position(result)
+    if not result or not result.unit then
+        return nil
+    end
+
+    local ok, x, y, z = pcall(dfhack.units.getPosition, result.unit)
+    if ok then
+        return make_position(x, y, z)
+    end
+    return nil
+end
+
 local function details_for_result(result)
     if not result then
         return 'No resident selected.'
@@ -72,7 +84,7 @@ local function details_for_result(result)
     local lines = {
         ('Name: %s'):format(result.name),
         ('Profession: %s'):format(result.profession or 'unknown'),
-        ('Position: %s'):format(format_position(result.position)),
+        ('Position: %s'):format(format_position(get_live_position(result))),
         ('Matches: %s'):format(result.match_label),
     }
 
@@ -86,18 +98,6 @@ local function details_for_result(result)
     end
 
     return table.concat(lines, '\n')
-end
-
-local function get_live_position(result)
-    if not result or not result.unit then
-        return nil
-    end
-
-    local ok, x, y, z = pcall(dfhack.units.getPosition, result.unit)
-    if ok then
-        return make_position(x, y, z)
-    end
-    return nil
 end
 
 DwarfSearchWindow = defclass(DwarfSearchWindow, widgets.Window)

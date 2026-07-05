@@ -11,19 +11,6 @@ local function enum_keys(enum)
     return keys
 end
 
-local function copy_position(x, y, z)
-    if type(x) == 'table' then
-        return {x=x.x, y=x.y, z=x.z}
-    end
-    if type(x) ~= 'number' or type(y) ~= 'number' or type(z) ~= 'number' then
-        return nil
-    end
-    if x < 0 or y < 0 or z < 0 then
-        return nil
-    end
-    return {x=x, y=y, z=z}
-end
-
 local function get_trait_values(unit)
     local values = {}
     local soul = unit.status and unit.status.current_soul
@@ -78,7 +65,6 @@ local function build_resident_row(unit)
         unit_id=unit.id,
         name=get_readable_name(unit),
         profession=dfhack.units.getProfessionName(unit),
-        position=copy_position(dfhack.units.getPosition(unit)),
         traits=get_trait_values(unit),
         mental_attributes=get_mental_attribute_values(unit),
         physical_attributes=get_physical_attribute_values(unit),
