@@ -1,13 +1,8 @@
 --@ module=true
 
-local TRAIT_MATCH_MINIMUM = 50
-local MENTAL_ATTRIBUTE_MATCH_MINIMUM = 1000
-local PHYSICAL_ATTRIBUTE_MATCH_MINIMUM = 1000
-local TRAIT_SCORE_SCALE = 100
-local MENTAL_ATTRIBUTE_SCORE_SCALE = 5000
-local PHYSICAL_ATTRIBUTE_SCORE_SCALE = 5000
+local attributes = reqscript('internal/dwarfsearch/attributes')
+
 local FILTER_HIGH = 'high'
-local FILTER_LOW = 'low'
 local MATCHED_FILTER_SCORE = 10
 local FILTER_PRIORITY_WEIGHT_BONUS = 0.2
 
@@ -31,14 +26,12 @@ local function title_case_enum_name(name)
     return table.concat(words, ' ')
 end
 
-local function make_descriptor(kind, key, label, match_minimum, score_scale)
+local function make_descriptor(kind, key, label)
     return {
         id=kind .. ':' .. key,
         kind=kind,
         key=key,
         label=label,
-        match_minimum=match_minimum,
-        score_scale=score_scale,
     }
 end
 
@@ -58,9 +51,7 @@ local function get_trait_descriptors()
         table.insert(descriptors, make_descriptor(
             'trait',
             trait.name,
-            title_case_enum_name(trait.name),
-            TRAIT_MATCH_MINIMUM,
-            TRAIT_SCORE_SCALE))
+            title_case_enum_name(trait.name)))
     end
     return sort_descriptors_by_label(descriptors)
 end
@@ -71,9 +62,7 @@ local function get_mental_attribute_descriptors()
         table.insert(descriptors, make_descriptor(
             'mental_attribute',
             attr.name,
-            title_case_enum_name(attr.name),
-            MENTAL_ATTRIBUTE_MATCH_MINIMUM,
-            MENTAL_ATTRIBUTE_SCORE_SCALE))
+            title_case_enum_name(attr.name)))
     end
     return sort_descriptors_by_label(descriptors)
 end
@@ -84,9 +73,7 @@ local function get_physical_attribute_descriptors()
         table.insert(descriptors, make_descriptor(
             'physical_attribute',
             attr.name,
-            title_case_enum_name(attr.name),
-            PHYSICAL_ATTRIBUTE_MATCH_MINIMUM,
-            PHYSICAL_ATTRIBUTE_SCORE_SCALE))
+            title_case_enum_name(attr.name)))
     end
     return sort_descriptors_by_label(descriptors)
 end
@@ -175,20 +162,6 @@ local function selected_filters_to_descriptors(selected_filters)
     return descriptors
 end
 
-local function matches_descriptor(value, descriptor)
-    if descriptor.direction == FILTER_LOW then
-        return value <= descriptor.match_minimum
-    end
-    return value >= descriptor.match_minimum
-end
-
-local function score_value(value, descriptor)
-    if descriptor.direction == FILTER_LOW then
-        return math.min((descriptor.score_scale - value) / descriptor.score_scale, 1)
-    end
-    return math.min(value / descriptor.score_scale, 1)
-end
-
 local function get_priority_weight(priority_index)
     return 1 + FILTER_PRIORITY_WEIGHT_BONUS / math.max(priority_index or 1, 1)
 end
@@ -205,10 +178,11 @@ local function score_row(row, selected_descriptors)
 
     for index, descriptor in ipairs(selected_descriptors) do
         local value = get_value(row, descriptor)
-        local matches = value and matches_descriptor(value, descriptor)
-        if value then
+        local evaluation = attributes.evaluate(descriptor.kind, descriptor.key, value, row.unit)
+        local matches = attributes.matches_direction(evaluation, descriptor.direction)
+        if evaluation then
             if matches then
-                local value_score = score_value(value, descriptor)
+                local value_score = attributes.score_direction(evaluation, descriptor.direction)
                 score = score + value_score
                 weighted_score = weighted_score +
                     score_weighted_match(value_score, index)
@@ -220,6 +194,9 @@ local function score_row(row, selected_descriptors)
                 label=descriptor.label,
                 direction=descriptor.direction,
                 value=value,
+                baseline=evaluation.baseline,
+                deviation=evaluation.deviation,
+                tier_distance=evaluation.tier_distance,
                 matched=matches,
             }
             table.insert(criteria, criterion)

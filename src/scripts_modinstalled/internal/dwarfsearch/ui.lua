@@ -5,13 +5,9 @@ local widgets = require('gui.widgets')
 
 local residents = reqscript('internal/dwarfsearch/residents')
 local search = reqscript('internal/dwarfsearch/search')
-local personality = reqscript('modtools/set-personality')
+local attributes = reqscript('internal/dwarfsearch/attributes')
 
 local view
-local median_cache = {}
-local NEUTRAL_PERSONALITY_TIER = personality.getTraitTier(50)
-local NEUTRAL_ATTRIBUTE_TIER = 0
-local ATTRIBUTE_TIER_WIDTH = 250
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local SECTION_DIVIDER_XS = {39, 93}
 local FILTER_HIGH = 'high'
@@ -86,80 +82,6 @@ local function get_category_info(kind)
         return 'Soul', COLOR_LIGHTBLUE
     end
     return 'Mind', COLOR_LIGHTMAGENTA
-end
-
-local function split_colon(text)
-    local parts = {}
-    for part in tostring(text):gmatch('[^:]+') do
-        table.insert(parts, part)
-    end
-    return parts
-end
-
-local function get_race_medians(race_id)
-    if median_cache[race_id] then
-        return median_cache[race_id]
-    end
-
-    local medians = {
-        physical_attribute={},
-        mental_attribute={},
-    }
-
-    for _, name in ipairs(df.physical_attribute_type) do
-        medians.physical_attribute[name] = 1000
-    end
-    for _, name in ipairs(df.mental_attribute_type) do
-        medians.mental_attribute[name] = 1000
-    end
-
-    local creature = df.global.world.raws.creatures.all[race_id]
-    if creature then
-        for _, raw in ipairs(creature.raws) do
-            local raw_value = raw.value or ''
-            if raw_value:match('PHYS_ATT_RANGE') then
-                local parts = split_colon(raw_value)
-                medians.physical_attribute[parts[2]] = tonumber(parts[6]) or medians.physical_attribute[parts[2]]
-            elseif raw_value:match('MENT_ATT_RANGE') then
-                local parts = split_colon(raw_value)
-                medians.mental_attribute[parts[2]] = tonumber(parts[6]) or medians.mental_attribute[parts[2]]
-            end
-        end
-    end
-
-    median_cache[race_id] = medians
-    return medians
-end
-
-local function get_attribute_tier(value, median)
-    local delta = value - median
-    if delta >= 0 then
-        return math.floor(delta / ATTRIBUTE_TIER_WIDTH)
-    end
-    return -math.floor(math.abs(delta) / ATTRIBUTE_TIER_WIDTH)
-end
-
-local function get_trait_median(unit, key)
-    local ok, range = pcall(personality.getUnitCasteTraitRange, unit, key)
-    if ok and range and range.mid then
-        return range.mid
-    end
-    return 50
-end
-
-local function get_deviation_info(kind, key, value, unit)
-    if kind == 'trait' then
-        local median = get_trait_median(unit, key)
-        local deviation = value - median
-        local median_tier = personality.getTraitTier(median)
-        local value_tier = personality.getTraitTier(value)
-        return deviation, math.abs(value_tier - median_tier)
-    end
-
-    local medians = get_race_medians(unit.race)
-    local median = medians[kind] and medians[kind][key] or 1000
-    local tier = get_attribute_tier(value, median)
-    return value - median, math.abs(tier)
 end
 
 local function get_deviation_pen(deviation, tier_distance)
@@ -264,16 +186,8 @@ local function get_live_position(result)
 end
 
 local function is_notable_value(kind, key, value, unit)
-    if type(value) ~= 'number' then
-        return false
-    end
-
-    if kind == 'trait' then
-        return personality.getTraitTier(value) ~= NEUTRAL_PERSONALITY_TIER
-    end
-
-    local _, tier_distance = get_deviation_info(kind, key, value, unit)
-    return tier_distance ~= NEUTRAL_ATTRIBUTE_TIER
+    local evaluation = attributes.evaluate(kind, key, value, unit)
+    return evaluation and evaluation.tier_distance ~= 0
 end
 
 local function add_attribute_section(tokens, title, pen, kind, values, unit)
@@ -301,9 +215,12 @@ local function add_attribute_section(tokens, title, pen, kind, values, unit)
 
     for _, key in ipairs(keys) do
         local label = key:gsub('_', ' '):lower():gsub('^%l', string.upper)
-        local deviation, tier_distance = get_deviation_info(kind, key, values[key], unit)
+        local evaluation = attributes.evaluate(kind, key, values[key], unit)
         table.insert(tokens, {text=('  %-24s '):format(label), pen=pen})
-        table.insert(tokens, {text=format_deviation(deviation), pen=get_deviation_pen(deviation, tier_distance)})
+        table.insert(tokens, {
+            text=format_deviation(evaluation.deviation),
+            pen=get_deviation_pen(evaluation.deviation, evaluation.tier_distance),
+        })
         table.insert(tokens, NEWLINE)
     end
 end
@@ -315,34 +232,39 @@ local function get_filter_criterion_pen(criterion, default_pen)
     return COLOR_DARKGREY
 end
 
-local function add_matched_filter_section(tokens, filter_criteria, unit)
+local function get_criterion_evaluation(criterion, unit)
+    if criterion.deviation ~= nil and criterion.tier_distance ~= nil then
+        return criterion
+    end
+    return attributes.evaluate(criterion.kind, criterion.key, criterion.value, unit)
+end
+
+local function add_selected_filter_section(tokens, filter_criteria, unit)
     if not filter_criteria or #filter_criteria == 0 then
         return
     end
 
-    add_underlined_title(tokens, 'Matched filters', COLOR_WHITE)
+    add_underlined_title(tokens, 'Selected filters', COLOR_WHITE)
 
     for _, criterion in ipairs(filter_criteria) do
         local is_low = criterion.direction == FILTER_LOW
-        local deviation, tier_distance = get_deviation_info(
-            criterion.kind,
-            criterion.key,
-            criterion.value,
-            unit)
-        local direction_pen = get_filter_criterion_pen(
-            criterion,
-            is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN)
-        local label_pen = get_filter_criterion_pen(criterion, get_category_pen(criterion))
-        local value_pen = get_filter_criterion_pen(
-            criterion,
-            get_deviation_pen(deviation, tier_distance))
-        table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
-        table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=direction_pen})
-        table.insert(tokens, {text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
-            truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=label_pen})
-        table.insert(tokens, {text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
-            format_deviation(deviation)), pen=value_pen})
-        table.insert(tokens, NEWLINE)
+        local evaluation = get_criterion_evaluation(criterion, unit)
+        if evaluation then
+            local direction_pen = get_filter_criterion_pen(
+                criterion,
+                is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN)
+            local label_pen = get_filter_criterion_pen(criterion, get_category_pen(criterion))
+            local value_pen = get_filter_criterion_pen(
+                criterion,
+                get_deviation_pen(evaluation.deviation, evaluation.tier_distance))
+            table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
+            table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=direction_pen})
+            table.insert(tokens, {text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
+                truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=label_pen})
+            table.insert(tokens, {text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
+                format_deviation(evaluation.deviation)), pen=value_pen})
+            table.insert(tokens, NEWLINE)
+        end
     end
 
     table.insert(tokens, NEWLINE)
@@ -354,7 +276,7 @@ local function attributes_for_result(result)
     end
 
     local tokens = {}
-    add_matched_filter_section(tokens, result.filter_criteria, result.unit)
+    add_selected_filter_section(tokens, result.filter_criteria, result.unit)
     table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
