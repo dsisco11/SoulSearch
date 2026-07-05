@@ -43,6 +43,17 @@ For local development without repeatedly copying files, add this line to
 The leading `+` tells DFHack to search this development copy before other script
 directories.
 
+## Publishing
+
+Create a distributable zip with:
+
+```powershell
+.\tools\Publish.ps1
+```
+
+The archive is written to `dist/DwarfSearch-<version>.zip` and contains the mod
+payload from `src/`.
+
 ## Usage
 
 After DFHack can see the script path, run:
