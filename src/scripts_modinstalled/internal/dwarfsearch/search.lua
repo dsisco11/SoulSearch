@@ -190,12 +190,17 @@ end
 local function score_row(row, selected_descriptors)
     local matched = {}
     local criteria = {}
+    local priority_scores = {}
     local score = 0
 
     for _, descriptor in ipairs(selected_descriptors) do
         local value = get_value(row, descriptor)
         local matches = value and matches_descriptor(value, descriptor)
+        local priority_score = 0
         if value then
+            if matches then
+                priority_score = 1 + score_value(value, descriptor)
+            end
             local criterion = {
                 id=descriptor.id,
                 kind=descriptor.kind,
@@ -213,13 +218,14 @@ local function score_row(row, selected_descriptors)
         if matches then
             score = score + score_value(value, descriptor)
         end
+        table.insert(priority_scores, priority_score)
     end
 
-    return criteria, matched, #matched, score
+    return criteria, matched, #matched, score, priority_scores
 end
 
 local function make_result(row, selected_descriptors)
-    local criteria, matched, matched_count, score = score_row(row, selected_descriptors)
+    local criteria, matched, matched_count, score, priority_scores = score_row(row, selected_descriptors)
     return {
         row=row,
         unit=row.unit,
@@ -231,8 +237,23 @@ local function make_result(row, selected_descriptors)
         matched_count=matched_count,
         criteria_count=#selected_descriptors,
         match_label=('%d/%d'):format(matched_count, #selected_descriptors),
+        priority_scores=priority_scores,
         score=score,
     }
+end
+
+local function compare_priority_scores(a, b)
+    local a_scores = a.priority_scores or {}
+    local b_scores = b.priority_scores or {}
+    local score_count = math.max(#a_scores, #b_scores)
+    for index = 1, score_count do
+        local a_score = a_scores[index] or 0
+        local b_score = b_scores[index] or 0
+        if a_score ~= b_score then
+            return a_score > b_score
+        end
+    end
+    return nil
 end
 
 function get_filter_descriptors()
@@ -263,6 +284,10 @@ function apply(rows, opts)
     end
 
     table.sort(results, function(a, b)
+        local priority_order = compare_priority_scores(a, b)
+        if priority_order ~= nil then
+            return priority_order
+        end
         if a.matched_count ~= b.matched_count then
             return a.matched_count > b.matched_count
         end

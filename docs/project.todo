@@ -11,13 +11,13 @@
 ✔ Right side panel should also show units name at the top, similar to the normal DF unit card panel. @done(26-07-05 00:00)
 ✔ Need way to specify an attribute filter as searching for negative rather than positive values, e.g. "low agility" or "low willpower" rather than just "agility" or "willpower". This could be done with a second checkbox next to each attribute filter. @done(26-07-05 00:00)
 ✔ Search panel section titles need to be made white (e.g. Search filters, Results, Attributes). @done(26-07-05 00:00)
-☐ Search panel sections need to be made collapsible, so that the user can hide the filters or attributes sections if they want more space for the results list.
 ✔ Search panel sections need have a divider line between them, so that the user can more easily see where one section ends and the next begins. @done(26-07-05 00:00)
 ✔ Rename "Search" field to "Name search" to make it more clear what it does. @done(26-07-05 00:00)
 ✔ Remove "zoom" and "Refresh" buttons from the bottom of the search panel. @done(26-07-05 00:00)
 ✔ Move close button to top-right of window. @done(26-07-05 00:00)
 ✔ The right-side view panel should also show the matched filter attributes at the very top of the panel (in the same order as the search filters). they should be positioned right below the panels "Attributes" title. @done(26-07-05 00:00)
-☐ Search filters should be able to be specified in the order of priority that a user wants, so that the results list can be sorted by the most important filter first, then the second most important filter, etc. This could be done by allowing the user to drag and drop the filters into a custom order.
+✔ Search filters should be able to be specified in the order of priority that a user wants, so that the results list can be sorted by the most important filter first, then the second most important filter, etc. This could be done by allowing the user to drag and drop the filters into a custom order. @done(26-07-05 00:00)
 ✔ Matched filters should display like a table, so values are aligned visually. @done(26-07-05 00:00)
 ✔ Units which dont match a filter should still show their value for that filter in the results list, but it should be greyed out to indicate that it is not a match. @done(26-07-05 00:00)
 ✔ Titles for panels and subviews should be underlined to make them more visually distinct. @done(26-07-05 00:00)
+✔ The +/- indicators for items in the search filters list should be clickable, rather than just being visual indicators. Add an x button to remove filters from the list. @done(26-07-05 00:00)

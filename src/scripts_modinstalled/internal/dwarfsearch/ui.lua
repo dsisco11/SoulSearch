@@ -19,6 +19,14 @@ local FILTER_LOW = 'low'
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
 local TITLE_UNDERLINE_PEN = COLOR_GREY
+local FILTER_ACTION_PLUS = 'plus'
+local FILTER_ACTION_MINUS = 'minus'
+local FILTER_ACTION_REMOVE = 'remove'
+local FILTER_ACTION_UP = 'up'
+local FILTER_ACTION_DOWN = 'down'
+local FILTER_ACTION_WIDTH = 3
+local ACTIVE_FILTER_BUTTON_START_X = 21
+local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -186,15 +194,55 @@ local function add_underlined_title(tokens, title, pen)
     table.insert(tokens, NEWLINE)
 end
 
-local function format_filter_choice(descriptor, mode)
+local function format_active_filter_choice(descriptor, mode, priority_index, priority_count)
     local high_selected = mode == FILTER_HIGH
     local low_selected = mode == FILTER_LOW
+    local can_move_up = priority_index and priority_index > 1
+    local can_move_down = priority_index and priority_index < priority_count
+    local label = truncate(descriptor.label, ACTIVE_FILTER_LABEL_WIDTH)
+    local spacer_width = math.max(1, ACTIVE_FILTER_BUTTON_START_X - #label)
     return {
+        {text=label, pen=get_category_pen(descriptor)},
+        {text=(' '):rep(spacer_width), pen=COLOR_DARKGREY},
         {text='[+]', pen=high_selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
         {text='[-]', pen=low_selected and COLOR_LIGHTRED or COLOR_DARKGREY},
-        {text=' ', pen=COLOR_DARKGREY},
+        {text='[^]', pen=can_move_up and COLOR_WHITE or COLOR_DARKGREY},
+        {text='[v]', pen=can_move_down and COLOR_WHITE or COLOR_DARKGREY},
+        {text='[x]', pen=COLOR_LIGHTRED},
+    }
+end
+
+local function format_available_filter_choice(descriptor)
+    return {
         {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
+end
+
+local function get_filter_action_at_x(x)
+    if not x then
+        return nil
+    end
+    if x < ACTIVE_FILTER_BUTTON_START_X then
+        return nil
+    end
+
+    x = x - ACTIVE_FILTER_BUTTON_START_X
+    if x < FILTER_ACTION_WIDTH then
+        return FILTER_ACTION_PLUS
+    end
+    if x < FILTER_ACTION_WIDTH * 2 then
+        return FILTER_ACTION_MINUS
+    end
+    if x < FILTER_ACTION_WIDTH * 3 then
+        return FILTER_ACTION_UP
+    end
+    if x < FILTER_ACTION_WIDTH * 4 then
+        return FILTER_ACTION_DOWN
+    end
+    if x < FILTER_ACTION_WIDTH * 5 then
+        return FILTER_ACTION_REMOVE
+    end
+    return nil
 end
 
 local function get_live_position(result)
@@ -350,6 +398,8 @@ function DwarfSearchWindow:init()
     self.query = ''
     self.selected_filters = {}
     self.selected_filter_modes = {}
+    self.selected_filter_order = {}
+    self.add_filter_open = false
     self.filter_descriptors = search.get_flat_filter_descriptors()
 
     self:addviews{
@@ -374,12 +424,25 @@ function DwarfSearchWindow:init()
             text=get_title_underline('Search filters'),
             text_pen=TITLE_UNDERLINE_PEN,
         },
+        widgets.HotkeyLabel{
+            view_id='add_filter_button',
+            frame={l=1, t=4, w=18, h=1},
+            key='CUSTOM_A',
+            label='Add filter',
+            on_activate=function() self:toggle_add_filter_dropdown() end,
+        },
         widgets.List{
             view_id='filter_list',
-            frame={l=1, t=4, w=38, b=3},
+            frame={l=1, t=6, w=38, b=3},
+            visible=function() return not self.add_filter_open end,
+        },
+        widgets.List{
+            view_id='available_filter_list',
+            frame={l=1, t=6, w=38, b=3},
+            visible=function() return self.add_filter_open end,
             on_submit=function(index, choice)
                 if choice and choice.descriptor then
-                    self:toggle_filter(choice.descriptor.id)
+                    self:add_filter(choice.descriptor.id)
                 end
             end,
         },
@@ -430,6 +493,7 @@ function DwarfSearchWindow:init()
 
     self:refresh_residents()
     self:update_filter_choices()
+    self:update_available_filter_choices()
 end
 
 function DwarfSearchWindow:onDragBegin()
@@ -444,11 +508,11 @@ end
 
 function DwarfSearchWindow:get_selected_filters()
     local selected_filters = {}
-    for _, descriptor in ipairs(self.filter_descriptors) do
-        local mode = self.selected_filter_modes[descriptor.id]
+    for _, filter_id in ipairs(self.selected_filter_order) do
+        local mode = self.selected_filter_modes[filter_id]
         if mode then
             table.insert(selected_filters, {
-                id=descriptor.id,
+                id=filter_id,
                 direction=mode,
             })
         end
@@ -456,19 +520,81 @@ function DwarfSearchWindow:get_selected_filters()
     return selected_filters
 end
 
+function DwarfSearchWindow:get_filter_descriptor_by_id(filter_id)
+    for _, descriptor in ipairs(self.filter_descriptors) do
+        if descriptor.id == filter_id then
+            return descriptor
+        end
+    end
+    return nil
+end
+
+function DwarfSearchWindow:get_filter_priority(filter_id)
+    for index, ordered_filter_id in ipairs(self.selected_filter_order) do
+        if ordered_filter_id == filter_id then
+            return index
+        end
+    end
+    return nil
+end
+
+function DwarfSearchWindow:get_active_filter_descriptors()
+    local descriptors = {}
+
+    for _, filter_id in ipairs(self.selected_filter_order) do
+        local descriptor = self:get_filter_descriptor_by_id(filter_id)
+        if descriptor then
+            table.insert(descriptors, descriptor)
+        end
+    end
+
+    return descriptors
+end
+
+function DwarfSearchWindow:get_filter_choice_index(filter_id)
+    for index, descriptor in ipairs(self:get_active_filter_descriptors()) do
+        if descriptor.id == filter_id then
+            return index
+        end
+    end
+    return 1
+end
+
 function DwarfSearchWindow:update_filter_choices(selected)
     local choices = {}
-    for _, descriptor in ipairs(self.filter_descriptors) do
+    local priority_count = #self.selected_filter_order
+    for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
         table.insert(choices, {
-            text=format_filter_choice(descriptor, self.selected_filter_modes[descriptor.id]),
+            text=format_active_filter_choice(
+                descriptor,
+                self.selected_filter_modes[descriptor.id],
+                self:get_filter_priority(descriptor.id),
+                priority_count),
             descriptor=descriptor,
             search_key=descriptor.label,
         })
     end
     if #choices == 0 then
-        table.insert(choices, {text='No search filters found.'})
+        table.insert(choices, {text='Use Add filter to select attributes.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
+end
+
+function DwarfSearchWindow:update_available_filter_choices(selected)
+    local choices = {}
+    for _, descriptor in ipairs(self.filter_descriptors) do
+        if not self.selected_filter_modes[descriptor.id] then
+            table.insert(choices, {
+                text=format_available_filter_choice(descriptor),
+                descriptor=descriptor,
+                search_key=descriptor.label,
+            })
+        end
+    end
+    if #choices == 0 then
+        table.insert(choices, {text='All attributes have been added.'})
+    end
+    self.subviews.available_filter_list:setChoices(choices, selected)
 end
 
 function DwarfSearchWindow:update_results()
@@ -523,18 +649,105 @@ function DwarfSearchWindow:zoom_to_result(result)
     dfhack.gui.revealInDwarfmodeMap(pos, true, true)
 end
 
-function DwarfSearchWindow:toggle_filter(filter_id)
-    local mode = self.selected_filter_modes[filter_id]
-    if not mode then
+function DwarfSearchWindow:is_filter_active(filter_id)
+    return self.selected_filter_modes[filter_id] ~= nil
+end
+
+function DwarfSearchWindow:add_filter(filter_id)
+    if not self:is_filter_active(filter_id) then
         self.selected_filter_modes[filter_id] = FILTER_HIGH
-    elseif mode == FILTER_HIGH then
-        self.selected_filter_modes[filter_id] = FILTER_LOW
-    else
-        self.selected_filter_modes[filter_id] = nil
+        table.insert(self.selected_filter_order, filter_id)
     end
-    local selected = self.subviews.filter_list:getSelected()
-    self:update_filter_choices(selected)
+    self.add_filter_open = false
+    self:update_filter_choices(self:get_filter_choice_index(filter_id))
+    self:update_available_filter_choices()
     self:update_results()
+end
+
+function DwarfSearchWindow:remove_filter(filter_id)
+    self.selected_filter_modes[filter_id] = nil
+    local selected = self:get_filter_priority(filter_id) or 1
+    for index, ordered_filter_id in ipairs(self.selected_filter_order) do
+        if ordered_filter_id == filter_id then
+            table.remove(self.selected_filter_order, index)
+            break
+        end
+    end
+    self:update_filter_choices(math.max(1, math.min(selected, #self.selected_filter_order)))
+    self:update_available_filter_choices()
+    self:update_results()
+end
+
+function DwarfSearchWindow:set_filter_direction(filter_id, direction)
+    if not self:is_filter_active(filter_id) then
+        self:add_filter(filter_id)
+        self.selected_filter_modes[filter_id] = direction
+    else
+        self.selected_filter_modes[filter_id] = direction
+    end
+    local selected = self:get_filter_choice_index(filter_id)
+    self:update_filter_choices(selected)
+    self:update_available_filter_choices()
+    self:update_results()
+end
+
+function DwarfSearchWindow:toggle_add_filter_dropdown()
+    self.add_filter_open = not self.add_filter_open
+    self:update_available_filter_choices()
+end
+
+function DwarfSearchWindow:move_selected_filter_priority(delta)
+    local _, choice = self.subviews.filter_list:getSelected()
+    local filter_id = choice and choice.descriptor and choice.descriptor.id
+    if not filter_id or not self.selected_filter_modes[filter_id] then
+        return false
+    end
+
+    local index = self:get_filter_priority(filter_id)
+    local new_index = index and math.max(1, math.min(#self.selected_filter_order, index + delta))
+    if not new_index or new_index == index then
+        return false
+    end
+
+    table.remove(self.selected_filter_order, index)
+    table.insert(self.selected_filter_order, new_index, filter_id)
+    self:update_filter_choices(new_index)
+    self:update_results()
+    return true
+end
+
+function DwarfSearchWindow:handle_filter_action_click()
+    if self.add_filter_open then
+        return false
+    end
+
+    local filter_list = self.subviews.filter_list
+    local index = filter_list:getIdxUnderMouse()
+    if not index then
+        return false
+    end
+
+    filter_list:setSelected(index)
+    local x = filter_list:getMousePos()
+    local _, choice = filter_list:getSelected()
+    local filter_id = choice and choice.descriptor and choice.descriptor.id
+    local action = get_filter_action_at_x(x)
+    if not filter_id or not action then
+        return false
+    end
+
+    if action == FILTER_ACTION_PLUS then
+        self:set_filter_direction(filter_id, FILTER_HIGH)
+    elseif action == FILTER_ACTION_MINUS then
+        self:set_filter_direction(filter_id, FILTER_LOW)
+    elseif action == FILTER_ACTION_REMOVE then
+        self:remove_filter(filter_id)
+    elseif action == FILTER_ACTION_UP then
+        self:move_selected_filter_priority(-1)
+    elseif action == FILTER_ACTION_DOWN then
+        self:move_selected_filter_priority(1)
+    end
+    return true
 end
 
 function DwarfSearchWindow:refresh_residents()
@@ -553,12 +766,21 @@ function DwarfSearchWindow:move_result_cursor(delta)
 end
 
 function DwarfSearchWindow:onInput(keys)
+    if keys._MOUSE_L and self:handle_filter_action_click() then
+        return true
+    end
     if keys.CUSTOM_R then
         self:refresh_residents()
         return true
     end
     if keys.CUSTOM_Z then
         self:zoom_to_selected_result()
+        return true
+    end
+    if keys.CUSTOM_U and self:move_selected_filter_priority(-1) then
+        return true
+    end
+    if keys.CUSTOM_D and self:move_selected_filter_priority(1) then
         return true
     end
     if keys.KEYBOARD_CURSOR_UP then
