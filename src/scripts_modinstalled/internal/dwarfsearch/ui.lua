@@ -46,15 +46,22 @@ local function format_result_choice(result)
         truncate(result.profession or '', 24))
 end
 
+local function get_category_pen(descriptor)
+    if descriptor.kind == 'physical_attribute' then
+        return COLOR_LIGHTGREEN
+    end
+    if descriptor.kind == 'mental_attribute' then
+        return COLOR_LIGHTBLUE
+    end
+    return COLOR_LIGHTMAGENTA
+end
+
 local function format_filter_choice(descriptor, selected)
     local marker = selected and '[x]' or '[ ]'
-    local kind = 'Soul'
-    if descriptor.kind == 'trait' then
-        kind = 'Mind'
-    elseif descriptor.kind == 'physical_attribute' then
-        kind = 'Body'
-    end
-    return ('%s %-5s %s'):format(marker, kind, descriptor.label)
+    return {
+        {text=marker .. ' ', pen=selected and COLOR_LIGHTCYAN or COLOR_DARKGREY},
+        {text=descriptor.label, pen=get_category_pen(descriptor)},
+    }
 end
 
 local function details_for_result(result)
