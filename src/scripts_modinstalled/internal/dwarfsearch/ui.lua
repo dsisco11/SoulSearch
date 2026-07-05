@@ -29,6 +29,13 @@ local ADD_FILTER_LABEL = 'Add attribute/trait'
 local CLOSE_FILTER_MENU_LABEL = 'Close attribute menu'
 local ADD_SKILL_LABEL = 'Add skill'
 local CLOSE_SKILL_MENU_LABEL = 'Close skill menu'
+local SKILL_CATEGORY_ORDER = {
+    'Labor',
+    'Combat',
+    'Social',
+    'Other Skills',
+    'Knowledge',
+}
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -165,6 +172,19 @@ end
 local function format_available_filter_choice(descriptor)
     return {
         {text=descriptor.label, pen=get_category_pen(descriptor)},
+    }
+end
+
+local function format_available_skill_choice(descriptor)
+    return {
+        {text='  ', pen=COLOR_DARKGREY},
+        {text=descriptor.label, pen=get_category_pen(descriptor)},
+    }
+end
+
+local function format_skill_category_choice(category)
+    return {
+        {text=category, pen=COLOR_WHITE},
     }
 end
 
@@ -644,14 +664,29 @@ end
 
 function DwarfSearchWindow:update_available_skill_choices(selected)
     local choices = {}
+    local choices_by_category = {}
     for _, descriptor in ipairs(self.skill_filter_descriptors) do
         if not self.selected_filter_modes[descriptor.id] and
                 contains_text(descriptor.label, self.skill_query) then
-            table.insert(choices, {
-                text=format_available_filter_choice(descriptor),
+            local category = descriptor.category or 'Other Skills'
+            choices_by_category[category] = choices_by_category[category] or {}
+            table.insert(choices_by_category[category], {
+                text=format_available_skill_choice(descriptor),
                 descriptor=descriptor,
                 search_key=descriptor.label,
             })
+        end
+    end
+    for _, category in ipairs(SKILL_CATEGORY_ORDER) do
+        local category_choices = choices_by_category[category]
+        if category_choices and #category_choices > 0 then
+            table.insert(choices, {
+                text=format_skill_category_choice(category),
+                search_key=category,
+            })
+            for _, choice in ipairs(category_choices) do
+                table.insert(choices, choice)
+            end
         end
     end
     if #choices == 0 then
