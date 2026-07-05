@@ -14,6 +14,8 @@ local NEUTRAL_ATTRIBUTE_TIER = 0
 local ATTRIBUTE_TIER_WIDTH = 250
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local SECTION_DIVIDER_XS = {39, 93}
+local FILTER_HIGH = 'high'
+local FILTER_LOW = 'low'
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -170,10 +172,13 @@ local function format_deviation(deviation)
     return tostring(deviation)
 end
 
-local function format_filter_choice(descriptor, selected)
-    local marker = selected and '[x]' or '[ ]'
+local function format_filter_choice(descriptor, mode)
+    local high_selected = mode == FILTER_HIGH
+    local low_selected = mode == FILTER_LOW
     return {
-        {text=marker .. ' ', pen=selected and COLOR_LIGHTCYAN or COLOR_DARKGREY},
+        {text='[+]', pen=high_selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
+        {text='[-]', pen=low_selected and COLOR_LIGHTRED or COLOR_DARKGREY},
+        {text=' ', pen=COLOR_DARKGREY},
         {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
 end
@@ -289,8 +294,8 @@ function DwarfSearchWindow:init()
     self.rows = {}
     self.results = {}
     self.query = ''
-    self.selected_filter_ids = {}
-    self.selected_filter_id_set = {}
+    self.selected_filters = {}
+    self.selected_filter_modes = {}
     self.filter_descriptors = search.get_flat_filter_descriptors()
 
     self:addviews{
@@ -367,21 +372,25 @@ function DwarfSearchWindow:onRenderBody(dc)
     draw_section_dividers(dc)
 end
 
-function DwarfSearchWindow:get_selected_filter_ids()
-    local ids = {}
+function DwarfSearchWindow:get_selected_filters()
+    local selected_filters = {}
     for _, descriptor in ipairs(self.filter_descriptors) do
-        if self.selected_filter_id_set[descriptor.id] then
-            table.insert(ids, descriptor.id)
+        local mode = self.selected_filter_modes[descriptor.id]
+        if mode then
+            table.insert(selected_filters, {
+                id=descriptor.id,
+                direction=mode,
+            })
         end
     end
-    return ids
+    return selected_filters
 end
 
 function DwarfSearchWindow:update_filter_choices(selected)
     local choices = {}
     for _, descriptor in ipairs(self.filter_descriptors) do
         table.insert(choices, {
-            text=format_filter_choice(descriptor, self.selected_filter_id_set[descriptor.id]),
+            text=format_filter_choice(descriptor, self.selected_filter_modes[descriptor.id]),
             descriptor=descriptor,
             search_key=descriptor.label,
         })
@@ -393,10 +402,10 @@ function DwarfSearchWindow:update_filter_choices(selected)
 end
 
 function DwarfSearchWindow:update_results()
-    self.selected_filter_ids = self:get_selected_filter_ids()
+    self.selected_filters = self:get_selected_filters()
     self.results = search.apply(self.rows, {
         query=self.query,
-        selected_filter_ids=self.selected_filter_ids,
+        selected_filters=self.selected_filters,
     })
 
     local choices = {}
@@ -443,7 +452,14 @@ function DwarfSearchWindow:zoom_to_result(result)
 end
 
 function DwarfSearchWindow:toggle_filter(filter_id)
-    self.selected_filter_id_set[filter_id] = not self.selected_filter_id_set[filter_id] or nil
+    local mode = self.selected_filter_modes[filter_id]
+    if not mode then
+        self.selected_filter_modes[filter_id] = FILTER_HIGH
+    elseif mode == FILTER_HIGH then
+        self.selected_filter_modes[filter_id] = FILTER_LOW
+    else
+        self.selected_filter_modes[filter_id] = nil
+    end
     local selected = self.subviews.filter_list:getSelected()
     self:update_filter_choices(selected)
     self:update_results()

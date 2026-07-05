@@ -6,6 +6,8 @@ local PHYSICAL_ATTRIBUTE_MATCH_MINIMUM = 1000
 local TRAIT_SCORE_SCALE = 100
 local MENTAL_ATTRIBUTE_SCORE_SCALE = 5000
 local PHYSICAL_ATTRIBUTE_SCORE_SCALE = 5000
+local FILTER_HIGH = 'high'
+local FILTER_LOW = 'low'
 
 local function enum_keys(enum)
     local keys = {}
@@ -138,15 +140,51 @@ local function copy_selected_descriptors(selected)
     return descriptors
 end
 
+local function make_selected_descriptor(descriptor, direction)
+    local selected = {}
+    for key, value in pairs(descriptor) do
+        selected[key] = value
+    end
+    selected.direction = direction or FILTER_HIGH
+    return selected
+end
+
 local function selected_ids_to_descriptors(selected_ids)
     local descriptors = {}
     for _, descriptor_id in ipairs(selected_ids or {}) do
         local descriptor = get_descriptor_by_id(descriptor_id)
         if descriptor then
-            table.insert(descriptors, descriptor)
+            table.insert(descriptors, make_selected_descriptor(descriptor, FILTER_HIGH))
         end
     end
     return descriptors
+end
+
+local function selected_filters_to_descriptors(selected_filters)
+    local descriptors = {}
+    for _, selected_filter in ipairs(selected_filters or {}) do
+        local descriptor = get_descriptor_by_id(selected_filter.id)
+        if descriptor then
+            table.insert(descriptors, make_selected_descriptor(
+                descriptor,
+                selected_filter.direction))
+        end
+    end
+    return descriptors
+end
+
+local function matches_descriptor(value, descriptor)
+    if descriptor.direction == FILTER_LOW then
+        return value <= descriptor.match_minimum
+    end
+    return value >= descriptor.match_minimum
+end
+
+local function score_value(value, descriptor)
+    if descriptor.direction == FILTER_LOW then
+        return math.min((descriptor.score_scale - value) / descriptor.score_scale, 1)
+    end
+    return math.min(value / descriptor.score_scale, 1)
 end
 
 local function score_row(row, selected_descriptors)
@@ -155,15 +193,16 @@ local function score_row(row, selected_descriptors)
 
     for _, descriptor in ipairs(selected_descriptors) do
         local value = get_value(row, descriptor)
-        if value and value >= descriptor.match_minimum then
+        if value and matches_descriptor(value, descriptor) then
             table.insert(matched, {
                 id=descriptor.id,
                 kind=descriptor.kind,
                 key=descriptor.key,
                 label=descriptor.label,
+                direction=descriptor.direction,
                 value=value,
             })
-            score = score + math.min(value / descriptor.score_scale, 1)
+            score = score + score_value(value, descriptor)
         end
     end
 
@@ -203,6 +242,7 @@ function apply(rows, opts)
     local query = opts.query or ''
     local selected_descriptors = opts.selected_descriptors and
         copy_selected_descriptors(opts.selected_descriptors) or
+        opts.selected_filters and selected_filters_to_descriptors(opts.selected_filters) or
         selected_ids_to_descriptors(opts.selected_filter_ids)
     local results = {}
 
