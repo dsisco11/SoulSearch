@@ -16,6 +16,8 @@ local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local SECTION_DIVIDER_XS = {39, 93}
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
+local MATCHED_FILTER_LABEL_WIDTH = 24
+local MATCHED_FILTER_VALUE_WIDTH = 6
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -258,9 +260,10 @@ local function add_matched_filter_section(tokens, matched_criteria, unit)
             unit)
         table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
         table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN})
-        table.insert(tokens, {text=criterion.label, pen=get_category_pen(criterion)})
-        table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
-        table.insert(tokens, {text=format_deviation(deviation), pen=get_deviation_pen(deviation, tier_distance)})
+        table.insert(tokens, {text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
+            truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=get_category_pen(criterion)})
+        table.insert(tokens, {text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
+            format_deviation(deviation)), pen=get_deviation_pen(deviation, tier_distance)})
         table.insert(tokens, NEWLINE)
     end
 

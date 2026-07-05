@@ -18,6 +18,6 @@
 ✔ Move close button to top-right of window. @done(26-07-05 00:00)
 ✔ The right-side view panel should also show the matched filter attributes at the very top of the panel (in the same order as the search filters). they should be positioned right below the panels "Attributes" title. @done(26-07-05 00:00)
 ☐ Search filters should be able to be specified in the order of priority that a user wants, so that the results list can be sorted by the most important filter first, then the second most important filter, etc. This could be done by allowing the user to drag and drop the filters into a custom order.
-☐ Matched filters should display as a table, so values are aligned visually.
+✔ Matched filters should display like a table, so values are aligned visually. @done(26-07-05 00:00)
 ☐ Units which dont match a filter should still show their value for that filter in the results list, but it should be greyed out to indicate that it is not a match.
 ☐ Titles for panels and subviews should be underlined to make them more visually distinct.
