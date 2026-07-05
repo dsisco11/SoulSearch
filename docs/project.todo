@@ -14,4 +14,4 @@
 ☐ Search panel sections need to be made collapsible, so that the user can hide the filters or attributes sections if they want more space for the results list.
 ☐ Search panel sections need have a divider line between them, so that the user can more easily see where one section ends and the next begins.
 ✔ Rename "Search" field to "Name search" to make it more clear what it does. @done(26-07-05 00:00)
-☐ Remove "zoom" and "Refresh" buttons from the bottom of the search panel.
+✔ Remove "zoom" and "Refresh" buttons from the bottom of the search panel. @done(26-07-05 00:00)

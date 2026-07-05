@@ -335,19 +335,7 @@ function DwarfSearchWindow:init()
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
-            frame={l=1, b=1, w=18, h=1},
-            key='CUSTOM_R',
-            label='Refresh',
-            on_activate=function() self:refresh_residents() end,
-        },
-        widgets.HotkeyLabel{
-            frame={l=20, b=1, w=18, h=1},
-            key='CUSTOM_Z',
-            label='Zoom',
-            on_activate=function() self:zoom_to_selected_result() end,
-        },
-        widgets.HotkeyLabel{
-            frame={l=39, b=1, w=16, h=1},
+            frame={l=1, b=1, w=16, h=1},
             key='LEAVESCREEN',
             label='Close',
             on_activate=function() self.parent_view:dismiss() end,
