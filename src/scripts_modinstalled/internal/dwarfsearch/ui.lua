@@ -5,8 +5,13 @@ local widgets = require('gui.widgets')
 
 local residents = reqscript('internal/dwarfsearch/residents')
 local search = reqscript('internal/dwarfsearch/search')
+local personality = reqscript('modtools/set-personality')
 
 local view
+local median_cache = {}
+local NEUTRAL_PERSONALITY_TIER = personality.getTraitTier(50)
+local NEUTRAL_ATTRIBUTE_TIER = 0
+local ATTRIBUTE_TIER_WIDTH = 250
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -66,6 +71,57 @@ local function get_category_info(kind)
     return 'Mind', COLOR_LIGHTMAGENTA
 end
 
+local function split_colon(text)
+    local parts = {}
+    for part in tostring(text):gmatch('[^:]+') do
+        table.insert(parts, part)
+    end
+    return parts
+end
+
+local function get_race_medians(race_id)
+    if median_cache[race_id] then
+        return median_cache[race_id]
+    end
+
+    local medians = {
+        physical_attribute={},
+        mental_attribute={},
+    }
+
+    for _, name in ipairs(df.physical_attribute_type) do
+        medians.physical_attribute[name] = 1000
+    end
+    for _, name in ipairs(df.mental_attribute_type) do
+        medians.mental_attribute[name] = 1000
+    end
+
+    local creature = df.global.world.raws.creatures.all[race_id]
+    if creature then
+        for _, raw in ipairs(creature.raws) do
+            local raw_value = raw.value or ''
+            if raw_value:match('PHYS_ATT_RANGE') then
+                local parts = split_colon(raw_value)
+                medians.physical_attribute[parts[2]] = tonumber(parts[6]) or medians.physical_attribute[parts[2]]
+            elseif raw_value:match('MENT_ATT_RANGE') then
+                local parts = split_colon(raw_value)
+                medians.mental_attribute[parts[2]] = tonumber(parts[6]) or medians.mental_attribute[parts[2]]
+            end
+        end
+    end
+
+    median_cache[race_id] = medians
+    return medians
+end
+
+local function get_attribute_tier(value, median)
+    local delta = value - median
+    if delta >= 0 then
+        return math.floor(delta / ATTRIBUTE_TIER_WIDTH)
+    end
+    return -math.floor(math.abs(delta) / ATTRIBUTE_TIER_WIDTH)
+end
+
 local function format_filter_choice(descriptor, selected)
     local marker = selected and '[x]' or '[ ]'
     return {
@@ -86,24 +142,40 @@ local function get_live_position(result)
     return nil
 end
 
-local function add_attribute_section(tokens, title, pen, values)
+local function is_notable_value(kind, key, value, unit)
+    if type(value) ~= 'number' then
+        return false
+    end
+
+    if kind == 'trait' then
+        return personality.getTraitTier(value) ~= NEUTRAL_PERSONALITY_TIER
+    end
+
+    local medians = get_race_medians(unit.race)
+    local median = medians[kind] and medians[kind][key] or 1000
+    return get_attribute_tier(value, median) ~= NEUTRAL_ATTRIBUTE_TIER
+end
+
+local function add_attribute_section(tokens, title, pen, kind, values, unit)
     table.insert(tokens, {text=title, pen=pen})
     table.insert(tokens, NEWLINE)
 
-    if not values then
-        table.insert(tokens, {text='  none', pen=COLOR_DARKGREY})
+    if not values or not unit then
+        table.insert(tokens, {text='  none notable', pen=COLOR_DARKGREY})
         table.insert(tokens, NEWLINE)
         return
     end
 
     local keys = {}
-    for key in pairs(values) do
-        table.insert(keys, key)
+    for key, value in pairs(values) do
+        if is_notable_value(kind, key, value, unit) then
+            table.insert(keys, key)
+        end
     end
     table.sort(keys)
 
     if #keys == 0 then
-        table.insert(tokens, {text='  none', pen=COLOR_DARKGREY})
+        table.insert(tokens, {text='  none notable', pen=COLOR_DARKGREY})
         table.insert(tokens, NEWLINE)
         return
     end
@@ -126,11 +198,11 @@ local function attributes_for_result(result)
     local soul_label, soul_pen = get_category_info('mental_attribute')
     local mind_label, mind_pen = get_category_info('trait')
 
-    add_attribute_section(tokens, body_label, body_pen, result.row.physical_attributes)
+    add_attribute_section(tokens, body_label, body_pen, 'physical_attribute', result.row.physical_attributes, result.unit)
     table.insert(tokens, NEWLINE)
-    add_attribute_section(tokens, soul_label, soul_pen, result.row.mental_attributes)
+    add_attribute_section(tokens, soul_label, soul_pen, 'mental_attribute', result.row.mental_attributes, result.unit)
     table.insert(tokens, NEWLINE)
-    add_attribute_section(tokens, mind_label, mind_pen, result.row.traits)
+    add_attribute_section(tokens, mind_label, mind_pen, 'trait', result.row.traits, result.unit)
 
     return tokens
 end
