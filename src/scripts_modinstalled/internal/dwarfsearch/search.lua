@@ -38,6 +38,16 @@ local function make_descriptor(kind, key, label, match_minimum, score_scale)
     }
 end
 
+local function sort_descriptors_by_label(descriptors)
+    table.sort(descriptors, function(a, b)
+        if a.label ~= b.label then
+            return a.label < b.label
+        end
+        return a.id < b.id
+    end)
+    return descriptors
+end
+
 local function get_trait_descriptors()
     local descriptors = {}
     for _, trait in ipairs(enum_keys(df.personality_facet_type)) do
@@ -48,7 +58,7 @@ local function get_trait_descriptors()
             TRAIT_MATCH_MINIMUM,
             TRAIT_SCORE_SCALE))
     end
-    return descriptors
+    return sort_descriptors_by_label(descriptors)
 end
 
 local function get_mental_attribute_descriptors()
@@ -61,7 +71,7 @@ local function get_mental_attribute_descriptors()
             MENTAL_ATTRIBUTE_MATCH_MINIMUM,
             MENTAL_ATTRIBUTE_SCORE_SCALE))
     end
-    return descriptors
+    return sort_descriptors_by_label(descriptors)
 end
 
 local function get_physical_attribute_descriptors()
@@ -74,7 +84,7 @@ local function get_physical_attribute_descriptors()
             PHYSICAL_ATTRIBUTE_MATCH_MINIMUM,
             PHYSICAL_ATTRIBUTE_SCORE_SCALE))
     end
-    return descriptors
+    return sort_descriptors_by_label(descriptors)
 end
 
 local function flatten_descriptors(descriptors)
