@@ -56,6 +56,24 @@ directories.
 
 ## Publishing
 
+Run the local Lua build check with:
+
+```powershell
+.\tools\Build.ps1
+```
+
+The build checks every `.lua` file under `src/scripts_modinstalled/` for syntax
+errors using `luac -p`, or `lua` with `loadfile()` if `luac` is not available.
+Install Lua on PATH or pass a specific executable path:
+
+```powershell
+.\tools\Build.ps1 -LuaPath "C:\path\to\luac.exe"
+.\tools\Build.ps1 -LuaPath "C:\path\to\lua.exe" -LuaMode Lua
+```
+
+This catches Lua parse/build errors only. DFHack APIs, UI widgets, and game
+state behavior still need in-game validation.
+
 Create a distributable zip with:
 
 ```powershell
