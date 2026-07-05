@@ -241,12 +241,39 @@ local function add_attribute_section(tokens, title, pen, kind, values, unit)
     end
 end
 
+local function add_matched_filter_section(tokens, matched_criteria, unit)
+    if not matched_criteria or #matched_criteria == 0 then
+        return
+    end
+
+    table.insert(tokens, {text='Matched filters', pen=COLOR_WHITE})
+    table.insert(tokens, NEWLINE)
+
+    for _, criterion in ipairs(matched_criteria) do
+        local is_low = criterion.direction == FILTER_LOW
+        local deviation, tier_distance = get_deviation_info(
+            criterion.kind,
+            criterion.key,
+            criterion.value,
+            unit)
+        table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
+        table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN})
+        table.insert(tokens, {text=criterion.label, pen=get_category_pen(criterion)})
+        table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
+        table.insert(tokens, {text=format_deviation(deviation), pen=get_deviation_pen(deviation, tier_distance)})
+        table.insert(tokens, NEWLINE)
+    end
+
+    table.insert(tokens, NEWLINE)
+end
+
 local function attributes_for_result(result)
     if not result or not result.row then
         return 'No resident selected.'
     end
 
     local tokens = {}
+    add_matched_filter_section(tokens, result.matched_criteria, result.unit)
     table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
@@ -341,13 +368,13 @@ function DwarfSearchWindow:init()
             end,
         },
         widgets.Label{
-            frame={l=95, t=2, r=1, h=1},
+            frame={l=95, t=1, r=1, h=1},
             text='Attributes',
             text_pen=COLOR_WHITE,
         },
         widgets.Label{
             view_id='attributes',
-            frame={l=95, t=3, r=1, b=3},
+            frame={l=95, t=2, r=1, b=3},
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
