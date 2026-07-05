@@ -26,6 +26,19 @@ local function format_position(pos)
     return ('%d, %d, %d'):format(pos.x, pos.y, pos.z)
 end
 
+local function make_position(x, y, z)
+    if type(x) == 'table' then
+        return {x=x.x, y=x.y, z=x.z}
+    end
+    if type(x) ~= 'number' or type(y) ~= 'number' or type(z) ~= 'number' then
+        return nil
+    end
+    if x < 0 or y < 0 or z < 0 then
+        return nil
+    end
+    return {x=x, y=y, z=z}
+end
+
 local function format_result_choice(result)
     return ('%-5s %-32s %s'):format(
         result.match_label,
@@ -68,9 +81,9 @@ local function get_live_position(result)
         return nil
     end
 
-    local ok, pos = pcall(dfhack.units.getPosition, result.unit)
+    local ok, x, y, z = pcall(dfhack.units.getPosition, result.unit)
     if ok then
-        return pos
+        return make_position(x, y, z)
     end
     return nil
 end

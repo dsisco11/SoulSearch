@@ -11,11 +11,17 @@ local function enum_keys(enum)
     return keys
 end
 
-local function copy_position(pos)
-    if not pos then
+local function copy_position(x, y, z)
+    if type(x) == 'table' then
+        return {x=x.x, y=x.y, z=x.z}
+    end
+    if type(x) ~= 'number' or type(y) ~= 'number' or type(z) ~= 'number' then
         return nil
     end
-    return {x=pos.x, y=pos.y, z=pos.z}
+    if x < 0 or y < 0 or z < 0 then
+        return nil
+    end
+    return {x=x, y=y, z=z}
 end
 
 local function get_trait_values(unit)
