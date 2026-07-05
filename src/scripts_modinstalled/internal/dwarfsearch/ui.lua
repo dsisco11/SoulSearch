@@ -25,8 +25,8 @@ local FILTER_ACTION_DOWN = 'down'
 local FILTER_ACTION_WIDTH = 3
 local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
-local ADD_FILTER_LABEL = 'Add filter'
-local CLOSE_FILTER_MENU_LABEL = 'Close filter menu'
+local ADD_FILTER_LABEL = 'Add attribute/trait'
+local CLOSE_FILTER_MENU_LABEL = 'Close attribute menu'
 local ADD_SKILL_LABEL = 'Add skill'
 local CLOSE_SKILL_MENU_LABEL = 'Close skill menu'
 
@@ -412,7 +412,7 @@ function DwarfSearchWindow:init()
             view_id='add_filter_button',
             frame={l=1, t=4, w=25, h=1},
             key='CUSTOM_A',
-            label='Add filter',
+            label=ADD_FILTER_LABEL,
             on_activate=function() self:toggle_add_filter_dropdown() end,
         },
         widgets.HotkeyLabel{
@@ -620,7 +620,7 @@ function DwarfSearchWindow:update_filter_choices(selected)
         })
     end
     if #choices == 0 then
-        table.insert(choices, {text='Use Add filter or Add skill.'})
+        table.insert(choices, {text='Use Add attribute/trait or Add skill.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
 end
