@@ -11,6 +11,18 @@ local function enum_keys(enum)
     return keys
 end
 
+local skill_name_by_id
+
+local function get_skill_name_by_id(skill_id)
+    if not skill_name_by_id then
+        skill_name_by_id = {}
+        for _, skill in ipairs(enum_keys(df.job_skill)) do
+            skill_name_by_id[skill.value] = skill.name
+        end
+    end
+    return skill_name_by_id[skill_id]
+end
+
 local function get_trait_values(unit)
     local values = {}
     local soul = unit.status and unit.status.current_soul
@@ -51,6 +63,35 @@ local function get_physical_attribute_values(unit)
     return values
 end
 
+local function get_skill_xp_to_next_level(rating)
+    return 500 + math.max(rating or 0, 0) * 100
+end
+
+local function get_skill_value(skill)
+    local rating = skill.rating or 0
+    local experience = math.max(skill.experience or 0, 0)
+    local xp_to_next_level = get_skill_xp_to_next_level(rating)
+    local progress = math.min(experience / xp_to_next_level, 0.99)
+    return rating + 1 + progress
+end
+
+local function get_skill_values(unit)
+    local values = {}
+    local soul = unit.status and unit.status.current_soul
+    local skills = soul and soul.skills
+    if not skills then
+        return values
+    end
+
+    for _, skill in ipairs(skills) do
+        local skill_name = get_skill_name_by_id(skill.id)
+        if skill_name then
+            values[skill_name] = get_skill_value(skill)
+        end
+    end
+    return values
+end
+
 local function get_readable_name(unit)
     local name = dfhack.units.getReadableName(unit)
     if name and name ~= '' then
@@ -68,6 +109,7 @@ local function build_resident_row(unit)
         traits=get_trait_values(unit),
         mental_attributes=get_mental_attribute_values(unit),
         physical_attributes=get_physical_attribute_values(unit),
+        skills=get_skill_values(unit),
     }
 end
 

@@ -27,6 +27,8 @@ local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
 local ADD_FILTER_LABEL = 'Add filter'
 local CLOSE_FILTER_MENU_LABEL = 'Close filter menu'
+local ADD_SKILL_LABEL = 'Add skill'
+local CLOSE_SKILL_MENU_LABEL = 'Close skill menu'
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -37,6 +39,13 @@ local function truncate(text, width)
         return text:sub(1, width)
     end
     return text:sub(1, width - 3) .. '...'
+end
+
+local function contains_text(haystack, needle)
+    if not needle or needle == '' then
+        return true
+    end
+    return tostring(haystack or ''):lower():find(needle:lower(), 1, true) ~= nil
 end
 
 local function format_position(pos)
@@ -67,6 +76,9 @@ local function format_result_choice(result)
 end
 
 local function get_category_pen(descriptor)
+    if descriptor.kind == 'skill' then
+        return COLOR_YELLOW
+    end
     if descriptor.kind == 'physical_attribute' then
         return COLOR_LIGHTGREEN
     end
@@ -107,6 +119,18 @@ local function format_deviation(deviation)
         return ('+%d'):format(deviation)
     end
     return tostring(deviation)
+end
+
+local function format_skill_value(value)
+    value = math.floor((value or 0) * 10) / 10
+    return ('%.1f'):format(value)
+end
+
+local function format_evaluation_value(criterion, evaluation)
+    if criterion.kind == 'skill' then
+        return format_skill_value(evaluation.value)
+    end
+    return format_deviation(evaluation.deviation)
 end
 
 local function get_title_underline(title)
@@ -189,6 +213,12 @@ local function copy_filter_order(filter_order)
         table.insert(copy, filter_id)
     end
     return copy
+end
+
+local function append_descriptors(target, descriptors)
+    for _, descriptor in ipairs(descriptors or {}) do
+        table.insert(target, descriptor)
+    end
 end
 
 local function get_live_position(result)
@@ -280,7 +310,7 @@ local function add_selected_filter_section(tokens, filter_criteria, unit)
             table.insert(tokens, {text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
                 truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=label_pen})
             table.insert(tokens, {text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
-                format_deviation(evaluation.deviation)), pen=value_pen})
+                format_evaluation_value(criterion, evaluation)), pen=value_pen})
             table.insert(tokens, NEWLINE)
         end
     end
@@ -342,8 +372,16 @@ function DwarfSearchWindow:init()
     self.rows = {}
     self.results = {}
     self.query = ''
+    self.skill_query = ''
     self.add_filter_open = false
+    self.add_skill_open = false
+    local filter_descriptor_groups = search.get_filter_descriptors()
     self.filter_descriptors = search.get_flat_filter_descriptors()
+    self.attribute_filter_descriptors = {}
+    append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.physical_attributes)
+    append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.mental_attributes)
+    append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
+    self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
     self.selected_filters = {}
     self.selected_filter_modes = self:get_valid_filter_modes(saved_filter_modes)
     self.selected_filter_order = self:get_valid_filter_order(saved_filter_order)
@@ -378,20 +416,49 @@ function DwarfSearchWindow:init()
             on_activate=function() self:toggle_add_filter_dropdown() end,
         },
         widgets.HotkeyLabel{
-            frame={l=1, t=5, w=20, h=1},
+            view_id='add_skill_button',
+            frame={l=1, t=5, w=25, h=1},
+            key='CUSTOM_S',
+            label='Add skill',
+            on_activate=function() self:toggle_add_skill_dropdown() end,
+        },
+        widgets.HotkeyLabel{
+            frame={l=1, t=6, w=20, h=1},
             key='CUSTOM_C',
             label='Clear filters',
             on_activate=function() self:clear_filters() end,
         },
         widgets.List{
             view_id='filter_list',
-            frame={l=1, t=7, w=38, b=3},
-            visible=function() return not self.add_filter_open end,
+            frame={l=1, t=8, w=38, b=3},
+            visible=function() return not self.add_filter_open and not self.add_skill_open end,
         },
         widgets.List{
             view_id='available_filter_list',
-            frame={l=1, t=7, w=38, b=3},
+            frame={l=1, t=8, w=38, b=3},
             visible=function() return self.add_filter_open end,
+            on_submit=function(index, choice)
+                if choice and choice.descriptor then
+                    self:add_filter(choice.descriptor.id)
+                end
+            end,
+        },
+        widgets.EditField{
+            view_id='skill_search_field',
+            frame={l=1, t=8, w=38, h=1},
+            label_text='Skill search: ',
+            key='CUSTOM_K',
+            modal=true,
+            visible=function() return self.add_skill_open end,
+            on_change=function(text)
+                self.skill_query = text
+                self:update_available_skill_choices()
+            end,
+        },
+        widgets.List{
+            view_id='available_skill_list',
+            frame={l=1, t=10, w=38, b=3},
+            visible=function() return self.add_skill_open end,
             on_submit=function(index, choice)
                 if choice and choice.descriptor then
                     self:add_filter(choice.descriptor.id)
@@ -446,6 +513,7 @@ function DwarfSearchWindow:init()
     self:refresh_residents()
     self:update_filter_choices()
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
 end
 
 function DwarfSearchWindow:onDragBegin()
@@ -552,14 +620,14 @@ function DwarfSearchWindow:update_filter_choices(selected)
         })
     end
     if #choices == 0 then
-        table.insert(choices, {text='Use Add filter to select attributes.'})
+        table.insert(choices, {text='Use Add filter or Add skill.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
 end
 
 function DwarfSearchWindow:update_available_filter_choices(selected)
     local choices = {}
-    for _, descriptor in ipairs(self.filter_descriptors) do
+    for _, descriptor in ipairs(self.attribute_filter_descriptors) do
         if not self.selected_filter_modes[descriptor.id] then
             table.insert(choices, {
                 text=format_available_filter_choice(descriptor),
@@ -572,6 +640,24 @@ function DwarfSearchWindow:update_available_filter_choices(selected)
         table.insert(choices, {text='All attributes have been added.'})
     end
     self.subviews.available_filter_list:setChoices(choices, selected)
+end
+
+function DwarfSearchWindow:update_available_skill_choices(selected)
+    local choices = {}
+    for _, descriptor in ipairs(self.skill_filter_descriptors) do
+        if not self.selected_filter_modes[descriptor.id] and
+                contains_text(descriptor.label, self.skill_query) then
+            table.insert(choices, {
+                text=format_available_filter_choice(descriptor),
+                descriptor=descriptor,
+                search_key=descriptor.label,
+            })
+        end
+    end
+    if #choices == 0 then
+        table.insert(choices, {text='No matching skills.'})
+    end
+    self.subviews.available_skill_list:setChoices(choices, selected)
 end
 
 function DwarfSearchWindow:update_results()
@@ -637,9 +723,12 @@ function DwarfSearchWindow:add_filter(filter_id)
         table.insert(self.selected_filter_order, filter_id)
     end
     self.add_filter_open = false
+    self.add_skill_open = false
     self:update_add_filter_button()
+    self:update_add_skill_button()
     self:update_filter_choices(self:get_filter_choice_index(filter_id))
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
     self:update_results()
 end
 
@@ -654,6 +743,7 @@ function DwarfSearchWindow:remove_filter(filter_id)
     end
     self:update_filter_choices(math.max(1, math.min(selected, #self.selected_filter_order)))
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
     self:update_results()
 end
 
@@ -665,9 +755,12 @@ function DwarfSearchWindow:clear_filters()
     self.selected_filter_modes = {}
     self.selected_filter_order = {}
     self.add_filter_open = false
+    self.add_skill_open = false
     self:update_add_filter_button()
+    self:update_add_skill_button()
     self:update_filter_choices(1)
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
     self:update_results()
     return true
 end
@@ -682,29 +775,54 @@ function DwarfSearchWindow:set_filter_direction(filter_id, direction)
     local selected = self:get_filter_choice_index(filter_id)
     self:update_filter_choices(selected)
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
     self:update_results()
 end
 
 function DwarfSearchWindow:toggle_add_filter_dropdown()
     self.add_filter_open = not self.add_filter_open
+    if self.add_filter_open then
+        self.add_skill_open = false
+    end
     self:update_add_filter_button()
+    self:update_add_skill_button()
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
+end
+
+function DwarfSearchWindow:toggle_add_skill_dropdown()
+    self.add_skill_open = not self.add_skill_open
+    if self.add_skill_open then
+        self.add_filter_open = false
+    end
+    self:update_add_filter_button()
+    self:update_add_skill_button()
+    self:update_available_filter_choices()
+    self:update_available_skill_choices()
 end
 
 function DwarfSearchWindow:close_add_filter_dropdown()
-    if not self.add_filter_open then
+    if not self.add_filter_open and not self.add_skill_open then
         return false
     end
 
     self.add_filter_open = false
+    self.add_skill_open = false
     self:update_add_filter_button()
+    self:update_add_skill_button()
     self:update_available_filter_choices()
+    self:update_available_skill_choices()
     return true
 end
 
 function DwarfSearchWindow:update_add_filter_button()
     local label = self.add_filter_open and CLOSE_FILTER_MENU_LABEL or ADD_FILTER_LABEL
     self.subviews.add_filter_button:setLabel(label)
+end
+
+function DwarfSearchWindow:update_add_skill_button()
+    local label = self.add_skill_open and CLOSE_SKILL_MENU_LABEL or ADD_SKILL_LABEL
+    self.subviews.add_skill_button:setLabel(label)
 end
 
 function DwarfSearchWindow:move_selected_filter_priority(delta)
@@ -728,7 +846,7 @@ function DwarfSearchWindow:move_selected_filter_priority(delta)
 end
 
 function DwarfSearchWindow:handle_filter_action_click()
-    if self.add_filter_open then
+    if self.add_filter_open or self.add_skill_open then
         return false
     end
 

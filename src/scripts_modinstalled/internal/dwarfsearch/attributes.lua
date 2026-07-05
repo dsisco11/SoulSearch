@@ -7,6 +7,7 @@ local DEFAULT_TRAIT_BASELINE = 50
 local DEFAULT_ATTRIBUTE_BASELINE = 1000
 local ATTRIBUTE_TIER_WIDTH = 250
 local ATTRIBUTE_SCORE_SCALE = 5000
+local SKILL_SCORE_SCALE = 21
 
 local median_cache = {}
 
@@ -92,6 +93,7 @@ function evaluate(kind, key, value, unit)
         local baseline_tier = personality.getTraitTier(baseline)
         local value_tier = personality.getTraitTier(value)
         return {
+            kind=kind,
             value=value,
             baseline=baseline,
             deviation=deviation,
@@ -101,11 +103,24 @@ function evaluate(kind, key, value, unit)
         }
     end
 
+    if kind == 'skill' then
+        return {
+            kind=kind,
+            value=value,
+            baseline=0,
+            deviation=value,
+            tier_distance=value,
+            high_score_scale=SKILL_SCORE_SCALE,
+            low_score_scale=1,
+        }
+    end
+
     local race_id = unit and unit.race
     local medians = get_race_medians(race_id)
     local baseline = medians[kind] and medians[kind][key] or DEFAULT_ATTRIBUTE_BASELINE
     local deviation = value - baseline
     return {
+        kind=kind,
         value=value,
         baseline=baseline,
         deviation=deviation,
@@ -119,6 +134,12 @@ function matches_direction(evaluation, direction)
     if not evaluation then
         return false
     end
+    if evaluation.kind == 'skill' then
+        if direction == FILTER_LOW then
+            return evaluation.value <= 0
+        end
+        return evaluation.value > 0
+    end
     if direction == FILTER_LOW then
         return evaluation.deviation < 0
     end
@@ -128,6 +149,13 @@ end
 function score_direction(evaluation, direction)
     if not matches_direction(evaluation, direction) then
         return 0
+    end
+
+    if evaluation.kind == 'skill' then
+        if direction == FILTER_LOW then
+            return 1
+        end
+        return math.min(evaluation.value / SKILL_SCORE_SCALE, 1)
     end
 
     local magnitude = evaluation.deviation

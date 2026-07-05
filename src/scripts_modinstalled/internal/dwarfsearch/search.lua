@@ -78,8 +78,22 @@ local function get_physical_attribute_descriptors()
     return sort_descriptors_by_label(descriptors)
 end
 
+local function get_skill_descriptors()
+    local descriptors = {}
+    for _, skill in ipairs(enum_keys(df.job_skill)) do
+        table.insert(descriptors, make_descriptor(
+            'skill',
+            skill.name,
+            title_case_enum_name(skill.name)))
+    end
+    return sort_descriptors_by_label(descriptors)
+end
+
 local function flatten_descriptors(descriptors)
     local flattened = {}
+    for _, descriptor in ipairs(descriptors.skills or {}) do
+        table.insert(flattened, descriptor)
+    end
     for _, descriptor in ipairs(descriptors.physical_attributes or {}) do
         table.insert(flattened, descriptor)
     end
@@ -110,6 +124,9 @@ local function get_value(row, descriptor)
     end
     if descriptor.kind == 'physical_attribute' then
         return row.physical_attributes and row.physical_attributes[descriptor.key]
+    end
+    if descriptor.kind == 'skill' then
+        return row.skills and row.skills[descriptor.key] or 0
     end
     return nil
 end
@@ -229,6 +246,7 @@ end
 
 function get_filter_descriptors()
     return {
+        skills=get_skill_descriptors(),
         traits=get_trait_descriptors(),
         mental_attributes=get_mental_attribute_descriptors(),
         physical_attributes=get_physical_attribute_descriptors(),
