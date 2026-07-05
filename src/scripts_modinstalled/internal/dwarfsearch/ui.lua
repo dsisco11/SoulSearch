@@ -50,7 +50,7 @@ local function format_filter_choice(descriptor, selected)
     local marker = selected and '[x]' or '[ ]'
     local kind = 'Soul'
     if descriptor.kind == 'trait' then
-        kind = 'Trait'
+        kind = 'Mind'
     elseif descriptor.kind == 'physical_attribute' then
         kind = 'Body'
     end

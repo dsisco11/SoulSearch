@@ -79,13 +79,13 @@ end
 
 local function flatten_descriptors(descriptors)
     local flattened = {}
-    for _, descriptor in ipairs(descriptors.traits or {}) do
+    for _, descriptor in ipairs(descriptors.physical_attributes or {}) do
         table.insert(flattened, descriptor)
     end
     for _, descriptor in ipairs(descriptors.mental_attributes or {}) do
         table.insert(flattened, descriptor)
     end
-    for _, descriptor in ipairs(descriptors.physical_attributes or {}) do
+    for _, descriptor in ipairs(descriptors.traits or {}) do
         table.insert(flattened, descriptor)
     end
     return flattened
