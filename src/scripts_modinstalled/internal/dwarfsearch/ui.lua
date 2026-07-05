@@ -377,14 +377,20 @@ function DwarfSearchWindow:init()
             label='Add filter',
             on_activate=function() self:toggle_add_filter_dropdown() end,
         },
+        widgets.HotkeyLabel{
+            frame={l=1, t=5, w=20, h=1},
+            key='CUSTOM_C',
+            label='Clear filters',
+            on_activate=function() self:clear_filters() end,
+        },
         widgets.List{
             view_id='filter_list',
-            frame={l=1, t=6, w=38, b=3},
+            frame={l=1, t=7, w=38, b=3},
             visible=function() return not self.add_filter_open end,
         },
         widgets.List{
             view_id='available_filter_list',
-            frame={l=1, t=6, w=38, b=3},
+            frame={l=1, t=7, w=38, b=3},
             visible=function() return self.add_filter_open end,
             on_submit=function(index, choice)
                 if choice and choice.descriptor then
@@ -649,6 +655,21 @@ function DwarfSearchWindow:remove_filter(filter_id)
     self:update_filter_choices(math.max(1, math.min(selected, #self.selected_filter_order)))
     self:update_available_filter_choices()
     self:update_results()
+end
+
+function DwarfSearchWindow:clear_filters()
+    if #self.selected_filter_order == 0 then
+        return false
+    end
+
+    self.selected_filter_modes = {}
+    self.selected_filter_order = {}
+    self.add_filter_open = false
+    self:update_add_filter_button()
+    self:update_filter_choices(1)
+    self:update_available_filter_choices()
+    self:update_results()
+    return true
 end
 
 function DwarfSearchWindow:set_filter_direction(filter_id, direction)
