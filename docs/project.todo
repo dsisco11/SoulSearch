@@ -8,7 +8,7 @@
 ✔ Right-side panel should only show traits which reasonably deviate from the average for that unit's race, similar to the default DF unit card viewer. @done(26-07-05 00:00)
 ☐ Right side panel should show the units portrait just like the normal DF unit card panel does.
 ☐ Bug: Search panel cant be dragged around easily, doesn't match the cursor movement.
-☐ Right side panel should also show units name at the top, similar to the normal DF unit card panel.
+✔ Right side panel should also show units name at the top, similar to the normal DF unit card panel. @done(26-07-05 00:00)
 ☐ Need way to specify an attribute filter as searching for negative rather than positive values, e.g. "low agility" or "low willpower" rather than just "agility" or "willpower". This could be done with a second checkbox next to each attribute filter.
 ☐ Search panel section titles need to be made white (e.g. Search filters, Results, Attributes).
 ☐ Search panel sections need to be made collapsible, so that the user can hide the filters or attributes sections if they want more space for the results list.

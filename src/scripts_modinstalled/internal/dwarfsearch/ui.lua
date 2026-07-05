@@ -240,6 +240,10 @@ local function attributes_for_result(result)
     end
 
     local tokens = {}
+    table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
+    table.insert(tokens, NEWLINE)
+    table.insert(tokens, NEWLINE)
+
     local body_label, body_pen = get_category_info('physical_attribute')
     local soul_label, soul_pen = get_category_info('mental_attribute')
     local mind_label, mind_pen = get_category_info('trait')
