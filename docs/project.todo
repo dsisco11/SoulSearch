@@ -15,3 +15,5 @@
 ✔ Search panel sections need have a divider line between them, so that the user can more easily see where one section ends and the next begins. @done(26-07-05 00:00)
 ✔ Rename "Search" field to "Name search" to make it more clear what it does. @done(26-07-05 00:00)
 ✔ Remove "zoom" and "Refresh" buttons from the bottom of the search panel. @done(26-07-05 00:00)
+✔ Move close button to top-right of window. @done(26-07-05 00:00)
+☐ The right-side view panel should also show the matched filter attributes at the very top of the panel (in the same order as the search filters). they should be positioned right below the panels "Attributes" title.

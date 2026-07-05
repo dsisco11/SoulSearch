@@ -301,7 +301,7 @@ function DwarfSearchWindow:init()
     self:addviews{
         widgets.EditField{
             view_id='search_field',
-            frame={l=1, t=0, r=1, h=1},
+            frame={l=1, t=0, r=18, h=1},
             label_text='Name search: ',
             key='CUSTOM_F',
             modal=true,
@@ -351,7 +351,7 @@ function DwarfSearchWindow:init()
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
-            frame={l=1, b=1, w=16, h=1},
+            frame={r=1, t=0, w=16, h=1},
             key='LEAVESCREEN',
             label='Close',
             on_activate=function() self.parent_view:dismiss() end,
