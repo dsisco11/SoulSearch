@@ -27,6 +27,8 @@ local FILTER_ACTION_DOWN = 'down'
 local FILTER_ACTION_WIDTH = 3
 local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
+local ADD_FILTER_LABEL = 'Add filter'
+local CLOSE_FILTER_MENU_LABEL = 'Close filter menu'
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -245,6 +247,10 @@ local function get_filter_action_at_x(x)
     return nil
 end
 
+local function is_backspace_key(keys)
+    return keys._BACKSPACE or keys.BACKSPACE or keys.KEYBOARD_BACKSPACE
+end
+
 local function get_live_position(result)
     if not result or not result.unit then
         return nil
@@ -426,7 +432,7 @@ function DwarfSearchWindow:init()
         },
         widgets.HotkeyLabel{
             view_id='add_filter_button',
-            frame={l=1, t=4, w=18, h=1},
+            frame={l=1, t=4, w=25, h=1},
             key='CUSTOM_A',
             label='Add filter',
             on_activate=function() self:toggle_add_filter_dropdown() end,
@@ -659,6 +665,7 @@ function DwarfSearchWindow:add_filter(filter_id)
         table.insert(self.selected_filter_order, filter_id)
     end
     self.add_filter_open = false
+    self:update_add_filter_button()
     self:update_filter_choices(self:get_filter_choice_index(filter_id))
     self:update_available_filter_choices()
     self:update_results()
@@ -693,7 +700,24 @@ end
 
 function DwarfSearchWindow:toggle_add_filter_dropdown()
     self.add_filter_open = not self.add_filter_open
+    self:update_add_filter_button()
     self:update_available_filter_choices()
+end
+
+function DwarfSearchWindow:close_add_filter_dropdown()
+    if not self.add_filter_open then
+        return false
+    end
+
+    self.add_filter_open = false
+    self:update_add_filter_button()
+    self:update_available_filter_choices()
+    return true
+end
+
+function DwarfSearchWindow:update_add_filter_button()
+    local label = self.add_filter_open and CLOSE_FILTER_MENU_LABEL or ADD_FILTER_LABEL
+    self.subviews.add_filter_button:setLabel(label)
 end
 
 function DwarfSearchWindow:move_selected_filter_priority(delta)
@@ -766,6 +790,9 @@ function DwarfSearchWindow:move_result_cursor(delta)
 end
 
 function DwarfSearchWindow:onInput(keys)
+    if is_backspace_key(keys) and self:close_add_filter_dropdown() then
+        return true
+    end
     if keys._MOUSE_L and self:handle_filter_action_click() then
         return true
     end
