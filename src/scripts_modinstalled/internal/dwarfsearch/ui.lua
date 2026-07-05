@@ -286,7 +286,7 @@ function DwarfSearchWindow:init()
         widgets.EditField{
             view_id='search_field',
             frame={l=1, t=0, r=1, h=1},
-            label_text='Search: ',
+            label_text='Name search: ',
             key='CUSTOM_F',
             modal=true,
             on_change=function(text)
