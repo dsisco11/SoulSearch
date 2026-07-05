@@ -8,6 +8,8 @@ local MENTAL_ATTRIBUTE_SCORE_SCALE = 5000
 local PHYSICAL_ATTRIBUTE_SCORE_SCALE = 5000
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
+local MATCHED_FILTER_SCORE = 10
+local FILTER_PRIORITY_WEIGHT_BONUS = 0.2
 
 local function enum_keys(enum)
     local keys = {}
@@ -187,19 +189,29 @@ local function score_value(value, descriptor)
     return math.min(value / descriptor.score_scale, 1)
 end
 
+local function get_priority_weight(priority_index)
+    return 1 + FILTER_PRIORITY_WEIGHT_BONUS / math.max(priority_index or 1, 1)
+end
+
+local function score_weighted_match(value_score, priority_index)
+    return (MATCHED_FILTER_SCORE + value_score) * get_priority_weight(priority_index)
+end
+
 local function score_row(row, selected_descriptors)
     local matched = {}
     local criteria = {}
-    local priority_scores = {}
     local score = 0
+    local weighted_score = 0
 
-    for _, descriptor in ipairs(selected_descriptors) do
+    for index, descriptor in ipairs(selected_descriptors) do
         local value = get_value(row, descriptor)
         local matches = value and matches_descriptor(value, descriptor)
-        local priority_score = 0
         if value then
             if matches then
-                priority_score = 1 + score_value(value, descriptor)
+                local value_score = score_value(value, descriptor)
+                score = score + value_score
+                weighted_score = weighted_score +
+                    score_weighted_match(value_score, index)
             end
             local criterion = {
                 id=descriptor.id,
@@ -215,17 +227,13 @@ local function score_row(row, selected_descriptors)
                 table.insert(matched, criterion)
             end
         end
-        if matches then
-            score = score + score_value(value, descriptor)
-        end
-        table.insert(priority_scores, priority_score)
     end
 
-    return criteria, matched, #matched, score, priority_scores
+    return criteria, matched, #matched, score, weighted_score
 end
 
 local function make_result(row, selected_descriptors)
-    local criteria, matched, matched_count, score, priority_scores = score_row(row, selected_descriptors)
+    local criteria, matched, matched_count, score, weighted_score = score_row(row, selected_descriptors)
     return {
         row=row,
         unit=row.unit,
@@ -237,23 +245,9 @@ local function make_result(row, selected_descriptors)
         matched_count=matched_count,
         criteria_count=#selected_descriptors,
         match_label=('%d/%d'):format(matched_count, #selected_descriptors),
-        priority_scores=priority_scores,
         score=score,
+        weighted_score=weighted_score,
     }
-end
-
-local function compare_priority_scores(a, b)
-    local a_scores = a.priority_scores or {}
-    local b_scores = b.priority_scores or {}
-    local score_count = math.max(#a_scores, #b_scores)
-    for index = 1, score_count do
-        local a_score = a_scores[index] or 0
-        local b_score = b_scores[index] or 0
-        if a_score ~= b_score then
-            return a_score > b_score
-        end
-    end
-    return nil
 end
 
 function get_filter_descriptors()
@@ -284,12 +278,11 @@ function apply(rows, opts)
     end
 
     table.sort(results, function(a, b)
-        local priority_order = compare_priority_scores(a, b)
-        if priority_order ~= nil then
-            return priority_order
-        end
         if a.matched_count ~= b.matched_count then
             return a.matched_count > b.matched_count
+        end
+        if a.weighted_score ~= b.weighted_score then
+            return a.weighted_score > b.weighted_score
         end
         if a.score ~= b.score then
             return a.score > b.score
