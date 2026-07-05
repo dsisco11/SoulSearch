@@ -31,6 +31,17 @@ Copy the contents of `src/` into a Dwarf Fortress mod folder, for example
 `mods/DwarfSearch/`. DFHack will discover scripts from
 `scripts_modinstalled/` when the mod is installed.
 
+Dwarf Fortress does not load mods directly from zip files in `mods/`. The final
+installed path must look like this:
+
+```text
+mods/DwarfSearch/info.txt
+mods/DwarfSearch/scripts_modinstalled/dwarfsearch.lua
+```
+
+If you extract the release zip, make sure the extraction tool does not add an
+extra wrapper folder such as `mods/DwarfSearch-0.1.0/DwarfSearch/info.txt`.
+
 ## Development Setup
 
 For local development without repeatedly copying files, add this line to
@@ -52,7 +63,8 @@ Create a distributable zip with:
 ```
 
 The archive is written to `dist/DwarfSearch-<version>.zip` and contains the mod
-payload from `src/`.
+payload from `src/`. The script also creates `dist/DwarfSearch/`, which can be
+copied directly into the Dwarf Fortress `mods/` folder.
 
 ## Usage
 
@@ -65,6 +77,29 @@ dwarfsearch
 At this stage the command opens the DwarfSearch panel in fortress mode.
 Press `z` or Enter on a selected result to center and highlight that resident on
 the fortress map.
+
+## Troubleshooting
+
+If DFHack says `dwarfsearch` is not a recognized command, DFHack has not added
+the mod's `scripts_modinstalled/` directory to its script paths yet.
+
+For development, the most reliable fix is to add this line to
+`dfhack-config/script-paths.txt` and restart DFHack:
+
+```text
++D:/CODE/DFHack/DwarfSearch/src/scripts_modinstalled
+```
+
+For a packaged install, verify the installed folder is extracted like this and
+then restart DFHack:
+
+```text
+mods/DwarfSearch/info.txt
+mods/DwarfSearch/scripts_modinstalled/dwarfsearch.lua
+```
+
+Do not leave the mod only as `mods/DwarfSearch-0.1.0.zip`, and avoid nested
+extraction paths like `mods/DwarfSearch-0.1.0/DwarfSearch/info.txt`.
 
 ## Roadmap
 

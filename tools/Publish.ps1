@@ -3,7 +3,8 @@ param(
     [string]$SourceDir = "src",
     [string]$OutputDir = "dist",
     [string]$PackageName = "",
-    [switch]$NoRootFolder
+    [switch]$NoRootFolder,
+    [switch]$NoExpandedFolder
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,6 +60,7 @@ if (-not $version) {
 $safePackageName = ConvertTo-SafeFileName -Name $PackageName
 $safeVersion = ConvertTo-SafeFileName -Name $version
 $zipPath = Join-Path $outputPath "$safePackageName-$safeVersion.zip"
+$expandedPath = Join-Path $outputPath $safePackageName
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) "DwarfSearchPublish-$([guid]::NewGuid())"
 $stagingRoot = if ($NoRootFolder) { $tempRoot } else { Join-Path $tempRoot $safePackageName }
 
@@ -70,12 +72,25 @@ try {
         Copy-Item -LiteralPath $_.FullName -Destination $stagingRoot -Recurse -Force
     }
 
+    if (-not $NoExpandedFolder) {
+        if (Test-Path -LiteralPath $expandedPath) {
+            Remove-Item -LiteralPath $expandedPath -Recurse -Force
+        }
+        Copy-Item -LiteralPath $stagingRoot -Destination $expandedPath -Recurse -Force
+    }
+
     if (Test-Path -LiteralPath $zipPath) {
         Remove-Item -LiteralPath $zipPath -Force
     }
 
     Compress-Archive -Path (Join-Path $tempRoot "*") -DestinationPath $zipPath
     Write-Host "Created $zipPath"
+    if (-not $NoExpandedFolder) {
+        Write-Host "Created $expandedPath"
+        Write-Host "For manual installation, copy '$expandedPath' to the Dwarf Fortress 'mods' folder so the final path is 'mods\$safePackageName\info.txt'."
+    } else {
+        Write-Host "For manual installation, extract the archive so the final path is 'mods\$safePackageName\info.txt'."
+    }
 }
 finally {
     if (Test-Path -LiteralPath $tempRoot) {
