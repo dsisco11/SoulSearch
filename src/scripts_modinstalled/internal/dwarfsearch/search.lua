@@ -9,9 +9,9 @@ local PHYSICAL_ATTRIBUTE_SCORE_SCALE = 5000
 
 local function enum_keys(enum)
     local keys = {}
-    for key, value in pairs(enum) do
-        if type(key) == 'string' and type(value) == 'number' and key:sub(1, 1) ~= '_' then
-            table.insert(keys, {name=key, value=value})
+    for index, name in ipairs(enum) do
+        if name ~= 'NONE' then
+            table.insert(keys, {name=name, value=enum[name] or index})
         end
     end
     table.sort(keys, function(a, b) return a.value < b.value end)

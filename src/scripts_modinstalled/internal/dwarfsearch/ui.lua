@@ -199,6 +199,9 @@ function DwarfSearchWindow:update_filter_choices(selected)
             search_key=descriptor.label,
         })
     end
+    if #choices == 0 then
+        table.insert(choices, {text='No search filters found.'})
+    end
     self.subviews.filter_list:setChoices(choices, selected)
 end
 
