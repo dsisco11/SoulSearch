@@ -21,6 +21,6 @@
 ✔ Units which dont match a filter should still show their value for that filter in the results list, but it should be greyed out to indicate that it is not a match. @done(26-07-05 00:00)
 ✔ Titles for panels and subviews should be underlined to make them more visually distinct. @done(26-07-05 00:00)
 ✔ The +/- indicators for items in the search filters list should be clickable, rather than just being visual indicators. Add an x button to remove filters from the list. @done(26-07-05 00:00)
-☐ Remember filters when window is closed and reopened.
+✔ Remember filters when window is closed and reopened. @done(26-07-05 00:00)
 ☐ Add a "Clear all filters" button to the search filters panel.
 ☐ Add Skills to the search filters, but skill filters should be selected from a different panel, since there are so many skills. The skill filter panel should be opened by a button in the search filters panel. The skill filter panel should have a search field to allow the user to quickly find a skill to add as a filter.

@@ -8,6 +8,8 @@ local search = reqscript('internal/dwarfsearch/search')
 local attributes = reqscript('internal/dwarfsearch/attributes')
 
 local view
+local saved_filter_modes = {}
+local saved_filter_order = {}
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local SECTION_DIVIDER_XS = {39, 93}
 local FILTER_HIGH = 'high'
@@ -173,6 +175,22 @@ local function is_backspace_key(keys)
     return keys._BACKSPACE or keys.BACKSPACE or keys.KEYBOARD_BACKSPACE
 end
 
+local function copy_filter_modes(filter_modes)
+    local copy = {}
+    for filter_id, mode in pairs(filter_modes or {}) do
+        copy[filter_id] = mode
+    end
+    return copy
+end
+
+local function copy_filter_order(filter_order)
+    local copy = {}
+    for _, filter_id in ipairs(filter_order or {}) do
+        table.insert(copy, filter_id)
+    end
+    return copy
+end
+
 local function get_live_position(result)
     if not result or not result.unit then
         return nil
@@ -324,11 +342,11 @@ function DwarfSearchWindow:init()
     self.rows = {}
     self.results = {}
     self.query = ''
-    self.selected_filters = {}
-    self.selected_filter_modes = {}
-    self.selected_filter_order = {}
     self.add_filter_open = false
     self.filter_descriptors = search.get_flat_filter_descriptors()
+    self.selected_filters = {}
+    self.selected_filter_modes = self:get_valid_filter_modes(saved_filter_modes)
+    self.selected_filter_order = self:get_valid_filter_order(saved_filter_order)
 
     self:addviews{
         widgets.EditField{
@@ -457,6 +475,31 @@ function DwarfSearchWindow:get_filter_descriptor_by_id(filter_id)
     return nil
 end
 
+function DwarfSearchWindow:get_valid_filter_modes(filter_modes)
+    local valid_modes = {}
+    for filter_id, mode in pairs(filter_modes or {}) do
+        if self:get_filter_descriptor_by_id(filter_id) then
+            valid_modes[filter_id] = mode
+        end
+    end
+    return valid_modes
+end
+
+function DwarfSearchWindow:get_valid_filter_order(filter_order)
+    local valid_order = {}
+    for _, filter_id in ipairs(filter_order or {}) do
+        if self.selected_filter_modes[filter_id] and self:get_filter_descriptor_by_id(filter_id) then
+            table.insert(valid_order, filter_id)
+        end
+    end
+    return valid_order
+end
+
+function DwarfSearchWindow:save_filter_state()
+    saved_filter_modes = copy_filter_modes(self.selected_filter_modes)
+    saved_filter_order = copy_filter_order(self.selected_filter_order)
+end
+
 function DwarfSearchWindow:get_filter_priority(filter_id)
     for index, ordered_filter_id in ipairs(self.selected_filter_order) do
         if ordered_filter_id == filter_id then
@@ -526,6 +569,7 @@ function DwarfSearchWindow:update_available_filter_choices(selected)
 end
 
 function DwarfSearchWindow:update_results()
+    self:save_filter_state()
     self.selected_filters = self:get_selected_filters()
     self.results = search.apply(self.rows, {
         query=self.query,
