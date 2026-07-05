@@ -56,6 +56,16 @@ local function get_category_pen(descriptor)
     return COLOR_LIGHTMAGENTA
 end
 
+local function get_category_info(kind)
+    if kind == 'physical_attribute' then
+        return 'Body', COLOR_LIGHTGREEN
+    end
+    if kind == 'mental_attribute' then
+        return 'Soul', COLOR_LIGHTBLUE
+    end
+    return 'Mind', COLOR_LIGHTMAGENTA
+end
+
 local function format_filter_choice(descriptor, selected)
     local marker = selected and '[x]' or '[ ]'
     return {
@@ -100,12 +110,61 @@ local function details_for_result(result)
     return table.concat(lines, '\n')
 end
 
+local function add_attribute_section(tokens, title, pen, values)
+    table.insert(tokens, {text=title, pen=pen})
+    table.insert(tokens, NEWLINE)
+
+    if not values then
+        table.insert(tokens, {text='  none', pen=COLOR_DARKGREY})
+        table.insert(tokens, NEWLINE)
+        return
+    end
+
+    local keys = {}
+    for key in pairs(values) do
+        table.insert(keys, key)
+    end
+    table.sort(keys)
+
+    if #keys == 0 then
+        table.insert(tokens, {text='  none', pen=COLOR_DARKGREY})
+        table.insert(tokens, NEWLINE)
+        return
+    end
+
+    for _, key in ipairs(keys) do
+        local label = key:gsub('_', ' '):lower():gsub('^%l', string.upper)
+        table.insert(tokens, {text=('  %-24s '):format(label), pen=pen})
+        table.insert(tokens, {text=tostring(values[key]), pen=COLOR_WHITE})
+        table.insert(tokens, NEWLINE)
+    end
+end
+
+local function attributes_for_result(result)
+    if not result or not result.row then
+        return 'No resident selected.'
+    end
+
+    local tokens = {}
+    local body_label, body_pen = get_category_info('physical_attribute')
+    local soul_label, soul_pen = get_category_info('mental_attribute')
+    local mind_label, mind_pen = get_category_info('trait')
+
+    add_attribute_section(tokens, body_label, body_pen, result.row.physical_attributes)
+    table.insert(tokens, NEWLINE)
+    add_attribute_section(tokens, soul_label, soul_pen, result.row.mental_attributes)
+    table.insert(tokens, NEWLINE)
+    add_attribute_section(tokens, mind_label, mind_pen, result.row.traits)
+
+    return tokens
+end
+
 DwarfSearchWindow = defclass(DwarfSearchWindow, widgets.Window)
 DwarfSearchWindow.ATTRS {
     frame_title='DwarfSearch',
-    frame={w=120, h=45, xalign=0.5, yalign=0.5},
+    frame={w=150, h=45, xalign=0.5, yalign=0.5},
     resizable=true,
-    resize_min={w=90, h=30},
+    resize_min={w=120, h=30},
 }
 
 function DwarfSearchWindow:init()
@@ -144,13 +203,13 @@ function DwarfSearchWindow:init()
         },
         widgets.Label{
             view_id='result_header',
-            frame={l=41, t=2, r=1, h=1},
+            frame={l=41, t=2, w=52, h=1},
             text='Results',
             text_pen=COLOR_LIGHTCYAN,
         },
         widgets.List{
             view_id='result_list',
-            frame={l=41, t=3, r=1, b=10},
+            frame={l=41, t=3, w=52, b=10},
             on_select=function(index, choice)
                 self:update_details(choice and choice.result or nil)
             end,
@@ -160,7 +219,17 @@ function DwarfSearchWindow:init()
         },
         widgets.Label{
             view_id='details',
-            frame={l=41, r=1, b=3, h=6},
+            frame={l=41, w=52, b=3, h=6},
+            text='No resident selected.',
+        },
+        widgets.Label{
+            frame={l=95, t=2, r=1, h=1},
+            text='Attributes',
+            text_pen=COLOR_LIGHTCYAN,
+        },
+        widgets.Label{
+            view_id='attributes',
+            frame={l=95, t=3, r=1, b=3},
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
@@ -236,6 +305,7 @@ end
 
 function DwarfSearchWindow:update_details(result)
     self.subviews.details:setText(details_for_result(result))
+    self.subviews.attributes:setText(attributes_for_result(result))
 end
 
 function DwarfSearchWindow:get_selected_result()
