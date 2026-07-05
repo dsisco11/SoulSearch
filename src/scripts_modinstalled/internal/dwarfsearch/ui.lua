@@ -320,6 +320,10 @@ function DwarfSearchWindow:refresh_residents()
     self:update_results()
 end
 
+function DwarfSearchWindow:move_result_cursor(delta)
+    self.subviews.result_list:moveCursor(delta)
+end
+
 function DwarfSearchWindow:onInput(keys)
     if keys.CUSTOM_R then
         self:refresh_residents()
@@ -327,6 +331,22 @@ function DwarfSearchWindow:onInput(keys)
     end
     if keys.CUSTOM_Z then
         self:zoom_to_selected_result()
+        return true
+    end
+    if keys.KEYBOARD_CURSOR_UP then
+        self:move_result_cursor(-1)
+        return true
+    end
+    if keys.KEYBOARD_CURSOR_DOWN then
+        self:move_result_cursor(1)
+        return true
+    end
+    if keys.KEYBOARD_CURSOR_UP_FAST then
+        self:move_result_cursor(-10)
+        return true
+    end
+    if keys.KEYBOARD_CURSOR_DOWN_FAST then
+        self:move_result_cursor(10)
         return true
     end
     return DwarfSearchWindow.super.onInput(self, keys)
