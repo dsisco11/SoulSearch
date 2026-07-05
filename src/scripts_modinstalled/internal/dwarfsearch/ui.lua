@@ -122,6 +122,52 @@ local function get_attribute_tier(value, median)
     return -math.floor(math.abs(delta) / ATTRIBUTE_TIER_WIDTH)
 end
 
+local function get_trait_median(unit, key)
+    local ok, range = pcall(personality.getUnitCasteTraitRange, unit, key)
+    if ok and range and range.mid then
+        return range.mid
+    end
+    return 50
+end
+
+local function get_deviation_info(kind, key, value, unit)
+    if kind == 'trait' then
+        local median = get_trait_median(unit, key)
+        local deviation = value - median
+        local median_tier = personality.getTraitTier(median)
+        local value_tier = personality.getTraitTier(value)
+        return deviation, math.abs(value_tier - median_tier)
+    end
+
+    local medians = get_race_medians(unit.race)
+    local median = medians[kind] and medians[kind][key] or 1000
+    local tier = get_attribute_tier(value, median)
+    return value - median, math.abs(tier)
+end
+
+local function get_deviation_pen(deviation, tier_distance)
+    if deviation < 0 then
+        if tier_distance >= 2 then
+            return COLOR_LIGHTRED
+        end
+        return COLOR_RED
+    end
+    if tier_distance >= 4 then
+        return COLOR_LIGHTGREEN
+    end
+    if tier_distance >= 2 then
+        return COLOR_LIGHTGREEN
+    end
+    return COLOR_GREEN
+end
+
+local function format_deviation(deviation)
+    if deviation > 0 then
+        return ('+%d'):format(deviation)
+    end
+    return tostring(deviation)
+end
+
 local function format_filter_choice(descriptor, selected)
     local marker = selected and '[x]' or '[ ]'
     return {
@@ -151,9 +197,8 @@ local function is_notable_value(kind, key, value, unit)
         return personality.getTraitTier(value) ~= NEUTRAL_PERSONALITY_TIER
     end
 
-    local medians = get_race_medians(unit.race)
-    local median = medians[kind] and medians[kind][key] or 1000
-    return get_attribute_tier(value, median) ~= NEUTRAL_ATTRIBUTE_TIER
+    local _, tier_distance = get_deviation_info(kind, key, value, unit)
+    return tier_distance ~= NEUTRAL_ATTRIBUTE_TIER
 end
 
 local function add_attribute_section(tokens, title, pen, kind, values, unit)
@@ -182,8 +227,9 @@ local function add_attribute_section(tokens, title, pen, kind, values, unit)
 
     for _, key in ipairs(keys) do
         local label = key:gsub('_', ' '):lower():gsub('^%l', string.upper)
+        local deviation, tier_distance = get_deviation_info(kind, key, values[key], unit)
         table.insert(tokens, {text=('  %-24s '):format(label), pen=pen})
-        table.insert(tokens, {text=tostring(values[key]), pen=COLOR_WHITE})
+        table.insert(tokens, {text=format_deviation(deviation), pen=get_deviation_pen(deviation, tier_distance)})
         table.insert(tokens, NEWLINE)
     end
 end
