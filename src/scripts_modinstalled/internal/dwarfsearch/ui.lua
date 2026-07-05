@@ -257,6 +257,15 @@ local function attributes_for_result(result)
     return tokens
 end
 
+local function normalize_frame_for_drag(window)
+    window.frame = {
+        l=window.frame_rect.x1,
+        t=window.frame_rect.y1,
+        w=window.frame_rect.width,
+        h=window.frame_rect.height,
+    }
+end
+
 DwarfSearchWindow = defclass(DwarfSearchWindow, widgets.Window)
 DwarfSearchWindow.ATTRS {
     frame_title='DwarfSearch',
@@ -347,6 +356,11 @@ function DwarfSearchWindow:init()
 
     self:refresh_residents()
     self:update_filter_choices()
+end
+
+function DwarfSearchWindow:onDragBegin()
+    DwarfSearchWindow.super.onDragBegin(self)
+    normalize_frame_for_drag(self)
 end
 
 function DwarfSearchWindow:get_selected_filter_ids()
