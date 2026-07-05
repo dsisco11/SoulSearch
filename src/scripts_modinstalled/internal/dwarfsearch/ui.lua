@@ -297,7 +297,7 @@ function DwarfSearchWindow:init()
         widgets.Label{
             frame={l=1, t=2, w=38, h=1},
             text='Search filters',
-            text_pen=COLOR_LIGHTCYAN,
+            text_pen=COLOR_WHITE,
         },
         widgets.List{
             view_id='filter_list',
@@ -312,7 +312,7 @@ function DwarfSearchWindow:init()
             view_id='result_header',
             frame={l=41, t=2, w=52, h=1},
             text='Results',
-            text_pen=COLOR_LIGHTCYAN,
+            text_pen=COLOR_WHITE,
         },
         widgets.List{
             view_id='result_list',
@@ -327,7 +327,7 @@ function DwarfSearchWindow:init()
         widgets.Label{
             frame={l=95, t=2, r=1, h=1},
             text='Attributes',
-            text_pen=COLOR_LIGHTCYAN,
+            text_pen=COLOR_WHITE,
         },
         widgets.Label{
             view_id='attributes',

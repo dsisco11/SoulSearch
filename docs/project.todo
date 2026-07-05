@@ -10,7 +10,7 @@
 ✔ Bug: Search panel cant be dragged around easily, doesn't match the cursor movement. @done(26-07-05 00:00)
 ✔ Right side panel should also show units name at the top, similar to the normal DF unit card panel. @done(26-07-05 00:00)
 ☐ Need way to specify an attribute filter as searching for negative rather than positive values, e.g. "low agility" or "low willpower" rather than just "agility" or "willpower". This could be done with a second checkbox next to each attribute filter.
-☐ Search panel section titles need to be made white (e.g. Search filters, Results, Attributes).
+✔ Search panel section titles need to be made white (e.g. Search filters, Results, Attributes). @done(26-07-05 00:00)
 ☐ Search panel sections need to be made collapsible, so that the user can hide the filters or attributes sections if they want more space for the results list.
 ☐ Search panel sections need have a divider line between them, so that the user can more easily see where one section ends and the next begins.
 ☐ Rename "Search" field to "Name search" to make it more clear what it does.
