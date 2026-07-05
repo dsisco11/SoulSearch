@@ -86,30 +86,6 @@ local function get_live_position(result)
     return nil
 end
 
-local function details_for_result(result)
-    if not result then
-        return 'No resident selected.'
-    end
-
-    local lines = {
-        ('Name: %s'):format(result.name),
-        ('Profession: %s'):format(result.profession or 'unknown'),
-        ('Position: %s'):format(format_position(get_live_position(result))),
-        ('Matches: %s'):format(result.match_label),
-    }
-
-    if #result.matched_criteria > 0 then
-        table.insert(lines, 'Matched criteria:')
-        for _, criterion in ipairs(result.matched_criteria) do
-            table.insert(lines, ('  %s: %s'):format(criterion.label, criterion.value))
-        end
-    else
-        table.insert(lines, 'Matched criteria: none')
-    end
-
-    return table.concat(lines, '\n')
-end
-
 local function add_attribute_section(tokens, title, pen, values)
     table.insert(tokens, {text=title, pen=pen})
     table.insert(tokens, NEWLINE)
@@ -209,18 +185,13 @@ function DwarfSearchWindow:init()
         },
         widgets.List{
             view_id='result_list',
-            frame={l=41, t=3, w=52, b=10},
+            frame={l=41, t=3, w=52, b=3},
             on_select=function(index, choice)
-                self:update_details(choice and choice.result or nil)
+                self:update_attributes(choice and choice.result or nil)
             end,
             on_submit=function(index, choice)
                 self:zoom_to_result(choice and choice.result or nil)
             end,
-        },
-        widgets.Label{
-            view_id='details',
-            frame={l=41, w=52, b=3, h=6},
-            text='No resident selected.',
         },
         widgets.Label{
             frame={l=95, t=2, r=1, h=1},
@@ -300,11 +271,10 @@ function DwarfSearchWindow:update_results()
     self.subviews.result_header:setText(('Results (%d)'):format(#choices))
     self.subviews.result_list:setChoices(choices, 1)
     local _, choice = self.subviews.result_list:getSelected()
-    self:update_details(choice and choice.result or nil)
+    self:update_attributes(choice and choice.result or nil)
 end
 
-function DwarfSearchWindow:update_details(result)
-    self.subviews.details:setText(details_for_result(result))
+function DwarfSearchWindow:update_attributes(result)
     self.subviews.attributes:setText(attributes_for_result(result))
 end
 

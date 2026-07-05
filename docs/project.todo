@@ -1,9 +1,9 @@
-☑ Sort attributes alphabetically (within their category).
-☑ Order attributes via category: Body -> Soul -> Mind.
-☑ Remove attribute category name prefix and use coloration to indicate category instead.
-☑ Add right-side panel which shows the selected unit's full attribute list, with color-coded categories and values.
-☑ Dont cache unit position, just read it live when the zoom button is clicked.
-☐ Remove the Name, Profession, Position, etc. status text at the bottom of the panel.
+✔ Sort attributes alphabetically (within their category). @done(26-07-05 00:07)
+✔ Order attributes via category: Body -> Soul -> Mind. @done(26-07-05 00:07)
+✔ Remove attribute category name prefix and use coloration to indicate category instead. @done(26-07-05 00:07)
+✔ Add right-side panel which shows the selected unit's full attribute list, with color-coded categories and values. @done(26-07-05 00:07)
+✔ Dont cache unit position, just read it live when the zoom button is clicked. @done(26-07-05 00:07)
+✔ Remove the Name, Profession, Position, etc. status text at the bottom of the panel. @done(26-07-05 00:07)
 ☐ The units list panel should always have "focus" so that the up/down arrow keys can be used to navigate the list and quickly move down the list without having to click on the list first.
 ☐ Right-side panel should only show traits which reasonably deviate from the average for that unit's race and caste.
 ☐ Right side panel should show the units portrait just like the normal DF unit card panel does.
