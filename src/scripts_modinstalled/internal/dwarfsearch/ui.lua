@@ -18,6 +18,7 @@ local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
+local TITLE_UNDERLINE_PEN = COLOR_GREY
 
 local function truncate(text, width)
     text = tostring(text or '')
@@ -174,6 +175,17 @@ local function format_deviation(deviation)
     return tostring(deviation)
 end
 
+local function get_title_underline(title)
+    return ('-'):rep(#tostring(title or ''))
+end
+
+local function add_underlined_title(tokens, title, pen)
+    table.insert(tokens, {text=title, pen=pen})
+    table.insert(tokens, NEWLINE)
+    table.insert(tokens, {text=get_title_underline(title), pen=pen})
+    table.insert(tokens, NEWLINE)
+end
+
 local function format_filter_choice(descriptor, mode)
     local high_selected = mode == FILTER_HIGH
     local low_selected = mode == FILTER_LOW
@@ -211,8 +223,7 @@ local function is_notable_value(kind, key, value, unit)
 end
 
 local function add_attribute_section(tokens, title, pen, kind, values, unit)
-    table.insert(tokens, {text=title, pen=pen})
-    table.insert(tokens, NEWLINE)
+    add_underlined_title(tokens, title, pen)
 
     if not values or not unit then
         table.insert(tokens, {text='  none notable', pen=COLOR_DARKGREY})
@@ -248,8 +259,7 @@ local function add_matched_filter_section(tokens, matched_criteria, unit)
         return
     end
 
-    table.insert(tokens, {text='Matched filters', pen=COLOR_WHITE})
-    table.insert(tokens, NEWLINE)
+    add_underlined_title(tokens, 'Matched filters', COLOR_WHITE)
 
     for _, criterion in ipairs(matched_criteria) do
         local is_low = criterion.direction == FILTER_LOW
@@ -345,9 +355,14 @@ function DwarfSearchWindow:init()
             text='Search filters',
             text_pen=COLOR_WHITE,
         },
+        widgets.Label{
+            frame={l=1, t=3, w=38, h=1},
+            text=get_title_underline('Search filters'),
+            text_pen=TITLE_UNDERLINE_PEN,
+        },
         widgets.List{
             view_id='filter_list',
-            frame={l=1, t=3, w=38, b=3},
+            frame={l=1, t=4, w=38, b=3},
             on_submit=function(index, choice)
                 if choice and choice.descriptor then
                     self:toggle_filter(choice.descriptor.id)
@@ -360,9 +375,15 @@ function DwarfSearchWindow:init()
             text='Results',
             text_pen=COLOR_WHITE,
         },
+        widgets.Label{
+            view_id='result_header_underline',
+            frame={l=41, t=3, w=52, h=1},
+            text=get_title_underline('Results'),
+            text_pen=TITLE_UNDERLINE_PEN,
+        },
         widgets.List{
             view_id='result_list',
-            frame={l=41, t=3, w=52, b=3},
+            frame={l=41, t=4, w=52, b=3},
             on_select=function(index, choice)
                 self:update_attributes(choice and choice.result or nil)
             end,
@@ -376,8 +397,13 @@ function DwarfSearchWindow:init()
             text_pen=COLOR_WHITE,
         },
         widgets.Label{
+            frame={l=95, t=2, r=1, h=1},
+            text=get_title_underline('Attributes'),
+            text_pen=TITLE_UNDERLINE_PEN,
+        },
+        widgets.Label{
             view_id='attributes',
-            frame={l=95, t=2, r=1, b=3},
+            frame={l=95, t=3, r=1, b=3},
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
@@ -447,7 +473,9 @@ function DwarfSearchWindow:update_results()
         })
     end
 
-    self.subviews.result_header:setText(('Results (%d)'):format(#choices))
+    local result_header = ('Results (%d)'):format(#choices)
+    self.subviews.result_header:setText(result_header)
+    self.subviews.result_header_underline:setText(get_title_underline(result_header))
     self.subviews.result_list:setChoices(choices, 1)
     local _, choice = self.subviews.result_list:getSelected()
     self:update_attributes(choice and choice.result or nil)
