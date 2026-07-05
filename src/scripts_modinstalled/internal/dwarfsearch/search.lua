@@ -189,34 +189,44 @@ end
 
 local function score_row(row, selected_descriptors)
     local matched = {}
+    local criteria = {}
     local score = 0
 
     for _, descriptor in ipairs(selected_descriptors) do
         local value = get_value(row, descriptor)
-        if value and matches_descriptor(value, descriptor) then
-            table.insert(matched, {
+        local matches = value and matches_descriptor(value, descriptor)
+        if value then
+            local criterion = {
                 id=descriptor.id,
                 kind=descriptor.kind,
                 key=descriptor.key,
                 label=descriptor.label,
                 direction=descriptor.direction,
                 value=value,
-            })
+                matched=matches,
+            }
+            table.insert(criteria, criterion)
+            if matches then
+                table.insert(matched, criterion)
+            end
+        end
+        if matches then
             score = score + score_value(value, descriptor)
         end
     end
 
-    return matched, #matched, score
+    return criteria, matched, #matched, score
 end
 
 local function make_result(row, selected_descriptors)
-    local matched, matched_count, score = score_row(row, selected_descriptors)
+    local criteria, matched, matched_count, score = score_row(row, selected_descriptors)
     return {
         row=row,
         unit=row.unit,
         unit_id=row.unit_id,
         name=row.name,
         profession=row.profession,
+        filter_criteria=criteria,
         matched_criteria=matched,
         matched_count=matched_count,
         criteria_count=#selected_descriptors,

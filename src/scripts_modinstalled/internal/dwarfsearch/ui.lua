@@ -254,26 +254,40 @@ local function add_attribute_section(tokens, title, pen, kind, values, unit)
     end
 end
 
-local function add_matched_filter_section(tokens, matched_criteria, unit)
-    if not matched_criteria or #matched_criteria == 0 then
+local function get_filter_criterion_pen(criterion, default_pen)
+    if criterion.matched then
+        return default_pen
+    end
+    return COLOR_DARKGREY
+end
+
+local function add_matched_filter_section(tokens, filter_criteria, unit)
+    if not filter_criteria or #filter_criteria == 0 then
         return
     end
 
     add_underlined_title(tokens, 'Matched filters', COLOR_WHITE)
 
-    for _, criterion in ipairs(matched_criteria) do
+    for _, criterion in ipairs(filter_criteria) do
         local is_low = criterion.direction == FILTER_LOW
         local deviation, tier_distance = get_deviation_info(
             criterion.kind,
             criterion.key,
             criterion.value,
             unit)
+        local direction_pen = get_filter_criterion_pen(
+            criterion,
+            is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN)
+        local label_pen = get_filter_criterion_pen(criterion, get_category_pen(criterion))
+        local value_pen = get_filter_criterion_pen(
+            criterion,
+            get_deviation_pen(deviation, tier_distance))
         table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
-        table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN})
+        table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=direction_pen})
         table.insert(tokens, {text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
-            truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=get_category_pen(criterion)})
+            truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=label_pen})
         table.insert(tokens, {text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
-            format_deviation(deviation)), pen=get_deviation_pen(deviation, tier_distance)})
+            format_deviation(deviation)), pen=value_pen})
         table.insert(tokens, NEWLINE)
     end
 
@@ -286,7 +300,7 @@ local function attributes_for_result(result)
     end
 
     local tokens = {}
-    add_matched_filter_section(tokens, result.matched_criteria, result.unit)
+    add_matched_filter_section(tokens, result.filter_criteria, result.unit)
     table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
