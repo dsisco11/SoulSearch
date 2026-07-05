@@ -16,8 +16,8 @@ Phases 1-5 are in place:
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
 - `scripts_modinstalled/dwarfsearch.lua` defines the public DFHack command.
 - `scripts_modinstalled/internal/dwarfsearch/` contains private support modules.
-- Resident collection snapshots names, professions, positions, traits, and
-  mental attributes.
+- Resident collection snapshots names, professions, positions, traits, mental
+  attributes, and physical attributes such as agility.
 - Search descriptors and relevance-ranked results drive the panel.
 - `dwarfsearch` opens an in-game panel with name search, checkbox-driven search
   filters, ranked results, resident details, refresh, zoom, and close controls.
@@ -93,8 +93,9 @@ dwarfsearch
 ```
 
 At this stage the command opens the DwarfSearch panel in fortress mode.
-Press `z` or Enter on a selected result to center and highlight that resident on
-the fortress map.
+Use the Search filters list to select traits and attributes such as `Agility`.
+The search field filters resident names only. Press `z` or Enter on a selected
+result to center and highlight that resident on the fortress map.
 
 ## Troubleshooting
 

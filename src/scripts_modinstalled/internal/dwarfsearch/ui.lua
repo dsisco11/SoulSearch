@@ -48,7 +48,12 @@ end
 
 local function format_filter_choice(descriptor, selected)
     local marker = selected and '[x]' or '[ ]'
-    local kind = descriptor.kind == 'trait' and 'Trait' or 'Soul'
+    local kind = 'Soul'
+    if descriptor.kind == 'trait' then
+        kind = 'Trait'
+    elseif descriptor.kind == 'physical_attribute' then
+        kind = 'Body'
+    end
     return ('%s %-5s %s'):format(marker, kind, descriptor.label)
 end
 

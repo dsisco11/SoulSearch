@@ -53,6 +53,17 @@ local function get_mental_attribute_values(unit)
     return values
 end
 
+local function get_physical_attribute_values(unit)
+    local values = {}
+    for _, attr in ipairs(enum_keys(df.physical_attribute_type)) do
+        local ok, value = pcall(dfhack.units.getPhysicalAttrValue, unit, attr.value)
+        if ok and value ~= nil then
+            values[attr.name] = value
+        end
+    end
+    return values
+end
+
 local function get_readable_name(unit)
     local name = dfhack.units.getReadableName(unit)
     if name and name ~= '' then
@@ -70,6 +81,7 @@ local function build_resident_row(unit)
         position=copy_position(dfhack.units.getPosition(unit)),
         traits=get_trait_values(unit),
         mental_attributes=get_mental_attribute_values(unit),
+        physical_attributes=get_physical_attribute_values(unit),
     }
 end
 

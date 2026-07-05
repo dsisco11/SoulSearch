@@ -13,11 +13,13 @@
 - [x] Build resident rows with unit pointer, readable name, profession, position, traits, and mental attributes.
 - [x] Use DFHack readable-name helpers for display.
 - [x] Use `dfhack.units.getMentalAttrValue()` for effective mental/soul attribute values.
+- [x] Include physical attributes such as agility with `dfhack.units.getPhysicalAttrValue()`.
 
 ## Phase 3: Search and Filter Engine
 - [x] Implement text search over resident names.
 - [x] Define data-driven filter descriptors for personality traits.
 - [x] Define data-driven filter descriptors for mental/soul attributes.
+- [x] Define data-driven filter descriptors for physical attributes.
 - [x] Treat selected trait and attribute filters as relevance criteria, not hard exclusions.
 - [x] Score each resident by how many selected criteria they match.
 - [x] Keep residents with partial matches in the results, sorted below stronger matches.
@@ -27,8 +29,8 @@
 ## Phase 4: In-Game Panel UI
 - [x] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
 - [x] Add a search field for resident name filtering.
-- [x] Add a Search filters panel listing available traits and mental attributes.
-- [x] Add checkboxes for selecting which traits and mental attributes are relevant to the search.
+- [x] Add a Search filters panel listing available traits, mental attributes, and physical attributes.
+- [x] Add checkboxes for selecting which traits and attributes are relevant to the search.
 - [x] Show match score/counts in the result list.
 - [x] Add a result list using DFHack GUI widgets.
 - [x] Add a selected-resident details area.
