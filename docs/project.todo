@@ -6,7 +6,7 @@
 ✔ Remove the Name, Profession, Position, etc. status text at the bottom of the panel. @done(26-07-05 00:07)
 ✔ The units list panel should always have "focus" so that the up/down arrow keys can be used to navigate the list and quickly move down the list without having to click on the list first. @done(26-07-05 00:00)
 ✔ Right-side panel should only show traits which reasonably deviate from the average for that unit's race, similar to the default DF unit card viewer. @done(26-07-05 00:00)
-☐ Right side panel should show the units portrait just like the normal DF unit card panel does.
+✘ Right side panel should show the units portrait just like the normal DF unit card panel does. @cancelled(26-07-06 01:42)
 ✔ Bug: Search panel cant be dragged around easily, doesn't match the cursor movement. @done(26-07-05 00:00)
 ✔ Right side panel should also show units name at the top, similar to the normal DF unit card panel. @done(26-07-05 00:00)
 ✔ Need way to specify an attribute filter as searching for negative rather than positive values, e.g. "low agility" or "low willpower" rather than just "agility" or "willpower". This could be done with a second checkbox next to each attribute filter. @done(26-07-05 00:00)
@@ -28,7 +28,7 @@
 ✔ BUG: Skill names arent always translated correctly? @done(26-07-06 00:00)
 ✔ Remove the "x/y" indicator column from the results list. @done(26-07-06 00:00)
 ✔ Align the "Search" field with the results list, so that the left edge of the search field lines up with the left edge of the results list. @done(26-07-06 00:00)
-☐ Make the "Skills" menu list easier to navigate by having the various skill categories either collapsed or turned into tab menus.
+✘ Make the "Skills" menu list easier to navigate by having the various skill categories either collapsed or turned into tab menus. @cancelled(26-07-06 01:41)
 ✔ Give dropdown menus a border so they are more obviously dropdown menus. @done(26-07-06 00:00)
 ✔ Search result list items dont need to show the units full title, just their name and alias. the profession can be omitted since it is already shown in the 2nd column of the results list. @done(26-07-06 00:00)
 ✔ The Results panel should be wider since the Attributes panel panel has dead space on the right side. @done(26-07-06 00:00)

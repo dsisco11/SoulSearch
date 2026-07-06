@@ -335,20 +335,29 @@ local function add_selected_filter_section(tokens, filter_criteria, unit)
     table.insert(tokens, NEWLINE)
 end
 
-local function attributes_for_result(result)
+local function attribute_header_for_result(result)
+    local tokens = {}
     if not result or not result.row then
-        return 'No resident selected.'
+        table.insert(tokens, {text='No resident selected.', pen=COLOR_DARKGREY})
+        return tokens
     end
 
-    local tokens = {}
-    add_selected_filter_section(tokens, result.filter_criteria, result.unit)
     table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
+    add_selected_filter_section(tokens, result.filter_criteria, result.unit)
+    return tokens
+end
+
+local function attributes_for_result(result)
+    if not result or not result.row then
+        return ''
+    end
 
     local body_label, body_pen = get_category_info('physical_attribute')
     local soul_label, soul_pen = get_category_info('mental_attribute')
     local mind_label, mind_pen = get_category_info('trait')
+    local tokens = {}
 
     add_attribute_section(tokens, body_label, body_pen, 'physical_attribute', result.row.physical_attributes, result.unit)
     table.insert(tokens, NEWLINE)
@@ -552,9 +561,16 @@ function DwarfSearchWindow:init()
             text_pen=TITLE_UNDERLINE_PEN,
         },
         widgets.Label{
-            view_id='attributes',
+            view_id='attribute_header',
             frame={l=107, t=4, r=1, b=0},
+            auto_height=false,
             text='No resident selected.',
+        },
+        widgets.Label{
+            view_id='attributes',
+            frame={l=107, t=5, r=1, b=0},
+            auto_height=false,
+            text='',
         },
         widgets.HotkeyLabel{
             frame={r=1, t=0, w=16, h=1},
@@ -756,7 +772,22 @@ function DwarfSearchWindow:update_results()
 end
 
 function DwarfSearchWindow:update_attributes(result)
-    self.subviews.attributes:setText(attributes_for_result(result))
+    local header = self.subviews.attribute_header
+    local body = self.subviews.attributes
+    header:setText(attribute_header_for_result(result))
+    body:setText(attributes_for_result(result))
+
+    local header_top = 4
+    local available_height = math.max(1, (self.frame_body and self.frame_body.height or 45) - header_top)
+    local header_height = math.min(header:getTextHeight(), math.max(1, available_height - 1))
+    local body_top = header_top + header_height
+
+    header.frame = {l=107, t=header_top, r=1, h=header_height}
+    body.frame = {l=107, t=body_top, r=1, b=0}
+    if self.frame_body then
+        header:updateLayout(self.frame_body)
+        body:updateLayout(self.frame_body)
+    end
 end
 
 function DwarfSearchWindow:get_selected_result()
