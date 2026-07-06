@@ -3,9 +3,9 @@
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
-local residents = reqscript('internal/dwarfsearch/residents')
-local search = reqscript('internal/dwarfsearch/search')
-local attributes = reqscript('internal/dwarfsearch/attributes')
+local residents = reqscript('internal/soulsearch/residents')
+local search = reqscript('internal/soulsearch/search')
+local attributes = reqscript('internal/soulsearch/attributes')
 
 local view
 local saved_filter_modes = {}
@@ -250,8 +250,8 @@ local function get_tooltip_box(text, max_width)
     return tooltip_text, #tooltip_text + 2
 end
 
-DwarfSearchTooltip = defclass(DwarfSearchTooltip, widgets.Window)
-DwarfSearchTooltip.ATTRS{
+SoulSearchTooltip = defclass(SoulSearchTooltip, widgets.Window)
+SoulSearchTooltip.ATTRS{
     frame={l=0, t=0, w=1, h=3},
     frame_style=gui.FRAME_THIN,
     frame_background=TOOLTIP_BACKGROUND_PEN,
@@ -261,7 +261,7 @@ DwarfSearchTooltip.ATTRS{
     owner=DEFAULT_NIL,
 }
 
-function DwarfSearchTooltip:init()
+function SoulSearchTooltip:init()
     self.label = widgets.Label{
         frame={l=0, t=0, w=1, h=1},
         auto_height=false,
@@ -271,7 +271,7 @@ function DwarfSearchTooltip:init()
     self:addviews{self.label}
 end
 
-function DwarfSearchTooltip:render(dc)
+function SoulSearchTooltip:render(dc)
     local owner = self.owner
     local mouse_x, mouse_y = dfhack.screen.getMousePos()
     if not owner or not mouse_x then
@@ -297,7 +297,7 @@ function DwarfSearchTooltip:render(dc)
     self.label.frame.w = math.max(1, tooltip_width - 2)
     self.label:setText(tooltip_text)
     self:updateLayout()
-    DwarfSearchTooltip.super.render(self, dc)
+    SoulSearchTooltip.super.render(self, dc)
 end
 
 local function copy_filter_modes(filter_modes)
@@ -535,15 +535,15 @@ local function draw_section_dividers(dc)
     end
 end
 
-DwarfSearchWindow = defclass(DwarfSearchWindow, widgets.Window)
-DwarfSearchWindow.ATTRS {
-    frame_title='DwarfSearch',
+SoulSearchWindow = defclass(SoulSearchWindow, widgets.Window)
+SoulSearchWindow.ATTRS {
+    frame_title='SoulSearch',
     frame={w=150, h=45, xalign=0.5, yalign=0.5},
     resizable=true,
     resize_min={w=120, h=30},
 }
 
-function DwarfSearchWindow:init()
+function SoulSearchWindow:init()
     self.rows = {}
     self.results = {}
     self.query = ''
@@ -740,17 +740,17 @@ function DwarfSearchWindow:init()
     self:update_available_skill_choices()
 end
 
-function DwarfSearchWindow:onDragBegin()
-    DwarfSearchWindow.super.onDragBegin(self)
+function SoulSearchWindow:onDragBegin()
+    SoulSearchWindow.super.onDragBegin(self)
     normalize_frame_for_drag(self)
 end
 
-function DwarfSearchWindow:onRenderBody(dc)
-    DwarfSearchWindow.super.onRenderBody(self, dc)
+function SoulSearchWindow:onRenderBody(dc)
+    SoulSearchWindow.super.onRenderBody(self, dc)
     draw_section_dividers(dc)
 end
 
-function DwarfSearchWindow:get_filter_action_tooltip()
+function SoulSearchWindow:get_filter_action_tooltip()
     if self.add_filter_open or self.add_skill_open then
         return nil
     end
@@ -765,7 +765,7 @@ function DwarfSearchWindow:get_filter_action_tooltip()
     return action and FILTER_ACTION_TOOLTIPS[action] or nil
 end
 
-function DwarfSearchWindow:get_stats_header_column()
+function SoulSearchWindow:get_stats_header_column()
     local stats = self.subviews.stats
     if not stats then
         return nil
@@ -784,12 +784,12 @@ function DwarfSearchWindow:get_stats_header_column()
     return nil
 end
 
-function DwarfSearchWindow:get_stats_header_tooltip()
+function SoulSearchWindow:get_stats_header_tooltip()
     local column = self:get_stats_header_column()
     return column and STATS_HEADER_TOOLTIPS[column] or nil
 end
 
-function DwarfSearchWindow:get_tooltip_text()
+function SoulSearchWindow:get_tooltip_text()
     local control_tooltips = {
         {id='add_filter_button', text='Add attribute filter'},
         {id='add_skill_button', text='Add skill filter'},
@@ -808,7 +808,7 @@ function DwarfSearchWindow:get_tooltip_text()
     return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or ''
 end
 
-function DwarfSearchWindow:get_selected_filters()
+function SoulSearchWindow:get_selected_filters()
     local selected_filters = {}
     for _, filter_id in ipairs(self.selected_filter_order) do
         local mode = self.selected_filter_modes[filter_id]
@@ -822,7 +822,7 @@ function DwarfSearchWindow:get_selected_filters()
     return selected_filters
 end
 
-function DwarfSearchWindow:get_filter_descriptor_by_id(filter_id)
+function SoulSearchWindow:get_filter_descriptor_by_id(filter_id)
     for _, descriptor in ipairs(self.filter_descriptors) do
         if descriptor.id == filter_id then
             return descriptor
@@ -831,7 +831,7 @@ function DwarfSearchWindow:get_filter_descriptor_by_id(filter_id)
     return nil
 end
 
-function DwarfSearchWindow:get_valid_filter_modes(filter_modes)
+function SoulSearchWindow:get_valid_filter_modes(filter_modes)
     local valid_modes = {}
     for filter_id, mode in pairs(filter_modes or {}) do
         if self:get_filter_descriptor_by_id(filter_id) then
@@ -841,7 +841,7 @@ function DwarfSearchWindow:get_valid_filter_modes(filter_modes)
     return valid_modes
 end
 
-function DwarfSearchWindow:get_valid_filter_order(filter_order)
+function SoulSearchWindow:get_valid_filter_order(filter_order)
     local valid_order = {}
     for _, filter_id in ipairs(filter_order or {}) do
         if self.selected_filter_modes[filter_id] and self:get_filter_descriptor_by_id(filter_id) then
@@ -851,12 +851,12 @@ function DwarfSearchWindow:get_valid_filter_order(filter_order)
     return valid_order
 end
 
-function DwarfSearchWindow:save_filter_state()
+function SoulSearchWindow:save_filter_state()
     saved_filter_modes = copy_filter_modes(self.selected_filter_modes)
     saved_filter_order = copy_filter_order(self.selected_filter_order)
 end
 
-function DwarfSearchWindow:get_filter_priority(filter_id)
+function SoulSearchWindow:get_filter_priority(filter_id)
     for index, ordered_filter_id in ipairs(self.selected_filter_order) do
         if ordered_filter_id == filter_id then
             return index
@@ -865,7 +865,7 @@ function DwarfSearchWindow:get_filter_priority(filter_id)
     return nil
 end
 
-function DwarfSearchWindow:get_active_filter_descriptors()
+function SoulSearchWindow:get_active_filter_descriptors()
     local descriptors = {}
 
     for _, filter_id in ipairs(self.selected_filter_order) do
@@ -878,7 +878,7 @@ function DwarfSearchWindow:get_active_filter_descriptors()
     return descriptors
 end
 
-function DwarfSearchWindow:get_filter_choice_index(filter_id)
+function SoulSearchWindow:get_filter_choice_index(filter_id)
     for index, descriptor in ipairs(self:get_active_filter_descriptors()) do
         if descriptor.id == filter_id then
             return index
@@ -887,7 +887,7 @@ function DwarfSearchWindow:get_filter_choice_index(filter_id)
     return 1
 end
 
-function DwarfSearchWindow:update_filter_choices(selected)
+function SoulSearchWindow:update_filter_choices(selected)
     local choices = {}
     local priority_count = #self.selected_filter_order
     for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
@@ -907,7 +907,7 @@ function DwarfSearchWindow:update_filter_choices(selected)
     self.subviews.filter_list:setChoices(choices, selected)
 end
 
-function DwarfSearchWindow:update_available_filter_choices(selected)
+function SoulSearchWindow:update_available_filter_choices(selected)
     local choices = {}
     for _, descriptor in ipairs(self.attribute_filter_descriptors) do
         if not self.selected_filter_modes[descriptor.id] and
@@ -925,7 +925,7 @@ function DwarfSearchWindow:update_available_filter_choices(selected)
     self.subviews.available_filter_list:setChoices(choices, selected)
 end
 
-function DwarfSearchWindow:update_available_skill_choices(selected)
+function SoulSearchWindow:update_available_skill_choices(selected)
     local choices = {}
     local choices_by_category = {}
     for _, descriptor in ipairs(self.skill_filter_descriptors) do
@@ -958,7 +958,7 @@ function DwarfSearchWindow:update_available_skill_choices(selected)
     self.subviews.available_skill_list:setChoices(choices, selected)
 end
 
-function DwarfSearchWindow:update_results()
+function SoulSearchWindow:update_results()
     self:save_filter_state()
     self.selected_filters = self:get_selected_filters()
     self.results = search.apply(self.rows, {
@@ -983,7 +983,7 @@ function DwarfSearchWindow:update_results()
     self:update_stats(choice and choice.result or nil)
 end
 
-function DwarfSearchWindow:update_stats(result)
+function SoulSearchWindow:update_stats(result)
     local header = self.subviews.stats_header
     local body = self.subviews.stats
     header:setText(stats_header_for_result(result))
@@ -1002,7 +1002,7 @@ function DwarfSearchWindow:update_stats(result)
     end
 end
 
-function DwarfSearchWindow:handle_stats_header_click()
+function SoulSearchWindow:handle_stats_header_click()
     local column = self:get_stats_header_column()
     if not column then
         return false
@@ -1029,35 +1029,35 @@ function DwarfSearchWindow:handle_stats_header_click()
     return true
 end
 
-function DwarfSearchWindow:get_selected_result()
+function SoulSearchWindow:get_selected_result()
     local _, choice = self.subviews.result_list:getSelected()
     return choice and choice.result or nil
 end
 
-function DwarfSearchWindow:zoom_to_selected_result()
+function SoulSearchWindow:zoom_to_selected_result()
     self:zoom_to_result(self:get_selected_result())
 end
 
-function DwarfSearchWindow:zoom_to_result(result)
+function SoulSearchWindow:zoom_to_result(result)
     if not result then
-        print('DwarfSearch: no resident selected.')
+        print('SoulSearch: no resident selected.')
         return
     end
 
     local pos = get_live_position(result)
     if not pos then
-        print(('DwarfSearch: %s does not have a valid map position.'):format(result.name))
+        print(('SoulSearch: %s does not have a valid map position.'):format(result.name))
         return
     end
 
     dfhack.gui.revealInDwarfmodeMap(pos, true, true)
 end
 
-function DwarfSearchWindow:is_filter_active(filter_id)
+function SoulSearchWindow:is_filter_active(filter_id)
     return self.selected_filter_modes[filter_id] ~= nil
 end
 
-function DwarfSearchWindow:add_filter(filter_id)
+function SoulSearchWindow:add_filter(filter_id)
     if not self:is_filter_active(filter_id) then
         self.selected_filter_modes[filter_id] = FILTER_HIGH
         table.insert(self.selected_filter_order, filter_id)
@@ -1072,7 +1072,7 @@ function DwarfSearchWindow:add_filter(filter_id)
     self:update_results()
 end
 
-function DwarfSearchWindow:remove_filter(filter_id)
+function SoulSearchWindow:remove_filter(filter_id)
     self.selected_filter_modes[filter_id] = nil
     local selected = self:get_filter_priority(filter_id) or 1
     for index, ordered_filter_id in ipairs(self.selected_filter_order) do
@@ -1087,7 +1087,7 @@ function DwarfSearchWindow:remove_filter(filter_id)
     self:update_results()
 end
 
-function DwarfSearchWindow:clear_filters()
+function SoulSearchWindow:clear_filters()
     if #self.selected_filter_order == 0 then
         return false
     end
@@ -1105,7 +1105,7 @@ function DwarfSearchWindow:clear_filters()
     return true
 end
 
-function DwarfSearchWindow:set_filter_direction(filter_id, direction)
+function SoulSearchWindow:set_filter_direction(filter_id, direction)
     if not self:is_filter_active(filter_id) then
         self:add_filter(filter_id)
         self.selected_filter_modes[filter_id] = direction
@@ -1119,7 +1119,7 @@ function DwarfSearchWindow:set_filter_direction(filter_id, direction)
     self:update_results()
 end
 
-function DwarfSearchWindow:toggle_add_filter_dropdown()
+function SoulSearchWindow:toggle_add_filter_dropdown()
     self.add_filter_open = not self.add_filter_open
     if self.add_filter_open then
         self.add_skill_open = false
@@ -1130,7 +1130,7 @@ function DwarfSearchWindow:toggle_add_filter_dropdown()
     self:update_available_skill_choices()
 end
 
-function DwarfSearchWindow:toggle_add_skill_dropdown()
+function SoulSearchWindow:toggle_add_skill_dropdown()
     self.add_skill_open = not self.add_skill_open
     if self.add_skill_open then
         self.add_filter_open = false
@@ -1141,7 +1141,7 @@ function DwarfSearchWindow:toggle_add_skill_dropdown()
     self:update_available_skill_choices()
 end
 
-function DwarfSearchWindow:close_add_filter_dropdown()
+function SoulSearchWindow:close_add_filter_dropdown()
     if not self.add_filter_open and not self.add_skill_open then
         return false
     end
@@ -1155,15 +1155,15 @@ function DwarfSearchWindow:close_add_filter_dropdown()
     return true
 end
 
-function DwarfSearchWindow:update_add_filter_button()
+function SoulSearchWindow:update_add_filter_button()
     self.subviews.add_filter_button:setLabel(ADD_FILTER_LABEL)
 end
 
-function DwarfSearchWindow:update_add_skill_button()
+function SoulSearchWindow:update_add_skill_button()
     self.subviews.add_skill_button:setLabel(ADD_SKILL_LABEL)
 end
 
-function DwarfSearchWindow:move_selected_filter_priority(delta)
+function SoulSearchWindow:move_selected_filter_priority(delta)
     local _, choice = self.subviews.filter_list:getSelected()
     local filter_id = choice and choice.descriptor and choice.descriptor.id
     if not filter_id or not self.selected_filter_modes[filter_id] then
@@ -1183,7 +1183,7 @@ function DwarfSearchWindow:move_selected_filter_priority(delta)
     return true
 end
 
-function DwarfSearchWindow:handle_filter_action_click()
+function SoulSearchWindow:handle_filter_action_click()
     if self.add_filter_open or self.add_skill_open then
         return false
     end
@@ -1217,7 +1217,7 @@ function DwarfSearchWindow:handle_filter_action_click()
     return true
 end
 
-function DwarfSearchWindow:refresh_residents()
+function SoulSearchWindow:refresh_residents()
     local rows, err = residents.collect_residents()
     if not rows then
         print(err)
@@ -1228,11 +1228,11 @@ function DwarfSearchWindow:refresh_residents()
     self:update_results()
 end
 
-function DwarfSearchWindow:move_result_cursor(delta)
+function SoulSearchWindow:move_result_cursor(delta)
     self.subviews.result_list:moveCursor(delta)
 end
 
-function DwarfSearchWindow:onInput(keys)
+function SoulSearchWindow:onInput(keys)
     if is_backspace_key(keys) and self:close_add_filter_dropdown() then
         return true
     end
@@ -1272,23 +1272,23 @@ function DwarfSearchWindow:onInput(keys)
         self:move_result_cursor(10)
         return true
     end
-    return DwarfSearchWindow.super.onInput(self, keys)
+    return SoulSearchWindow.super.onInput(self, keys)
 end
 
-DwarfSearchScreen = defclass(DwarfSearchScreen, gui.ZScreen)
-DwarfSearchScreen.ATTRS {
-    focus_path='dwarfsearch',
+SoulSearchScreen = defclass(SoulSearchScreen, gui.ZScreen)
+SoulSearchScreen.ATTRS {
+    focus_path='soulsearch',
 }
 
-function DwarfSearchScreen:init()
-    self.window = DwarfSearchWindow{}
+function SoulSearchScreen:init()
+    self.window = SoulSearchWindow{}
     self:addviews{
         self.window,
-        DwarfSearchTooltip{owner=self.window},
+        SoulSearchTooltip{owner=self.window},
     }
 end
 
-function DwarfSearchScreen:onDismiss()
+function SoulSearchScreen:onDismiss()
     view = nil
 end
 
@@ -1299,5 +1299,5 @@ function open(...)
         return
     end
 
-    view = view and view:raise() or DwarfSearchScreen{}:show()
+    view = view and view:raise() or SoulSearchScreen{}:show()
 end

@@ -1,6 +1,6 @@
 --@ module=true
 
-local attributes = reqscript('internal/dwarfsearch/attributes')
+local attributes = reqscript('internal/soulsearch/attributes')
 
 local FILTER_HIGH = 'high'
 local MATCHED_FILTER_SCORE = 10

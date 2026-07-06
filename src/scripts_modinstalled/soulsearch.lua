@@ -1,16 +1,16 @@
--- DwarfSearch public DFHack command.
+-- SoulSearch public DFHack command.
 --[====[
-dwarfsearch
+soulsearch
 ===========
 
 Tags: fort | units | inspection
 
-Open the DwarfSearch resident search panel.
+Open the SoulSearch resident search panel.
 
 Usage
 -----
 
-    dwarfsearch
+    soulsearch
 ]====]
 
 local ui
@@ -27,10 +27,10 @@ local function load_module(script_name, required_field)
 end
 
 local function refresh_scripts()
-    load_module('internal/dwarfsearch/attributes')
-    load_module('internal/dwarfsearch/residents', 'get_unavailable_reason')
-    load_module('internal/dwarfsearch/search', 'search')
-    ui = load_module('internal/dwarfsearch/ui', 'open')
+    load_module('internal/soulsearch/attributes')
+    load_module('internal/soulsearch/residents', 'get_unavailable_reason')
+    load_module('internal/soulsearch/search', 'search')
+    ui = load_module('internal/soulsearch/ui', 'open')
 end
 
 refresh_scripts()

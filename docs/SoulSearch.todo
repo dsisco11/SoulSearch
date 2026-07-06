@@ -1,10 +1,10 @@
-# DwarfSearch TODO
+# SoulSearch TODO
 
 ## Phase 1: Mod Skeleton
 - [x] Create DFHack mod metadata in `info.txt`.
 - [x] Create `README.md` with install and development-path notes.
-- [x] Create `scripts_modinstalled/dwarfsearch.lua` as the public DFHack command.
-- [x] Create `scripts_modinstalled/internal/dwarfsearch/` for internal modules.
+- [x] Create `scripts_modinstalled/soulsearch.lua` as the public DFHack command.
+- [x] Create `scripts_modinstalled/internal/soulsearch/` for internal modules.
 - [ ] Confirm the command can be loaded as a DFHack script without side effects.
 
 ## Phase 2: Resident Data Model
@@ -27,7 +27,7 @@
 - [x] Sort by match score first, then by readable resident name for stable results.
 
 ## Phase 4: In-Game Panel UI
-- [x] Create a `gui.ZScreen` opened by the `dwarfsearch` command.
+- [x] Create a `gui.ZScreen` opened by the `soulsearch` command.
 - [x] Add a search field for resident name filtering.
 - [x] Add a Search filters panel listing available traits, mental attributes, and physical attributes.
 - [x] Add checkboxes for selecting which traits and attributes are relevant to the search.
@@ -44,7 +44,7 @@
 - [x] Handle missing, caged, invalid, or off-map positions gracefully.
 
 ## Phase 6: Validation and Polish
-- [ ] Load test with `:lua ~reqscript('dwarfsearch')`.
+- [ ] Load test with `:lua ~reqscript('soulsearch')`.
 - [ ] Verify the panel opens in fortress mode.
 - [ ] Verify the command fails safely outside fortress mode.
 - [ ] Verify name search changes result counts correctly.

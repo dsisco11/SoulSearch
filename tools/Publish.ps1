@@ -51,7 +51,7 @@ $metadataName = Get-ModInfoValue -InfoText $infoText -Key "NAME"
 $version = Get-ModInfoValue -InfoText $infoText -Key "DISPLAYED_VERSION"
 
 if (-not $PackageName) {
-    $PackageName = if ($metadataName) { $metadataName } else { "DwarfSearch" }
+    $PackageName = if ($metadataName) { $metadataName } else { "SoulSearch" }
 }
 if (-not $version) {
     $version = "0.0.0"
@@ -61,7 +61,7 @@ $safePackageName = ConvertTo-SafeFileName -Name $PackageName
 $safeVersion = ConvertTo-SafeFileName -Name $version
 $zipPath = Join-Path $outputPath "$safePackageName-$safeVersion.zip"
 $expandedPath = Join-Path $outputPath $safePackageName
-$tempRoot = Join-Path ([IO.Path]::GetTempPath()) "DwarfSearchPublish-$([guid]::NewGuid())"
+$tempRoot = Join-Path ([IO.Path]::GetTempPath()) "SoulSearchPublish-$([guid]::NewGuid())"
 $stagingRoot = if ($NoRootFolder) { $tempRoot } else { Join-Path $tempRoot $safePackageName }
 
 New-Item -ItemType Directory -Force -Path $outputPath | Out-Null
