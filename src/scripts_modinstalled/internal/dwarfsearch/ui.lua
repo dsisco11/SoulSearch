@@ -507,18 +507,18 @@ function DwarfSearchWindow:init()
             end,
         },
         widgets.Label{
-            frame={l=107, t=1, r=1, h=1},
+            frame={l=107, t=2, r=1, h=1},
             text='Attributes',
             text_pen=COLOR_WHITE,
         },
         widgets.Label{
-            frame={l=107, t=2, r=1, h=1},
+            frame={l=107, t=3, r=1, h=1},
             text=get_title_underline('Attributes'),
             text_pen=TITLE_UNDERLINE_PEN,
         },
         widgets.Label{
             view_id='attributes',
-            frame={l=107, t=3, r=1, b=0},
+            frame={l=107, t=4, r=1, b=0},
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
