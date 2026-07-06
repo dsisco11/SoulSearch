@@ -26,7 +26,8 @@
 ✔ Add Skills to the search filters, but skill filters should be selected from a different panel, since there are so many skills. The skill filter panel should be opened by a button in the search filters panel. The skill filter panel should have a search field to allow the user to quickly find a skill to add as a filter. @done(26-07-05 00:00)
 ✔ The skill menu needs to group displayed skills into categories, similar to how the DF unit card skill list is grouped. @done(26-07-05 00:00)
 ✔ BUG: Skill names arent always translated correctly? @done(26-07-06 00:00)
-☐ Remove the "x/y" indicator column from the results list.
+✔ Remove the "x/y" indicator column from the results list. @done(26-07-06 00:00)
 ✔ Align the "Search" field with the results list, so that the left edge of the search field lines up with the left edge of the results list. @done(26-07-06 00:00)
 ☐ Make the "Skills" menu list easier to navigate by having the various skill categories either collapsed or turned into tab menus.
 ☐ Give dropdown menus a border so they are more obviously dropdown menus.
+☐ Search result list items dont need to show the units full title, just their name and alias. the profession can be omitted since it is already shown in the 2nd column of the results list. 

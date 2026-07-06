@@ -76,9 +76,8 @@ local function make_position(x, y, z)
 end
 
 local function format_result_choice(result)
-    return ('%-5s %-32s %s'):format(
-        result.match_label,
-        truncate(result.name, 32),
+    return ('%-38s %s'):format(
+        truncate(result.name, 38),
         truncate(result.profession or '', 24))
 end
 
