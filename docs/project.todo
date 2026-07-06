@@ -35,7 +35,7 @@
 ✔ All 3 panels should be tall enough to fill up the window without empty space below them. @done(26-07-06 00:00)
 ✔ Simplify tooltip text labels. @done(26-07-06 02:58)
 ✔ Amend "filter" to the end of the "Add attribute" & "Add skill" buttons. @done(26-07-06 03:00)
-☐ Rename "Attributes" panel to "Stats" panel, since it shows both attributes and skills. This will also make it more clear to the user that the panel shows both attributes and skills, since the "Attributes" label is misleading.
+✔ Rename "Attributes" panel to "Stats" panel, since it shows both attributes and skills. This will also make it more clear to the user that the panel shows both attributes and skills, since the "Attributes" label is misleading. @done(26-07-06 03:02)
 ☐ Attributes Panel: Remove the "Body", "Mind", and "Soul" category labels, since the color coding is sufficient to indicate the category. The category labels are redundant and take up space.
 ☐ Attribute/Skill filters dropdown menu: place "search" bar and "close" button on the same row.
 ☐ Rename mod to "SoulSearch".

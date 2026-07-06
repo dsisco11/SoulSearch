@@ -640,12 +640,12 @@ function DwarfSearchWindow:init()
         },
         widgets.Label{
             frame={l=107, t=2, r=1, h=1},
-            text='Attributes',
+            text='Stats',
             text_pen=COLOR_WHITE,
         },
         widgets.Label{
             frame={l=107, t=3, r=1, h=1},
-            text=get_title_underline('Attributes'),
+            text=get_title_underline('Stats'),
             text_pen=TITLE_UNDERLINE_PEN,
         },
         widgets.Label{
