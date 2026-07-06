@@ -26,9 +26,7 @@ local FILTER_ACTION_WIDTH = 3
 local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
 local ADD_FILTER_LABEL = 'Add attribute/trait'
-local CLOSE_FILTER_MENU_LABEL = 'Close attribute menu'
 local ADD_SKILL_LABEL = 'Add skill'
-local CLOSE_SKILL_MENU_LABEL = 'Close skill menu'
 local SKILL_CATEGORY_ORDER = {
     'Labor',
     'Combat',
@@ -460,9 +458,14 @@ function DwarfSearchWindow:init()
             draggable=false,
             visible=function() return self.add_filter_open end,
             subviews={
+                widgets.HotkeyLabel{
+                    frame={r=0, t=0, w=3, h=1},
+                    label='[X]',
+                    on_activate=function() self:close_add_filter_dropdown() end,
+                },
                 widgets.EditField{
                     view_id='attribute_search_field',
-                    frame={l=0, t=0, r=0, h=1},
+                    frame={l=0, t=1, r=0, h=1},
                     label_text='Search: ',
                     key='CUSTOM_T',
                     modal=true,
@@ -473,7 +476,7 @@ function DwarfSearchWindow:init()
                 },
                 widgets.List{
                     view_id='available_filter_list',
-                    frame={l=0, t=2, r=0, b=0},
+                    frame={l=0, t=3, r=0, b=0},
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
                             self:add_filter(choice.descriptor.id)
@@ -489,9 +492,14 @@ function DwarfSearchWindow:init()
             draggable=false,
             visible=function() return self.add_skill_open end,
             subviews={
+                widgets.HotkeyLabel{
+                    frame={r=0, t=0, w=3, h=1},
+                    label='[X]',
+                    on_activate=function() self:close_add_filter_dropdown() end,
+                },
                 widgets.EditField{
                     view_id='skill_search_field',
-                    frame={l=0, t=0, r=0, h=1},
+                    frame={l=0, t=1, r=0, h=1},
                     label_text='Search: ',
                     key='CUSTOM_K',
                     modal=true,
@@ -502,7 +510,7 @@ function DwarfSearchWindow:init()
                 },
                 widgets.List{
                     view_id='available_skill_list',
-                    frame={l=0, t=2, r=0, b=0},
+                    frame={l=0, t=3, r=0, b=0},
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
                             self:add_filter(choice.descriptor.id)
@@ -878,13 +886,11 @@ function DwarfSearchWindow:close_add_filter_dropdown()
 end
 
 function DwarfSearchWindow:update_add_filter_button()
-    local label = self.add_filter_open and CLOSE_FILTER_MENU_LABEL or ADD_FILTER_LABEL
-    self.subviews.add_filter_button:setLabel(label)
+    self.subviews.add_filter_button:setLabel(ADD_FILTER_LABEL)
 end
 
 function DwarfSearchWindow:update_add_skill_button()
-    local label = self.add_skill_open and CLOSE_SKILL_MENU_LABEL or ADD_SKILL_LABEL
-    self.subviews.add_skill_button:setLabel(label)
+    self.subviews.add_skill_button:setLabel(ADD_SKILL_LABEL)
 end
 
 function DwarfSearchWindow:move_selected_filter_priority(delta)
