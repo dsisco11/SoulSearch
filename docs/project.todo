@@ -31,3 +31,4 @@
 ☐ Make the "Skills" menu list easier to navigate by having the various skill categories either collapsed or turned into tab menus.
 ☐ Give dropdown menus a border so they are more obviously dropdown menus.
 ✔ Search result list items dont need to show the units full title, just their name and alias. the profession can be omitted since it is already shown in the 2nd column of the results list. @done(26-07-06 00:00)
+✔ The Results panel should be wider since the Attributes panel panel has dead space on the right side. @done(26-07-06 00:00)

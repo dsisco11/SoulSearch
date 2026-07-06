@@ -11,7 +11,7 @@ local view
 local saved_filter_modes = {}
 local saved_filter_order = {}
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
-local SECTION_DIVIDER_XS = {39, 93}
+local SECTION_DIVIDER_XS = {39, 105}
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
 local MATCHED_FILTER_LABEL_WIDTH = 24
@@ -76,9 +76,9 @@ local function make_position(x, y, z)
 end
 
 local function format_result_choice(result)
-    return ('%-38s %s'):format(
-        truncate(result.name, 38),
-        truncate(result.profession or '', 24))
+    return ('%-45s %s'):format(
+        truncate(result.name, 45),
+        truncate(result.profession or '', 18))
 end
 
 local function get_category_pen(descriptor)
@@ -408,7 +408,7 @@ function DwarfSearchWindow:init()
     self:addviews{
         widgets.EditField{
             view_id='search_field',
-            frame={l=41, t=4, w=52, h=1},
+            frame={l=41, t=4, w=64, h=1},
             label_text='Search: ',
             key='CUSTOM_F',
             modal=true,
@@ -486,19 +486,19 @@ function DwarfSearchWindow:init()
         },
         widgets.Label{
             view_id='result_header',
-            frame={l=41, t=2, w=52, h=1},
+            frame={l=41, t=2, w=64, h=1},
             text='Results',
             text_pen=COLOR_WHITE,
         },
         widgets.Label{
             view_id='result_header_underline',
-            frame={l=41, t=3, w=52, h=1},
+            frame={l=41, t=3, w=64, h=1},
             text=get_title_underline('Results'),
             text_pen=TITLE_UNDERLINE_PEN,
         },
         widgets.List{
             view_id='result_list',
-            frame={l=41, t=6, w=52, b=3},
+            frame={l=41, t=6, w=64, b=3},
             on_select=function(index, choice)
                 self:update_attributes(choice and choice.result or nil)
             end,
@@ -507,18 +507,18 @@ function DwarfSearchWindow:init()
             end,
         },
         widgets.Label{
-            frame={l=95, t=1, r=1, h=1},
+            frame={l=107, t=1, r=1, h=1},
             text='Attributes',
             text_pen=COLOR_WHITE,
         },
         widgets.Label{
-            frame={l=95, t=2, r=1, h=1},
+            frame={l=107, t=2, r=1, h=1},
             text=get_title_underline('Attributes'),
             text_pen=TITLE_UNDERLINE_PEN,
         },
         widgets.Label{
             view_id='attributes',
-            frame={l=95, t=3, r=1, b=3},
+            frame={l=107, t=3, r=1, b=3},
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
