@@ -34,8 +34,8 @@ local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
 local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
-local ADD_FILTER_LABEL = 'Add attribute/trait'
-local ADD_SKILL_LABEL = 'Add skill'
+local ADD_FILTER_LABEL = 'Add attribute filter'
+local ADD_SKILL_LABEL = 'Add skill filter'
 local SKILL_CATEGORY_ORDER = {
     'Labor',
     'Combat',
@@ -531,7 +531,7 @@ function DwarfSearchWindow:init()
             view_id='add_skill_button',
             frame={l=1, t=5, w=25, h=1},
             key='CUSTOM_S',
-            label='Add skill',
+            label='Add skill filter',
             on_activate=function() self:toggle_add_skill_dropdown() end,
         },
         widgets.HotkeyLabel{
@@ -702,8 +702,8 @@ end
 
 function DwarfSearchWindow:get_tooltip_text()
     local control_tooltips = {
-        {id='add_filter_button', text='Add attribute'},
-        {id='add_skill_button', text='Add skill'},
+        {id='add_filter_button', text='Add attribute filter'},
+        {id='add_skill_button', text='Add skill filter'},
         {id='clear_filters_button', text='Clear filters'},
         {id='close_filter_picker_button', text='Close'},
         {id='close_skill_picker_button', text='Close'},
