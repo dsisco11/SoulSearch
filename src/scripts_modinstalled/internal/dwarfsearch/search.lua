@@ -224,6 +224,45 @@ local function title_case_enum_name(name)
     return table.concat(words, ' ')
 end
 
+local function title_case_display_name(name)
+    if type(name) ~= 'string' or name == '' then
+        return nil
+    end
+
+    return name:gsub('^%l', string.upper)
+end
+
+local function get_enum_attr(enum, key, value)
+    local attrs = enum.attrs
+    if not attrs then
+        return nil
+    end
+
+    return attrs[value] or attrs[key]
+end
+
+local function get_attr_string(attr, field)
+    local ok, value = pcall(function() return attr[field] end)
+    if ok and type(value) == 'string' and value ~= '' then
+        return value
+    end
+    return nil
+end
+
+local function get_skill_label(skill)
+    local attrs = get_enum_attr(df.job_skill, skill.name, skill.value)
+    if attrs then
+        local caption = get_attr_string(attrs, 'caption') or
+            get_attr_string(attrs, 'caption_noun')
+        local label = title_case_display_name(caption)
+        if label then
+            return label
+        end
+    end
+
+    return title_case_enum_name(skill.name)
+end
+
 local function make_descriptor(kind, key, label)
     return {
         id=kind .. ':' .. key,
@@ -286,7 +325,7 @@ local function get_skill_descriptors()
         local descriptor = make_descriptor(
             'skill',
             skill.name,
-            title_case_enum_name(skill.name))
+            get_skill_label(skill))
         descriptor.category = get_skill_category(skill.name)
         table.insert(descriptors, descriptor)
     end
