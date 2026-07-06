@@ -42,3 +42,5 @@
 ✔ Add column headers for stats attributes list. @done(26-07-06 03:52)
 ✔ Add ability to click stats attribute headers to change sorting order. @done(26-07-06 04:00)
 ✔ Rename mod to "SoulSearch". @done(26-07-06 04:09)
+☐ Add code comments.
+☐ Cleanup code architecture.
