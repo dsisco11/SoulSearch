@@ -452,37 +452,52 @@ function DwarfSearchWindow:init()
             frame={l=1, t=8, w=38, b=0},
             visible=function() return not self.add_filter_open and not self.add_skill_open end,
         },
-        widgets.List{
-            view_id='available_filter_list',
-            frame={l=1, t=8, w=38, b=0},
+        widgets.Window{
+            view_id='available_filter_window',
+            frame={l=1, t=7, w=38, b=0},
+            frame_title='Select attribute/trait',
+            draggable=false,
             visible=function() return self.add_filter_open end,
-            on_submit=function(index, choice)
-                if choice and choice.descriptor then
-                    self:add_filter(choice.descriptor.id)
-                end
-            end,
+            subviews={
+                widgets.List{
+                    view_id='available_filter_list',
+                    frame={l=0, t=0, r=0, b=0},
+                    on_submit=function(index, choice)
+                        if choice and choice.descriptor then
+                            self:add_filter(choice.descriptor.id)
+                        end
+                    end,
+                },
+            },
         },
-        widgets.EditField{
-            view_id='skill_search_field',
-            frame={l=1, t=8, w=38, h=1},
-            label_text='Skill search: ',
-            key='CUSTOM_K',
-            modal=true,
+        widgets.Window{
+            view_id='available_skill_window',
+            frame={l=1, t=7, w=38, b=0},
+            frame_title='Select skill',
+            draggable=false,
             visible=function() return self.add_skill_open end,
-            on_change=function(text)
-                self.skill_query = text
-                self:update_available_skill_choices()
-            end,
-        },
-        widgets.List{
-            view_id='available_skill_list',
-            frame={l=1, t=10, w=38, b=0},
-            visible=function() return self.add_skill_open end,
-            on_submit=function(index, choice)
-                if choice and choice.descriptor then
-                    self:add_filter(choice.descriptor.id)
-                end
-            end,
+            subviews={
+                widgets.EditField{
+                    view_id='skill_search_field',
+                    frame={l=0, t=0, r=0, h=1},
+                    label_text='Skill search: ',
+                    key='CUSTOM_K',
+                    modal=true,
+                    on_change=function(text)
+                        self.skill_query = text
+                        self:update_available_skill_choices()
+                    end,
+                },
+                widgets.List{
+                    view_id='available_skill_list',
+                    frame={l=0, t=2, r=0, b=0},
+                    on_submit=function(index, choice)
+                        if choice and choice.descriptor then
+                            self:add_filter(choice.descriptor.id)
+                        end
+                    end,
+                },
+            },
         },
         widgets.Label{
             view_id='result_header',
