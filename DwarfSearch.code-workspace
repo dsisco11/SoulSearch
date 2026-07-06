@@ -4,7 +4,8 @@
 			"path": "."
 		},
 		{
-			"path": "G:/Steam/steamapps/common/Dwarf Fortress/hack"
+			"path": "G:/Steam/steamapps/common/Dwarf Fortress/hack",
+			"name": "DFHack"
 		}
 	],
 	"settings": {}
