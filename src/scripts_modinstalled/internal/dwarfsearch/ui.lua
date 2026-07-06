@@ -409,8 +409,8 @@ function DwarfSearchWindow:init()
     self:addviews{
         widgets.EditField{
             view_id='search_field',
-            frame={l=1, t=0, r=18, h=1},
-            label_text='Name search: ',
+            frame={l=41, t=4, w=52, h=1},
+            label_text='Search: ',
             key='CUSTOM_F',
             modal=true,
             on_change=function(text)
@@ -499,7 +499,7 @@ function DwarfSearchWindow:init()
         },
         widgets.List{
             view_id='result_list',
-            frame={l=41, t=4, w=52, b=3},
+            frame={l=41, t=6, w=52, b=3},
             on_select=function(index, choice)
                 self:update_attributes(choice and choice.result or nil)
             end,
