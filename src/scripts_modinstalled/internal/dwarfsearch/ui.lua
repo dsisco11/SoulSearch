@@ -546,10 +546,9 @@ function DwarfSearchWindow:init()
                 },
                 widgets.EditField{
                     view_id='attribute_search_field',
-                    frame={l=0, t=1, r=0, h=1},
+                    frame={l=0, t=0, r=4, h=1},
                     label_text='Search: ',
                     key='CUSTOM_T',
-                    modal=true,
                     on_change=function(text)
                         self.attribute_query = text
                         self:update_available_filter_choices()
@@ -557,7 +556,7 @@ function DwarfSearchWindow:init()
                 },
                 widgets.List{
                     view_id='available_filter_list',
-                    frame={l=0, t=3, r=0, b=0},
+                    frame={l=0, t=2, r=0, b=0},
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
                             self:add_filter(choice.descriptor.id)
@@ -581,10 +580,9 @@ function DwarfSearchWindow:init()
                 },
                 widgets.EditField{
                     view_id='skill_search_field',
-                    frame={l=0, t=1, r=0, h=1},
+                    frame={l=0, t=0, r=4, h=1},
                     label_text='Search: ',
                     key='CUSTOM_K',
-                    modal=true,
                     on_change=function(text)
                         self.skill_query = text
                         self:update_available_skill_choices()
@@ -592,7 +590,7 @@ function DwarfSearchWindow:init()
                 },
                 widgets.List{
                     view_id='available_skill_list',
-                    frame={l=0, t=3, r=0, b=0},
+                    frame={l=0, t=2, r=0, b=0},
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
                             self:add_filter(choice.descriptor.id)
