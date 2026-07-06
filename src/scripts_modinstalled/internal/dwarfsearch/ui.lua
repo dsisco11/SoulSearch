@@ -332,9 +332,7 @@ end
 
 local function add_attribute_section(tokens, pen, kind, values, unit)
     if not values or not unit then
-        table.insert(tokens, {text='  none notable', pen=COLOR_DARKGREY})
-        table.insert(tokens, NEWLINE)
-        return
+        return false
     end
 
     local keys = {}
@@ -346,9 +344,7 @@ local function add_attribute_section(tokens, pen, kind, values, unit)
     table.sort(keys)
 
     if #keys == 0 then
-        table.insert(tokens, {text='  none notable', pen=COLOR_DARKGREY})
-        table.insert(tokens, NEWLINE)
-        return
+        return false
     end
 
     for _, key in ipairs(keys) do
@@ -361,6 +357,7 @@ local function add_attribute_section(tokens, pen, kind, values, unit)
         })
         table.insert(tokens, NEWLINE)
     end
+    return true
 end
 
 local function get_filter_criterion_pen(criterion, default_pen)
@@ -431,11 +428,24 @@ local function stats_for_result(result)
 
     local tokens = {}
 
-    add_attribute_section(tokens, COLOR_LIGHTGREEN, 'physical_attribute', result.row.physical_attributes, result.unit)
-    table.insert(tokens, NEWLINE)
-    add_attribute_section(tokens, COLOR_LIGHTBLUE, 'mental_attribute', result.row.mental_attributes, result.unit)
-    table.insert(tokens, NEWLINE)
-    add_attribute_section(tokens, COLOR_LIGHTMAGENTA, 'trait', result.row.traits, result.unit)
+    local has_previous_section = false
+    local function append_section(pen, kind, values)
+        local section_tokens = {}
+        if not add_attribute_section(section_tokens, pen, kind, values, result.unit) then
+            return
+        end
+        if has_previous_section then
+            table.insert(tokens, NEWLINE)
+        end
+        for _, token in ipairs(section_tokens) do
+            table.insert(tokens, token)
+        end
+        has_previous_section = true
+    end
+
+    append_section(COLOR_LIGHTGREEN, 'physical_attribute', result.row.physical_attributes)
+    append_section(COLOR_LIGHTBLUE, 'mental_attribute', result.row.mental_attributes)
+    append_section(COLOR_LIGHTMAGENTA, 'trait', result.row.traits)
 
     return tokens
 end
