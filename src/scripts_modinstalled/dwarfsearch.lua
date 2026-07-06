@@ -13,9 +13,19 @@ Usage
     dwarfsearch
 ]====]
 
-local ui = reqscript('internal/dwarfsearch/ui')
+local ui
+
+local function refresh_scripts()
+    reqscript('internal/dwarfsearch/attributes')
+    reqscript('internal/dwarfsearch/residents')
+    reqscript('internal/dwarfsearch/search')
+    ui = reqscript('internal/dwarfsearch/ui')
+end
+
+refresh_scripts()
 
 function main(...)
+    refresh_scripts()
     ui.open(...)
 end
 
