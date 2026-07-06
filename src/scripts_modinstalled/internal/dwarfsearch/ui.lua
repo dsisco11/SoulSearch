@@ -417,6 +417,8 @@ local function stats_header_for_result(result)
 
     table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
+    table.insert(tokens, {text=result.profession or '', pen=COLOR_DARKGREY})
+    table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
     add_selected_filter_section(tokens, result.filter_criteria, result.unit)
     return tokens
