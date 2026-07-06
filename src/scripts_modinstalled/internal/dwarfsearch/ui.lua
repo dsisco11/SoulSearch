@@ -23,6 +23,15 @@ local FILTER_ACTION_REMOVE = 'remove'
 local FILTER_ACTION_UP = 'up'
 local FILTER_ACTION_DOWN = 'down'
 local FILTER_ACTION_WIDTH = 3
+local FILTER_ACTION_TOOLTIPS = {
+    [FILTER_ACTION_PLUS] = 'Search for high values for this filter.',
+    [FILTER_ACTION_MINUS] = 'Search for low values for this filter.',
+    [FILTER_ACTION_UP] = 'Move this filter higher in the priority order.',
+    [FILTER_ACTION_DOWN] = 'Move this filter lower in the priority order.',
+    [FILTER_ACTION_REMOVE] = 'Remove this filter.',
+}
+local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
+local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
 local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
 local ADD_FILTER_LABEL = 'Add attribute/trait'
@@ -214,6 +223,82 @@ end
 
 local function is_backspace_key(keys)
     return keys._BACKSPACE or keys.BACKSPACE or keys.KEYBOARD_BACKSPACE
+end
+
+local function is_visible(view)
+    while view do
+        if type(view.visible) == 'function' then
+            if not view.visible() then
+                return false
+            end
+        elseif not view.visible then
+            return false
+        end
+        view = view.parent_view
+    end
+    return true
+end
+
+local function is_mouse_over(view)
+    local rect = view and view.frame_body
+    local x, y = dfhack.screen.getMousePos()
+    return rect and x and is_visible(view) and rect:inClipGlobalXY(x, y)
+end
+
+local function get_tooltip_box(text, max_width)
+    local text_width = math.min(#text, math.min(52, max_width - 2))
+    local tooltip_text = truncate(text, text_width)
+    return tooltip_text, #tooltip_text + 2
+end
+
+DwarfSearchTooltip = defclass(DwarfSearchTooltip, widgets.Window)
+DwarfSearchTooltip.ATTRS{
+    frame={l=0, t=0, w=1, h=3},
+    frame_style=gui.FRAME_THIN,
+    frame_background=TOOLTIP_BACKGROUND_PEN,
+    frame_inset=0,
+    draggable=false,
+    no_force_pause_badge=true,
+    owner=DEFAULT_NIL,
+}
+
+function DwarfSearchTooltip:init()
+    self.label = widgets.Label{
+        frame={l=0, t=0, w=1, h=1},
+        auto_height=false,
+        text_pen=TOOLTIP_TEXT_PEN,
+        text='',
+    }
+    self:addviews{self.label}
+end
+
+function DwarfSearchTooltip:render(dc)
+    local owner = self.owner
+    local mouse_x, mouse_y = dfhack.screen.getMousePos()
+    if not owner or not mouse_x then
+        return
+    end
+
+    local text = owner:get_tooltip_text()
+    if text == '' then
+        return
+    end
+
+    local screen_width, screen_height = dfhack.screen.getWindowSize()
+    local tooltip_text, tooltip_width = get_tooltip_box(text, screen_width)
+    local x = math.min(mouse_x + 2, screen_width - tooltip_width)
+    local y = math.min(mouse_y + 1, screen_height - 3)
+
+    self.frame = {
+        l=math.max(0, x),
+        t=math.max(0, y),
+        w=tooltip_width,
+        h=3,
+    }
+    self.label.frame.w = math.max(1, tooltip_width - 2)
+    self.label:setText(tooltip_text)
+    self:updateLayout()
+    DwarfSearchTooltip.super.render(self, dc)
 end
 
 local function copy_filter_modes(filter_modes)
@@ -450,6 +535,7 @@ function DwarfSearchWindow:init()
             on_activate=function() self:toggle_add_skill_dropdown() end,
         },
         widgets.HotkeyLabel{
+            view_id='clear_filters_button',
             frame={l=1, t=6, w=20, h=1},
             key='CUSTOM_C',
             label='Clear filters',
@@ -468,6 +554,7 @@ function DwarfSearchWindow:init()
             visible=function() return self.add_filter_open end,
             subviews={
                 widgets.HotkeyLabel{
+                    view_id='close_filter_picker_button',
                     frame={r=0, t=0, w=3, h=1},
                     label='[X]',
                     on_activate=function() self:close_add_filter_dropdown() end,
@@ -502,6 +589,7 @@ function DwarfSearchWindow:init()
             visible=function() return self.add_skill_open end,
             subviews={
                 widgets.HotkeyLabel{
+                    view_id='close_skill_picker_button',
                     frame={r=0, t=0, w=3, h=1},
                     label='[X]',
                     on_activate=function() self:close_add_filter_dropdown() end,
@@ -573,6 +661,7 @@ function DwarfSearchWindow:init()
             text='',
         },
         widgets.HotkeyLabel{
+            view_id='close_button',
             frame={r=1, t=0, w=16, h=1},
             key='LEAVESCREEN',
             label='Close',
@@ -594,6 +683,40 @@ end
 function DwarfSearchWindow:onRenderBody(dc)
     DwarfSearchWindow.super.onRenderBody(self, dc)
     draw_section_dividers(dc)
+end
+
+function DwarfSearchWindow:get_filter_action_tooltip()
+    if self.add_filter_open or self.add_skill_open then
+        return nil
+    end
+
+    local filter_list = self.subviews.filter_list
+    if not filter_list or not filter_list:getIdxUnderMouse() then
+        return nil
+    end
+
+    local x = filter_list:getMousePos()
+    local action = get_filter_action_at_x(x)
+    return action and FILTER_ACTION_TOOLTIPS[action] or nil
+end
+
+function DwarfSearchWindow:get_tooltip_text()
+    local control_tooltips = {
+        {id='add_filter_button', text='Open the attribute and trait filter picker.'},
+        {id='add_skill_button', text='Open the skill filter picker.'},
+        {id='clear_filters_button', text='Remove all active filters.'},
+        {id='close_filter_picker_button', text='Close the attribute and trait filter picker.'},
+        {id='close_skill_picker_button', text='Close the skill filter picker.'},
+        {id='close_button', text='Close DwarfSearch.'},
+    }
+
+    for _, tooltip in ipairs(control_tooltips) do
+        if is_mouse_over(self.subviews[tooltip.id]) then
+            return tooltip.text
+        end
+    end
+
+    return self:get_filter_action_tooltip() or ''
 end
 
 function DwarfSearchWindow:get_selected_filters()
@@ -1039,7 +1162,11 @@ DwarfSearchScreen.ATTRS {
 }
 
 function DwarfSearchScreen:init()
-    self:addviews{DwarfSearchWindow{}}
+    self.window = DwarfSearchWindow{}
+    self:addviews{
+        self.window,
+        DwarfSearchTooltip{owner=self.window},
+    }
 end
 
 function DwarfSearchScreen:onDismiss()
