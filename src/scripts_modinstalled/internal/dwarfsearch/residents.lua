@@ -92,10 +92,35 @@ local function get_skill_values(unit)
     return values
 end
 
-local function get_readable_name(unit)
-    local name = dfhack.units.getReadableName(unit)
-    if name and name ~= '' then
-        return name
+local function nonempty_string(value)
+    return type(value) == 'string' and value ~= ''
+end
+
+local function translate_visible_name(name, in_english)
+    if not name then
+        return nil
+    end
+
+    local ok, translated_name = pcall(dfhack.translation.translateName, name, in_english)
+    if ok and nonempty_string(translated_name) then
+        return translated_name
+    end
+    return nil
+end
+
+local function get_display_name(unit)
+    local visible_name = dfhack.units.getVisibleName(unit)
+    local native_name = translate_visible_name(visible_name, false)
+    local english_name = translate_visible_name(visible_name, true)
+
+    if native_name and english_name and native_name ~= english_name then
+        return ('%s "%s"'):format(native_name, english_name)
+    end
+    if native_name then
+        return native_name
+    end
+    if english_name then
+        return english_name
     end
     return ('Unit #%d'):format(unit.id)
 end
@@ -104,7 +129,7 @@ local function build_resident_row(unit)
     return {
         unit=unit,
         unit_id=unit.id,
-        name=get_readable_name(unit),
+        name=get_display_name(unit),
         profession=dfhack.units.getProfessionName(unit),
         traits=get_trait_values(unit),
         mental_attributes=get_mental_attribute_values(unit),
