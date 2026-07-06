@@ -40,5 +40,5 @@
 ✔ Attribute/Skill filters dropdown menu: place "search" bar and "close" button on the same row. @done(26-07-06 03:37)
 ✔ Stats Panel: Add a profession label (grey text) below the current unit name label. @done(26-07-06 03:41)
 ✔ Add column headers for stats attributes list. @done(26-07-06 03:52)
-☐ Add ability to click stats attribute headers to change sorting order.
+✔ Add ability to click stats attribute headers to change sorting order. @done(26-07-06 04:00)
 ☐ Rename mod to "SoulSearch".

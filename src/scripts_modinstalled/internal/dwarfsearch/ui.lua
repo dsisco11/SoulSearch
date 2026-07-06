@@ -18,6 +18,9 @@ local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
 local STATS_LABEL_WIDTH = 24
 local STATS_VALUE_COLUMN_X = 27
+local STATS_VALUE_HEADER_WIDTH = 7
+local STATS_SORT_LABEL = 'label'
+local STATS_SORT_VALUE = 'value'
 local TITLE_UNDERLINE_PEN = COLOR_GREY
 local FILTER_ACTION_PLUS = 'plus'
 local FILTER_ACTION_MINUS = 'minus'
@@ -33,8 +36,8 @@ local FILTER_ACTION_TOOLTIPS = {
     [FILTER_ACTION_REMOVE] = 'Remove',
 }
 local STATS_HEADER_TOOLTIPS = {
-    label='Notable attribute or personality trait.',
-    value='Difference from the race or trait baseline.',
+    [STATS_SORT_LABEL]='Sort by stat name.',
+    [STATS_SORT_VALUE]='Sort by baseline difference.',
 }
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
@@ -336,7 +339,7 @@ local function is_notable_value(kind, key, value, unit)
     return evaluation and evaluation.tier_distance ~= 0
 end
 
-local function add_attribute_section(tokens, pen, kind, values, unit)
+local function collect_attribute_records(records, pen, kind, values, unit)
     if not values or not unit then
         return false
     end
@@ -356,20 +359,53 @@ local function add_attribute_section(tokens, pen, kind, values, unit)
     for _, key in ipairs(keys) do
         local label = key:gsub('_', ' '):lower():gsub('^%l', string.upper)
         local evaluation = attributes.evaluate(kind, key, values[key], unit)
-        table.insert(tokens, {text=('  %-' .. STATS_LABEL_WIDTH .. 's '):format(label), pen=pen})
-        table.insert(tokens, {
-            text=format_deviation(evaluation.deviation),
-            pen=get_deviation_pen(evaluation.deviation, evaluation.tier_distance),
+        table.insert(records, {
+            label=label,
+            label_key=label:lower(),
+            deviation=evaluation.deviation,
+            tier_distance=evaluation.tier_distance,
+            pen=pen,
         })
-        table.insert(tokens, NEWLINE)
     end
     return true
 end
 
-local function add_stats_column_header(tokens)
+local function add_attribute_record(tokens, record)
+    table.insert(tokens, {text=('  %-' .. STATS_LABEL_WIDTH .. 's '):format(record.label), pen=record.pen})
+    table.insert(tokens, {
+        text=format_deviation(record.deviation),
+        pen=get_deviation_pen(record.deviation, record.tier_distance),
+    })
+    table.insert(tokens, NEWLINE)
+end
+
+local function sort_attribute_records(records, sort_key, sort_reverse)
+    table.sort(records, function(left, right)
+        local left_value = sort_key == STATS_SORT_VALUE and left.deviation or left.label_key
+        local right_value = sort_key == STATS_SORT_VALUE and right.deviation or right.label_key
+        if left_value == right_value then
+            return left.label_key < right.label_key
+        end
+        if sort_reverse then
+            return left_value > right_value
+        end
+        return left_value < right_value
+    end)
+end
+
+local function get_sort_marker(sort_key, active_key, sort_reverse)
+    if sort_key ~= active_key then
+        return ''
+    end
+    return sort_reverse and ' v' or ' ^'
+end
+
+local function add_stats_column_header(tokens, sort_key, sort_reverse)
+    local label_header = 'Stat' .. get_sort_marker(sort_key, STATS_SORT_LABEL, sort_reverse)
+    local value_header = 'Delta' .. get_sort_marker(sort_key, STATS_SORT_VALUE, sort_reverse)
     table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=('%-' .. STATS_LABEL_WIDTH .. 's '):format('Stat'), pen=COLOR_GREY})
-    table.insert(tokens, {text='Delta', pen=COLOR_GREY})
+    table.insert(tokens, {text=('%-' .. STATS_LABEL_WIDTH .. 's '):format(label_header), pen=COLOR_GREY})
+    table.insert(tokens, {text=value_header, pen=COLOR_GREY})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
     table.insert(tokens, {text=('-'):rep(STATS_LABEL_WIDTH), pen=COLOR_DARKGREY})
@@ -439,25 +475,37 @@ local function stats_header_for_result(result)
     return tokens
 end
 
-local function stats_for_result(result)
+local function stats_for_result(result, sort_key, sort_reverse)
     if not result or not result.row then
         return ''
     end
 
     local tokens = {}
-    add_stats_column_header(tokens)
+    add_stats_column_header(tokens, sort_key, sort_reverse)
+
+    if sort_key then
+        local records = {}
+        collect_attribute_records(records, COLOR_LIGHTGREEN, 'physical_attribute', result.row.physical_attributes, result.unit)
+        collect_attribute_records(records, COLOR_LIGHTBLUE, 'mental_attribute', result.row.mental_attributes, result.unit)
+        collect_attribute_records(records, COLOR_LIGHTMAGENTA, 'trait', result.row.traits, result.unit)
+        sort_attribute_records(records, sort_key, sort_reverse)
+        for _, record in ipairs(records) do
+            add_attribute_record(tokens, record)
+        end
+        return tokens
+    end
 
     local has_previous_section = false
     local function append_section(pen, kind, values)
-        local section_tokens = {}
-        if not add_attribute_section(section_tokens, pen, kind, values, result.unit) then
+        local records = {}
+        if not collect_attribute_records(records, pen, kind, values, result.unit) then
             return
         end
         if has_previous_section then
             table.insert(tokens, NEWLINE)
         end
-        for _, token in ipairs(section_tokens) do
-            table.insert(tokens, token)
+        for _, record in ipairs(records) do
+            add_attribute_record(tokens, record)
         end
         has_previous_section = true
     end
@@ -501,6 +549,9 @@ function DwarfSearchWindow:init()
     self.query = ''
     self.attribute_query = ''
     self.skill_query = ''
+    self.stats_sort_key = nil
+    self.stats_sort_reverse = false
+    self.stats_sort_phase = 0
     self.add_filter_open = false
     self.add_skill_open = false
     local filter_descriptor_groups = search.get_filter_descriptors()
@@ -714,7 +765,7 @@ function DwarfSearchWindow:get_filter_action_tooltip()
     return action and FILTER_ACTION_TOOLTIPS[action] or nil
 end
 
-function DwarfSearchWindow:get_stats_header_tooltip()
+function DwarfSearchWindow:get_stats_header_column()
     local stats = self.subviews.stats
     if not stats then
         return nil
@@ -725,12 +776,17 @@ function DwarfSearchWindow:get_stats_header_tooltip()
         return nil
     end
     if x >= 2 and x < 2 + STATS_LABEL_WIDTH then
-        return STATS_HEADER_TOOLTIPS.label
+        return STATS_SORT_LABEL
     end
-    if x >= STATS_VALUE_COLUMN_X and x < STATS_VALUE_COLUMN_X + 5 then
-        return STATS_HEADER_TOOLTIPS.value
+    if x >= STATS_VALUE_COLUMN_X and x < STATS_VALUE_COLUMN_X + STATS_VALUE_HEADER_WIDTH then
+        return STATS_SORT_VALUE
     end
     return nil
+end
+
+function DwarfSearchWindow:get_stats_header_tooltip()
+    local column = self:get_stats_header_column()
+    return column and STATS_HEADER_TOOLTIPS[column] or nil
 end
 
 function DwarfSearchWindow:get_tooltip_text()
@@ -931,7 +987,7 @@ function DwarfSearchWindow:update_stats(result)
     local header = self.subviews.stats_header
     local body = self.subviews.stats
     header:setText(stats_header_for_result(result))
-    body:setText(stats_for_result(result))
+    body:setText(stats_for_result(result, self.stats_sort_key, self.stats_sort_reverse))
 
     local header_top = 4
     local available_height = math.max(1, (self.frame_body and self.frame_body.height or 45) - header_top)
@@ -944,6 +1000,33 @@ function DwarfSearchWindow:update_stats(result)
         header:updateLayout(self.frame_body)
         body:updateLayout(self.frame_body)
     end
+end
+
+function DwarfSearchWindow:handle_stats_header_click()
+    local column = self:get_stats_header_column()
+    if not column then
+        return false
+    end
+
+    if self.stats_sort_key == column then
+        self.stats_sort_phase = self.stats_sort_phase + 1
+    else
+        self.stats_sort_key = column
+        self.stats_sort_phase = 1
+    end
+
+    if self.stats_sort_phase >= 3 then
+        self.stats_sort_key = nil
+        self.stats_sort_reverse = false
+        self.stats_sort_phase = 0
+    elseif self.stats_sort_phase == 1 then
+        self.stats_sort_reverse = column == STATS_SORT_VALUE
+    else
+        self.stats_sort_reverse = column ~= STATS_SORT_VALUE
+    end
+
+    self:update_stats(self:get_selected_result())
+    return true
 end
 
 function DwarfSearchWindow:get_selected_result()
@@ -1154,6 +1237,9 @@ function DwarfSearchWindow:onInput(keys)
         return true
     end
     if keys._MOUSE_L and self:handle_filter_action_click() then
+        return true
+    end
+    if keys._MOUSE_L and self:handle_stats_header_click() then
         return true
     end
     if keys.CUSTOM_R then
