@@ -24,11 +24,11 @@ local FILTER_ACTION_UP = 'up'
 local FILTER_ACTION_DOWN = 'down'
 local FILTER_ACTION_WIDTH = 3
 local FILTER_ACTION_TOOLTIPS = {
-    [FILTER_ACTION_PLUS] = 'Search for high values for this filter.',
-    [FILTER_ACTION_MINUS] = 'Search for low values for this filter.',
-    [FILTER_ACTION_UP] = 'Move this filter higher in the priority order.',
-    [FILTER_ACTION_DOWN] = 'Move this filter lower in the priority order.',
-    [FILTER_ACTION_REMOVE] = 'Remove this filter.',
+    [FILTER_ACTION_PLUS] = 'Prefer high',
+    [FILTER_ACTION_MINUS] = 'Prefer low',
+    [FILTER_ACTION_UP] = 'Move up',
+    [FILTER_ACTION_DOWN] = 'Move down',
+    [FILTER_ACTION_REMOVE] = 'Remove',
 }
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
@@ -702,12 +702,12 @@ end
 
 function DwarfSearchWindow:get_tooltip_text()
     local control_tooltips = {
-        {id='add_filter_button', text='Open the attribute and trait filter picker.'},
-        {id='add_skill_button', text='Open the skill filter picker.'},
-        {id='clear_filters_button', text='Remove all active filters.'},
-        {id='close_filter_picker_button', text='Close the attribute and trait filter picker.'},
-        {id='close_skill_picker_button', text='Close the skill filter picker.'},
-        {id='close_button', text='Close DwarfSearch.'},
+        {id='add_filter_button', text='Add attribute'},
+        {id='add_skill_button', text='Add skill'},
+        {id='clear_filters_button', text='Clear filters'},
+        {id='close_filter_picker_button', text='Close'},
+        {id='close_skill_picker_button', text='Close'},
+        {id='close_button', text='Close'},
     }
 
     for _, tooltip in ipairs(control_tooltips) do
