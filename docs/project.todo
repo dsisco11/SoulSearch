@@ -33,3 +33,8 @@
 ✔ Search result list items dont need to show the units full title, just their name and alias. the profession can be omitted since it is already shown in the 2nd column of the results list. @done(26-07-06 00:00)
 ✔ The Results panel should be wider since the Attributes panel panel has dead space on the right side. @done(26-07-06 00:00)
 ✔ All 3 panels should be tall enough to fill up the window without empty space below them. @done(26-07-06 00:00)
+☐ Simplify tooltip text labels.
+☐ Amend "filter" to the end of the "Add attribute" & "Add skill" buttons.
+☐ Attributes Panel: Remove the "Body", "Mind", and "Soul" category labels, since the color coding is sufficient to indicate the category. The category labels are redundant and take up space.
+☐ Attribute/Skill filters dropdown menu: place "search" bar and "close" button on the same row.
+☐ Rename mod to "SoulSearch".
