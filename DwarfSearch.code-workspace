@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "G:/Steam/steamapps/common/Dwarf Fortress/hack"
 		}
 	],
 	"settings": {}
