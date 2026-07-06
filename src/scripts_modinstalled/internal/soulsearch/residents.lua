@@ -1,5 +1,21 @@
 --@ module=true
 
+---@class SoulSearchEnumEntry
+---@field name string
+---@field value integer
+
+---@class SoulSearchResidentRow
+---@field unit df.unit
+---@field unit_id integer
+---@field name string
+---@field profession string
+---@field traits table<string, number>
+---@field mental_attributes table<string, number>
+---@field physical_attributes table<string, number>
+---@field skills table<string, number>
+
+---@param enum table
+---@return SoulSearchEnumEntry[]
 local function enum_keys(enum)
     local keys = {}
     for index, name in ipairs(enum) do
@@ -13,6 +29,8 @@ end
 
 local skill_name_by_id
 
+---@param skill_id integer
+---@return string|nil
 local function get_skill_name_by_id(skill_id)
     if not skill_name_by_id then
         skill_name_by_id = {}
@@ -23,6 +41,8 @@ local function get_skill_name_by_id(skill_id)
     return skill_name_by_id[skill_id]
 end
 
+---@param unit df.unit
+---@return table<string, number>
 local function get_trait_values(unit)
     local values = {}
     local soul = unit.status and unit.status.current_soul
@@ -41,6 +61,8 @@ local function get_trait_values(unit)
     return values
 end
 
+---@param unit df.unit
+---@return table<string, number>
 local function get_mental_attribute_values(unit)
     local values = {}
     for _, attr in ipairs(enum_keys(df.mental_attribute_type)) do
@@ -52,6 +74,8 @@ local function get_mental_attribute_values(unit)
     return values
 end
 
+---@param unit df.unit
+---@return table<string, number>
 local function get_physical_attribute_values(unit)
     local values = {}
     for _, attr in ipairs(enum_keys(df.physical_attribute_type)) do
@@ -63,10 +87,14 @@ local function get_physical_attribute_values(unit)
     return values
 end
 
+---@param rating number|nil
+---@return number
 local function get_skill_xp_to_next_level(rating)
     return 500 + math.max(rating or 0, 0) * 100
 end
 
+---@param skill df.unit_skill
+---@return number
 local function get_skill_value(skill)
     local rating = skill.rating or 0
     local experience = math.max(skill.experience or 0, 0)
@@ -75,6 +103,8 @@ local function get_skill_value(skill)
     return rating + 1 + progress
 end
 
+---@param unit df.unit
+---@return table<string, number>
 local function get_skill_values(unit)
     local values = {}
     local soul = unit.status and unit.status.current_soul
@@ -92,10 +122,15 @@ local function get_skill_values(unit)
     return values
 end
 
+---@param value any
+---@return boolean
 local function nonempty_string(value)
     return type(value) == 'string' and value ~= ''
 end
 
+---@param name df.language_name|nil
+---@param in_english boolean
+---@return string|nil
 local function translate_visible_name(name, in_english)
     if not name then
         return nil
@@ -108,6 +143,8 @@ local function translate_visible_name(name, in_english)
     return nil
 end
 
+---@param unit df.unit
+---@return string
 local function get_display_name(unit)
     local visible_name = dfhack.units.getVisibleName(unit)
     local native_name = translate_visible_name(visible_name, false)
@@ -125,6 +162,8 @@ local function get_display_name(unit)
     return ('Unit #%d'):format(unit.id)
 end
 
+---@param unit df.unit
+---@return SoulSearchResidentRow
 local function build_resident_row(unit)
     return {
         unit=unit,
@@ -138,6 +177,8 @@ local function build_resident_row(unit)
     }
 end
 
+---Gets the reason resident data cannot currently be collected.
+---@return string|nil
 function get_unavailable_reason()
     if not dfhack.isMapLoaded() then
         return 'SoulSearch requires a loaded fortress map.'
@@ -148,6 +189,9 @@ function get_unavailable_reason()
     return nil
 end
 
+---Collects searchable rows for fortress citizens.
+---@return SoulSearchResidentRow[]|nil rows
+---@return string|nil error
 function collect_residents()
     local reason = get_unavailable_reason()
     if reason then

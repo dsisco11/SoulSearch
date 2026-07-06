@@ -1,5 +1,21 @@
 --@ module=true
 
+---@alias SoulSearchStatKind 'trait'|'skill'|'physical_attribute'|'mental_attribute'
+---@alias SoulSearchFilterDirection 'high'|'low'
+
+---@class SoulSearchAttributeMedians
+---@field physical_attribute table<string, number>
+---@field mental_attribute table<string, number>
+
+---@class SoulSearchEvaluation
+---@field kind SoulSearchStatKind
+---@field value number
+---@field baseline number
+---@field deviation number
+---@field tier_distance number
+---@field high_score_scale number
+---@field low_score_scale number
+
 local personality = reqscript('modtools/set-personality')
 
 local FILTER_LOW = 'low'
@@ -11,6 +27,8 @@ local SKILL_SCORE_SCALE = 21
 
 local median_cache = {}
 
+---@param text any
+---@return string[]
 local function split_colon(text)
     local parts = {}
     for part in tostring(text):gmatch('[^:]+') do
@@ -19,6 +37,9 @@ local function split_colon(text)
     return parts
 end
 
+---@param value number
+---@param baseline number
+---@return integer
 local function get_attribute_tier(value, baseline)
     local delta = value - baseline
     if delta >= 0 then
@@ -27,6 +48,9 @@ local function get_attribute_tier(value, baseline)
     return -math.floor(math.abs(delta) / ATTRIBUTE_TIER_WIDTH)
 end
 
+---@param medians SoulSearchAttributeMedians
+---@param kind 'physical_attribute'|'mental_attribute'
+---@param raw_value string
 local function set_attribute_median(medians, kind, raw_value)
     local parts = split_colon(raw_value)
     local key = parts[2]
@@ -36,6 +60,9 @@ local function set_attribute_median(medians, kind, raw_value)
     medians[kind][key] = tonumber(parts[6]) or medians[kind][key]
 end
 
+---Gets physical and mental attribute medians for a creature race.
+---@param race_id integer|nil
+---@return SoulSearchAttributeMedians
 function get_race_medians(race_id)
     local cache_key = race_id or false
     if median_cache[cache_key] then
@@ -70,6 +97,10 @@ function get_race_medians(race_id)
     return medians
 end
 
+---Gets the race/caste-aware neutral value for a personality trait.
+---@param unit df.unit|nil
+---@param key string
+---@return number
 function get_trait_baseline(unit, key)
     if not unit then
         return DEFAULT_TRAIT_BASELINE
@@ -82,6 +113,12 @@ function get_trait_baseline(unit, key)
     return DEFAULT_TRAIT_BASELINE
 end
 
+---Compares a stat value against the appropriate neutral baseline.
+---@param kind SoulSearchStatKind
+---@param key string
+---@param value number|nil
+---@param unit df.unit|nil
+---@return SoulSearchEvaluation|nil
 function evaluate(kind, key, value, unit)
     if type(value) ~= 'number' then
         return nil
@@ -130,6 +167,10 @@ function evaluate(kind, key, value, unit)
     }
 end
 
+---Checks whether an evaluated value satisfies a high/low filter direction.
+---@param evaluation SoulSearchEvaluation|nil
+---@param direction SoulSearchFilterDirection
+---@return boolean
 function matches_direction(evaluation, direction)
     if not evaluation then
         return false
@@ -146,6 +187,10 @@ function matches_direction(evaluation, direction)
     return evaluation.deviation > 0
 end
 
+---Scores how strongly an evaluated value satisfies a high/low direction.
+---@param evaluation SoulSearchEvaluation|nil
+---@param direction SoulSearchFilterDirection
+---@return number
 function score_direction(evaluation, direction)
     if not matches_direction(evaluation, direction) then
         return 0

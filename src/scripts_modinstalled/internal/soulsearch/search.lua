@@ -1,5 +1,57 @@
 --@ module=true
 
+---@class SoulSearchFilterDescriptor
+---@field id string
+---@field kind SoulSearchStatKind
+---@field key string
+---@field label string
+---@field category string|nil
+
+---@class SoulSearchSelectedFilter
+---@field id string
+---@field direction SoulSearchFilterDirection
+
+---@class SoulSearchSelectedDescriptor: SoulSearchFilterDescriptor
+---@field direction SoulSearchFilterDirection
+
+---@class SoulSearchFilterCriterion
+---@field id string
+---@field kind SoulSearchStatKind
+---@field key string
+---@field label string
+---@field direction SoulSearchFilterDirection
+---@field value number
+---@field baseline number
+---@field deviation number
+---@field tier_distance number
+---@field matched boolean
+
+---@class SoulSearchResult
+---@field row SoulSearchResidentRow
+---@field unit df.unit
+---@field unit_id integer
+---@field name string
+---@field profession string
+---@field filter_criteria SoulSearchFilterCriterion[]
+---@field matched_criteria SoulSearchFilterCriterion[]
+---@field matched_count integer
+---@field criteria_count integer
+---@field match_label string
+---@field score number
+---@field weighted_score number
+
+---@class SoulSearchFilterDescriptorGroups
+---@field skills SoulSearchFilterDescriptor[]
+---@field traits SoulSearchFilterDescriptor[]
+---@field mental_attributes SoulSearchFilterDescriptor[]
+---@field physical_attributes SoulSearchFilterDescriptor[]
+
+---@class SoulSearchApplyOptions
+---@field query string|nil
+---@field selected_descriptors SoulSearchSelectedDescriptor[]|nil
+---@field selected_filters SoulSearchSelectedFilter[]|nil
+---@field selected_filter_ids string[]|nil
+
 local attributes = reqscript('internal/soulsearch/attributes')
 
 local FILTER_HIGH = 'high'
@@ -204,6 +256,8 @@ local SKILL_CATEGORY_BY_KEY = {
     DRUID=SKILL_CATEGORY_OTHER,
 }
 
+---@param enum table
+---@return SoulSearchEnumEntry[]
 local function enum_keys(enum)
     local keys = {}
     for index, name in ipairs(enum) do
@@ -215,6 +269,8 @@ local function enum_keys(enum)
     return keys
 end
 
+---@param name string
+---@return string
 local function title_case_enum_name(name)
     local words = {}
     for word in name:gmatch('[^_]+') do
@@ -224,6 +280,8 @@ local function title_case_enum_name(name)
     return table.concat(words, ' ')
 end
 
+---@param name any
+---@return string|nil
 local function title_case_display_name(name)
     if type(name) ~= 'string' or name == '' then
         return nil
@@ -232,6 +290,10 @@ local function title_case_display_name(name)
     return name:gsub('^%l', string.upper)
 end
 
+---@param enum table
+---@param key string
+---@param value integer
+---@return table|nil
 local function get_enum_attr(enum, key, value)
     local attrs = enum.attrs
     if not attrs then
@@ -241,6 +303,9 @@ local function get_enum_attr(enum, key, value)
     return attrs[value] or attrs[key]
 end
 
+---@param attr table
+---@param field string
+---@return string|nil
 local function get_attr_string(attr, field)
     local ok, value = pcall(function() return attr[field] end)
     if ok and type(value) == 'string' and value ~= '' then
@@ -249,6 +314,8 @@ local function get_attr_string(attr, field)
     return nil
 end
 
+---@param skill SoulSearchEnumEntry
+---@return string
 local function get_skill_label(skill)
     local attrs = get_enum_attr(df.job_skill, skill.name, skill.value)
     if attrs then
@@ -263,6 +330,10 @@ local function get_skill_label(skill)
     return title_case_enum_name(skill.name)
 end
 
+---@param kind SoulSearchStatKind
+---@param key string
+---@param label string
+---@return SoulSearchFilterDescriptor
 local function make_descriptor(kind, key, label)
     return {
         id=kind .. ':' .. key,
@@ -272,10 +343,14 @@ local function make_descriptor(kind, key, label)
     }
 end
 
+---@param key string
+---@return string
 local function get_skill_category(key)
     return SKILL_CATEGORY_BY_KEY[key] or SKILL_CATEGORY_OTHER
 end
 
+---@param descriptors SoulSearchFilterDescriptor[]
+---@return SoulSearchFilterDescriptor[]
 local function sort_descriptors_by_label(descriptors)
     table.sort(descriptors, function(a, b)
         if a.label ~= b.label then
@@ -286,6 +361,7 @@ local function sort_descriptors_by_label(descriptors)
     return descriptors
 end
 
+---@return SoulSearchFilterDescriptor[]
 local function get_trait_descriptors()
     local descriptors = {}
     for _, trait in ipairs(enum_keys(df.personality_facet_type)) do
@@ -297,6 +373,7 @@ local function get_trait_descriptors()
     return sort_descriptors_by_label(descriptors)
 end
 
+---@return SoulSearchFilterDescriptor[]
 local function get_mental_attribute_descriptors()
     local descriptors = {}
     for _, attr in ipairs(enum_keys(df.mental_attribute_type)) do
@@ -308,6 +385,7 @@ local function get_mental_attribute_descriptors()
     return sort_descriptors_by_label(descriptors)
 end
 
+---@return SoulSearchFilterDescriptor[]
 local function get_physical_attribute_descriptors()
     local descriptors = {}
     for _, attr in ipairs(enum_keys(df.physical_attribute_type)) do
@@ -319,6 +397,7 @@ local function get_physical_attribute_descriptors()
     return sort_descriptors_by_label(descriptors)
 end
 
+---@return SoulSearchFilterDescriptor[]
 local function get_skill_descriptors()
     local descriptors = {}
     for _, skill in ipairs(enum_keys(df.job_skill)) do
@@ -332,6 +411,8 @@ local function get_skill_descriptors()
     return sort_descriptors_by_label(descriptors)
 end
 
+---@param descriptors SoulSearchFilterDescriptorGroups
+---@return SoulSearchFilterDescriptor[]
 local function flatten_descriptors(descriptors)
     local flattened = {}
     for _, descriptor in ipairs(descriptors.skills or {}) do
@@ -349,6 +430,8 @@ local function flatten_descriptors(descriptors)
     return flattened
 end
 
+---@param descriptor_id string
+---@return SoulSearchFilterDescriptor|nil
 local function get_descriptor_by_id(descriptor_id)
     for _, descriptor in ipairs(flatten_descriptors(get_filter_descriptors())) do
         if descriptor.id == descriptor_id then
@@ -358,6 +441,9 @@ local function get_descriptor_by_id(descriptor_id)
     return nil
 end
 
+---@param row SoulSearchResidentRow
+---@param descriptor SoulSearchFilterDescriptor
+---@return number|nil
 local function get_value(row, descriptor)
     if descriptor.kind == 'trait' then
         return row.traits and row.traits[descriptor.key]
@@ -374,6 +460,9 @@ local function get_value(row, descriptor)
     return nil
 end
 
+---@param haystack string
+---@param needle string
+---@return boolean
 local function contains_text(haystack, needle)
     if not needle or needle == '' then
         return true
@@ -381,6 +470,8 @@ local function contains_text(haystack, needle)
     return haystack:lower():find(needle:lower(), 1, true) ~= nil
 end
 
+---@param selected SoulSearchSelectedDescriptor[]|nil
+---@return SoulSearchSelectedDescriptor[]
 local function copy_selected_descriptors(selected)
     local descriptors = {}
     for _, descriptor in ipairs(selected or {}) do
@@ -389,6 +480,9 @@ local function copy_selected_descriptors(selected)
     return descriptors
 end
 
+---@param descriptor SoulSearchFilterDescriptor
+---@param direction SoulSearchFilterDirection|nil
+---@return SoulSearchSelectedDescriptor
 local function make_selected_descriptor(descriptor, direction)
     local selected = {}
     for key, value in pairs(descriptor) do
@@ -398,6 +492,8 @@ local function make_selected_descriptor(descriptor, direction)
     return selected
 end
 
+---@param selected_ids string[]|nil
+---@return SoulSearchSelectedDescriptor[]
 local function selected_ids_to_descriptors(selected_ids)
     local descriptors = {}
     for _, descriptor_id in ipairs(selected_ids or {}) do
@@ -409,6 +505,8 @@ local function selected_ids_to_descriptors(selected_ids)
     return descriptors
 end
 
+---@param selected_filters SoulSearchSelectedFilter[]|nil
+---@return SoulSearchSelectedDescriptor[]
 local function selected_filters_to_descriptors(selected_filters)
     local descriptors = {}
     for _, selected_filter in ipairs(selected_filters or {}) do
@@ -422,14 +520,26 @@ local function selected_filters_to_descriptors(selected_filters)
     return descriptors
 end
 
+---@param priority_index integer|nil
+---@return number
 local function get_priority_weight(priority_index)
     return 1 + FILTER_PRIORITY_WEIGHT_BONUS / math.max(priority_index or 1, 1)
 end
 
+---@param value_score number
+---@param priority_index integer
+---@return number
 local function score_weighted_match(value_score, priority_index)
     return (MATCHED_FILTER_SCORE + value_score) * get_priority_weight(priority_index)
 end
 
+---@param row SoulSearchResidentRow
+---@param selected_descriptors SoulSearchSelectedDescriptor[]
+---@return SoulSearchFilterCriterion[] criteria
+---@return SoulSearchFilterCriterion[] matched
+---@return integer matched_count
+---@return number score
+---@return number weighted_score
 local function score_row(row, selected_descriptors)
     local matched = {}
     local criteria = {}
@@ -469,6 +579,9 @@ local function score_row(row, selected_descriptors)
     return criteria, matched, #matched, score, weighted_score
 end
 
+---@param row SoulSearchResidentRow
+---@param selected_descriptors SoulSearchSelectedDescriptor[]
+---@return SoulSearchResult
 local function make_result(row, selected_descriptors)
     local criteria, matched, matched_count, score, weighted_score = score_row(row, selected_descriptors)
     return {
@@ -487,6 +600,8 @@ local function make_result(row, selected_descriptors)
     }
 end
 
+---Builds grouped filter descriptors for the picker UI.
+---@return SoulSearchFilterDescriptorGroups
 function get_filter_descriptors()
     return {
         skills=get_skill_descriptors(),
@@ -496,10 +611,16 @@ function get_filter_descriptors()
     }
 end
 
+---Builds a flat filter descriptor list.
+---@return SoulSearchFilterDescriptor[]
 function get_flat_filter_descriptors()
     return flatten_descriptors(get_filter_descriptors())
 end
 
+---Filters and ranks resident rows.
+---@param rows SoulSearchResidentRow[]|nil
+---@param opts SoulSearchApplyOptions|nil
+---@return SoulSearchResult[]
 function apply(rows, opts)
     opts = opts or {}
     local query = opts.query or ''
