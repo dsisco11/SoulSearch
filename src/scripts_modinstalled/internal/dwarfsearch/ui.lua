@@ -408,7 +408,7 @@ local function add_selected_filter_section(tokens, filter_criteria, unit)
     table.insert(tokens, NEWLINE)
 end
 
-local function attribute_header_for_result(result)
+local function stats_header_for_result(result)
     local tokens = {}
     if not result or not result.row then
         table.insert(tokens, {text='No resident selected.', pen=COLOR_DARKGREY})
@@ -422,7 +422,7 @@ local function attribute_header_for_result(result)
     return tokens
 end
 
-local function attributes_for_result(result)
+local function stats_for_result(result)
     if not result or not result.row then
         return ''
     end
@@ -617,7 +617,7 @@ function DwarfSearchWindow:init()
             view_id='result_list',
             frame={l=41, t=6, w=64, b=0},
             on_select=function(index, choice)
-                self:update_attributes(choice and choice.result or nil)
+                self:update_stats(choice and choice.result or nil)
             end,
             on_submit=function(index, choice)
                 self:zoom_to_result(choice and choice.result or nil)
@@ -634,13 +634,13 @@ function DwarfSearchWindow:init()
             text_pen=TITLE_UNDERLINE_PEN,
         },
         widgets.Label{
-            view_id='attribute_header',
+            view_id='stats_header',
             frame={l=107, t=4, r=1, b=0},
             auto_height=false,
             text='No resident selected.',
         },
         widgets.Label{
-            view_id='attributes',
+            view_id='stats',
             frame={l=107, t=5, r=1, b=0},
             auto_height=false,
             text='',
@@ -876,14 +876,14 @@ function DwarfSearchWindow:update_results()
     self.subviews.result_header_underline:setText(get_title_underline(result_header))
     self.subviews.result_list:setChoices(choices, 1)
     local _, choice = self.subviews.result_list:getSelected()
-    self:update_attributes(choice and choice.result or nil)
+    self:update_stats(choice and choice.result or nil)
 end
 
-function DwarfSearchWindow:update_attributes(result)
-    local header = self.subviews.attribute_header
-    local body = self.subviews.attributes
-    header:setText(attribute_header_for_result(result))
-    body:setText(attributes_for_result(result))
+function DwarfSearchWindow:update_stats(result)
+    local header = self.subviews.stats_header
+    local body = self.subviews.stats
+    header:setText(stats_header_for_result(result))
+    body:setText(stats_for_result(result))
 
     local header_top = 4
     local available_height = math.max(1, (self.frame_body and self.frame_body.height or 45) - header_top)
