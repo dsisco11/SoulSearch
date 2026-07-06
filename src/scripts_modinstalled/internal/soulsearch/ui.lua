@@ -40,6 +40,10 @@ local FILTER_ACTION_REMOVE = 'remove'
 local FILTER_ACTION_UP = 'up'
 local FILTER_ACTION_DOWN = 'down'
 local FILTER_ACTION_WIDTH = 3
+local CP437_ARROW_UP = string.char(30)
+local CP437_ARROW_DOWN = string.char(31)
+local FILTER_ACTION_UP_LABEL = '[' .. CP437_ARROW_UP .. ']'
+local FILTER_ACTION_DOWN_LABEL = '[' .. CP437_ARROW_DOWN .. ']'
 local FILTER_ACTION_TOOLTIPS = {
     [FILTER_ACTION_PLUS] = 'Prefer high',
     [FILTER_ACTION_MINUS] = 'Prefer low',
@@ -216,8 +220,8 @@ local function format_active_filter_choice(descriptor, mode, priority_index, pri
         {text=(' '):rep(spacer_width), pen=COLOR_DARKGREY},
         {text='[+]', pen=high_selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
         {text='[-]', pen=low_selected and COLOR_LIGHTRED or COLOR_DARKGREY},
-        {text='[^]', pen=can_move_up and COLOR_WHITE or COLOR_DARKGREY},
-        {text='[v]', pen=can_move_down and COLOR_WHITE or COLOR_DARKGREY},
+        {text=FILTER_ACTION_UP_LABEL, pen=can_move_up and COLOR_WHITE or COLOR_DARKGREY},
+        {text=FILTER_ACTION_DOWN_LABEL, pen=can_move_down and COLOR_WHITE or COLOR_DARKGREY},
         {text='[x]', pen=COLOR_LIGHTRED},
     }
 end
