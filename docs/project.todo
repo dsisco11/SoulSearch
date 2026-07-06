@@ -38,5 +38,7 @@
 ✔ Rename "Attributes" panel to "Stats" panel, since it shows both attributes and skills. This will also make it more clear to the user that the panel shows both attributes and skills, since the "Attributes" label is misleading. @done(26-07-06 03:02)
 ✔ Attributes Panel: Remove the "Body", "Mind", and "Soul" category labels, since the color coding is sufficient to indicate the category. The category labels are redundant and take up space. @done(26-07-06 03:16)
 ✔ Attribute/Skill filters dropdown menu: place "search" bar and "close" button on the same row. @done(26-07-06 03:37)
-☐ Stats Panel: Add a profession label (grey text) below the current unit name label.
+✔ Stats Panel: Add a profession label (grey text) below the current unit name label. @done(26-07-06 03:41)
+✔ Add column headers for stats attributes list. @done(26-07-06 03:52)
+☐ Add ability to click stats attribute headers to change sorting order.
 ☐ Rename mod to "SoulSearch".

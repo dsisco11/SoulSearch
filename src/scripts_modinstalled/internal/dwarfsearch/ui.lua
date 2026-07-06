@@ -16,6 +16,8 @@ local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
+local STATS_LABEL_WIDTH = 24
+local STATS_VALUE_COLUMN_X = 27
 local TITLE_UNDERLINE_PEN = COLOR_GREY
 local FILTER_ACTION_PLUS = 'plus'
 local FILTER_ACTION_MINUS = 'minus'
@@ -29,6 +31,10 @@ local FILTER_ACTION_TOOLTIPS = {
     [FILTER_ACTION_UP] = 'Move up',
     [FILTER_ACTION_DOWN] = 'Move down',
     [FILTER_ACTION_REMOVE] = 'Remove',
+}
+local STATS_HEADER_TOOLTIPS = {
+    label='Notable attribute or personality trait.',
+    value='Difference from the race or trait baseline.',
 }
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
@@ -350,7 +356,7 @@ local function add_attribute_section(tokens, pen, kind, values, unit)
     for _, key in ipairs(keys) do
         local label = key:gsub('_', ' '):lower():gsub('^%l', string.upper)
         local evaluation = attributes.evaluate(kind, key, values[key], unit)
-        table.insert(tokens, {text=('  %-24s '):format(label), pen=pen})
+        table.insert(tokens, {text=('  %-' .. STATS_LABEL_WIDTH .. 's '):format(label), pen=pen})
         table.insert(tokens, {
             text=format_deviation(evaluation.deviation),
             pen=get_deviation_pen(evaluation.deviation, evaluation.tier_distance),
@@ -358,6 +364,18 @@ local function add_attribute_section(tokens, pen, kind, values, unit)
         table.insert(tokens, NEWLINE)
     end
     return true
+end
+
+local function add_stats_column_header(tokens)
+    table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=('%-' .. STATS_LABEL_WIDTH .. 's '):format('Stat'), pen=COLOR_GREY})
+    table.insert(tokens, {text='Delta', pen=COLOR_GREY})
+    table.insert(tokens, NEWLINE)
+    table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=('-'):rep(STATS_LABEL_WIDTH), pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=('-'):rep(5), pen=COLOR_DARKGREY})
+    table.insert(tokens, NEWLINE)
 end
 
 local function get_filter_criterion_pen(criterion, default_pen)
@@ -427,6 +445,7 @@ local function stats_for_result(result)
     end
 
     local tokens = {}
+    add_stats_column_header(tokens)
 
     local has_previous_section = false
     local function append_section(pen, kind, values)
@@ -695,6 +714,25 @@ function DwarfSearchWindow:get_filter_action_tooltip()
     return action and FILTER_ACTION_TOOLTIPS[action] or nil
 end
 
+function DwarfSearchWindow:get_stats_header_tooltip()
+    local stats = self.subviews.stats
+    if not stats then
+        return nil
+    end
+
+    local x, y = stats:getMousePos()
+    if not x or y ~= 0 then
+        return nil
+    end
+    if x >= 2 and x < 2 + STATS_LABEL_WIDTH then
+        return STATS_HEADER_TOOLTIPS.label
+    end
+    if x >= STATS_VALUE_COLUMN_X and x < STATS_VALUE_COLUMN_X + 5 then
+        return STATS_HEADER_TOOLTIPS.value
+    end
+    return nil
+end
+
 function DwarfSearchWindow:get_tooltip_text()
     local control_tooltips = {
         {id='add_filter_button', text='Add attribute filter'},
@@ -711,7 +749,7 @@ function DwarfSearchWindow:get_tooltip_text()
         end
     end
 
-    return self:get_filter_action_tooltip() or ''
+    return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or ''
 end
 
 function DwarfSearchWindow:get_selected_filters()
