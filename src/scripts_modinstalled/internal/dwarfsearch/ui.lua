@@ -371,7 +371,7 @@ local function normalize_frame_for_drag(window)
 end
 
 local function draw_section_dividers(dc)
-    local y2 = math.max(2, dc.height - 3)
+    local y2 = math.max(2, dc.height)
     for _, x in ipairs(SECTION_DIVIDER_XS) do
         for y = 2, y2 do
             dc:seek(x, y):char('|', SECTION_DIVIDER_PEN)
@@ -449,12 +449,12 @@ function DwarfSearchWindow:init()
         },
         widgets.List{
             view_id='filter_list',
-            frame={l=1, t=8, w=38, b=3},
+            frame={l=1, t=8, w=38, b=0},
             visible=function() return not self.add_filter_open and not self.add_skill_open end,
         },
         widgets.List{
             view_id='available_filter_list',
-            frame={l=1, t=8, w=38, b=3},
+            frame={l=1, t=8, w=38, b=0},
             visible=function() return self.add_filter_open end,
             on_submit=function(index, choice)
                 if choice and choice.descriptor then
@@ -476,7 +476,7 @@ function DwarfSearchWindow:init()
         },
         widgets.List{
             view_id='available_skill_list',
-            frame={l=1, t=10, w=38, b=3},
+            frame={l=1, t=10, w=38, b=0},
             visible=function() return self.add_skill_open end,
             on_submit=function(index, choice)
                 if choice and choice.descriptor then
@@ -498,7 +498,7 @@ function DwarfSearchWindow:init()
         },
         widgets.List{
             view_id='result_list',
-            frame={l=41, t=6, w=64, b=3},
+            frame={l=41, t=6, w=64, b=0},
             on_select=function(index, choice)
                 self:update_attributes(choice and choice.result or nil)
             end,
@@ -518,7 +518,7 @@ function DwarfSearchWindow:init()
         },
         widgets.Label{
             view_id='attributes',
-            frame={l=107, t=3, r=1, b=3},
+            frame={l=107, t=3, r=1, b=0},
             text='No resident selected.',
         },
         widgets.HotkeyLabel{
