@@ -101,16 +101,6 @@ local function get_category_pen(descriptor)
     return COLOR_LIGHTMAGENTA
 end
 
-local function get_category_info(kind)
-    if kind == 'physical_attribute' then
-        return 'Body', COLOR_LIGHTGREEN
-    end
-    if kind == 'mental_attribute' then
-        return 'Soul', COLOR_LIGHTBLUE
-    end
-    return 'Mind', COLOR_LIGHTMAGENTA
-end
-
 local function get_deviation_pen(deviation, tier_distance)
     if deviation < 0 then
         if tier_distance >= 2 then
@@ -340,9 +330,7 @@ local function is_notable_value(kind, key, value, unit)
     return evaluation and evaluation.tier_distance ~= 0
 end
 
-local function add_attribute_section(tokens, title, pen, kind, values, unit)
-    add_underlined_title(tokens, title, pen)
-
+local function add_attribute_section(tokens, pen, kind, values, unit)
     if not values or not unit then
         table.insert(tokens, {text='  none notable', pen=COLOR_DARKGREY})
         table.insert(tokens, NEWLINE)
@@ -439,16 +427,13 @@ local function attributes_for_result(result)
         return ''
     end
 
-    local body_label, body_pen = get_category_info('physical_attribute')
-    local soul_label, soul_pen = get_category_info('mental_attribute')
-    local mind_label, mind_pen = get_category_info('trait')
     local tokens = {}
 
-    add_attribute_section(tokens, body_label, body_pen, 'physical_attribute', result.row.physical_attributes, result.unit)
+    add_attribute_section(tokens, COLOR_LIGHTGREEN, 'physical_attribute', result.row.physical_attributes, result.unit)
     table.insert(tokens, NEWLINE)
-    add_attribute_section(tokens, soul_label, soul_pen, 'mental_attribute', result.row.mental_attributes, result.unit)
+    add_attribute_section(tokens, COLOR_LIGHTBLUE, 'mental_attribute', result.row.mental_attributes, result.unit)
     table.insert(tokens, NEWLINE)
-    add_attribute_section(tokens, mind_label, mind_pen, 'trait', result.row.traits, result.unit)
+    add_attribute_section(tokens, COLOR_LIGHTMAGENTA, 'trait', result.row.traits, result.unit)
 
     return tokens
 end
