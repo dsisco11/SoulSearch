@@ -391,6 +391,7 @@ function DwarfSearchWindow:init()
     self.rows = {}
     self.results = {}
     self.query = ''
+    self.attribute_query = ''
     self.skill_query = ''
     self.add_filter_open = false
     self.add_skill_open = false
@@ -459,9 +460,20 @@ function DwarfSearchWindow:init()
             draggable=false,
             visible=function() return self.add_filter_open end,
             subviews={
+                widgets.EditField{
+                    view_id='attribute_search_field',
+                    frame={l=0, t=0, r=0, h=1},
+                    label_text='Search: ',
+                    key='CUSTOM_T',
+                    modal=true,
+                    on_change=function(text)
+                        self.attribute_query = text
+                        self:update_available_filter_choices()
+                    end,
+                },
                 widgets.List{
                     view_id='available_filter_list',
-                    frame={l=0, t=0, r=0, b=0},
+                    frame={l=0, t=2, r=0, b=0},
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
                             self:add_filter(choice.descriptor.id)
@@ -662,7 +674,8 @@ end
 function DwarfSearchWindow:update_available_filter_choices(selected)
     local choices = {}
     for _, descriptor in ipairs(self.attribute_filter_descriptors) do
-        if not self.selected_filter_modes[descriptor.id] then
+        if not self.selected_filter_modes[descriptor.id] and
+                contains_text(descriptor.label, self.attribute_query) then
             table.insert(choices, {
                 text=format_available_filter_choice(descriptor),
                 descriptor=descriptor,
@@ -671,7 +684,7 @@ function DwarfSearchWindow:update_available_filter_choices(selected)
         end
     end
     if #choices == 0 then
-        table.insert(choices, {text='All attributes have been added.'})
+        table.insert(choices, {text='No matching attributes.'})
     end
     self.subviews.available_filter_list:setChoices(choices, selected)
 end
