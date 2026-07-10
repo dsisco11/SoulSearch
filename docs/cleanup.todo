@@ -203,7 +203,7 @@ output.
 ✔ Ranking characterization tests remain unchanged and pass.
   @done(26-07-10 06:58)
 ✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-10 06:58)
-☐ In-game filter pickers show the same labels, categories, colors, and order
+✔ In-game filter pickers show the same labels, categories, colors, and order @done(26-07-10 07:13)
   (requires the interactive smoke run).
 
 ## Phase 2 - Search API and result model cleanup
