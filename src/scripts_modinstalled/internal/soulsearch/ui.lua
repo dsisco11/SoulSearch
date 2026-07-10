@@ -40,10 +40,13 @@ local FILTER_ACTION_REMOVE = 'remove'
 local FILTER_ACTION_UP = 'up'
 local FILTER_ACTION_DOWN = 'down'
 local FILTER_ACTION_WIDTH = 3
-local CP437_ARROW_UP = string.char(30)
-local CP437_ARROW_DOWN = string.char(31)
-local FILTER_ACTION_UP_LABEL = '[' .. CP437_ARROW_UP .. ']'
-local FILTER_ACTION_DOWN_LABEL = '[' .. CP437_ARROW_DOWN .. ']'
+local CP437_TRIANGLE_UP = string.char(30)
+local CP437_TRIANGLE_DOWN = string.char(31)
+local CP437_ARROW_RIGHT = string.char(16)
+local CP437_ARROW_UP = string.char(24)
+local CP437_ARROW_DOWN = string.char(25)
+local FILTER_ACTION_UP_LABEL = '[' .. CP437_TRIANGLE_UP .. ']'
+local FILTER_ACTION_DOWN_LABEL = '[' .. CP437_TRIANGLE_DOWN .. ']'
 local FILTER_ACTION_TOOLTIPS = {
     [FILTER_ACTION_PLUS] = 'Prefer high',
     [FILTER_ACTION_MINUS] = 'Prefer low',
@@ -238,7 +241,7 @@ end
 ---@return table[]
 local function format_available_skill_choice(descriptor)
     return {
-        {text='  ', pen=COLOR_DARKGREY},
+        {text=CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
         {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
 end
@@ -501,7 +504,7 @@ local function get_sort_marker(sort_key, active_key, sort_reverse)
     if sort_key ~= active_key then
         return ''
     end
-    return sort_reverse and ' v' or ' ^'
+    return ' ' .. (sort_reverse and CP437_ARROW_DOWN or CP437_ARROW_UP)
 end
 
 ---@param tokens table[]
