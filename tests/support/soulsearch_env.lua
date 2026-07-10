@@ -144,4 +144,10 @@ function M.load_filter_state(repo_root)
         globals), descriptors
 end
 
+function M.load_ui_refresh(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui_refresh.lua')
+end
+
 return M

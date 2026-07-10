@@ -364,47 +364,83 @@ Depends on: Phase 3.
 Goal: replace scattered/nested update cascades with explicit view update paths
 while preserving the existing widget tree.
 
+Status: in progress — orchestration, focused tests, automated validation, and
+the source-level input/focus audit are complete; the full interactive in-game
+smoke pass remains pending.
+
+Automated validation: `tools/Build.ps1` compiled all 10 production Lua files,
+`tools/Test.ps1` passed all 76 tests, and `git diff --check` reported no errors.
+
+Invalidation map:
+
+- Filter add/remove/clear/direction/reorder: persist state, then refresh picker
+  buttons, active filters, picker choices, results, and stats once.
+- Picker open/close: refresh picker buttons and choices only. Picker query:
+  refresh picker choices only. Neither path recomputes resident results.
+- Name query or resident collection: recompute results once, preserve selection,
+  then refresh stats once.
+- Result selection or stats sort: refresh stats only.
+- Result navigation and submit/zoom: use the existing widget/map action directly
+  without result recomputation.
+
 ### Update ownership
 
-☐ Inventory which views depend on filter state, picker query, picker visibility,
+✔ Inventory which views depend on filter state, picker query, picker visibility,
   resident rows, name query, result selection, and stats sort state.
-☐ Add one narrow refresh method for active filter choices.
-☐ Add one narrow refresh method for picker choices.
-☐ Add one narrow result recomputation method.
-☐ Add one narrow stats refresh method.
-☐ Ensure refresh methods update derived views only and do not mutate domain
-  state.
-☐ Ensure state-transition methods do not call other state-transition methods.
+  @done(26-07-10 09:50)
+✔ Add one narrow refresh method for active filter choices.
+  @done(26-07-10 09:50)
+✔ Add one narrow refresh method for picker choices. @done(26-07-10 09:50)
+✔ Add one narrow result recomputation method. @done(26-07-10 09:50)
+✔ Add one narrow stats refresh method. @done(26-07-10 09:50)
+✔ Ensure refresh methods update derived views only and do not mutate domain
+  state. @done(26-07-10 09:50)
+✔ Ensure state-transition methods do not call other state-transition methods.
+  @done(26-07-10 09:50)
 
 ### Event flow
 
-☐ Route each filter-state change through one controller callback/update pass.
-☐ Remove repeated `update_available_filter_choices()` and
+✔ Route each filter-state change through one controller callback/update pass.
+  @done(26-07-10 09:50)
+✔ Remove repeated `update_available_filter_choices()` and
   `update_available_skill_choices()` call sequences from individual actions.
-☐ Separate picker open/close changes from filter-data changes.
-☐ Ensure opening or closing a picker does not recompute resident results.
-☐ Preserve selected filter index after direction/reorder changes where valid.
-☐ Preserve selected resident by unit ID across result recomputation where the
-  resident remains present.
-☐ Define the fallback selection when the previous resident disappears.
-☐ Ensure name-query changes recompute results once.
-☐ Ensure resident refresh recomputes results once after collection completes.
+  @done(26-07-10 09:50)
+✔ Separate picker open/close changes from filter-data changes.
+  @done(26-07-10 09:50)
+✔ Ensure opening or closing a picker does not recompute resident results.
+  @done(26-07-10 09:50)
+✔ Preserve selected filter index after direction/reorder changes where valid.
+  @done(26-07-10 09:50)
+✔ Preserve selected resident by unit ID across result recomputation where the
+  resident remains present. @done(26-07-10 09:50)
+✔ Define the fallback selection when the previous resident disappears.
+  @done(26-07-10 09:50)
+✔ Ensure name-query changes recompute results once. @done(26-07-10 09:50)
+✔ Ensure resident refresh recomputes results once after collection completes.
+  @done(26-07-10 09:50)
 
 ### Input and focus regression checks
 
-☐ Verify mouse filter actions still select the row before applying the action.
-☐ Verify up/down and fast up/down keys continue controlling the results list.
-☐ Verify filter-priority hotkeys still operate on the selected filter.
-☐ Verify Backspace closes an open picker before reaching parent handling.
-☐ Verify Enter and zoom hotkey behavior remains unchanged.
+✔ Verify mouse filter actions still select the row before applying the action.
+  @done(26-07-10 09:50)
+✔ Verify up/down and fast up/down keys continue controlling the results list.
+  @done(26-07-10 09:50)
+✔ Verify filter-priority hotkeys still operate on the selected filter.
+  @done(26-07-10 09:50)
+✔ Verify Backspace closes an open picker before reaching parent handling.
+  @done(26-07-10 09:50)
+✔ Verify Enter and zoom hotkey behavior remains unchanged.
+  @done(26-07-10 09:50)
 
 ### Phase 4 exit gate
 
-☐ Every user action has one documented state/update path.
-☐ No view refresh is nested inside a domain-state transition.
-☐ Instrumentation or focused tests show one result recomputation per logical
-  action.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
+✔ Every user action has one documented state/update path.
+  @done(26-07-10 09:50)
+✔ No view refresh is nested inside a domain-state transition.
+  @done(26-07-10 09:50)
+✔ Instrumentation or focused tests show one result recomputation per logical
+  action. @done(26-07-10 09:50)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-10 09:50)
 ☐ The full in-game interaction smoke checklist passes with unchanged geometry.
 
 ## Phase 5 - Presentation modules, layout metadata, and UI components

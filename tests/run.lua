@@ -13,6 +13,7 @@ local suites = {
     (require('metadata_test')),
     (require('filter_state_test')),
     (require('search_test')),
+    (require('ui_refresh_test')),
 }
 
 for _, register_suite in ipairs(suites) do

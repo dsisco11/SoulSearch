@@ -21,6 +21,7 @@ local attributes = reqscript('internal/soulsearch/attributes')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
+local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 
 local view
 local saved_stats_sort_key
@@ -647,6 +648,7 @@ end
 ---@field stats_sort_key string|nil
 ---@field stats_sort_reverse boolean
 ---@field stats_sort_phase integer
+---@field suppress_result_select_refresh boolean
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
 ---@field filter_catalog SoulSearchFilterCatalog
@@ -671,6 +673,7 @@ function SoulSearchWindow:init()
     self.stats_sort_key = saved_stats_sort_key
     self.stats_sort_reverse = saved_stats_sort_reverse
     self.stats_sort_phase = saved_stats_sort_phase
+    self.suppress_result_select_refresh = false
     self.add_filter_open = false
     self.add_skill_open = false
     local filter_catalog = descriptors.get_catalog()
@@ -692,7 +695,7 @@ function SoulSearchWindow:init()
             modal=true,
             on_change=function(text)
                 self.query = text
-                self:update_results()
+                self:refresh_views{results=true}
             end,
         },
         widgets.Label{
@@ -751,7 +754,7 @@ function SoulSearchWindow:init()
                     key='CUSTOM_T',
                     on_change=function(text)
                         self.attribute_query = text
-                        self:update_available_filter_choices()
+                        self:refresh_views{pickers=true}
                     end,
                 },
                 widgets.List{
@@ -785,7 +788,7 @@ function SoulSearchWindow:init()
                     key='CUSTOM_K',
                     on_change=function(text)
                         self.skill_query = text
-                        self:update_available_skill_choices()
+                        self:refresh_views{pickers=true}
                     end,
                 },
                 widgets.List{
@@ -815,7 +818,12 @@ function SoulSearchWindow:init()
             view_id='result_list',
             frame={l=41, t=6, w=64, b=0},
             on_select=function(index, choice)
-                self:update_stats(choice and choice.result or nil)
+                if not self.suppress_result_select_refresh then
+                    self:refresh_views{
+                        stats=true,
+                        result=choice and choice.result or nil,
+                    }
+                end
             end,
             on_submit=function(index, choice)
                 self:zoom_to_result(choice and choice.result or nil)
@@ -853,9 +861,11 @@ function SoulSearchWindow:init()
     }
 
     self:refresh_residents()
-    self:update_filter_choices()
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
+    self:refresh_views{
+        picker_buttons=true,
+        active_filters=true,
+        pickers=true,
+    }
 end
 
 ---Normalizes the frame after a drag begins so resizing remains stable.
@@ -954,7 +964,7 @@ function SoulSearchWindow:get_filter_choice_index(filter_id)
 end
 
 ---@param selected integer|nil
-function SoulSearchWindow:update_filter_choices(selected)
+function SoulSearchWindow:refresh_active_filter_choices(selected)
     local choices = {}
     local priority_count = filter_state.count(self.filter_state)
     for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
@@ -972,6 +982,37 @@ function SoulSearchWindow:update_filter_choices(selected)
         table.insert(choices, {text='Use Add attribute/trait or Add skill.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
+end
+
+---Refreshes the two picker lists from filter state and picker queries.
+function SoulSearchWindow:refresh_picker_choices()
+    self:update_available_filter_choices()
+    self:update_available_skill_choices()
+end
+
+---Refreshes labels whose presentation depends on picker visibility.
+function SoulSearchWindow:refresh_picker_buttons()
+    self:update_add_filter_button()
+    self:update_add_skill_button()
+end
+
+---Dispatches one explicit pass over the requested derived views.
+---@param request SoulSearchRefreshRequest
+function SoulSearchWindow:refresh_views(request)
+    ui_refresh.apply(self, request)
+end
+
+---Persists filter state and refreshes every view derived from it once.
+---@param selected integer|nil
+function SoulSearchWindow:on_filter_state_changed(selected)
+    filter_state.save(self.filter_state)
+    self:refresh_views{
+        picker_buttons=true,
+        active_filters=true,
+        pickers=true,
+        results=true,
+        selected_filter=selected,
+    }
 end
 
 ---@param selected integer|nil
@@ -1027,9 +1068,15 @@ function SoulSearchWindow:update_available_skill_choices(selected)
     self.subviews.available_skill_list:setChoices(choices, selected)
 end
 
----Applies the current query and filters, then refreshes result choices.
-function SoulSearchWindow:update_results()
-    filter_state.save(self.filter_state)
+---Recomputes results and preserves selection by unit ID when possible. If the
+---previous resident disappears, the same list position is retained and clamped
+---to the final row; an empty result set has no selection.
+---@return SoulSearchResult|nil
+function SoulSearchWindow:recompute_results()
+    local previous_index, previous_choice = self.subviews.result_list:getSelected()
+    local previous_result = previous_choice and previous_choice.result
+    local previous_unit_id = previous_result and previous_result.unit_id
+
     self.results = search.apply(self.rows, {
         query=self.query,
         selected_filters=filter_state.get_filters(self.filter_state),
@@ -1047,13 +1094,22 @@ function SoulSearchWindow:update_results()
     local result_header = ('Results (%d)'):format(#choices)
     self.subviews.result_header:setText(result_header)
     self.subviews.result_header_underline:setText(get_title_underline(result_header))
-    self.subviews.result_list:setChoices(choices, 1)
+
+    local selected = ui_refresh.get_result_selection(
+        self.results,
+        previous_unit_id,
+        previous_index)
+    -- DFHack List:setChoices() force-fires on_select. Suppress that nested view
+    -- refresh so the dispatcher remains the single owner of the Stats update.
+    self.suppress_result_select_refresh = true
+    self.subviews.result_list:setChoices(choices, selected)
+    self.suppress_result_select_refresh = false
     local _, choice = self.subviews.result_list:getSelected()
-    self:update_stats(choice and choice.result or nil)
+    return choice and choice.result or nil
 end
 
 ---@param result SoulSearchResult|nil
-function SoulSearchWindow:update_stats(result)
+function SoulSearchWindow:refresh_stats(result)
     local header = self.subviews.stats_header
     local body = self.subviews.stats
     header:setText(stats_header_for_result(result))
@@ -1101,7 +1157,7 @@ function SoulSearchWindow:handle_stats_header_click()
     saved_stats_sort_key = self.stats_sort_key
     saved_stats_sort_reverse = self.stats_sort_reverse
     saved_stats_sort_phase = self.stats_sort_phase
-    self:update_stats(self:get_selected_result())
+    self:refresh_views{stats=true}
     return true
 end
 
@@ -1140,12 +1196,7 @@ function SoulSearchWindow:add_filter(filter_id)
     end
     self.add_filter_open = false
     self.add_skill_open = false
-    self:update_add_filter_button()
-    self:update_add_skill_button()
-    self:update_filter_choices(self:get_filter_choice_index(filter_id))
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
-    self:update_results()
+    self:on_filter_state_changed(self:get_filter_choice_index(filter_id))
     return true
 end
 
@@ -1156,12 +1207,9 @@ function SoulSearchWindow:remove_filter(filter_id)
     if not filter_state.remove(self.filter_state, filter_id) then
         return false
     end
-    self:update_filter_choices(math.max(
+    self:on_filter_state_changed(math.max(
         1,
         math.min(selected, filter_state.count(self.filter_state))))
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
-    self:update_results()
     return true
 end
 
@@ -1173,12 +1221,7 @@ function SoulSearchWindow:clear_filters()
 
     self.add_filter_open = false
     self.add_skill_open = false
-    self:update_add_filter_button()
-    self:update_add_skill_button()
-    self:update_filter_choices(1)
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
-    self:update_results()
+    self:on_filter_state_changed(1)
     return true
 end
 
@@ -1193,14 +1236,9 @@ function SoulSearchWindow:set_filter_direction(filter_id, direction)
     if not was_active then
         self.add_filter_open = false
         self.add_skill_open = false
-        self:update_add_filter_button()
-        self:update_add_skill_button()
     end
     local selected = self:get_filter_choice_index(filter_id)
-    self:update_filter_choices(selected)
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
-    self:update_results()
+    self:on_filter_state_changed(selected)
     return true
 end
 
@@ -1210,10 +1248,7 @@ function SoulSearchWindow:toggle_add_filter_dropdown()
     if self.add_filter_open then
         self.add_skill_open = false
     end
-    self:update_add_filter_button()
-    self:update_add_skill_button()
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
+    self:refresh_views{picker_buttons=true, pickers=true}
 end
 
 ---Opens or closes the skill filter picker.
@@ -1222,10 +1257,7 @@ function SoulSearchWindow:toggle_add_skill_dropdown()
     if self.add_skill_open then
         self.add_filter_open = false
     end
-    self:update_add_filter_button()
-    self:update_add_skill_button()
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
+    self:refresh_views{picker_buttons=true, pickers=true}
 end
 
 ---@return boolean
@@ -1236,10 +1268,7 @@ function SoulSearchWindow:close_add_filter_dropdown()
 
     self.add_filter_open = false
     self.add_skill_open = false
-    self:update_add_filter_button()
-    self:update_add_skill_button()
-    self:update_available_filter_choices()
-    self:update_available_skill_choices()
+    self:refresh_views{picker_buttons=true, pickers=true}
     return true
 end
 
@@ -1267,8 +1296,7 @@ function SoulSearchWindow:move_selected_filter_priority(delta)
         return false
     end
 
-    self:update_filter_choices(new_index)
-    self:update_results()
+    self:on_filter_state_changed(new_index)
     return true
 end
 
@@ -1316,7 +1344,7 @@ function SoulSearchWindow:refresh_residents()
     else
         self.rows = rows
     end
-    self:update_results()
+    self:refresh_views{results=true}
 end
 
 ---@param delta integer

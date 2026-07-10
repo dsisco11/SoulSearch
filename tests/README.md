@@ -28,6 +28,9 @@ environment stubs only the external APIs needed by the modules under test:
 - The production filter-state model is loaded with the real descriptor catalog;
   transition, validation, ordered serialization, and persistence-copy behavior
   are exercised without widget stubs.
+- The production UI refresh dispatcher is exercised with a counting owner to
+  prove picker-only changes skip results and each result invalidation invokes
+  recomputation once.
 
 The tests do not stub DFHack widgets or claim to validate in-game behavior.
 Visual layout, focus, mouse handling, live unit access, refresh, and zoom remain
