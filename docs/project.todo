@@ -44,3 +44,6 @@
 ✔ Rename mod to "SoulSearch". @done(26-07-06 04:09)
 ✔ Add code comments. @done(26-07-06 06:49)
 ☐ Cleanup code architecture.
+☐ Add tooltip for 'delta' column values on stats panel, should explain that the number is the difference between the unit's value and the average for that attribute.
+☐ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does.
+☐ Add tooltips for all skill names in the stat & filter panels, should explain what the skill is and what it does.
