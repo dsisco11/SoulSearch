@@ -220,6 +220,8 @@ DF/DFHack version and terminal dimensions with the result.
 - [ ] Confirm notable physical, mental, and trait rows use the expected colors.
 - [ ] Click Stat and Delta header boundaries and verify the three-phase sort
   cycle for each column.
+- [ ] Close and reopen SoulSearch during each active Stat/Delta ascending and
+  descending mode; confirm the selected column and direction persist.
 - [ ] Hover every filter action, Stats header, add/clear/close control, and picker
   close control; confirm tooltip text and placement.
 - [ ] Move a selected resident, then zoom and confirm the current live position

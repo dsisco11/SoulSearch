@@ -19,11 +19,13 @@ local residents = reqscript('internal/soulsearch/residents')
 local search = reqscript('internal/soulsearch/search')
 local attributes = reqscript('internal/soulsearch/attributes')
 local descriptors = reqscript('internal/soulsearch/descriptors')
+local filter_state = reqscript('internal/soulsearch/filter_state')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 
 local view
-local saved_filter_modes = {}
-local saved_filter_order = {}
+local saved_stats_sort_key
+local saved_stats_sort_reverse = false
+local saved_stats_sort_phase = 0
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local SECTION_DIVIDER_XS = {39, 105}
 local FILTER_HIGH = 'high'
@@ -373,26 +375,6 @@ function SoulSearchTooltip:render(dc)
     SoulSearchTooltip.super.render(self, dc)
 end
 
----@param filter_modes table<string, SoulSearchFilterDirection>|nil
----@return table<string, SoulSearchFilterDirection>
-local function copy_filter_modes(filter_modes)
-    local copy = {}
-    for filter_id, mode in pairs(filter_modes or {}) do
-        copy[filter_id] = mode
-    end
-    return copy
-end
-
----@param filter_order string[]|nil
----@return string[]
-local function copy_filter_order(filter_order)
-    local copy = {}
-    for _, filter_id in ipairs(filter_order or {}) do
-        table.insert(copy, filter_id)
-    end
-    return copy
-end
-
 ---@param target SoulSearchFilterDescriptor[]
 ---@param descriptors SoulSearchFilterDescriptor[]|nil
 local function append_descriptors(target, descriptors)
@@ -668,12 +650,9 @@ end
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
 ---@field filter_catalog SoulSearchFilterCatalog
----@field filter_descriptors SoulSearchFilterDescriptor[]
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field skill_filter_descriptors SoulSearchFilterDescriptor[]
----@field selected_filters SoulSearchSelectedFilter[]
----@field selected_filter_modes table<string, SoulSearchFilterDirection>
----@field selected_filter_order string[]
+---@field filter_state SoulSearchFilterState
 SoulSearchWindow = defclass(SoulSearchWindow, widgets.Window)
 SoulSearchWindow.ATTRS {
     frame_title='SoulSearch',
@@ -689,23 +668,20 @@ function SoulSearchWindow:init()
     self.query = ''
     self.attribute_query = ''
     self.skill_query = ''
-    self.stats_sort_key = nil
-    self.stats_sort_reverse = false
-    self.stats_sort_phase = 0
+    self.stats_sort_key = saved_stats_sort_key
+    self.stats_sort_reverse = saved_stats_sort_reverse
+    self.stats_sort_phase = saved_stats_sort_phase
     self.add_filter_open = false
     self.add_skill_open = false
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
     self.filter_catalog = filter_catalog
-    self.filter_descriptors = filter_catalog.flat
     self.attribute_filter_descriptors = {}
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.physical_attributes)
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.mental_attributes)
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
-    self.selected_filters = {}
-    self.selected_filter_modes = self:get_valid_filter_modes(saved_filter_modes)
-    self.selected_filter_order = self:get_valid_filter_order(saved_filter_order)
+    self.filter_state = filter_state.load()
 
     self:addviews{
         widgets.EditField{
@@ -957,103 +933,36 @@ function SoulSearchWindow:get_tooltip_text()
     return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or ''
 end
 
----@return SoulSearchSelectedFilter[]
-function SoulSearchWindow:get_selected_filters()
-    local selected_filters = {}
-    for _, filter_id in ipairs(self.selected_filter_order) do
-        local mode = self.selected_filter_modes[filter_id]
-        if mode then
-            table.insert(selected_filters, {
-                id=filter_id,
-                direction=mode,
-            })
-        end
-    end
-    return selected_filters
-end
-
----@param filter_id string
----@return SoulSearchFilterDescriptor|nil
-function SoulSearchWindow:get_filter_descriptor_by_id(filter_id)
-    return self.filter_catalog.by_id[filter_id]
-end
-
----@param filter_modes table<string, SoulSearchFilterDirection>|nil
----@return table<string, SoulSearchFilterDirection>
-function SoulSearchWindow:get_valid_filter_modes(filter_modes)
-    local valid_modes = {}
-    for filter_id, mode in pairs(filter_modes or {}) do
-        if self:get_filter_descriptor_by_id(filter_id) then
-            valid_modes[filter_id] = mode
-        end
-    end
-    return valid_modes
-end
-
----@param filter_order string[]|nil
----@return string[]
-function SoulSearchWindow:get_valid_filter_order(filter_order)
-    local valid_order = {}
-    for _, filter_id in ipairs(filter_order or {}) do
-        if self.selected_filter_modes[filter_id] and self:get_filter_descriptor_by_id(filter_id) then
-            table.insert(valid_order, filter_id)
-        end
-    end
-    return valid_order
-end
-
----Persists the current filter mode and priority state for future windows.
-function SoulSearchWindow:save_filter_state()
-    saved_filter_modes = copy_filter_modes(self.selected_filter_modes)
-    saved_filter_order = copy_filter_order(self.selected_filter_order)
-end
-
----@param filter_id string
----@return integer|nil
-function SoulSearchWindow:get_filter_priority(filter_id)
-    for index, ordered_filter_id in ipairs(self.selected_filter_order) do
-        if ordered_filter_id == filter_id then
-            return index
-        end
-    end
-    return nil
-end
-
 ---@return SoulSearchFilterDescriptor[]
 function SoulSearchWindow:get_active_filter_descriptors()
-    local descriptors = {}
+    local active_descriptors = {}
 
-    for _, filter_id in ipairs(self.selected_filter_order) do
-        local descriptor = self:get_filter_descriptor_by_id(filter_id)
+    for _, filter in ipairs(filter_state.get_filters(self.filter_state)) do
+        local descriptor = self.filter_catalog.by_id[filter.id]
         if descriptor then
-            table.insert(descriptors, descriptor)
+            table.insert(active_descriptors, descriptor)
         end
     end
 
-    return descriptors
+    return active_descriptors
 end
 
 ---@param filter_id string
 ---@return integer
 function SoulSearchWindow:get_filter_choice_index(filter_id)
-    for index, descriptor in ipairs(self:get_active_filter_descriptors()) do
-        if descriptor.id == filter_id then
-            return index
-        end
-    end
-    return 1
+    return filter_state.get_priority(self.filter_state, filter_id) or 1
 end
 
 ---@param selected integer|nil
 function SoulSearchWindow:update_filter_choices(selected)
     local choices = {}
-    local priority_count = #self.selected_filter_order
+    local priority_count = filter_state.count(self.filter_state)
     for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
         table.insert(choices, {
             text=format_active_filter_choice(
                 descriptor,
-                self.selected_filter_modes[descriptor.id],
-                self:get_filter_priority(descriptor.id),
+                filter_state.get_direction(self.filter_state, descriptor.id),
+                filter_state.get_priority(self.filter_state, descriptor.id),
                 priority_count),
             descriptor=descriptor,
             search_key=descriptor.label,
@@ -1069,7 +978,7 @@ end
 function SoulSearchWindow:update_available_filter_choices(selected)
     local choices = {}
     for _, descriptor in ipairs(self.attribute_filter_descriptors) do
-        if not self.selected_filter_modes[descriptor.id] and
+        if not filter_state.contains(self.filter_state, descriptor.id) and
                 contains_text(descriptor.label, self.attribute_query) then
             table.insert(choices, {
                 text=format_available_filter_choice(descriptor),
@@ -1089,7 +998,7 @@ function SoulSearchWindow:update_available_skill_choices(selected)
     local choices = {}
     local choices_by_category = {}
     for _, descriptor in ipairs(self.skill_filter_descriptors) do
-        if not self.selected_filter_modes[descriptor.id] and
+        if not filter_state.contains(self.filter_state, descriptor.id) and
                 contains_text(descriptor.label, self.skill_query) then
             local category = descriptor.category or 'Other Skills'
             choices_by_category[category] = choices_by_category[category] or {}
@@ -1120,11 +1029,10 @@ end
 
 ---Applies the current query and filters, then refreshes result choices.
 function SoulSearchWindow:update_results()
-    self:save_filter_state()
-    self.selected_filters = self:get_selected_filters()
+    filter_state.save(self.filter_state)
     self.results = search.apply(self.rows, {
         query=self.query,
-        selected_filters=self.selected_filters,
+        selected_filters=filter_state.get_filters(self.filter_state),
     })
 
     local choices = {}
@@ -1188,6 +1096,11 @@ function SoulSearchWindow:handle_stats_header_click()
         self.stats_sort_reverse = column ~= STATS_SORT_VALUE
     end
 
+    -- Retain the presentation mode while this UI module remains loaded, which
+    -- matches the session lifetime used by the filter-state persistence model.
+    saved_stats_sort_key = self.stats_sort_key
+    saved_stats_sort_reverse = self.stats_sort_reverse
+    saved_stats_sort_phase = self.stats_sort_phase
     self:update_stats(self:get_selected_result())
     return true
 end
@@ -1221,15 +1134,9 @@ end
 
 ---@param filter_id string
 ---@return boolean
-function SoulSearchWindow:is_filter_active(filter_id)
-    return self.selected_filter_modes[filter_id] ~= nil
-end
-
----@param filter_id string
 function SoulSearchWindow:add_filter(filter_id)
-    if not self:is_filter_active(filter_id) then
-        self.selected_filter_modes[filter_id] = FILTER_HIGH
-        table.insert(self.selected_filter_order, filter_id)
+    if not filter_state.add(self.filter_state, filter_id, FILTER_HIGH) then
+        return false
     end
     self.add_filter_open = false
     self.add_skill_open = false
@@ -1239,32 +1146,31 @@ function SoulSearchWindow:add_filter(filter_id)
     self:update_available_filter_choices()
     self:update_available_skill_choices()
     self:update_results()
+    return true
 end
 
 ---@param filter_id string
+---@return boolean
 function SoulSearchWindow:remove_filter(filter_id)
-    self.selected_filter_modes[filter_id] = nil
-    local selected = self:get_filter_priority(filter_id) or 1
-    for index, ordered_filter_id in ipairs(self.selected_filter_order) do
-        if ordered_filter_id == filter_id then
-            table.remove(self.selected_filter_order, index)
-            break
-        end
+    local selected = filter_state.get_priority(self.filter_state, filter_id) or 1
+    if not filter_state.remove(self.filter_state, filter_id) then
+        return false
     end
-    self:update_filter_choices(math.max(1, math.min(selected, #self.selected_filter_order)))
+    self:update_filter_choices(math.max(
+        1,
+        math.min(selected, filter_state.count(self.filter_state))))
     self:update_available_filter_choices()
     self:update_available_skill_choices()
     self:update_results()
+    return true
 end
 
 ---@return boolean
 function SoulSearchWindow:clear_filters()
-    if #self.selected_filter_order == 0 then
+    if not filter_state.clear(self.filter_state) then
         return false
     end
 
-    self.selected_filter_modes = {}
-    self.selected_filter_order = {}
     self.add_filter_open = false
     self.add_skill_open = false
     self:update_add_filter_button()
@@ -1278,18 +1184,24 @@ end
 
 ---@param filter_id string
 ---@param direction SoulSearchFilterDirection
+---@return boolean
 function SoulSearchWindow:set_filter_direction(filter_id, direction)
-    if not self:is_filter_active(filter_id) then
-        self:add_filter(filter_id)
-        self.selected_filter_modes[filter_id] = direction
-    else
-        self.selected_filter_modes[filter_id] = direction
+    local was_active = filter_state.contains(self.filter_state, filter_id)
+    if not filter_state.set_direction(self.filter_state, filter_id, direction) then
+        return false
+    end
+    if not was_active then
+        self.add_filter_open = false
+        self.add_skill_open = false
+        self:update_add_filter_button()
+        self:update_add_skill_button()
     end
     local selected = self:get_filter_choice_index(filter_id)
     self:update_filter_choices(selected)
     self:update_available_filter_choices()
     self:update_available_skill_choices()
     self:update_results()
+    return true
 end
 
 ---Opens or closes the attribute/trait filter picker.
@@ -1346,18 +1258,15 @@ end
 function SoulSearchWindow:move_selected_filter_priority(delta)
     local _, choice = self.subviews.filter_list:getSelected()
     local filter_id = choice and choice.descriptor and choice.descriptor.id
-    if not filter_id or not self.selected_filter_modes[filter_id] then
+    if not filter_id then
         return false
     end
 
-    local index = self:get_filter_priority(filter_id)
-    local new_index = index and math.max(1, math.min(#self.selected_filter_order, index + delta))
-    if not new_index or new_index == index then
+    local changed, new_index = filter_state.move(self.filter_state, filter_id, delta)
+    if not changed then
         return false
     end
 
-    table.remove(self.selected_filter_order, index)
-    table.insert(self.selected_filter_order, new_index, filter_id)
     self:update_filter_choices(new_index)
     self:update_results()
     return true

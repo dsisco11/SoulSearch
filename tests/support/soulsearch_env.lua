@@ -129,4 +129,19 @@ function M.load_search(repo_root, attributes)
     return search, descriptors, descriptor_df
 end
 
+function M.load_filter_state(repo_root)
+    local descriptors = M.load_descriptors(repo_root)
+    local globals = {
+        reqscript=function(name)
+            assert(name == 'internal/soulsearch/descriptors',
+                'unexpected reqscript: ' .. tostring(name))
+            return descriptors
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/filter_state.lua',
+        globals), descriptors
+end
+
 return M

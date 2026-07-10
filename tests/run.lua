@@ -11,6 +11,7 @@ local test = require('support.testlib')
 local suites = {
     (require('attributes_test')),
     (require('metadata_test')),
+    (require('filter_state_test')),
     (require('search_test')),
 }
 

@@ -281,54 +281,79 @@ Depends on: Phases 0-2.
 Goal: remove filter collection rules and persistence from
 `SoulSearchWindow`, using one canonical state representation.
 
+Status: in progress — implementation and automated validation are complete;
+the interactive in-game behavior and reopen-persistence comparison remains
+pending with the earlier visual smoke gates.
+
+Automated validation: `tools/Build.ps1` compiled all 9 production Lua files,
+`tools/Test.ps1` passed all 70 tests, and `git diff --check` reported no errors.
+
 ### Pure filter state model
 
-☐ Create `internal/soulsearch/filter_state.lua` with LuaLS types.
-☐ Represent active filters as one ordered collection of `{id, direction}`.
-☐ Add an ID index only if needed for clear invariants or measured lookup cost.
-☐ Implement atomic `add`, `remove`, `clear`, `set_direction`, and `move`
-  transitions.
-☐ Implement descriptor-catalog validation for stale IDs and invalid directions.
-☐ Define and test duplicate-add behavior.
-☐ Define and test move behavior at the first/last boundary.
-☐ Make each operation report whether the state actually changed.
-☐ Ensure returned/read state cannot be mutated accidentally by a caller.
+✔ Create `internal/soulsearch/filter_state.lua` with LuaLS types.
+  @done(26-07-10 07:52)
+✔ Represent active filters as one ordered collection of `{id, direction}`.
+  @done(26-07-10 07:52)
+✔ Keep linear ID lookup: the small ordered collection has clear invariants and
+  no measured lookup cost justifies a synchronized index. @done(26-07-10 07:52)
+✔ Implement atomic `add`, `remove`, `clear`, `set_direction`, and `move`
+  transitions. @done(26-07-10 07:52)
+✔ Implement descriptor-catalog validation for stale IDs and invalid directions.
+  @done(26-07-10 07:52)
+✔ Define and test duplicate-add behavior. @done(26-07-10 07:52)
+✔ Define and test move behavior at the first/last boundary.
+  @done(26-07-10 07:52)
+✔ Make each operation report whether the state actually changed.
+  @done(26-07-10 07:52)
+✔ Ensure returned/read state cannot be mutated accidentally by a caller.
+  @done(26-07-10 07:52)
 
 ### State tests
 
-☐ Add table-driven add/remove/clear tests.
-☐ Add direction-change tests for active and inactive filters.
-☐ Add priority reorder and boundary tests.
-☐ Add validation tests for stale, duplicate, and malformed entries.
-☐ Add copy/isolation tests proving saved state does not alias live state.
-☐ Add ordered serialization tests for the search input.
+✔ Add table-driven add/remove/clear tests. @done(26-07-10 07:52)
+✔ Add direction-change tests for active and inactive filters.
+  @done(26-07-10 07:52)
+✔ Add priority reorder and boundary tests. @done(26-07-10 07:52)
+✔ Add validation tests for stale, duplicate, and malformed entries.
+  @done(26-07-10 07:52)
+✔ Add copy/isolation tests proving saved state does not alias live state.
+  @done(26-07-10 07:52)
+✔ Add ordered serialization tests for the search input. @done(26-07-10 07:52)
 
 ### Persistence boundary
 
-☐ Add explicit `load()` and `save(state)` operations for session persistence.
-☐ Preserve the current persistence lifetime unless a separate behavior change
-  is approved.
-☐ Move `saved_filter_modes` and `saved_filter_order` out of `ui.lua`.
-☐ Validate persisted state against the active descriptor catalog on load.
-☐ Document the owner responsible for clearing or retaining state on script/world
-  lifecycle changes.
+✔ Add explicit `load()` and `save(state)` operations for session persistence.
+  @done(26-07-10 07:52)
+✔ Preserve the current persistence lifetime unless a separate behavior change
+  is approved. @done(26-07-10 07:52)
+✔ Move `saved_filter_modes` and `saved_filter_order` out of `ui.lua`.
+  @done(26-07-10 07:52)
+✔ Validate persisted state against the active descriptor catalog on load.
+  @done(26-07-10 07:52)
+✔ Document the owner responsible for clearing or retaining state on script/world
+  lifecycle changes. @done(26-07-10 07:52)
 
 ### Window migration
 
-☐ Replace `selected_filter_modes`, `selected_filter_order`, and derived
-  `selected_filters` with the canonical filter state.
-☐ Migrate add, remove, clear, direction, and priority methods one at a time.
-☐ Remove window methods that only implement collection lookup/copy/validation.
-☐ Ensure setting direction on a new filter performs one atomic state change,
-  not an add refresh followed by a direction refresh.
-☐ Keep widget construction and geometry unchanged during this phase.
+✔ Replace `selected_filter_modes`, `selected_filter_order`, and derived
+  `selected_filters` with the canonical filter state. @done(26-07-10 07:52)
+✔ Migrate add, remove, clear, direction, and priority methods one at a time.
+  @done(26-07-10 07:52)
+✔ Remove window methods that only implement collection lookup/copy/validation.
+  @done(26-07-10 07:52)
+✔ Ensure setting direction on a new filter performs one atomic state change,
+  not an add refresh followed by a direction refresh. @done(26-07-10 07:52)
+✔ Keep widget construction and geometry unchanged during this phase.
+  @done(26-07-10 07:52)
 
 ### Phase 3 exit gate
 
-☐ The window no longer owns filter collection mutation or persistence rules.
-☐ One logical state action results in one state transition.
-☐ Filter-state and search characterization tests pass.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
+✔ The window no longer owns filter collection mutation or persistence rules.
+  @done(26-07-10 07:52)
+✔ One logical state action results in one state transition.
+  @done(26-07-10 07:52)
+✔ Filter-state and search characterization tests pass. @done(26-07-10 07:52)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-10 07:52)
 ☐ In-game add/remove/clear/reorder/direction and reopen persistence match the
   baseline.
 

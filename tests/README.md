@@ -25,6 +25,9 @@ environment stubs only the external APIs needed by the modules under test:
   production attribute module loaded by the test environment.
 - The enum adapter, skill taxonomy, and descriptor catalog are loaded directly
   from their production files; only their DF enum data is supplied by fixtures.
+- The production filter-state model is loaded with the real descriptor catalog;
+  transition, validation, ordered serialization, and persistence-copy behavior
+  are exercised without widget stubs.
 
 The tests do not stub DFHack widgets or claim to validate in-game behavior.
 Visual layout, focus, mouse handling, live unit access, refresh, and zoom remain
