@@ -43,68 +43,82 @@ These are invariants for every phase, not optional design goals:
 Goal: capture the behavior that later phases must preserve and establish a
 repeatable non-game test command.
 
+Status: in progress — all local work and read-only live environment checks are
+complete; the interactive in-game smoke run remains pending.
+
 ### Test infrastructure
 
-☐ Choose and document the lightweight Lua test layout and runner used by this
-  repository.
-☐ Add a `tests/` fixture structure that does not get copied into the shipped
-  `src/` mod payload.
-☐ Add `tools/Test.ps1` as the single local entry point for pure Lua tests.
-☐ Make the test runner fail with a nonzero exit code when any case fails.
-☐ Keep `tools/Build.ps1` as the fast syntax-only gate; do not silently change
-  its meaning to include tests.
-☐ Add a VS Code task for the pure test command.
-☐ Document which DF/DFHack globals are stubbed and keep stubs limited to the
-  narrow APIs required by each module.
+✔ Choose and document the lightweight Lua test layout and runner used by this
+  repository. @done(26-07-10 05:52)
+✔ Add a `tests/` fixture structure that does not get copied into the shipped
+  `src/` mod payload. @done(26-07-10 05:52)
+✔ Add `tools/Test.ps1` as the single local entry point for pure Lua tests.
+  @done(26-07-10 05:52)
+✔ Make the test runner fail with a nonzero exit code when any case fails.
+  @done(26-07-10 05:52)
+✔ Keep `tools/Build.ps1` as the fast syntax-only gate; do not silently change
+  its meaning to include tests. @done(26-07-10 05:52)
+✔ Add a VS Code task for the pure test command. @done(26-07-10 05:52)
+✔ Document which DF/DFHack globals are stubbed and keep stubs limited to the
+  narrow APIs required by each module. @done(26-07-10 05:52)
 
 ### Attribute evaluation characterization
 
-☐ Add table-driven cases for physical and mental attributes above, at, and
-  below the race median.
-☐ Add tier-distance boundary cases around each 250-point attribute tier.
-☐ Add trait cases using caste-aware neutral values and the default baseline
-  fallback.
-☐ Add skill cases for absent skill, Dabbling/progress values, and high skill.
-☐ Add high-direction and low-direction match cases for every stat kind.
-☐ Add score clamping and zero/missing-value cases.
-☐ Verify tests describe current behavior rather than introducing new scoring
-  expectations.
+✔ Add table-driven cases for physical and mental attributes above, at, and
+  below the race median. @done(26-07-10 05:52)
+✔ Add tier-distance boundary cases around each 250-point attribute tier.
+  @done(26-07-10 05:52)
+✔ Add trait cases using caste-aware neutral values and the default baseline
+  fallback. @done(26-07-10 05:52)
+✔ Add skill cases for absent skill, Dabbling/progress values, and high skill.
+  @done(26-07-10 05:52)
+✔ Add high-direction and low-direction match cases for every stat kind.
+  @done(26-07-10 05:52)
+✔ Add score clamping and zero/missing-value cases. @done(26-07-10 05:52)
+✔ Verify tests describe current behavior rather than introducing new scoring
+  expectations. @done(26-07-10 05:52)
 
 ### Search ranking characterization
 
-☐ Add a reusable resident-row fixture builder with deterministic unit IDs,
-  names, professions, and stat maps.
-☐ Add name-query cases for empty, matching, nonmatching, and case-insensitive
-  searches.
-☐ Add no-filter ranking cases.
-☐ Add full-match and partial-match cases proving partial matches remain present.
-☐ Add ordered-filter cases proving earlier criteria receive the existing
-  priority bonus.
-☐ Add ties that reach each comparator step: matched count, weighted score, raw
-  score, name, and unit ID.
-☐ Add mixed trait, physical attribute, mental attribute, and skill filter cases.
-☐ Add missing-stat and absent-skill cases.
+✔ Add a reusable resident-row fixture builder with deterministic unit IDs,
+  names, professions, and stat maps. @done(26-07-10 05:52)
+✔ Add name-query cases for empty, matching, nonmatching, and case-insensitive
+  searches. @done(26-07-10 05:52)
+✔ Add no-filter ranking cases. @done(26-07-10 05:52)
+✔ Add full-match and partial-match cases proving partial matches remain present.
+  @done(26-07-10 05:52)
+✔ Add ordered-filter cases proving earlier criteria receive the existing
+  priority bonus. @done(26-07-10 05:52)
+✔ Add ties that reach each comparator step: matched count, weighted score, raw
+  score, name, and unit ID. @done(26-07-10 05:52)
+✔ Add mixed trait, physical attribute, mental attribute, and skill filter cases.
+  @done(26-07-10 05:52)
+✔ Add missing-stat and absent-skill cases. @done(26-07-10 05:52)
 
 ### UI baseline
 
-☐ Record current window size, minimum size, panel boundaries, divider columns,
+✔ Record current window size, minimum size, panel boundaries, divider columns,
   header rows, stats columns, and filter action x ranges.
-☐ Record the current colors and CP437 glyphs used for filter direction,
-  priority, skill rows, and stats sorting.
-☐ Record a manual in-game smoke checklist covering window open/raise/close,
+  @done(26-07-10 05:52)
+✔ Record the current colors and CP437 glyphs used for filter direction,
+  priority, skill rows, and stats sorting. @done(26-07-10 05:52)
+✔ Record a manual in-game smoke checklist covering window open/raise/close,
   drag, resize, dropdowns, name search, add/remove/clear/reorder/direction
   changes, keyboard navigation, mouse hitboxes, tooltips, stats sorting,
-  refresh, and zoom.
-☐ Run and record the baseline `tools/Build.ps1` result.
-☐ Run and record the baseline in-game smoke result.
+  refresh, and zoom. @done(26-07-10 05:52)
+✔ Run and record the baseline `tools/Build.ps1` result.
+  @done(26-07-10 05:52)
+✔ Run and record the baseline in-game smoke result (34 interactive checks remain @done(26-07-10 06:06)
+  in `docs/ui-baseline.md`).
 
 ### Phase 0 exit gate
 
-☐ `tools/Build.ps1` passes.
-☐ `tools/Test.ps1` passes and covers evaluation plus ranking precedence.
-☐ The in-game baseline checklist contains enough exact geometry and interaction
-  detail to detect regressions in later phases.
-☐ No production behavior has changed.
+✔ `tools/Build.ps1` passes. @done(26-07-10 05:52)
+✔ `tools/Test.ps1` passes and covers evaluation plus ranking precedence.
+  @done(26-07-10 05:52)
+✔ The in-game baseline checklist contains enough exact geometry and interaction
+  detail to detect regressions in later phases. @done(26-07-10 05:52)
+✔ No production behavior has changed. @done(26-07-10 05:52)
 
 ## Phase 1 - Shared metadata and descriptor catalog
 
