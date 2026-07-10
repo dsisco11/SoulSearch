@@ -16,12 +16,15 @@ environment stubs only the external APIs needed by the modules under test:
 
 - `reqscript('modtools/set-personality')` supplies deterministic caste trait
   baselines and trait tiers.
-- `df.physical_attribute_type` and `df.mental_attribute_type` contain the small
-  enum subsets exercised by fixtures.
+- Physical, mental, personality, and job-skill enums contain the small sparse
+  subsets exercised by fixtures, including caption metadata and an explicitly
+  uncategorized future-skill case.
 - `df.global.world.raws.creatures.all` contains one creature raw with physical
   and mental attribute medians.
 - `reqscript('internal/soulsearch/attributes')` gives `search.lua` the actual
   production attribute module loaded by the test environment.
+- The enum adapter, skill taxonomy, and descriptor catalog are loaded directly
+  from their production files; only their DF enum data is supplied by fixtures.
 
 The tests do not stub DFHack widgets or claim to validate in-game behavior.
 Visual layout, focus, mouse handling, live unit access, refresh, and zoom remain

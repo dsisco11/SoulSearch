@@ -127,58 +127,84 @@ Depends on: Phase 0.
 Goal: give descriptor metadata, skill taxonomy, and enum traversal one source
 of truth, then stop rebuilding descriptors during searches.
 
+Status: in progress — implementation, automated validation, and a live
+DFHack catalog query are complete; the visual in-game picker comparison remains
+pending with the Phase 0 interactive smoke run.
+
+Live validation (DF/DFHack 0.53.15): one stable catalog contained 149 skills,
+6 physical attributes, 13 mental attributes, and 50 traits (218 indexed
+descriptors total). The development taxonomy query identified 54 current skill
+keys using the explicit `Other Skills` fallback without emitting normal runtime
+output.
+
 ### Skill taxonomy extraction
 
-☐ Create `internal/soulsearch/skill_categories.lua`.
-☐ Move category labels, category order, skill-key mappings, and compatibility
-  aliases out of `search.lua`.
-☐ Export a narrow `get_category(skill_key)` API with `Other Skills` fallback.
-☐ Export category order from the same module used by the picker UI.
-☐ Preserve every existing mapped key and alias during the move.
-☐ Add a test that every current fixture/current-enum skill resolves to a
-  category or the explicit fallback.
-☐ Add a development-only way to identify skills that reached the fallback
-  without spamming normal users.
+✔ Create `internal/soulsearch/skill_categories.lua`.
+  @done(26-07-10 06:58)
+✔ Move category labels, category order, skill-key mappings, and compatibility
+  aliases out of `search.lua`. @done(26-07-10 06:58)
+✔ Export a narrow `get_category(skill_key)` API with `Other Skills` fallback.
+  @done(26-07-10 06:58)
+✔ Export category order from the same module used by the picker UI.
+  @done(26-07-10 06:58)
+✔ Preserve every existing mapped key and alias during the move.
+  @done(26-07-10 06:58)
+✔ Add a test that every current fixture/current-enum skill resolves to a
+  category or the explicit fallback. @done(26-07-10 06:58)
+✔ Add a development-only way to identify skills that reached the fallback
+  without spamming normal users. @done(26-07-10 06:58)
 
 ### Enum metadata ownership
 
-☐ Create a narrowly named DF enum adapter module; do not create a catch-all
-  `utils.lua`.
-☐ Move the duplicated `enum_keys()` implementation out of `search.lua` and
-  `residents.lua`.
-☐ Keep enum iteration ordered by numeric enum value and continue excluding
-  `NONE`.
-☐ Centralize enum value-to-name lookup used by resident skill snapshots.
-☐ Add focused enum adapter tests with sparse and aliased enum fixtures.
+✔ Create a narrowly named DF enum adapter module; do not create a catch-all
+  `utils.lua`. @done(26-07-10 06:58)
+✔ Move the duplicated `enum_keys()` implementation out of `search.lua` and
+  `residents.lua`. @done(26-07-10 06:58)
+✔ Keep enum iteration ordered by numeric enum value and continue excluding
+  `NONE`. @done(26-07-10 06:58)
+✔ Centralize enum value-to-name lookup used by resident skill snapshots.
+  @done(26-07-10 06:58)
+✔ Add focused enum adapter tests with sparse and aliased enum fixtures.
+  @done(26-07-10 06:58)
 
 ### Immutable descriptor catalog
 
-☐ Define a LuaLS-annotated catalog type containing `groups`, `flat`, and
-  `by_id`.
-☐ Build trait, physical attribute, mental attribute, and skill descriptors once
-  per loaded script environment.
-☐ Preserve current labels, IDs, alphabetical ordering, category assignments,
-  and group ordering.
-☐ Populate `by_id` while building `flat` and fail clearly on duplicate IDs in
-  development/tests.
-☐ Treat catalog descriptor tables as immutable shared metadata.
-☐ Replace `get_filter_descriptors()` and `get_flat_filter_descriptors()` call
-  sites with one catalog access path.
-☐ Replace repeated flatten-and-scan lookups in `search.lua` with `by_id[id]`.
-☐ Replace the independent linear descriptor lookup in `ui.lua` with the same
-  catalog index.
-☐ Define whether enum metadata can change during the supported lifecycle.
-☐ If rebuild is required, expose and test one explicit `rebuild_catalog()`
+✔ Define a LuaLS-annotated catalog type containing `groups`, `flat`, and
+  `by_id`. @done(26-07-10 06:58)
+✔ Build trait, physical attribute, mental attribute, and skill descriptors once
+  per loaded script environment. @done(26-07-10 06:58)
+✔ Preserve current labels, IDs, alphabetical ordering, category assignments,
+  and group ordering. @done(26-07-10 06:58)
+✔ Populate `by_id` while building `flat` and fail clearly on duplicate IDs in
+  development/tests. @done(26-07-10 06:58)
+✔ Treat catalog descriptor tables as immutable shared metadata.
+  @done(26-07-10 06:58)
+✔ Replace `get_filter_descriptors()` and `get_flat_filter_descriptors()` call
+  sites with one catalog access path. @done(26-07-10 06:58)
+✔ Replace repeated flatten-and-scan lookups in `search.lua` with `by_id[id]`.
+  @done(26-07-10 06:58)
+✔ Replace the independent linear descriptor lookup in `ui.lua` with the same
+  catalog index. @done(26-07-10 06:58)
+✔ Define whether enum metadata can change during the supported lifecycle.
+  @done(26-07-10 06:58)
+✘ If rebuild is required, expose and test one explicit `rebuild_catalog()`
   lifecycle operation; do not rebuild implicitly inside lookup/search.
+  @cancelled(26-07-10 06:58) Enum metadata is stable for a loaded script
+  environment; a module reload owns construction of a new catalog.
 
 ### Phase 1 exit gate
 
-☐ Catalog tests prove ID uniqueness, ordering, categories, and lookup behavior.
-☐ Applying a search performs no DF enum traversal or descriptor sorting.
-☐ Opening the window constructs or retrieves the descriptor catalog once.
-☐ Ranking characterization tests remain unchanged and pass.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
-☐ In-game filter pickers show the same labels, categories, colors, and order.
+✔ Catalog tests prove ID uniqueness, ordering, categories, and lookup behavior.
+  @done(26-07-10 06:58)
+✔ Applying a search performs no DF enum traversal or descriptor sorting.
+  @done(26-07-10 06:58)
+✔ Opening the window constructs or retrieves the descriptor catalog once.
+  @done(26-07-10 06:58)
+✔ Ranking characterization tests remain unchanged and pass.
+  @done(26-07-10 06:58)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-10 06:58)
+☐ In-game filter pickers show the same labels, categories, colors, and order
+  (requires the interactive smoke run).
 
 ## Phase 2 - Search API and result model cleanup
 

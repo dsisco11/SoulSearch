@@ -1,9 +1,5 @@
 --@ module=true
 
----@class SoulSearchEnumEntry
----@field name string
----@field value integer
-
 ---@class SoulSearchResidentRow
 ---@field unit df.unit
 ---@field unit_id integer
@@ -14,18 +10,7 @@
 ---@field physical_attributes table<string, number>
 ---@field skills table<string, number>
 
----@param enum table
----@return SoulSearchEnumEntry[]
-local function enum_keys(enum)
-    local keys = {}
-    for index, name in ipairs(enum) do
-        if name ~= 'NONE' then
-            table.insert(keys, {name=name, value=enum[name] or index})
-        end
-    end
-    table.sort(keys, function(a, b) return a.value < b.value end)
-    return keys
-end
+local df_enums = reqscript('internal/soulsearch/df_enums')
 
 local skill_name_by_id
 
@@ -33,10 +18,7 @@ local skill_name_by_id
 ---@return string|nil
 local function get_skill_name_by_id(skill_id)
     if not skill_name_by_id then
-        skill_name_by_id = {}
-        for _, skill in ipairs(enum_keys(df.job_skill)) do
-            skill_name_by_id[skill.value] = skill.name
-        end
+        skill_name_by_id = df_enums.names_by_value(df.job_skill)
     end
     return skill_name_by_id[skill_id]
 end
@@ -52,7 +34,7 @@ local function get_trait_values(unit)
         return values
     end
 
-    for _, trait in ipairs(enum_keys(df.personality_facet_type)) do
+    for _, trait in ipairs(df_enums.entries(df.personality_facet_type)) do
         local ok, value = pcall(function() return traits[trait.value] end)
         if ok and value ~= nil then
             values[trait.name] = value
@@ -65,7 +47,7 @@ end
 ---@return table<string, number>
 local function get_mental_attribute_values(unit)
     local values = {}
-    for _, attr in ipairs(enum_keys(df.mental_attribute_type)) do
+    for _, attr in ipairs(df_enums.entries(df.mental_attribute_type)) do
         local ok, value = pcall(dfhack.units.getMentalAttrValue, unit, attr.value)
         if ok and value ~= nil then
             values[attr.name] = value
@@ -78,7 +60,7 @@ end
 ---@return table<string, number>
 local function get_physical_attribute_values(unit)
     local values = {}
-    for _, attr in ipairs(enum_keys(df.physical_attribute_type)) do
+    for _, attr in ipairs(df_enums.entries(df.physical_attribute_type)) do
         local ok, value = pcall(dfhack.units.getPhysicalAttrValue, unit, attr.value)
         if ok and value ~= nil then
             values[attr.name] = value

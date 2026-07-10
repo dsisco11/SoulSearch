@@ -18,6 +18,8 @@ local widgets = require('gui.widgets')
 local residents = reqscript('internal/soulsearch/residents')
 local search = reqscript('internal/soulsearch/search')
 local attributes = reqscript('internal/soulsearch/attributes')
+local descriptors = reqscript('internal/soulsearch/descriptors')
+local skill_categories = reqscript('internal/soulsearch/skill_categories')
 
 local view
 local saved_filter_modes = {}
@@ -64,14 +66,6 @@ local ACTIVE_FILTER_BUTTON_START_X = 21
 local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
 local ADD_FILTER_LABEL = 'Add attribute filter'
 local ADD_SKILL_LABEL = 'Add skill filter'
-local SKILL_CATEGORY_ORDER = {
-    'Labor',
-    'Combat',
-    'Social',
-    'Other Skills',
-    'Knowledge',
-}
-
 ---@param text any
 ---@param width integer
 ---@return string
@@ -673,6 +667,7 @@ end
 ---@field stats_sort_phase integer
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
+---@field filter_catalog SoulSearchFilterCatalog
 ---@field filter_descriptors SoulSearchFilterDescriptor[]
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field skill_filter_descriptors SoulSearchFilterDescriptor[]
@@ -699,8 +694,10 @@ function SoulSearchWindow:init()
     self.stats_sort_phase = 0
     self.add_filter_open = false
     self.add_skill_open = false
-    local filter_descriptor_groups = search.get_filter_descriptors()
-    self.filter_descriptors = search.get_flat_filter_descriptors()
+    local filter_catalog = descriptors.get_catalog()
+    local filter_descriptor_groups = filter_catalog.groups
+    self.filter_catalog = filter_catalog
+    self.filter_descriptors = filter_catalog.flat
     self.attribute_filter_descriptors = {}
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.physical_attributes)
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.mental_attributes)
@@ -978,12 +975,7 @@ end
 ---@param filter_id string
 ---@return SoulSearchFilterDescriptor|nil
 function SoulSearchWindow:get_filter_descriptor_by_id(filter_id)
-    for _, descriptor in ipairs(self.filter_descriptors) do
-        if descriptor.id == filter_id then
-            return descriptor
-        end
-    end
-    return nil
+    return self.filter_catalog.by_id[filter_id]
 end
 
 ---@param filter_modes table<string, SoulSearchFilterDirection>|nil
@@ -1108,7 +1100,7 @@ function SoulSearchWindow:update_available_skill_choices(selected)
             })
         end
     end
-    for _, category in ipairs(SKILL_CATEGORY_ORDER) do
+    for _, category in ipairs(skill_categories.get_order()) do
         local category_choices = choices_by_category[category]
         if category_choices and #category_choices > 0 then
             table.insert(choices, {
