@@ -47,3 +47,5 @@
 ☐ Add tooltip for 'delta' column values on stats panel, should explain that the number is the difference between the unit's value and the average for that attribute.
 ☐ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does.
 ☐ Add tooltips for all skill names in the stat & filter panels, should explain what the skill is and what it does.
+☐ Add filter presets, so that users can save and load their favorite filter combinations.
+☐ Provide filter preset defaults for common jobs, such as Scholar, Marksdwarf, Sheriff, etc.
