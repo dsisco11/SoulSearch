@@ -213,46 +213,66 @@ Depends on: Phase 1.
 Goal: reduce search to one input contract and an explicitly tested result
 ordering/model.
 
+Status: in progress — implementation, automated validation, and a fresh-script
+live DFHack probe are complete; visual result/filter comparison remains pending
+with the interactive smoke run.
+
+Canonical input policy: filters are ordered `{id, direction}` entries. Unknown
+IDs, malformed entries, and directions other than `high`/`low` are ignored. The
+first valid occurrence of a duplicate ID wins and retains its priority.
+
 ### Canonical search input
 
-☐ Confirm that no external script consumes the private alternatives
-  `selected_descriptors` or `selected_filter_ids`.
-☐ Choose ordered `{id, direction}` filters as the canonical `search.apply()`
-  input.
-☐ Normalize and validate filter entries once at the API boundary through the
-  descriptor catalog.
-☐ Define behavior for unknown IDs, duplicate IDs, and invalid directions.
-☐ Remove unused compatibility input paths when confirmed private.
-☐ If a compatibility path must remain, isolate it in one named adapter and
+✔ Confirm that no external script consumes the private alternatives
+  `selected_descriptors` or `selected_filter_ids`. @done(26-07-10 07:20)
+✔ Choose ordered `{id, direction}` filters as the canonical `search.apply()`
+  input. @done(26-07-10 07:20)
+✔ Normalize and validate filter entries once at the API boundary through the
+  descriptor catalog. @done(26-07-10 07:20)
+✔ Define behavior for unknown IDs, duplicate IDs, and invalid directions.
+  @done(26-07-10 07:20)
+✔ Remove unused compatibility input paths when confirmed private.
+  @done(26-07-10 07:20)
+✘ If a compatibility path must remain, isolate it in one named adapter and
   document its precedence instead of branching inside `apply()`.
+  @cancelled(26-07-10 07:20) No compatibility path or external consumer remains.
 
 ### Search internals
 
-☐ Extract the result ordering function into a named comparator.
-☐ Add direct comparator tests for every tie-break level.
-☐ Keep scoring/evaluation separate from result presentation formatting.
-☐ Avoid copying immutable descriptor tables; copy only selected-filter state
-  that is actually mutable.
-☐ Rename any remaining shallow-copy helper so its behavior is explicit.
+✔ Extract the result ordering function into a named comparator.
+  @done(26-07-10 07:20)
+✔ Add direct comparator tests for every tie-break level.
+  @done(26-07-10 07:20)
+✔ Keep scoring/evaluation separate from result presentation formatting.
+  @done(26-07-10 07:20)
+✔ Avoid copying immutable descriptor tables; copy only selected-filter state
+  that is actually mutable. @done(26-07-10 07:20)
+✔ Rename any remaining shallow-copy helper so its behavior is explicit.
+  @done(26-07-10 07:20) The obsolete shallow-copy helper was removed entirely.
 
 ### Result model
 
-☐ Audit every `SoulSearchResult` field against production consumers.
-☐ Remove unused `matched_criteria`, `criteria_count`, and `match_label` fields
-  if no consumer is found.
-☐ Keep `filter_criteria`, `matched_count`, and score fields only where required
-  by presentation or sorting.
-☐ Update LuaLS result annotations to match the final shape.
-☐ Update fixtures to build/compare the final result contract.
+✔ Audit every `SoulSearchResult` field against production consumers.
+  @done(26-07-10 07:20)
+✔ Remove unused `matched_criteria`, `criteria_count`, and `match_label` fields
+  if no consumer is found. @done(26-07-10 07:20)
+✔ Keep `filter_criteria`, `matched_count`, and score fields only where required
+  by presentation or sorting. @done(26-07-10 07:20)
+✔ Update LuaLS result annotations to match the final shape.
+  @done(26-07-10 07:20)
+✔ Update fixtures to build/compare the final result contract.
+  @done(26-07-10 07:20)
 
 ### Phase 2 exit gate
 
-☐ `search.apply()` exposes one documented input shape.
-☐ Result objects contain no unowned compatibility or presentation fields.
-☐ All ranking and comparator characterization tests pass without expectation
-  changes.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
-☐ In-game result order and selected-filter values match the baseline.
+✔ `search.apply()` exposes one documented input shape. @done(26-07-10 07:20)
+✔ Result objects contain no unowned compatibility or presentation fields.
+  @done(26-07-10 07:20)
+✔ All ranking and comparator characterization tests pass without expectation
+  changes. @done(26-07-10 07:20)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-10 07:20)
+✔ In-game result order and selected-filter values match the baseline (requires @done(26-07-10 07:32)
+  the interactive smoke run).
 
 ## Phase 3 - Filter state model and persistence boundary
 
