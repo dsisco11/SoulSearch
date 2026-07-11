@@ -9,7 +9,6 @@ local function make_owner()
         self.values[name] = value
         self.last_value = value
     end
-    function owner:refresh_picker_buttons() record(self, 'picker_buttons') end
     function owner:refresh_active_filter_choices(selected)
         record(self, 'active_filters', selected)
     end
@@ -32,14 +31,13 @@ return function(test, repo_root)
     test.case('UI refresh: filter change refreshes each dependent view once', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {
-            picker_buttons=true,
             active_filters=true,
             pickers=true,
             results=true,
             selected_filter=3,
         })
         test.assert_sequence(
-            {'picker_buttons', 'active_filters', 'pickers', 'results', 'stats'},
+            {'active_filters', 'pickers', 'results', 'stats'},
             owner.calls)
         test.assert_equal(1, owner.counts.results)
         test.assert_equal(1, owner.counts.stats)
@@ -49,8 +47,8 @@ return function(test, repo_root)
 
     test.case('UI refresh: picker change never recomputes results', function()
         local owner = make_owner()
-        ui_refresh.apply(owner, {picker_buttons=true, pickers=true})
-        test.assert_sequence({'picker_buttons', 'pickers'}, owner.calls)
+        ui_refresh.apply(owner, {pickers=true})
+        test.assert_sequence({'pickers'}, owner.calls)
         test.assert_nil(owner.counts.results)
         test.assert_nil(owner.counts.stats)
     end)

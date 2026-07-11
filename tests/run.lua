@@ -14,6 +14,11 @@ local suites = {
     (require('filter_state_test')),
     (require('search_test')),
     (require('ui_refresh_test')),
+    (require('ui_layout_test')),
+    (require('text_match_test')),
+    (require('ui_format_test')),
+    (require('stats_presenter_test')),
+    (require('ui_components_test')),
 }
 
 for _, register_suite in ipairs(suites) do

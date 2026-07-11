@@ -5,22 +5,18 @@
 ---@field y integer
 ---@field z integer
 
----@class SoulSearchStatsRecord
----@field label string
----@field label_key string
----@field deviation number
----@field tier_distance number
----@field pen dfhack.color|dfhack.pen
-
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
 local residents = reqscript('internal/soulsearch/residents')
 local search = reqscript('internal/soulsearch/search')
-local attributes = reqscript('internal/soulsearch/attributes')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
+local text_match = reqscript('internal/soulsearch/text_match')
+local ui_components = reqscript('internal/soulsearch/ui_components')
+local ui_format = reqscript('internal/soulsearch/ui_format')
+local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 
 local view
@@ -28,80 +24,12 @@ local saved_stats_sort_key
 local saved_stats_sort_reverse = false
 local saved_stats_sort_phase = 0
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
-local SECTION_DIVIDER_XS = {39, 105}
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
-local MATCHED_FILTER_LABEL_WIDTH = 24
-local MATCHED_FILTER_VALUE_WIDTH = 6
-local STATS_LABEL_WIDTH = 24
-local STATS_VALUE_COLUMN_X = 27
-local STATS_VALUE_HEADER_WIDTH = 7
 local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
-local TITLE_UNDERLINE_PEN = COLOR_GREY
-local FILTER_ACTION_PLUS = 'plus'
-local FILTER_ACTION_MINUS = 'minus'
-local FILTER_ACTION_REMOVE = 'remove'
-local FILTER_ACTION_UP = 'up'
-local FILTER_ACTION_DOWN = 'down'
-local FILTER_ACTION_WIDTH = 3
-local CP437_TRIANGLE_UP = string.char(30)
-local CP437_TRIANGLE_DOWN = string.char(31)
-local CP437_ARROW_RIGHT = string.char(16)
-local CP437_ARROW_UP = string.char(24)
-local CP437_ARROW_DOWN = string.char(25)
-local FILTER_ACTION_UP_LABEL = '[' .. CP437_TRIANGLE_UP .. ']'
-local FILTER_ACTION_DOWN_LABEL = '[' .. CP437_TRIANGLE_DOWN .. ']'
-local FILTER_ACTION_TOOLTIPS = {
-    [FILTER_ACTION_PLUS] = 'Prefer high',
-    [FILTER_ACTION_MINUS] = 'Prefer low',
-    [FILTER_ACTION_UP] = 'Move up',
-    [FILTER_ACTION_DOWN] = 'Move down',
-    [FILTER_ACTION_REMOVE] = 'Remove',
-}
-local STATS_HEADER_TOOLTIPS = {
-    [STATS_SORT_LABEL]='Sort by stat name.',
-    [STATS_SORT_VALUE]='Sort by baseline difference.',
-}
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
-local ACTIVE_FILTER_BUTTON_START_X = 21
-local ACTIVE_FILTER_LABEL_WIDTH = ACTIVE_FILTER_BUTTON_START_X - 1
-local ADD_FILTER_LABEL = 'Add attribute filter'
-local ADD_SKILL_LABEL = 'Add skill filter'
----@param text any
----@param width integer
----@return string
-local function truncate(text, width)
-    text = tostring(text or '')
-    if width <= 0 or #text <= width then
-        return text
-    end
-    if width <= 3 then
-        return text:sub(1, width)
-    end
-    return text:sub(1, width - 3) .. '...'
-end
-
----@param haystack any
----@param needle string|nil
----@return boolean
-local function contains_text(haystack, needle)
-    if not needle or needle == '' then
-        return true
-    end
-    return tostring(haystack or ''):lower():find(needle:lower(), 1, true) ~= nil
-end
-
----@param pos SoulSearchPosition|nil
----@return string
-local function format_position(pos)
-    if not pos then
-        return 'unknown'
-    end
-    return ('%d, %d, %d'):format(pos.x, pos.y, pos.z)
-end
-
 ---@param x integer|table
 ---@param y integer|nil
 ---@param z integer|nil
@@ -117,167 +45,6 @@ local function make_position(x, y, z)
         return nil
     end
     return {x=x, y=y, z=z}
-end
-
----@param result SoulSearchResult
----@return string
-local function format_result_choice(result)
-    return ('%-45s %s'):format(
-        truncate(result.name, 45),
-        truncate(result.profession or '', 18))
-end
-
----@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
----@return dfhack.color|dfhack.pen
-local function get_category_pen(descriptor)
-    if descriptor.kind == 'skill' then
-        return COLOR_YELLOW
-    end
-    if descriptor.kind == 'physical_attribute' then
-        return COLOR_LIGHTGREEN
-    end
-    if descriptor.kind == 'mental_attribute' then
-        return COLOR_LIGHTBLUE
-    end
-    return COLOR_LIGHTMAGENTA
-end
-
----@param deviation number
----@param tier_distance number
----@return dfhack.color|dfhack.pen
-local function get_deviation_pen(deviation, tier_distance)
-    if deviation < 0 then
-        if tier_distance >= 2 then
-            return COLOR_LIGHTRED
-        end
-        return COLOR_RED
-    end
-    if tier_distance >= 4 then
-        return COLOR_LIGHTGREEN
-    end
-    if tier_distance >= 2 then
-        return COLOR_LIGHTGREEN
-    end
-    return COLOR_GREEN
-end
-
----@param deviation number
----@return string
-local function format_deviation(deviation)
-    if deviation > 0 then
-        return ('+%d'):format(deviation)
-    end
-    return tostring(deviation)
-end
-
----@param value number|nil
----@return string
-local function format_skill_value(value)
-    value = math.floor((value or 0) * 10) / 10
-    return ('%.1f'):format(value)
-end
-
----@param criterion SoulSearchFilterCriterion
----@param evaluation SoulSearchEvaluation
----@return string
-local function format_evaluation_value(criterion, evaluation)
-    if criterion.kind == 'skill' then
-        return format_skill_value(evaluation.value)
-    end
-    return format_deviation(evaluation.deviation)
-end
-
----@param title any
----@return string
-local function get_title_underline(title)
-    return ('-'):rep(#tostring(title or ''))
-end
-
----@param tokens table[]
----@param title string
----@param pen dfhack.color|dfhack.pen
-local function add_underlined_title(tokens, title, pen)
-    table.insert(tokens, {text=title, pen=pen})
-    table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text=get_title_underline(title), pen=pen})
-    table.insert(tokens, NEWLINE)
-end
-
----@param descriptor SoulSearchFilterDescriptor
----@param mode SoulSearchFilterDirection|nil
----@param priority_index integer|nil
----@param priority_count integer
----@return table[]
-local function format_active_filter_choice(descriptor, mode, priority_index, priority_count)
-    local high_selected = mode == FILTER_HIGH
-    local low_selected = mode == FILTER_LOW
-    local can_move_up = priority_index and priority_index > 1
-    local can_move_down = priority_index and priority_index < priority_count
-    local label = truncate(descriptor.label, ACTIVE_FILTER_LABEL_WIDTH)
-    local spacer_width = math.max(1, ACTIVE_FILTER_BUTTON_START_X - #label)
-    return {
-        {text=label, pen=get_category_pen(descriptor)},
-        {text=(' '):rep(spacer_width), pen=COLOR_DARKGREY},
-        {text='[+]', pen=high_selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
-        {text='[-]', pen=low_selected and COLOR_LIGHTRED or COLOR_DARKGREY},
-        {text=FILTER_ACTION_UP_LABEL, pen=can_move_up and COLOR_WHITE or COLOR_DARKGREY},
-        {text=FILTER_ACTION_DOWN_LABEL, pen=can_move_down and COLOR_WHITE or COLOR_DARKGREY},
-        {text='[x]', pen=COLOR_LIGHTRED},
-    }
-end
-
----@param descriptor SoulSearchFilterDescriptor
----@return table[]
-local function format_available_filter_choice(descriptor)
-    return {
-        {text=descriptor.label, pen=get_category_pen(descriptor)},
-    }
-end
-
----@param descriptor SoulSearchFilterDescriptor
----@return table[]
-local function format_available_skill_choice(descriptor)
-    return {
-        {text=CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
-        {text=descriptor.label, pen=get_category_pen(descriptor)},
-    }
-end
-
----@param category string
----@return table[]
-local function format_skill_category_choice(category)
-    return {
-        {text=category, pen=COLOR_WHITE},
-    }
-end
-
----@param x integer|nil
----@return string|nil
-local function get_filter_action_at_x(x)
-    if not x then
-        return nil
-    end
-    if x < ACTIVE_FILTER_BUTTON_START_X then
-        return nil
-    end
-
-    x = x - ACTIVE_FILTER_BUTTON_START_X
-    if x < FILTER_ACTION_WIDTH then
-        return FILTER_ACTION_PLUS
-    end
-    if x < FILTER_ACTION_WIDTH * 2 then
-        return FILTER_ACTION_MINUS
-    end
-    if x < FILTER_ACTION_WIDTH * 3 then
-        return FILTER_ACTION_UP
-    end
-    if x < FILTER_ACTION_WIDTH * 4 then
-        return FILTER_ACTION_DOWN
-    end
-    if x < FILTER_ACTION_WIDTH * 5 then
-        return FILTER_ACTION_REMOVE
-    end
-    return nil
 end
 
 ---@param keys table
@@ -316,7 +83,7 @@ end
 ---@return integer tooltip_width
 local function get_tooltip_box(text, max_width)
     local text_width = math.min(#text, math.min(52, max_width - 2))
-    local tooltip_text = truncate(text, text_width)
+    local tooltip_text = ui_format.truncate(text, text_width)
     return tooltip_text, #tooltip_text + 2
 end
 
@@ -384,6 +151,14 @@ local function append_descriptors(target, descriptors)
     end
 end
 
+---@param target table[]
+---@param views table[]
+local function append_views(target, views)
+    for _, child in ipairs(views) do
+        table.insert(target, child)
+    end
+end
+
 ---@param result SoulSearchResult|nil
 ---@return SoulSearchPosition|nil
 local function get_live_position(result)
@@ -396,227 +171,6 @@ local function get_live_position(result)
         return make_position(x, y, z)
     end
     return nil
-end
-
----@param kind SoulSearchStatKind
----@param key string
----@param value number
----@param unit df.unit
----@return boolean
-local function is_notable_value(kind, key, value, unit)
-    local evaluation = attributes.evaluate(kind, key, value, unit)
-    return evaluation and evaluation.tier_distance ~= 0
-end
-
----@param records SoulSearchStatsRecord[]
----@param pen dfhack.color|dfhack.pen
----@param kind SoulSearchStatKind
----@param values table<string, number>|nil
----@param unit df.unit|nil
----@return boolean
-local function collect_attribute_records(records, pen, kind, values, unit)
-    if not values or not unit then
-        return false
-    end
-
-    local keys = {}
-    for key, value in pairs(values) do
-        if is_notable_value(kind, key, value, unit) then
-            table.insert(keys, key)
-        end
-    end
-    table.sort(keys)
-
-    if #keys == 0 then
-        return false
-    end
-
-    for _, key in ipairs(keys) do
-        local label = key:gsub('_', ' '):lower():gsub('^%l', string.upper)
-        local evaluation = attributes.evaluate(kind, key, values[key], unit)
-        table.insert(records, {
-            label=label,
-            label_key=label:lower(),
-            deviation=evaluation.deviation,
-            tier_distance=evaluation.tier_distance,
-            pen=pen,
-        })
-    end
-    return true
-end
-
----@param tokens table[]
----@param record SoulSearchStatsRecord
-local function add_attribute_record(tokens, record)
-    table.insert(tokens, {text=('  %-' .. STATS_LABEL_WIDTH .. 's '):format(record.label), pen=record.pen})
-    table.insert(tokens, {
-        text=format_deviation(record.deviation),
-        pen=get_deviation_pen(record.deviation, record.tier_distance),
-    })
-    table.insert(tokens, NEWLINE)
-end
-
----@param records SoulSearchStatsRecord[]
----@param sort_key string|nil
----@param sort_reverse boolean
-local function sort_attribute_records(records, sort_key, sort_reverse)
-    table.sort(records, function(left, right)
-        local left_value = sort_key == STATS_SORT_VALUE and left.deviation or left.label_key
-        local right_value = sort_key == STATS_SORT_VALUE and right.deviation or right.label_key
-        if left_value == right_value then
-            return left.label_key < right.label_key
-        end
-        if sort_reverse then
-            return left_value > right_value
-        end
-        return left_value < right_value
-    end)
-end
-
----@param sort_key string|nil
----@param active_key string
----@param sort_reverse boolean
----@return string
-local function get_sort_marker(sort_key, active_key, sort_reverse)
-    if sort_key ~= active_key then
-        return ''
-    end
-    return ' ' .. (sort_reverse and CP437_ARROW_DOWN or CP437_ARROW_UP)
-end
-
----@param tokens table[]
----@param sort_key string|nil
----@param sort_reverse boolean
-local function add_stats_column_header(tokens, sort_key, sort_reverse)
-    local label_header = 'Stat' .. get_sort_marker(sort_key, STATS_SORT_LABEL, sort_reverse)
-    local value_header = 'Delta' .. get_sort_marker(sort_key, STATS_SORT_VALUE, sort_reverse)
-    table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=('%-' .. STATS_LABEL_WIDTH .. 's '):format(label_header), pen=COLOR_GREY})
-    table.insert(tokens, {text=value_header, pen=COLOR_GREY})
-    table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=('-'):rep(STATS_LABEL_WIDTH), pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=('-'):rep(5), pen=COLOR_DARKGREY})
-    table.insert(tokens, NEWLINE)
-end
-
----@param criterion SoulSearchFilterCriterion
----@param default_pen dfhack.color|dfhack.pen
----@return dfhack.color|dfhack.pen
-local function get_filter_criterion_pen(criterion, default_pen)
-    if criterion.matched then
-        return default_pen
-    end
-    return COLOR_DARKGREY
-end
-
----@param criterion SoulSearchFilterCriterion
----@param unit df.unit
----@return SoulSearchEvaluation|SoulSearchFilterCriterion|nil
-local function get_criterion_evaluation(criterion, unit)
-    if criterion.deviation ~= nil and criterion.tier_distance ~= nil then
-        return criterion
-    end
-    return attributes.evaluate(criterion.kind, criterion.key, criterion.value, unit)
-end
-
----@param tokens table[]
----@param filter_criteria SoulSearchFilterCriterion[]|nil
----@param unit df.unit
-local function add_selected_filter_section(tokens, filter_criteria, unit)
-    if not filter_criteria or #filter_criteria == 0 then
-        return
-    end
-
-    add_underlined_title(tokens, 'Selected filters', COLOR_WHITE)
-
-    for _, criterion in ipairs(filter_criteria) do
-        local is_low = criterion.direction == FILTER_LOW
-        local evaluation = get_criterion_evaluation(criterion, unit)
-        if evaluation then
-            local direction_pen = get_filter_criterion_pen(
-                criterion,
-                is_low and COLOR_LIGHTRED or COLOR_LIGHTGREEN)
-            local label_pen = get_filter_criterion_pen(criterion, get_category_pen(criterion))
-            local value_pen = get_filter_criterion_pen(
-                criterion,
-                get_deviation_pen(evaluation.deviation, evaluation.tier_distance))
-            table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
-            table.insert(tokens, {text=is_low and '[-] ' or '[+] ', pen=direction_pen})
-            table.insert(tokens, {text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
-                truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)), pen=label_pen})
-            table.insert(tokens, {text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
-                format_evaluation_value(criterion, evaluation)), pen=value_pen})
-            table.insert(tokens, NEWLINE)
-        end
-    end
-
-    table.insert(tokens, NEWLINE)
-end
-
----@param result SoulSearchResult|nil
----@return table[]
-local function stats_header_for_result(result)
-    local tokens = {}
-    if not result or not result.row then
-        table.insert(tokens, {text='No resident selected.', pen=COLOR_DARKGREY})
-        return tokens
-    end
-
-    table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
-    table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text=result.profession or '', pen=COLOR_DARKGREY})
-    table.insert(tokens, NEWLINE)
-    table.insert(tokens, NEWLINE)
-    add_selected_filter_section(tokens, result.filter_criteria, result.unit)
-    return tokens
-end
-
----@param result SoulSearchResult|nil
----@param sort_key string|nil
----@param sort_reverse boolean
----@return table[]|string
-local function stats_for_result(result, sort_key, sort_reverse)
-    if not result or not result.row then
-        return ''
-    end
-
-    local tokens = {}
-    add_stats_column_header(tokens, sort_key, sort_reverse)
-
-    if sort_key then
-        local records = {}
-        collect_attribute_records(records, COLOR_LIGHTGREEN, 'physical_attribute', result.row.physical_attributes, result.unit)
-        collect_attribute_records(records, COLOR_LIGHTBLUE, 'mental_attribute', result.row.mental_attributes, result.unit)
-        collect_attribute_records(records, COLOR_LIGHTMAGENTA, 'trait', result.row.traits, result.unit)
-        sort_attribute_records(records, sort_key, sort_reverse)
-        for _, record in ipairs(records) do
-            add_attribute_record(tokens, record)
-        end
-        return tokens
-    end
-
-    local has_previous_section = false
-    local function append_section(pen, kind, values)
-        local records = {}
-        if not collect_attribute_records(records, pen, kind, values, result.unit) then
-            return
-        end
-        if has_previous_section then
-            table.insert(tokens, NEWLINE)
-        end
-        for _, record in ipairs(records) do
-            add_attribute_record(tokens, record)
-        end
-        has_previous_section = true
-    end
-
-    append_section(COLOR_LIGHTGREEN, 'physical_attribute', result.row.physical_attributes)
-    append_section(COLOR_LIGHTBLUE, 'mental_attribute', result.row.mental_attributes)
-    append_section(COLOR_LIGHTMAGENTA, 'trait', result.row.traits)
-
-    return tokens
 end
 
 ---@param window widgets.Window
@@ -632,7 +186,7 @@ end
 ---@param dc gui.Painter
 local function draw_section_dividers(dc)
     local y2 = math.max(2, dc.height)
-    for _, x in ipairs(SECTION_DIVIDER_XS) do
+    for _, x in ipairs(ui_layout.DIVIDER_XS) do
         for y = 2, y2 do
             dc:seek(x, y):char('|', SECTION_DIVIDER_PEN)
         end
@@ -658,9 +212,9 @@ end
 SoulSearchWindow = defclass(SoulSearchWindow, widgets.Window)
 SoulSearchWindow.ATTRS {
     frame_title='SoulSearch',
-    frame={w=150, h=45, xalign=0.5, yalign=0.5},
+    frame=ui_layout.copy_dimensions(ui_layout.WINDOW_FRAME),
     resizable=true,
-    resize_min={w=120, h=30},
+    resize_min=ui_layout.copy_dimensions(ui_layout.WINDOW_RESIZE_MIN),
 }
 
 ---Creates controls and loads the initial resident/filter data.
@@ -686,183 +240,46 @@ function SoulSearchWindow:init()
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
     self.filter_state = filter_state.load()
 
-    self:addviews{
-        widgets.EditField{
-            view_id='search_field',
-            frame={l=41, t=4, w=64, h=1},
-            label_text='Search: ',
-            key='CUSTOM_F',
-            modal=true,
-            on_change=function(text)
-                self.query = text
-                self:refresh_views{results=true}
-            end,
-        },
-        widgets.Label{
-            frame={l=1, t=2, w=38, h=1},
-            text='Search filters',
-            text_pen=COLOR_WHITE,
-        },
-        widgets.Label{
-            frame={l=1, t=3, w=38, h=1},
-            text=get_title_underline('Search filters'),
-            text_pen=TITLE_UNDERLINE_PEN,
-        },
-        widgets.HotkeyLabel{
-            view_id='add_filter_button',
-            frame={l=1, t=4, w=25, h=1},
-            key='CUSTOM_A',
-            label=ADD_FILTER_LABEL,
-            on_activate=function() self:toggle_add_filter_dropdown() end,
-        },
-        widgets.HotkeyLabel{
-            view_id='add_skill_button',
-            frame={l=1, t=5, w=25, h=1},
-            key='CUSTOM_S',
-            label='Add skill filter',
-            on_activate=function() self:toggle_add_skill_dropdown() end,
-        },
-        widgets.HotkeyLabel{
-            view_id='clear_filters_button',
-            frame={l=1, t=6, w=20, h=1},
-            key='CUSTOM_C',
-            label='Clear filters',
-            on_activate=function() self:clear_filters() end,
-        },
-        widgets.List{
-            view_id='filter_list',
-            frame={l=1, t=8, w=38, b=0},
-            visible=function() return not self.add_filter_open and not self.add_skill_open end,
-        },
-        widgets.Window{
-            view_id='available_filter_window',
-            frame={l=1, t=7, w=38, b=0},
-            frame_title='Select attribute/trait',
-            draggable=false,
-            visible=function() return self.add_filter_open end,
-            subviews={
-                widgets.HotkeyLabel{
-                    view_id='close_filter_picker_button',
-                    frame={r=0, t=0, w=3, h=1},
-                    label='[X]',
-                    on_activate=function() self:close_add_filter_dropdown() end,
-                },
-                widgets.EditField{
-                    view_id='attribute_search_field',
-                    frame={l=0, t=0, r=4, h=1},
-                    label_text='Search: ',
-                    key='CUSTOM_T',
-                    on_change=function(text)
-                        self.attribute_query = text
-                        self:refresh_views{pickers=true}
-                    end,
-                },
-                widgets.List{
-                    view_id='available_filter_list',
-                    frame={l=0, t=2, r=0, b=0},
-                    on_submit=function(index, choice)
-                        if choice and choice.descriptor then
-                            self:add_filter(choice.descriptor.id)
-                        end
-                    end,
-                },
-            },
-        },
-        widgets.Window{
-            view_id='available_skill_window',
-            frame={l=1, t=7, w=38, b=0},
-            frame_title='Select skill',
-            draggable=false,
-            visible=function() return self.add_skill_open end,
-            subviews={
-                widgets.HotkeyLabel{
-                    view_id='close_skill_picker_button',
-                    frame={r=0, t=0, w=3, h=1},
-                    label='[X]',
-                    on_activate=function() self:close_add_filter_dropdown() end,
-                },
-                widgets.EditField{
-                    view_id='skill_search_field',
-                    frame={l=0, t=0, r=4, h=1},
-                    label_text='Search: ',
-                    key='CUSTOM_K',
-                    on_change=function(text)
-                        self.skill_query = text
-                        self:refresh_views{pickers=true}
-                    end,
-                },
-                widgets.List{
-                    view_id='available_skill_list',
-                    frame={l=0, t=2, r=0, b=0},
-                    on_submit=function(index, choice)
-                        if choice and choice.descriptor then
-                            self:add_filter(choice.descriptor.id)
-                        end
-                    end,
-                },
-            },
-        },
-        widgets.Label{
-            view_id='result_header',
-            frame={l=41, t=2, w=64, h=1},
-            text='Results',
-            text_pen=COLOR_WHITE,
-        },
-        widgets.Label{
-            view_id='result_header_underline',
-            frame={l=41, t=3, w=64, h=1},
-            text=get_title_underline('Results'),
-            text_pen=TITLE_UNDERLINE_PEN,
-        },
-        widgets.List{
-            view_id='result_list',
-            frame={l=41, t=6, w=64, b=0},
-            on_select=function(index, choice)
-                if not self.suppress_result_select_refresh then
-                    self:refresh_views{
-                        stats=true,
-                        result=choice and choice.result or nil,
-                    }
-                end
-            end,
-            on_submit=function(index, choice)
-                self:zoom_to_result(choice and choice.result or nil)
-            end,
-        },
-        widgets.Label{
-            frame={l=107, t=2, r=1, h=1},
-            text='Stats',
-            text_pen=COLOR_WHITE,
-        },
-        widgets.Label{
-            frame={l=107, t=3, r=1, h=1},
-            text=get_title_underline('Stats'),
-            text_pen=TITLE_UNDERLINE_PEN,
-        },
-        widgets.Label{
-            view_id='stats_header',
-            frame={l=107, t=4, r=1, b=0},
-            auto_height=false,
-            text='No resident selected.',
-        },
-        widgets.Label{
-            view_id='stats',
-            frame={l=107, t=5, r=1, b=0},
-            auto_height=false,
-            text='',
-        },
-        widgets.HotkeyLabel{
-            view_id='close_button',
-            frame={r=1, t=0, w=16, h=1},
-            key='LEAVESCREEN',
-            label='Close',
-            on_activate=function() self.parent_view:dismiss() end,
-        },
-    }
+    local views = {}
+    -- Preserve the original child order: the modal results query remains first
+    -- so keyboard focus traversal is unchanged by component extraction.
+    table.insert(views, ui_components.create_results_query(function(text)
+        self.query = text
+        self:refresh_views{results=true}
+    end))
+    append_views(views, ui_components.create_filter_panel{
+        is_attribute_picker_open=function() return self.add_filter_open end,
+        is_skill_picker_open=function() return self.add_skill_open end,
+        on_toggle_attribute_picker=function() self:toggle_add_filter_dropdown() end,
+        on_toggle_skill_picker=function() self:toggle_add_skill_dropdown() end,
+        on_clear=function() self:clear_filters() end,
+        on_close_picker=function() self:close_add_filter_dropdown() end,
+        on_attribute_query=function(text)
+            self.attribute_query = text
+            self:refresh_views{pickers=true}
+        end,
+        on_skill_query=function(text)
+            self.skill_query = text
+            self:refresh_views{pickers=true}
+        end,
+        on_add=function(filter_id) self:add_filter(filter_id) end,
+    })
+    append_views(views, ui_components.create_results_panel{
+        on_select=function(result)
+            if not self.suppress_result_select_refresh then
+                self:refresh_views{stats=true, result=result}
+            end
+        end,
+        on_submit=function(result) self:zoom_to_result(result) end,
+    })
+    append_views(views, ui_components.create_stats_panel())
+    table.insert(views, ui_components.create_close_button(function()
+        self.parent_view:dismiss()
+    end))
+    self:addviews(views)
 
     self:refresh_residents()
     self:refresh_views{
-        picker_buttons=true,
         active_filters=true,
         pickers=true,
     }
@@ -893,8 +310,8 @@ function SoulSearchWindow:get_filter_action_tooltip()
     end
 
     local x = filter_list:getMousePos()
-    local action = get_filter_action_at_x(x)
-    return action and FILTER_ACTION_TOOLTIPS[action] or nil
+    local action = ui_layout.get_filter_action_at_x(x)
+    return action and action.tooltip or nil
 end
 
 ---@return string|nil
@@ -905,36 +322,18 @@ function SoulSearchWindow:get_stats_header_column()
     end
 
     local x, y = stats:getMousePos()
-    if not x or y ~= 0 then
-        return nil
-    end
-    if x >= 2 and x < 2 + STATS_LABEL_WIDTH then
-        return STATS_SORT_LABEL
-    end
-    if x >= STATS_VALUE_COLUMN_X and x < STATS_VALUE_COLUMN_X + STATS_VALUE_HEADER_WIDTH then
-        return STATS_SORT_VALUE
-    end
-    return nil
+    return ui_layout.get_stats_header_column(x, y)
 end
 
 ---@return string|nil
 function SoulSearchWindow:get_stats_header_tooltip()
     local column = self:get_stats_header_column()
-    return column and STATS_HEADER_TOOLTIPS[column] or nil
+    return column and ui_components.STATS_HEADER_TOOLTIPS[column] or nil
 end
 
 ---@return string
 function SoulSearchWindow:get_tooltip_text()
-    local control_tooltips = {
-        {id='add_filter_button', text='Add attribute filter'},
-        {id='add_skill_button', text='Add skill filter'},
-        {id='clear_filters_button', text='Clear filters'},
-        {id='close_filter_picker_button', text='Close'},
-        {id='close_skill_picker_button', text='Close'},
-        {id='close_button', text='Close'},
-    }
-
-    for _, tooltip in ipairs(control_tooltips) do
+    for _, tooltip in ipairs(ui_components.CONTROL_TOOLTIPS) do
         if is_mouse_over(self.subviews[tooltip.id]) then
             return tooltip.text
         end
@@ -969,7 +368,7 @@ function SoulSearchWindow:refresh_active_filter_choices(selected)
     local priority_count = filter_state.count(self.filter_state)
     for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
         table.insert(choices, {
-            text=format_active_filter_choice(
+            text=ui_format.active_filter_choice(
                 descriptor,
                 filter_state.get_direction(self.filter_state, descriptor.id),
                 filter_state.get_priority(self.filter_state, descriptor.id),
@@ -990,12 +389,6 @@ function SoulSearchWindow:refresh_picker_choices()
     self:update_available_skill_choices()
 end
 
----Refreshes labels whose presentation depends on picker visibility.
-function SoulSearchWindow:refresh_picker_buttons()
-    self:update_add_filter_button()
-    self:update_add_skill_button()
-end
-
 ---Dispatches one explicit pass over the requested derived views.
 ---@param request SoulSearchRefreshRequest
 function SoulSearchWindow:refresh_views(request)
@@ -1007,7 +400,6 @@ end
 function SoulSearchWindow:on_filter_state_changed(selected)
     filter_state.save(self.filter_state)
     self:refresh_views{
-        picker_buttons=true,
         active_filters=true,
         pickers=true,
         results=true,
@@ -1020,9 +412,9 @@ function SoulSearchWindow:update_available_filter_choices(selected)
     local choices = {}
     for _, descriptor in ipairs(self.attribute_filter_descriptors) do
         if not filter_state.contains(self.filter_state, descriptor.id) and
-                contains_text(descriptor.label, self.attribute_query) then
+                text_match.contains(descriptor.label, self.attribute_query) then
             table.insert(choices, {
-                text=format_available_filter_choice(descriptor),
+                text=ui_format.available_filter_choice(descriptor),
                 descriptor=descriptor,
                 search_key=descriptor.label,
             })
@@ -1040,11 +432,11 @@ function SoulSearchWindow:update_available_skill_choices(selected)
     local choices_by_category = {}
     for _, descriptor in ipairs(self.skill_filter_descriptors) do
         if not filter_state.contains(self.filter_state, descriptor.id) and
-                contains_text(descriptor.label, self.skill_query) then
+                text_match.contains(descriptor.label, self.skill_query) then
             local category = descriptor.category or 'Other Skills'
             choices_by_category[category] = choices_by_category[category] or {}
             table.insert(choices_by_category[category], {
-                text=format_available_skill_choice(descriptor),
+                text=ui_format.available_skill_choice(descriptor),
                 descriptor=descriptor,
                 search_key=descriptor.label,
             })
@@ -1054,7 +446,7 @@ function SoulSearchWindow:update_available_skill_choices(selected)
         local category_choices = choices_by_category[category]
         if category_choices and #category_choices > 0 then
             table.insert(choices, {
-                text=format_skill_category_choice(category),
+                text=ui_format.skill_category_choice(category),
                 search_key=category,
             })
             for _, choice in ipairs(category_choices) do
@@ -1085,7 +477,7 @@ function SoulSearchWindow:recompute_results()
     local choices = {}
     for _, result in ipairs(self.results) do
         table.insert(choices, {
-            text=format_result_choice(result),
+            text=ui_format.result_choice(result),
             result=result,
             search_key=result.name,
         })
@@ -1093,7 +485,7 @@ function SoulSearchWindow:recompute_results()
 
     local result_header = ('Results (%d)'):format(#choices)
     self.subviews.result_header:setText(result_header)
-    self.subviews.result_header_underline:setText(get_title_underline(result_header))
+    self.subviews.result_header_underline:setText(ui_format.title_underline(result_header))
 
     local selected = ui_refresh.get_result_selection(
         self.results,
@@ -1102,7 +494,10 @@ function SoulSearchWindow:recompute_results()
     -- DFHack List:setChoices() force-fires on_select. Suppress that nested view
     -- refresh so the dispatcher remains the single owner of the Stats update.
     self.suppress_result_select_refresh = true
-    self.subviews.result_list:setChoices(choices, selected)
+    ui_components.set_result_choices(
+        self.subviews.result_list,
+        choices,
+        selected)
     self.suppress_result_select_refresh = false
     local _, choice = self.subviews.result_list:getSelected()
     return choice and choice.result or nil
@@ -1110,22 +505,13 @@ end
 
 ---@param result SoulSearchResult|nil
 function SoulSearchWindow:refresh_stats(result)
-    local header = self.subviews.stats_header
-    local body = self.subviews.stats
-    header:setText(stats_header_for_result(result))
-    body:setText(stats_for_result(result, self.stats_sort_key, self.stats_sort_reverse))
-
-    local header_top = 4
-    local available_height = math.max(1, (self.frame_body and self.frame_body.height or 45) - header_top)
-    local header_height = math.min(header:getTextHeight(), math.max(1, available_height - 1))
-    local body_top = header_top + header_height
-
-    header.frame = {l=107, t=header_top, r=1, h=header_height}
-    body.frame = {l=107, t=body_top, r=1, b=0}
-    if self.frame_body then
-        header:updateLayout(self.frame_body)
-        body:updateLayout(self.frame_body)
-    end
+    ui_components.update_stats_panel(
+        self.subviews.stats_header,
+        self.subviews.stats,
+        result,
+        self.stats_sort_key,
+        self.stats_sort_reverse,
+        self.frame_body)
 end
 
 ---@return boolean
@@ -1248,7 +634,7 @@ function SoulSearchWindow:toggle_add_filter_dropdown()
     if self.add_filter_open then
         self.add_skill_open = false
     end
-    self:refresh_views{picker_buttons=true, pickers=true}
+    self:refresh_views{pickers=true}
 end
 
 ---Opens or closes the skill filter picker.
@@ -1257,7 +643,7 @@ function SoulSearchWindow:toggle_add_skill_dropdown()
     if self.add_skill_open then
         self.add_filter_open = false
     end
-    self:refresh_views{picker_buttons=true, pickers=true}
+    self:refresh_views{pickers=true}
 end
 
 ---@return boolean
@@ -1268,18 +654,8 @@ function SoulSearchWindow:close_add_filter_dropdown()
 
     self.add_filter_open = false
     self.add_skill_open = false
-    self:refresh_views{picker_buttons=true, pickers=true}
+    self:refresh_views{pickers=true}
     return true
-end
-
----Refreshes the add attribute filter button label.
-function SoulSearchWindow:update_add_filter_button()
-    self.subviews.add_filter_button:setLabel(ADD_FILTER_LABEL)
-end
-
----Refreshes the add skill filter button label.
-function SoulSearchWindow:update_add_skill_button()
-    self.subviews.add_skill_button:setLabel(ADD_SKILL_LABEL)
 end
 
 ---@param delta integer
@@ -1316,20 +692,20 @@ function SoulSearchWindow:handle_filter_action_click()
     local x = filter_list:getMousePos()
     local _, choice = filter_list:getSelected()
     local filter_id = choice and choice.descriptor and choice.descriptor.id
-    local action = get_filter_action_at_x(x)
+    local action = ui_layout.get_filter_action_at_x(x)
     if not filter_id or not action then
         return false
     end
 
-    if action == FILTER_ACTION_PLUS then
+    if action.callback == 'set_high' then
         self:set_filter_direction(filter_id, FILTER_HIGH)
-    elseif action == FILTER_ACTION_MINUS then
+    elseif action.callback == 'set_low' then
         self:set_filter_direction(filter_id, FILTER_LOW)
-    elseif action == FILTER_ACTION_REMOVE then
+    elseif action.callback == 'remove' then
         self:remove_filter(filter_id)
-    elseif action == FILTER_ACTION_UP then
+    elseif action.callback == 'move_up' then
         self:move_selected_filter_priority(-1)
-    elseif action == FILTER_ACTION_DOWN then
+    elseif action.callback == 'move_down' then
         self:move_selected_filter_priority(1)
     end
     return true
@@ -1349,7 +725,7 @@ end
 
 ---@param delta integer
 function SoulSearchWindow:move_result_cursor(delta)
-    self.subviews.result_list:moveCursor(delta)
+    ui_components.move_result_cursor(self.subviews.result_list, delta)
 end
 
 ---@param keys table

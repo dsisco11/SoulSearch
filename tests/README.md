@@ -31,10 +31,16 @@ environment stubs only the external APIs needed by the modules under test:
 - The production UI refresh dispatcher is exercised with a counting owner to
   prove picker-only changes skip results and each result invalidation invokes
   recomputation once.
+- Production text matching, formatting, stats presentation, and layout metadata
+  run against pure fixtures that preserve exact padding, pens, CP437 bytes,
+  sorting, panel boundaries, and filter-action hitboxes.
+- UI component factories run with inert widget constructors to verify explicit
+  inputs and focus-sensitive child order without pretending to emulate DFHack
+  widget behavior.
 
-The tests do not stub DFHack widgets or claim to validate in-game behavior.
-Visual layout, focus, mouse handling, live unit access, refresh, and zoom remain
-covered by the manual checklist in `docs/ui-baseline.md`.
+The tests do not emulate DFHack widget behavior or claim to validate in-game
+behavior. Visual layout, focus, mouse handling, live unit access, refresh, and
+zoom remain covered by the manual checklist in `docs/ui-baseline.md`.
 
 The `tests/` tree is outside `src/`; `tools/Publish.ps1` packages only `src/`, so
 test code is not included in the shipped mod payload.

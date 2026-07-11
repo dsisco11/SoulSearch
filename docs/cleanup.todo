@@ -373,10 +373,10 @@ Automated validation: `tools/Build.ps1` compiled all 10 production Lua files,
 
 Invalidation map:
 
-- Filter add/remove/clear/direction/reorder: persist state, then refresh picker
-  buttons, active filters, picker choices, results, and stats once.
-- Picker open/close: refresh picker buttons and choices only. Picker query:
-  refresh picker choices only. Neither path recomputes resident results.
+- Filter add/remove/clear/direction/reorder: persist state, then refresh active
+  filters, picker choices, results, and stats once.
+- Picker open/close and picker query: refresh picker choices only. Neither path
+  recomputes resident results. Static picker button labels need no refresh.
 - Name query or resident collection: recompute results once, preserve selection,
   then refresh stats once.
 - Result selection or stats sort: refresh stats only.
@@ -450,61 +450,96 @@ Depends on: Phase 4.
 Goal: reduce `ui.lua` to composition and coordination without changing visual
 or interaction behavior.
 
+Status: in progress — presentation, layout, and component extraction plus
+automated validation are complete; the full interactive in-game visual and
+input smoke pass remains pending.
+
+Automated validation: `tools/Build.ps1` compiled all 15 production Lua files,
+`tools/Test.ps1` passed all 98 tests, and `git diff --check` reported no errors.
+`ui.lua` is 817 lines and no longer constructs the filter/results/stats panels
+or owns their formatting and stats-record transformation.
+
 ### Pure formatting extraction
 
-☐ Create `internal/soulsearch/ui_format.lua` for pure text/token formatting.
-☐ Move truncation, title underline, result-row, filter-row, direction, skill,
+✔ Create `internal/soulsearch/ui_format.lua` for pure text/token formatting.
+  @done(26-07-11 08:24)
+✔ Move truncation, title underline, result-row, filter-row, direction, skill,
   deviation, and evaluation formatting behind narrow functions.
-☐ Preserve exact strings, padding, CP437 bytes, and pens.
-☐ Add snapshot/table tests for formatted result, filter, picker, and stats
-  tokens.
-☐ Give text matching one defined nil/coercion contract and one owning module.
-☐ Remove the duplicate `contains_text()` implementation after callers migrate.
+  @done(26-07-11 08:24)
+✔ Preserve exact strings, padding, CP437 bytes, and pens.
+  @done(26-07-11 08:24)
+✔ Add snapshot/table tests for formatted result, filter, picker, and stats
+  tokens. @done(26-07-11 08:24)
+✔ Give text matching one defined nil/coercion contract and one owning module.
+  @done(26-07-11 08:24)
+✔ Remove the duplicate `contains_text()` implementation after callers migrate.
+  @done(26-07-11 08:24)
 
 ### Stats presenter extraction
 
-☐ Create `internal/soulsearch/stats_presenter.lua`.
-☐ Move notable-stat record construction out of `ui.lua`.
-☐ Move record label creation, deviation/tier data, and sorting out of widgets.
-☐ Keep category pens/presentation metadata explicit at the presenter boundary.
-☐ Add tests for notable-value inclusion, default order, label sort, delta sort,
-  reverse phases, and stable tie behavior.
-☐ Keep skill display behavior unchanged; do not broaden the Stats panel during
-  architecture cleanup.
+✔ Create `internal/soulsearch/stats_presenter.lua`.
+  @done(26-07-11 08:24)
+✔ Move notable-stat record construction out of `ui.lua`.
+  @done(26-07-11 08:24)
+✔ Move record label creation, deviation/tier data, and sorting out of widgets.
+  @done(26-07-11 08:24)
+✔ Keep category pens/presentation metadata explicit at the presenter boundary.
+  @done(26-07-11 08:24)
+✔ Add tests for notable-value inclusion, default order, label sort, delta sort,
+  reverse phases, and stable tie behavior. @done(26-07-11 08:24)
+✔ Keep skill display behavior unchanged; do not broaden the Stats panel during
+  architecture cleanup. @done(26-07-11 08:24)
 
 ### Layout and action metadata
 
-☐ Define one layout table for window dimensions, resize minimum, panel edges,
+✔ Define one layout table for window dimensions, resize minimum, panel edges,
   gaps, divider columns, header rows, picker frames, and stats columns.
-☐ Derive divider positions and widget frames from the same layout values.
-☐ Remove repeated literal panel positions such as result/stats left edges.
-☐ Define ordered filter action metadata containing action ID, label, width,
-  tooltip, pen/enabled rules, and callback identity.
-☐ Use the same action metadata for row rendering and x-coordinate hit testing.
-☐ Add boundary tests for every action x range and stats-header column.
-☐ Prove `FILTER_ACTION_WIDTH = 3` and the total action zone are unchanged.
+  @done(26-07-11 08:24)
+✔ Derive divider positions and widget frames from the same layout values.
+  @done(26-07-11 08:24)
+✔ Remove repeated literal panel positions such as result/stats left edges.
+  @done(26-07-11 08:24)
+✔ Define ordered filter action metadata containing action ID, label, width,
+  tooltip, pen/enabled rules, and callback identity. @done(26-07-11 08:24)
+✔ Use the same action metadata for row rendering and x-coordinate hit testing.
+  @done(26-07-11 08:24)
+✔ Add boundary tests for every action x range and stats-header column.
+  @done(26-07-11 08:24)
+✔ Prove `FILTER_ACTION_WIDTH = 3` and the total action zone are unchanged.
+  @done(26-07-11 08:24)
 
 ### Focused component extraction
 
-☐ Extract a filter panel/picker component with explicit state and event inputs.
-☐ Extract a results panel component with explicit choices, selection, query,
-  submit, and navigation inputs.
-☐ Extract a stats panel component with explicit result and sort-state inputs.
-☐ Keep `SoulSearchWindow` as the layout composition root and controller.
-☐ Keep `SoulSearchScreen` responsible only for screen lifecycle and overlays.
-☐ Move tooltip metadata next to the owning controls or components.
-☐ Keep tooltip rendering/positioning centralized only where shared overlay
-  behavior requires it.
-☐ Update LuaLS class/field annotations after each extraction.
-☐ Remove obsolete helpers from `ui.lua` only after all call sites migrate.
+✔ Extract a filter panel/picker component with explicit state and event inputs.
+  @done(26-07-11 08:24)
+✔ Extract a results panel component with explicit choices, selection, query,
+  submit, and navigation inputs. @done(26-07-11 08:24)
+✔ Extract a stats panel component with explicit result and sort-state inputs.
+  @done(26-07-11 08:24)
+✔ Keep `SoulSearchWindow` as the layout composition root and controller.
+  @done(26-07-11 08:24)
+✔ Keep `SoulSearchScreen` responsible only for screen lifecycle and overlays.
+  @done(26-07-11 08:24)
+✔ Move tooltip metadata next to the owning controls or components.
+  @done(26-07-11 08:24)
+✔ Keep tooltip rendering/positioning centralized only where shared overlay
+  behavior requires it. @done(26-07-11 08:24)
+✔ Update LuaLS class/field annotations after each extraction.
+  @done(26-07-11 08:24)
+✔ Remove obsolete helpers from `ui.lua` only after all call sites migrate.
+  @done(26-07-11 08:24)
 
 ### Phase 5 exit gate
 
-☐ Presenter/formatter behavior is covered by pure tests.
-☐ Changing one panel boundary requires changing one source value.
-☐ Rendered filter action labels and hitboxes derive from the same metadata.
-☐ `SoulSearchWindow` primarily composes components and coordinates events.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
+✔ Presenter/formatter behavior is covered by pure tests.
+  @done(26-07-11 08:24)
+✔ Changing one panel boundary requires changing one source value.
+  @done(26-07-11 08:24)
+✔ Rendered filter action labels and hitboxes derive from the same metadata.
+  @done(26-07-11 08:24)
+✔ `SoulSearchWindow` primarily composes components and coordinates events.
+  @done(26-07-11 08:24)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-11 08:24)
 ☐ Full in-game visual, mouse, focus, drag, resize, tooltip, stats sort, refresh,
   and zoom smoke checks match the baseline.
 

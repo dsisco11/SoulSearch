@@ -111,6 +111,7 @@ end
 
 function M.load_search(repo_root, attributes)
     local descriptors, descriptor_df = M.load_descriptors(repo_root)
+    local text_match = M.load_text_match(repo_root)
     local globals = {
         reqscript=function(name)
             if name == 'internal/soulsearch/attributes' then
@@ -118,6 +119,9 @@ function M.load_search(repo_root, attributes)
             end
             if name == 'internal/soulsearch/descriptors' then
                 return descriptors
+            end
+            if name == 'internal/soulsearch/text_match' then
+                return text_match
             end
             error('unexpected reqscript: ' .. tostring(name))
         end,
@@ -148,6 +152,106 @@ function M.load_ui_refresh(repo_root)
     return module_loader.load(
         repo_root,
         'src/scripts_modinstalled/internal/soulsearch/ui_refresh.lua')
+end
+
+function M.load_text_match(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/text_match.lua')
+end
+
+function M.load_ui_layout(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui_layout.lua')
+end
+
+local function make_presentation_globals()
+    return {
+        NEWLINE='<NL>',
+        COLOR_DARKGREY='darkgrey',
+        COLOR_GREY='grey',
+        COLOR_WHITE='white',
+        COLOR_YELLOW='yellow',
+        COLOR_GREEN='green',
+        COLOR_LIGHTGREEN='lightgreen',
+        COLOR_RED='red',
+        COLOR_LIGHTRED='lightred',
+        COLOR_LIGHTBLUE='lightblue',
+        COLOR_LIGHTMAGENTA='lightmagenta',
+    }
+end
+
+function M.load_ui_format(repo_root)
+    local layout = M.load_ui_layout(repo_root)
+    local globals = make_presentation_globals()
+    globals.reqscript=function(name)
+        assert(name == 'internal/soulsearch/ui_layout',
+            'unexpected reqscript: ' .. tostring(name))
+        return layout
+    end
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui_format.lua',
+        globals)
+end
+
+function M.load_stats_presenter(repo_root, attributes)
+    local ui_format = M.load_ui_format(repo_root)
+    local globals = make_presentation_globals()
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/attributes' then
+            return attributes
+        end
+        if name == 'internal/soulsearch/ui_format' then
+            return ui_format
+        end
+        error('unexpected reqscript: ' .. tostring(name))
+    end
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_presenter.lua',
+        globals)
+end
+
+function M.load_ui_components(repo_root)
+    local layout = M.load_ui_layout(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    local function constructor(kind)
+        return function(config)
+            config.widget_kind = kind
+            return config
+        end
+    end
+    local widgets = {
+        Label=constructor('Label'),
+        HotkeyLabel=constructor('HotkeyLabel'),
+        EditField=constructor('EditField'),
+        List=constructor('List'),
+        Window=constructor('Window'),
+    }
+    local globals = make_presentation_globals()
+    globals.require=function(name)
+        assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
+        return widgets
+    end
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/stats_presenter' then
+            return {
+                header=function(result) return {'header', result} end,
+                body=function(result, key, reverse)
+                    return {'body', result, key, reverse}
+                end,
+            }
+        end
+        if name == 'internal/soulsearch/ui_format' then return ui_format end
+        if name == 'internal/soulsearch/ui_layout' then return layout end
+        error('unexpected reqscript: ' .. tostring(name))
+    end
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui_components.lua',
+        globals)
 end
 
 return M

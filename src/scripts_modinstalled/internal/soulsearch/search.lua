@@ -37,6 +37,7 @@
 
 local attributes = reqscript('internal/soulsearch/attributes')
 local descriptors = reqscript('internal/soulsearch/descriptors')
+local text_match = reqscript('internal/soulsearch/text_match')
 
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
@@ -70,16 +71,6 @@ local function get_value(row, descriptor)
         return row.skills and row.skills[descriptor.key] or 0
     end
     return nil
-end
-
----@param haystack string
----@param needle string
----@return boolean
-local function contains_text(haystack, needle)
-    if not needle or needle == '' then
-        return true
-    end
-    return haystack:lower():find(needle:lower(), 1, true) ~= nil
 end
 
 ---Resolves the ordered public filter state through the immutable catalog.
@@ -220,7 +211,7 @@ function apply(rows, opts)
     local results = {}
 
     for _, row in ipairs(rows or {}) do
-        if contains_text(row.name or '', query) then
+        if text_match.contains(row.name, query) then
             table.insert(results, make_result(row, resolved_filters))
         end
     end

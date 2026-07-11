@@ -2,7 +2,6 @@
 
 ---@class SoulSearchRefreshRequest
 ---@field active_filters boolean|nil
----@field picker_buttons boolean|nil
 ---@field pickers boolean|nil
 ---@field results boolean|nil
 ---@field stats boolean|nil
@@ -11,7 +10,6 @@
 
 ---@class SoulSearchRefreshOwner
 ---@field refresh_active_filter_choices fun(self: SoulSearchRefreshOwner, selected: integer|nil)
----@field refresh_picker_buttons fun(self: SoulSearchRefreshOwner)
 ---@field refresh_picker_choices fun(self: SoulSearchRefreshOwner)
 ---@field recompute_results fun(self: SoulSearchRefreshOwner): SoulSearchResult|nil
 ---@field refresh_stats fun(self: SoulSearchRefreshOwner, result: SoulSearchResult|nil)
@@ -22,9 +20,6 @@
 ---@param owner SoulSearchRefreshOwner
 ---@param request SoulSearchRefreshRequest
 function apply(owner, request)
-    if request.picker_buttons then
-        owner:refresh_picker_buttons()
-    end
     if request.active_filters then
         owner:refresh_active_filter_choices(request.selected_filter)
     end
