@@ -160,19 +160,20 @@ function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     end
     local label_header = 'Stat' .. marker('label')
     local value_header = 'Delta' .. marker('value')
-    table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
     table.insert(tokens, {
-        text=('%-' .. layout.STATS_LABEL_WIDTH .. 's '):format(label_header),
+        text=('%-' .. layout.STATS_VALUE_COLUMN_X .. 's'):format(label_header),
         pen=COLOR_GREY,
     })
     table.insert(tokens, {text=value_header, pen=COLOR_GREY})
     table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
     table.insert(tokens, {
         text=glyphs.CP437_HORIZONTAL_LINE:rep(layout.STATS_LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
-    table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
+    table.insert(tokens, {
+        text=(' '):rep(layout.STATS_VALUE_COLUMN_X - layout.STATS_LABEL_WIDTH),
+        pen=COLOR_DARKGREY,
+    })
     table.insert(tokens, {
         text=glyphs.CP437_HORIZONTAL_LINE:rep(5), pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)

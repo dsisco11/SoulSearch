@@ -126,7 +126,7 @@ function get_stats_header_column(x, y)
     if not x or y ~= 0 then
         return nil
     end
-    if x >= 2 and x < 2 + STATS_LABEL_WIDTH then
+    if x >= 0 and x < STATS_LABEL_WIDTH then
         return 'label'
     end
     if x >= STATS_VALUE_COLUMN_X and

@@ -87,7 +87,7 @@ return function(test, repo_root)
     test.case('Stats presenter: column header remains separate from records', function()
         local header = presenter.column_header('value', true)
         local body = presenter.body(result, nil, false)
-        test.assert_equal('  ', header[1].text)
+        test.assert_equal('Stat                       ', header[1].text)
         test.assert_equal('  Strength                 ', body[1].text)
     end)
 end
