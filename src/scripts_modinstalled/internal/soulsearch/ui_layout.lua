@@ -1,7 +1,6 @@
 --@ module=true
 
-local CP437_TRIANGLE_UP = string.char(30) -- ▲
-local CP437_TRIANGLE_DOWN = string.char(31) -- ▼
+local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 
 WINDOW_FRAME = {w=150, h=45, xalign=0.5, yalign=0.5}
 WINDOW_RESIZE_MIN = {w=120, h=30}
@@ -46,12 +45,12 @@ FILTER_ACTIONS = {
         enabled_rule='always', callback='set_low',
     },
     {
-        id='up', label='[' .. CP437_TRIANGLE_UP .. ']', width=FILTER_ACTION_WIDTH,
+        id='up', label='[' .. glyphs.CP437_TRIANGLE_UP .. ']', width=FILTER_ACTION_WIDTH,
         tooltip='Move up', pen_rule='enabled',
         enabled_rule='can_move_up', callback='move_up',
     },
     {
-        id='down', label='[' .. CP437_TRIANGLE_DOWN .. ']', width=FILTER_ACTION_WIDTH,
+        id='down', label='[' .. glyphs.CP437_TRIANGLE_DOWN .. ']', width=FILTER_ACTION_WIDTH,
         tooltip='Move down', pen_rule='enabled',
         enabled_rule='can_move_down', callback='move_down',
     },

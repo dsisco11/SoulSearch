@@ -13,13 +13,13 @@ local ui_components = reqscript('internal/soulsearch/ui_components')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
+local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 
 local view
 local saved_stats_sort_key
 local saved_stats_sort_reverse = false
 local saved_stats_sort_phase = 0
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
-local CP437_VERTICAL_LINE = string.char(179) -- │
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
 local STATS_SORT_LABEL = 'label'
@@ -184,7 +184,7 @@ local function draw_section_dividers(dc)
     local y2 = math.max(2, dc.height)
     for _, x in ipairs(ui_layout.DIVIDER_XS) do
         for y = 2, y2 do
-            dc:seek(x, y):char(CP437_VERTICAL_LINE, SECTION_DIVIDER_PEN)
+            dc:seek(x, y):char(glyphs.CP437_VERTICAL_LINE, SECTION_DIVIDER_PEN)
         end
     end
 end

@@ -161,9 +161,23 @@ function M.load_text_match(repo_root)
 end
 
 function M.load_ui_layout(repo_root)
+    local glyphs = M.load_ui_glyphs(repo_root)
+    local globals = {
+        reqscript=function(name)
+            assert(name == 'internal/soulsearch/ui_glyphs',
+                'unexpected reqscript: ' .. tostring(name))
+            return glyphs
+        end,
+    }
     return module_loader.load(
         repo_root,
-        'src/scripts_modinstalled/internal/soulsearch/ui_layout.lua')
+        'src/scripts_modinstalled/internal/soulsearch/ui_layout.lua', globals)
+end
+
+function M.load_ui_glyphs(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui_glyphs.lua')
 end
 
 local function make_presentation_globals()
@@ -184,11 +198,12 @@ end
 
 function M.load_ui_format(repo_root)
     local layout = M.load_ui_layout(repo_root)
+    local glyphs = M.load_ui_glyphs(repo_root)
     local globals = make_presentation_globals()
     globals.reqscript=function(name)
-        assert(name == 'internal/soulsearch/ui_layout',
-            'unexpected reqscript: ' .. tostring(name))
-        return layout
+        if name == 'internal/soulsearch/ui_layout' then return layout end
+        if name == 'internal/soulsearch/ui_glyphs' then return glyphs end
+        error('unexpected reqscript: ' .. tostring(name))
     end
     return module_loader.load(
         repo_root,

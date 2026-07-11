@@ -1,15 +1,12 @@
 --@ module=true
 
 local layout = reqscript('internal/soulsearch/ui_layout')
+local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
-local CP437_ARROW_RIGHT = string.char(16) -- ►
-local CP437_ARROW_UP = string.char(24) -- ↑
-local CP437_ARROW_DOWN = string.char(25) -- ↓
-local CP437_HORIZONTAL_LINE = string.char(196) -- ─
 
 ---@param text any
 ---@param width integer
@@ -77,7 +74,7 @@ end
 ---@param title any
 ---@return string
 function get_title_underline(title)
-    return CP437_HORIZONTAL_LINE:rep(#tostring(title or ''))
+    return glyphs.CP437_HORIZONTAL_LINE:rep(#tostring(title or ''))
 end
 
 ---@param tokens table[]
@@ -141,7 +138,7 @@ end
 ---@return table[]
 function format_available_skill_choice(descriptor)
     return {
-        {text=CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
+        {text=glyphs.CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
         {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
 end
@@ -158,7 +155,8 @@ end
 function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     local function marker(active_key)
         if sort_key ~= active_key then return '' end
-        return ' ' .. (sort_reverse and CP437_ARROW_DOWN or CP437_ARROW_UP)
+        return ' ' .. (sort_reverse and glyphs.CP437_ARROW_DOWN or
+            glyphs.CP437_ARROW_UP)
     end
     local label_header = 'Stat' .. marker('label')
     local value_header = 'Delta' .. marker('value')
@@ -171,11 +169,12 @@ function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     table.insert(tokens, NEWLINE)
     table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
     table.insert(tokens, {
-        text=CP437_HORIZONTAL_LINE:rep(layout.STATS_LABEL_WIDTH),
+        text=glyphs.CP437_HORIZONTAL_LINE:rep(layout.STATS_LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
     table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=CP437_HORIZONTAL_LINE:rep(5), pen=COLOR_DARKGREY})
+    table.insert(tokens, {
+        text=glyphs.CP437_HORIZONTAL_LINE:rep(5), pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)
 end
 
