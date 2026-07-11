@@ -59,4 +59,13 @@ return function(test, repo_root)
         test.assert_nil(layout.get_stats_header_column(34, 0))
         test.assert_nil(layout.get_stats_header_column(2, 1))
     end)
+
+    test.case('UI layout: stats delta cells exclude headers and separators', function()
+        test.assert_false(layout.is_stats_value_cell(27, 0))
+        test.assert_false(layout.is_stats_value_cell(27, 1))
+        test.assert_true(layout.is_stats_value_cell(27, 2))
+        test.assert_true(layout.is_stats_value_cell(33, 8))
+        test.assert_false(layout.is_stats_value_cell(34, 2))
+        test.assert_false(layout.is_stats_value_cell(26, 2))
+    end)
 end

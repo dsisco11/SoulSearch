@@ -17,6 +17,8 @@ STATS_HEADER_TOOLTIPS = {
     value='Sort by baseline difference.',
 }
 
+STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
+
 ---@class SoulSearchFilterPanelInputs
 ---@field is_attribute_picker_open fun(): boolean
 ---@field is_skill_picker_open fun(): boolean

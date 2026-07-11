@@ -327,6 +327,20 @@ function SoulSearchWindow:get_stats_header_tooltip()
     return column and ui_components.STATS_HEADER_TOOLTIPS[column] or nil
 end
 
+---@return string|nil
+function SoulSearchWindow:get_stats_value_tooltip()
+    local stats = self.subviews.stats
+    if not stats then
+        return nil
+    end
+
+    local x, y = stats:getMousePos()
+    if ui_layout.is_stats_value_cell(x, y) then
+        return ui_components.STATS_VALUE_TOOLTIP
+    end
+    return nil
+end
+
 ---@return string
 function SoulSearchWindow:get_tooltip_text()
     for _, tooltip in ipairs(ui_components.CONTROL_TOOLTIPS) do
@@ -335,7 +349,8 @@ function SoulSearchWindow:get_tooltip_text()
         end
     end
 
-    return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or ''
+    return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or
+        self:get_stats_value_tooltip() or ''
 end
 
 ---@return SoulSearchFilterDescriptor[]

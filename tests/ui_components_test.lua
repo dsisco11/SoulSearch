@@ -19,6 +19,12 @@ return function(test, repo_root)
         end)())
     end)
 
+    test.case('UI components: stats delta tooltip explains its baseline', function()
+        test.assert_equal(
+            'Difference from the attribute average.',
+            components.STATS_VALUE_TOOLTIP)
+    end)
+
     test.case('UI components: filter panel preserves child and picker order', function()
         local views = components.create_filter_panel{
             is_attribute_picker_open=function() return false end,
