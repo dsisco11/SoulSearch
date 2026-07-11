@@ -27,6 +27,7 @@ local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
+local TOOLTIP_MAX_TEXT_WIDTH = 60
 
 ---@class SoulSearchPosition
 ---@field x integer
@@ -82,10 +83,15 @@ end
 ---@param max_width integer
 ---@return string tooltip_text
 ---@return integer tooltip_width
+---@return integer tooltip_height
 local function get_tooltip_box(text, max_width)
-    local text_width = math.min(#text, math.min(52, max_width - 2))
-    local tooltip_text = ui_format.truncate_text(text, text_width)
-    return tooltip_text, #tooltip_text + 2
+    local text_width = math.max(1, math.min(TOOLTIP_MAX_TEXT_WIDTH, max_width - 2))
+    local lines = ui_format.wrap_text(text, text_width)
+    local widest_line = 0
+    for _, line in ipairs(lines) do
+        widest_line = math.max(widest_line, #line)
+    end
+    return table.concat(lines, '\n'), widest_line + 2, #lines + 2
 end
 
 ---@class SoulSearchTooltip: widgets.Window
@@ -128,17 +134,23 @@ function SoulSearchTooltip:render(dc)
     end
 
     local screen_width, screen_height = dfhack.screen.getWindowSize()
-    local tooltip_text, tooltip_width = get_tooltip_box(text, screen_width)
+    local tooltip_text, tooltip_width, tooltip_height = get_tooltip_box(
+        text, screen_width)
     local x = math.min(mouse_x + 2, screen_width - tooltip_width)
-    local y = math.min(mouse_y + 1, screen_height - 3)
+    local y = math.min(mouse_y + 1, screen_height - tooltip_height)
 
     self.frame = {
         l=math.max(0, x),
         t=math.max(0, y),
         w=tooltip_width,
-        h=3,
+        h=tooltip_height,
     }
-    self.label.frame.w = math.max(1, tooltip_width - 2)
+    self.label.frame = {
+        l=0,
+        t=0,
+        w=math.max(1, tooltip_width - 2),
+        h=math.max(1, tooltip_height - 2),
+    }
     self.label:setText(tooltip_text)
     self:updateLayout()
     SoulSearchTooltip.super.render(self, dc)

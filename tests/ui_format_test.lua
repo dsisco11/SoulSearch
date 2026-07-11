@@ -20,6 +20,14 @@ return function(test, repo_root)
         test.assert_equal(57, #text)
     end)
 
+    test.case('UI format: tooltip text wraps without truncation', function()
+        test.assert_sequence({
+            'Difference from the',
+            'attribute average.',
+        }, format.wrap_text('Difference from the attribute average.', 20))
+        test.assert_sequence({''}, format.wrap_text('', 20))
+    end)
+
     test.case('UI format: active filter snapshot uses metadata labels', function()
         local tokens = format.format_active_filter_choice(
             {label='Mining', kind='skill'},
