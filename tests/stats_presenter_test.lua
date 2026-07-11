@@ -81,6 +81,13 @@ return function(test, repo_root)
         for _, token in ipairs(tokens) do
             if token == '<NL>' then newline_count = newline_count + 1 end
         end
-        test.assert_equal(8, newline_count)
+        test.assert_equal(6, newline_count)
+    end)
+
+    test.case('Stats presenter: column header remains separate from records', function()
+        local header = presenter.column_header('value', true)
+        local body = presenter.body(result, nil, false)
+        test.assert_equal('  ', header[1].text)
+        test.assert_equal('  Strength                 ', body[1].text)
     end)
 end

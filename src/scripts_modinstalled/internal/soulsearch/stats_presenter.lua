@@ -110,6 +110,15 @@ function header(result)
     return ui_format.format_stats_header(result)
 end
 
+---@param sort_key string|nil
+---@param sort_reverse boolean
+---@return table[]
+function column_header(sort_key, sort_reverse)
+    local tokens = {}
+    ui_format.append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
+    return tokens
+end
+
 ---@param result SoulSearchResult|nil
 ---@param sort_key string|nil
 ---@param sort_reverse boolean
@@ -117,8 +126,6 @@ end
 function body(result, sort_key, sort_reverse)
     if not result or not result.row then return '' end
     local tokens = {}
-    ui_format.append_stats_column_header_tokens(
-        tokens, sort_key, sort_reverse)
     local sections, flat = build_records(result)
     if sort_key then
         sort_records(flat, sort_key, sort_reverse)

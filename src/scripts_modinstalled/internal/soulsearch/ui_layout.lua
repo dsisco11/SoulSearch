@@ -81,7 +81,8 @@ FRAMES = {
     stats_title={l=STATS_LEFT, t=HEADER_ROW, r=1, h=1},
     stats_underline={l=STATS_LEFT, t=UNDERLINE_ROW, r=1, h=1},
     stats_header={l=STATS_LEFT, t=STATS_CONTENT_TOP, r=1, b=0},
-    stats_body={l=STATS_LEFT, t=STATS_CONTENT_TOP + 1, r=1, b=0},
+    stats_columns={l=STATS_LEFT, t=STATS_CONTENT_TOP + 1, r=1, h=2},
+    stats_body={l=STATS_LEFT, t=STATS_CONTENT_TOP + 3, r=1, b=0},
     close={r=1, t=0, w=16, h=1},
 }
 
@@ -139,7 +140,7 @@ end
 ---@param y integer|nil
 ---@return boolean
 function is_stats_value_cell(x, y)
-    return x and y and y >= 2 and
+    return x and y and y >= 0 and
         x >= STATS_VALUE_COLUMN_X and
         x < STATS_VALUE_COLUMN_X + STATS_VALUE_HEADER_WIDTH
 end

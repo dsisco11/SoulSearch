@@ -217,6 +217,12 @@ function create_stats_panel()
             text='No resident selected.',
         },
         widgets.Label{
+            view_id='stats_columns',
+            frame=ui_layout.get_frame('stats_columns'),
+            auto_height=false,
+            text='',
+        },
+        widgets.Label{
             view_id='stats',
             frame=ui_layout.get_frame('stats_body'),
             auto_height=false,
@@ -226,14 +232,16 @@ function create_stats_panel()
 end
 
 ---@param header widgets.Label
+---@param columns widgets.Label
 ---@param body widgets.Label
 ---@param result SoulSearchResult|nil
 ---@param sort_key string|nil
 ---@param sort_reverse boolean
 ---@param frame_body table|nil
 function update_stats_panel(
-        header, body, result, sort_key, sort_reverse, frame_body)
+        header, columns, body, result, sort_key, sort_reverse, frame_body)
     header:setText(stats_presenter.header(result))
+    columns:setText(stats_presenter.column_header(sort_key, sort_reverse))
     body:setText(stats_presenter.body(result, sort_key, sort_reverse))
 
     local header_top = ui_layout.STATS_CONTENT_TOP
@@ -243,8 +251,12 @@ function update_stats_panel(
             header_top)
     local header_height = math.min(
         header:getTextHeight(),
-        math.max(1, available_height - 1))
-    local body_top = header_top + header_height
+        math.max(1, available_height - 3))
+    local columns_top = header_top + header_height
+    local columns_height = math.min(
+        columns:getTextHeight(),
+        math.max(1, available_height - header_height - 1))
+    local body_top = columns_top + columns_height
 
     header.frame = {
         l=ui_layout.STATS_LEFT,
@@ -252,9 +264,16 @@ function update_stats_panel(
         r=1,
         h=header_height,
     }
+    columns.frame = {
+        l=ui_layout.STATS_LEFT,
+        t=columns_top,
+        r=1,
+        h=columns_height,
+    }
     body.frame = {l=ui_layout.STATS_LEFT, t=body_top, r=1, b=0}
     if frame_body then
         header:updateLayout(frame_body)
+        columns:updateLayout(frame_body)
         body:updateLayout(frame_body)
     end
 end

@@ -253,8 +253,11 @@ function M.load_ui_components(repo_root)
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/stats_presenter' then
             return {
-                header=function(result) return {'header', result} end,
-                body=function(result, key, reverse)
+            header=function(result) return {'header', result} end,
+            column_header=function(key, reverse)
+                return {'columns', key, reverse}
+            end,
+            body=function(result, key, reverse)
                     return {'body', result, key, reverse}
                 end,
             }

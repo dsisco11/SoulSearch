@@ -64,7 +64,8 @@ return function(test, repo_root)
 
         local stats = components.create_stats_panel()
         test.assert_equal('stats_header', stats[3].view_id)
-        test.assert_equal('stats', stats[4].view_id)
+        test.assert_equal('stats_columns', stats[4].view_id)
+        test.assert_equal('stats', stats[5].view_id)
         test.assert_equal('close_button', components.create_close_button(noop).view_id)
     end)
 
@@ -89,16 +90,19 @@ return function(test, repo_root)
                 updateLayout=function(self, frame) self.updated_with = frame end,
             }
         end
-        local header, body = label(3), label(1)
+        local header, columns, body = label(3), label(2), label(1)
         local frame = {height=30}
         components.update_stats_panel(
-            header, body, {unit_id=7}, 'value', true, frame)
+            header, columns, body, {unit_id=7}, 'value', true, frame)
         test.assert_equal('header', header.text[1])
+        test.assert_equal('columns', columns.text[1])
         test.assert_equal('body', body.text[1])
         test.assert_equal('value', body.text[3])
         test.assert_true(body.text[4])
         test.assert_equal(4, header.frame.t)
-        test.assert_equal(7, body.frame.t)
+        test.assert_equal(7, columns.frame.t)
+        test.assert_equal(9, body.frame.t)
         test.assert_equal(frame, header.updated_with)
+        test.assert_equal(frame, columns.updated_with)
     end)
 end

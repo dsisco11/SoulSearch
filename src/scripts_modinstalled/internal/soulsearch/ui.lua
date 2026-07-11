@@ -312,12 +312,12 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_stats_header_column()
-    local stats = self.subviews.stats
-    if not stats then
+    local columns = self.subviews.stats_columns
+    if not columns then
         return nil
     end
 
-    local x, y = stats:getMousePos()
+    local x, y = columns:getMousePos()
     return ui_layout.get_stats_header_column(x, y)
 end
 
@@ -519,6 +519,7 @@ end
 function SoulSearchWindow:refresh_stats(result)
     ui_components.update_stats_panel(
         self.subviews.stats_header,
+        self.subviews.stats_columns,
         self.subviews.stats,
         result,
         self.stats_sort_key,
