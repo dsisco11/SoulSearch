@@ -4,6 +4,21 @@ return function(test, repo_root)
     local components = soulsearch_env.load_ui_components(repo_root)
     local noop = function() end
 
+    test.case('UI components: control tooltips explain non-obvious actions', function()
+        test.assert_sequence({
+            'Add an attribute or trait to the ranking criteria.',
+            'Add a skill to the ranking criteria.',
+            'Close',
+            'Close',
+        }, (function()
+            local texts = {}
+            for _, tooltip in ipairs(components.CONTROL_TOOLTIPS) do
+                table.insert(texts, tooltip.text)
+            end
+            return texts
+        end)())
+    end)
+
     test.case('UI components: filter panel preserves child and picker order', function()
         local views = components.create_filter_panel{
             is_attribute_picker_open=function() return false end,

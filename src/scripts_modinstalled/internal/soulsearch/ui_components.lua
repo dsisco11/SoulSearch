@@ -6,12 +6,10 @@ local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 CONTROL_TOOLTIPS = {
-    {id='add_filter_button', text='Add attribute filter'},
-    {id='add_skill_button', text='Add skill filter'},
-    {id='clear_filters_button', text='Clear filters'},
+    {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
+    {id='add_skill_button', text='Add a skill to the ranking criteria.'},
     {id='close_filter_picker_button', text='Close'},
     {id='close_skill_picker_button', text='Close'},
-    {id='close_button', text='Close'},
 }
 
 STATS_HEADER_TOOLTIPS = {

@@ -45,8 +45,8 @@
 ✔ Add code comments. @done(26-07-06 06:49)
 ✔ Cleanup code architecture. @done(26-07-11 11:23)
 ✔ Replace text-based underlines/borders with actual CP437 line-drawing characters. @done(26-07-11 00:00)
-☐ Remove redundant tooltips (such as "Clear filters" button tooltip).
-☐ Reword tooltips for "add attribute/skill filter" buttons to be more clear about what they do.
+✔ Remove redundant tooltips (such as "Clear filters" button tooltip). @done(26-07-11 00:00)
+✔ Reword tooltips for "add attribute/skill filter" buttons to be more clear about what they do. @done(26-07-11 00:00)
 ☐ Remove "/trait" from search-filter-panel help text that says "Use Add attribute/trait or Add skill.".
 ☐ Add tooltip for 'delta' column values on stats panel, should explain that the number is the difference between the unit's value and the average for that attribute.
 ☐ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does.
