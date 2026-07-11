@@ -44,8 +44,15 @@
 ✔ Rename mod to "SoulSearch". @done(26-07-06 04:09)
 ✔ Add code comments. @done(26-07-06 06:49)
 ☐ Cleanup code architecture.
+☐ Replace text-based underlines/borders with actual CP437 line-drawing characters.
+☐ Remove redundant tooltips (such as "Clear filters" button tooltip).
+☐ Reword tooltips for "add attribute/skill filter" buttons to be more clear about what they do.
+☐ Remove "/trait" from search-filter-panel help text that says "Use Add attribute/trait or Add skill.".
 ☐ Add tooltip for 'delta' column values on stats panel, should explain that the number is the difference between the unit's value and the average for that attribute.
 ☐ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does.
 ☐ Add tooltips for all skill names in the stat & filter panels, should explain what the skill is and what it does.
 ☐ Add filter presets, so that users can save and load their favorite filter combinations.
 ☐ Provide filter preset defaults for common jobs, such as Scholar, Marksdwarf, Sheriff, etc.
+☐ Add race filters, so users can e.g. search for animals like dogs, or search specifically for dwarves, elves, humans, etc. (Default should target all humanoid races).
+☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)
+☐ Refactor code so that we can spawn multiple SoulSearch windows. this will allow the system to persist settings for "scoped" windows.
