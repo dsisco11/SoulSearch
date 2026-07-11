@@ -14,7 +14,7 @@ return function(test, repo_root)
             'Willingness to help others without reward.',
             descriptions.get_tooltip('trait', 'ALTRUISM'))
         test.assert_equal(
-            'Tendency to reject advice and rely on one’s own counsel.',
+            "Tendency to reject advice and rely on one's own counsel.",
             descriptions.get_tooltip('trait', 'DISDAIN_ADVICE'))
         test.assert_equal(
             'Sensitivity to art and natural beauty.',
