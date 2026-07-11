@@ -10,6 +10,7 @@ package.path = table.concat({
 local test = require('support.testlib')
 local suites = {
     (require('attributes_test')),
+    (require('attribute_descriptions_test')),
     (require('metadata_test')),
     (require('filter_state_test')),
     (require('search_test')),

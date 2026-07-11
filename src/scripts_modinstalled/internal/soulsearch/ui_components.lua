@@ -243,6 +243,8 @@ function update_stats_panel(
     header:setText(stats_presenter.header(result))
     columns:setText(stats_presenter.column_header(sort_key, sort_reverse))
     body:setText(stats_presenter.body(result, sort_key, sort_reverse))
+    local records = stats_presenter.get_display_records(
+        result, sort_key, sort_reverse)
 
     local header_top = ui_layout.STATS_CONTENT_TOP
     local available_height = math.max(
@@ -276,6 +278,7 @@ function update_stats_panel(
         columns:updateLayout(frame_body)
         body:updateLayout(frame_body)
     end
+    return records
 end
 
 ---@param on_close fun()

@@ -48,6 +48,8 @@ local function collect_category(category, values, unit, first_ordinal)
             unit)
         local label = record_label(key)
         table.insert(records, {
+            kind=category.kind,
+            key=key,
             label=label,
             label_key=label:lower(),
             deviation=evaluation.deviation,
@@ -122,22 +124,34 @@ end
 ---@param result SoulSearchResult|nil
 ---@param sort_key string|nil
 ---@param sort_reverse boolean
+---@return SoulSearchStatsRecord[]|false[]
+function get_display_records(result, sort_key, sort_reverse)
+    if not result or not result.row then return {} end
+    local sections, flat = build_records(result)
+    if sort_key then
+        sort_records(flat, sort_key, sort_reverse)
+        return flat
+    end
+    local rows = {}
+    for section_index, records in ipairs(sections) do
+        if section_index > 1 then table.insert(rows, false) end
+        for _, record in ipairs(records) do table.insert(rows, record) end
+    end
+    return rows
+end
+
+---@param result SoulSearchResult|nil
+---@param sort_key string|nil
+---@param sort_reverse boolean
 ---@return table[]|string
 function body(result, sort_key, sort_reverse)
     if not result or not result.row then return '' end
     local tokens = {}
-    local sections, flat = build_records(result)
-    if sort_key then
-        sort_records(flat, sort_key, sort_reverse)
-        for _, record in ipairs(flat) do
+    for _, record in ipairs(get_display_records(result, sort_key, sort_reverse)) do
+        if record then
             ui_format.append_attribute_record_tokens(tokens, record)
-        end
-        return tokens
-    end
-    for section_index, records in ipairs(sections) do
-        if section_index > 1 then table.insert(tokens, NEWLINE) end
-        for _, record in ipairs(records) do
-            ui_format.append_attribute_record_tokens(tokens, record)
+        else
+            table.insert(tokens, NEWLINE)
         end
     end
     return tokens

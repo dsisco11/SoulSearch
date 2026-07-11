@@ -144,3 +144,10 @@ function is_stats_value_cell(x, y)
         x >= STATS_VALUE_COLUMN_X and
         x < STATS_VALUE_COLUMN_X + STATS_VALUE_HEADER_WIDTH
 end
+
+---@param x integer|nil
+---@param y integer|nil
+---@return boolean
+function is_stats_label_cell(x, y)
+    return x and y and y >= 0 and x >= 2 and x < STATS_VALUE_COLUMN_X
+end

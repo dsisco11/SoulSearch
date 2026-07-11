@@ -50,7 +50,7 @@
 ✔ Remove "/trait" from search-filter-panel help text that says "Use Add attribute/trait or Add skill.". @done(26-07-11 00:00)
 ✔ Add tooltip for 'delta' column values on stats panel, should explain that the number is the difference between the unit's value and the average for that attribute. @done(26-07-11 00:00)
 ✔ BUG: stats-panel 'stat' & 'delta' header scrolls with the list, should be fixed so that they stay in place while the list scrolls. @done(26-07-11 13:02)
-☐ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does.
+✔ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does. @done(26-07-11 00:00)
 ☐ Add tooltips for all skill names in the stat & filter panels, should explain what the skill is and what it does.
 ☐ Add filter presets, so that users can save and load their favorite filter combinations.
 ☐ Provide filter preset defaults for common jobs, such as Scholar, Marksdwarf, Sheriff, etc.

@@ -68,4 +68,10 @@ return function(test, repo_root)
         test.assert_false(layout.is_stats_value_cell(34, 2))
         test.assert_false(layout.is_stats_value_cell(26, 2))
     end)
+
+    test.case('UI layout: stats labels exclude their values', function()
+        test.assert_true(layout.is_stats_label_cell(2, 0))
+        test.assert_true(layout.is_stats_label_cell(26, 5))
+        test.assert_false(layout.is_stats_label_cell(27, 0))
+    end)
 end

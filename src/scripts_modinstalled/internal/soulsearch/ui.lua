@@ -14,6 +14,7 @@ local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
+local attribute_descriptions = reqscript('internal/soulsearch/attribute_descriptions')
 
 local view
 local saved_stats_sort_key
@@ -327,6 +328,31 @@ function SoulSearchWindow:get_stats_header_tooltip()
     return column and ui_components.STATS_HEADER_TOOLTIPS[column] or nil
 end
 
+---@param list widgets.List|nil
+---@param choices table[]|nil
+---@return string|nil
+local function get_descriptor_tooltip(list, choices)
+    local index = list and list:getIdxUnderMouse()
+    local descriptor = index and choices and choices[index] and choices[index].descriptor
+    return descriptor and attribute_descriptions.get_tooltip(
+        descriptor.kind, descriptor.key) or nil
+end
+
+---@return string|nil
+function SoulSearchWindow:get_filter_descriptor_tooltip()
+    if self.add_filter_open then
+        return get_descriptor_tooltip(
+            self.subviews.available_filter_list,
+            self.available_filter_choices)
+    end
+    if self.add_skill_open then
+        return nil
+    end
+    return get_descriptor_tooltip(
+        self.subviews.filter_list,
+        self.active_filter_choices)
+end
+
 ---@return string|nil
 function SoulSearchWindow:get_stats_value_tooltip()
     local stats = self.subviews.stats
@@ -341,6 +367,18 @@ function SoulSearchWindow:get_stats_value_tooltip()
     return nil
 end
 
+---@return string|nil
+function SoulSearchWindow:get_stats_attribute_tooltip()
+    local stats = self.subviews.stats
+    if not stats then return nil end
+    local x, y = stats:getMousePos()
+    local record = self.stats_records and self.stats_records[y + 1]
+    if record and ui_layout.is_stats_label_cell(x, y) then
+        return attribute_descriptions.get_tooltip(record.kind, record.key)
+    end
+    return nil
+end
+
 ---@return string
 function SoulSearchWindow:get_tooltip_text()
     for _, tooltip in ipairs(ui_components.CONTROL_TOOLTIPS) do
@@ -350,7 +388,8 @@ function SoulSearchWindow:get_tooltip_text()
     end
 
     return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or
-        self:get_stats_value_tooltip() or ''
+        self:get_stats_value_tooltip() or self:get_filter_descriptor_tooltip() or
+        self:get_stats_attribute_tooltip() or ''
 end
 
 ---@return SoulSearchFilterDescriptor[]
@@ -392,6 +431,7 @@ function SoulSearchWindow:refresh_active_filter_choices(selected)
         table.insert(choices, {text='Use Add attribute or Add skill.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
+    self.active_filter_choices = choices
 end
 
 ---Refreshes the two picker lists from filter state and picker queries.
@@ -435,6 +475,7 @@ function SoulSearchWindow:update_available_filter_choices(selected)
         table.insert(choices, {text='No matching attributes.'})
     end
     self.subviews.available_filter_list:setChoices(choices, selected)
+    self.available_filter_choices = choices
 end
 
 ---@param selected integer|nil
@@ -517,7 +558,7 @@ end
 
 ---@param result SoulSearchResult|nil
 function SoulSearchWindow:refresh_stats(result)
-    ui_components.update_stats_panel(
+    self.stats_records = ui_components.update_stats_panel(
         self.subviews.stats_header,
         self.subviews.stats_columns,
         self.subviews.stats,

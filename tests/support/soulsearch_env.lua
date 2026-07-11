@@ -180,6 +180,12 @@ function M.load_ui_glyphs(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/ui_glyphs.lua')
 end
 
+function M.load_attribute_descriptions(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua')
+end
+
 local function make_presentation_globals()
     return {
         NEWLINE='<NL>',
@@ -257,6 +263,7 @@ function M.load_ui_components(repo_root)
             column_header=function(key, reverse)
                 return {'columns', key, reverse}
             end,
+            get_display_records=function() return {} end,
             body=function(result, key, reverse)
                     return {'body', result, key, reverse}
                 end,
