@@ -1,7 +1,7 @@
 --@ module=true
 
-local CP437_TRIANGLE_UP = string.char(30)
-local CP437_TRIANGLE_DOWN = string.char(31)
+local CP437_TRIANGLE_UP = string.char(30) -- ▲
+local CP437_TRIANGLE_DOWN = string.char(31) -- ▼
 
 WINDOW_FRAME = {w=150, h=45, xalign=0.5, yalign=0.5}
 WINDOW_RESIZE_MIN = {w=120, h=30}

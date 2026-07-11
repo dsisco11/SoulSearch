@@ -53,12 +53,19 @@ return function(test, repo_root)
         format.append_stats_column_header_tokens(tokens, 'value', true)
         test.assert_equal('Stat                     ', tokens[2].text)
         test.assert_equal('Delta ' .. string.char(25), tokens[3].text)
+        test.assert_equal(string.char(196):rep(24), tokens[6].text)
+        test.assert_equal(string.char(196):rep(5), tokens[8].text)
         local record_tokens = {}
         format.append_attribute_record_tokens(record_tokens, {
             label='Strength', deviation=250, tier_distance=2, pen='physical'})
         test.assert_equal('  Strength                 ', record_tokens[1].text)
         test.assert_equal('+250', record_tokens[2].text)
         test.assert_equal('lightgreen', record_tokens[2].pen)
+    end)
+
+    test.case('UI format: panel title rules use CP437 horizontal lines', function()
+        test.assert_equal(string.char(196):rep(7),
+            format.get_title_underline('Results'))
     end)
 
     test.case('UI format: selected filter tokens preserve direction and skill value', function()

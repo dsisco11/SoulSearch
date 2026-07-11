@@ -6,9 +6,10 @@ local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
-local CP437_ARROW_RIGHT = string.char(16)
-local CP437_ARROW_UP = string.char(24)
-local CP437_ARROW_DOWN = string.char(25)
+local CP437_ARROW_RIGHT = string.char(16) -- ►
+local CP437_ARROW_UP = string.char(24) -- ↑
+local CP437_ARROW_DOWN = string.char(25) -- ↓
+local CP437_HORIZONTAL_LINE = string.char(196) -- ─
 
 ---@param text any
 ---@param width integer
@@ -76,7 +77,7 @@ end
 ---@param title any
 ---@return string
 function get_title_underline(title)
-    return ('-'):rep(#tostring(title or ''))
+    return CP437_HORIZONTAL_LINE:rep(#tostring(title or ''))
 end
 
 ---@param tokens table[]
@@ -170,11 +171,11 @@ function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     table.insert(tokens, NEWLINE)
     table.insert(tokens, {text='  ', pen=COLOR_DARKGREY})
     table.insert(tokens, {
-        text=('-'):rep(layout.STATS_LABEL_WIDTH),
+        text=CP437_HORIZONTAL_LINE:rep(layout.STATS_LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
     table.insert(tokens, {text=' ', pen=COLOR_DARKGREY})
-    table.insert(tokens, {text=('-'):rep(5), pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=CP437_HORIZONTAL_LINE:rep(5), pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)
 end
 
