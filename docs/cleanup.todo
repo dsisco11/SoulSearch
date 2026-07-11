@@ -655,59 +655,90 @@ Depends on: Phases 1-6.
 Goal: remove residue left by the structural work and align developer-facing
 documentation and validation with the final architecture.
 
+Status: complete — code residue, workflow documentation, package verification,
+and documentation alignment are complete. The remaining live DFHack reload
+probe belongs to the Phase 6 dependency and remains tracked there.
+
+Automated validation: `tools/Build.ps1` compiled all 17 production Lua files,
+`tools/Test.ps1` passed all 108 tests, and `tools/Publish.ps1` generated and
+verified both `dist/SoulSearch-0.1.0.zip` and `dist/SoulSearch/` against `src/`.
+
 ### Code residue
 
-☐ Collapse the redundant positive branches in `get_deviation_pen()` unless a
+✘ Collapse the redundant positive branches in `get_deviation_pen()` unless a
   separately specified extreme-value color is required.
-☐ Remove static add-filter/add-skill label refresh methods if components do not
-  need dynamic labels.
-☐ Remove the unused `format_position()` helper unless it gained a real consumer.
-☐ Remove obsolete shallow-copy, descriptor lookup, compatibility, refresh, and
-  state helper functions.
-☐ Remove stale LuaLS types/fields and add missing annotations for new modules.
-☐ Search for and resolve remaining duplicated enum, matching, label, category,
-  layout, and filter action definitions.
-☐ Run a dead-field/call-site audit across every internal module.
+  @cancelled(26-07-11 11:01) `docs/ui-baseline.md` specifies distinct normal
+  and extreme positive/negative deviation pens.
+✔ Remove static add-filter/add-skill label refresh methods if components do not
+  need dynamic labels. @done(26-07-11 11:01) The obsolete methods were already
+  absent after component extraction.
+✔ Remove the unused `format_position()` helper unless it gained a real consumer.
+  @done(26-07-11 11:01)
+✔ Remove obsolete shallow-copy, descriptor lookup, compatibility, refresh, and
+  state helper functions. @done(26-07-11 11:01) Removed the final pass-through
+  descriptor and filter-action lookups; intentional copy helpers preserve
+  filter-state isolation.
+✔ Remove stale LuaLS types/fields and add missing annotations for new modules.
+  @done(26-07-11 11:01)
+✔ Search for and resolve remaining duplicated enum, matching, label, category,
+  layout, and filter action definitions. @done(26-07-11 11:01) Catalog,
+  taxonomy, text matching, layout, and action metadata retain single owners.
+✔ Run a dead-field/call-site audit across every internal module.
+  @done(26-07-11 11:01)
 
 ### Developer workflow
 
-☐ Document the separate commands and guarantees for syntax build, pure tests,
-  publishing, and in-game smoke validation.
-☐ Add a combined local verification command only if it keeps the individual
-  gates callable and failures attributable.
-☐ Ensure VS Code tasks expose build, test, and publish actions clearly.
-☐ Make test failures show the fixture/case name and expected/actual values.
+✔ Document the separate commands and guarantees for syntax build, pure tests,
+  publishing, and in-game smoke validation. @done(26-07-11 11:01)
+✘ Add a combined local verification command only if it keeps the individual
+  gates callable and failures attributable. @cancelled(26-07-11 11:01) The
+  separate Build, Test, and Publish gates remain short and attributable;
+  Publish already invokes package verification.
+✔ Ensure VS Code tasks expose build, test, and publish actions clearly.
+  @done(26-07-11 11:01)
+✔ Make test failures show the fixture/case name and expected/actual values.
+  @done(26-07-11 11:01)
 
 ### Package verification
 
-☐ Add a non-destructive verification step for the expanded package and zip.
-☐ Verify packaged output contains root `info.txt` and
+✔ Add a non-destructive verification step for the expanded package and zip.
+  @done(26-07-11 11:01)
+✔ Verify packaged output contains root `info.txt` and
   `scripts_modinstalled/soulsearch.lua` at the expected depth.
-☐ Verify new runtime modules are included in the package.
-☐ Verify tests, development fixtures, reports, and TODO files are not copied into
-  the mod payload.
-☐ Preserve both zip and expanded-folder outputs from `tools/Publish.ps1`.
+  @done(26-07-11 11:01)
+✔ Verify new runtime modules are included in the package.
+  @done(26-07-11 11:01)
+✔ Verify tests, development fixtures, reports, and TODO files are not copied into
+  the mod payload. @done(26-07-11 11:01)
+✔ Preserve both zip and expanded-folder outputs from `tools/Publish.ps1`.
+  @done(26-07-11 11:01)
 
 ### Documentation
 
-☐ Update README status to describe the actual final modules and behavior.
-☐ Replace stale position-snapshot and checkbox-filter wording.
-☐ Point the README roadmap to `docs/project.todo`.
-☐ Link `docs/cleanup-report.md` and `docs/cleanup.todo` from the appropriate
-  architecture/development section.
-☐ Document the descriptor catalog, filter-state owner, search input contract,
+✔ Update README status to describe the actual final modules and behavior.
+  @done(26-07-11 11:01)
+✔ Replace stale position-snapshot and checkbox-filter wording.
+  @done(26-07-11 11:01)
+✔ Point the README roadmap to `docs/project.todo`. @done(26-07-11 11:01)
+✔ Link `docs/cleanup-report.md` and `docs/cleanup.todo` from the appropriate
+  architecture/development section. @done(26-07-11 11:01)
+✔ Document the descriptor catalog, filter-state owner, search input contract,
   presenter/component boundaries, cache lifetime, and reload behavior.
-☐ Update `docs/cleanup-report.md` if implementation evidence changes any
-  recommendation or original assumption.
+  @done(26-07-11 11:01)
+✔ Update `docs/cleanup-report.md` if implementation evidence changes any
+  recommendation or original assumption. @done(26-07-11 11:01)
 
 ### Phase 7 exit gate
 
-☐ No known dead compatibility or duplicate helper remains from the old shape.
-☐ Build, test, package verification, and in-game validation are separately
-  documented and runnable.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
-☐ `tools/Publish.ps1` succeeds and package layout verification passes.
-☐ README and architecture documents match the repository state.
+✔ No known dead compatibility or duplicate helper remains from the old shape.
+  @done(26-07-11 11:01)
+✔ Build, test, package verification, and in-game validation are separately
+  documented and runnable. @done(26-07-11 11:01)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-11 11:01)
+✔ `tools/Publish.ps1` succeeds and package layout verification passes.
+  @done(26-07-11 11:01)
+✔ README and architecture documents match the repository state.
+  @done(26-07-11 11:01)
 
 ## Phase 8 - Final validation and checklist closure
 

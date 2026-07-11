@@ -103,17 +103,6 @@ function get_frame(name)
         'unknown SoulSearch frame: ' .. name))
 end
 
----@param action_id string
----@return SoulSearchFilterActionMetadata|nil
-function get_filter_action(action_id)
-    for _, action in ipairs(FILTER_ACTIONS) do
-        if action.id == action_id then
-            return action
-        end
-    end
-    return nil
-end
-
 ---@param x integer|nil
 ---@return SoulSearchFilterActionMetadata|nil
 function get_filter_action_at_x(x)

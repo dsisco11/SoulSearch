@@ -1,26 +1,32 @@
 # SoulSearch
 
-SoulSearch is a DFHack mod that will provide an in-game panel for searching
-fortress residents by personality traits, soul attributes, and related unit
-data. Search filters are relevance criteria: selecting multiple attributes ranks
-residents by how many criteria they match instead of excluding partial matches.
+SoulSearch is a DFHack mod that provides an in-game panel for searching fortress
+residents by personality traits, attributes, and skills. Search filters are
+ordered relevance criteria: partial matches remain visible, while residents who
+match more and higher-priority criteria rank first.
 
-The first implementation target is a Lua-only DFHack command named
-`soulsearch`. Native C++ plugin code is intentionally out of scope unless Lua
-profiling later shows a real performance issue.
+SoulSearch is implemented as the Lua-only DFHack command `soulsearch`. Native
+C++ plugin code remains out of scope unless profiling later identifies a real
+performance requirement.
 
 ## Status
 
-Phases 1-5 are in place:
+The current implementation includes:
 
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
 - `scripts_modinstalled/soulsearch.lua` defines the public DFHack command.
 - `scripts_modinstalled/internal/soulsearch/` contains private support modules.
-- Resident collection snapshots names, professions, positions, traits, mental
-  attributes, and physical attributes such as agility.
-- Search descriptors and relevance-ranked results drive the panel.
-- `soulsearch` opens an in-game panel with name search, checkbox-driven search
-  filters, ranked results, resident details, refresh, zoom, and close controls.
+- Resident collection reads stable DFHack APIs into compact snapshots of names,
+  professions, traits, attributes, and skills. Position is intentionally read
+  live only when zooming.
+- The immutable descriptor catalog owns filter metadata; `filter_state.lua`
+  owns ordered `{id, direction}` state for the loaded script session.
+- `search.apply()` accepts rows, a name query, and ordered selected filters,
+  then returns relevance-ranked results.
+- `ui.lua` composes the window and coordinates events; formatting, layout,
+  components, refresh dispatch, and Stats presentation have dedicated modules.
+- `soulsearch` opens the panel with name search, ordered high/low filters,
+  ranked results, Stats, refresh, zoom, and close controls.
 
 The command currently validates fortress mode and opens the resident search
 panel.
@@ -54,9 +60,9 @@ For local development without repeatedly copying files, add this line to
 The leading `+` tells DFHack to search this development copy before other script
 directories.
 
-## Publishing
+## Validation and publishing
 
-Run the local Lua build check with:
+Run the syntax-only Lua build check with:
 
 ```powershell
 .\tools\Build.ps1
@@ -71,8 +77,18 @@ Install Lua on PATH or pass a specific executable path:
 .\tools\Build.ps1 -LuaPath "C:\path\to\lua.exe" -LuaMode Lua
 ```
 
-This catches Lua parse/build errors only. DFHack APIs, UI widgets, and game
-state behavior still need in-game validation.
+This checks Lua syntax only. It does not exercise DFHack APIs, widgets, or game
+state.
+
+Run pure Lua tests with:
+
+```powershell
+.\tools\Test.ps1
+```
+
+The tests cover domain rules, filter transitions, ranking, formatting, layout,
+module lifecycle, resident snapshot transformation, and package-independent
+logic. They do not replace an in-game smoke pass.
 
 Create a distributable zip with:
 
@@ -80,9 +96,25 @@ Create a distributable zip with:
 .\tools\Publish.ps1
 ```
 
-The archive is written to `dist/SoulSearch-<version>.zip` and contains the mod
-payload from `src/`. The script also creates `dist/SoulSearch/`, which can be
-copied directly into the Dwarf Fortress `mods/` folder.
+`Publish.ps1` creates `dist/SoulSearch-<version>.zip` and `dist/SoulSearch/`,
+then verifies both contain exactly the payload under `src/`: root `info.txt`,
+the public command, and every runtime Lua module, with no tests or docs. The
+expanded folder can be copied directly into the Dwarf Fortress `mods/` folder.
+
+Run the interactive fortress-mode smoke checklist separately in
+[`docs/ui-baseline.md`](docs/ui-baseline.md). That is the gate for visual
+layout, focus, mouse handling, refresh, and live zoom behavior.
+
+For development reloads, use:
+
+```text
+soulsearch reload
+```
+
+Normal `soulsearch` execution validates the retained internal-module contracts.
+`soulsearch reload` clears internal script environments in reverse dependency
+order, then reloads and validates them forward so a UI does not retain mixed
+module generations.
 
 ## Usage
 
@@ -92,8 +124,9 @@ After DFHack can see the script path, run:
 soulsearch
 ```
 
-At this stage the command opens the SoulSearch panel in fortress mode.
-Use the Search filters list to select traits and attributes such as `Agility`.
+The command opens the SoulSearch panel in fortress mode. Use the Search filters
+list to add traits, attributes, and skills such as `Agility`; set their high/low
+directions and priorities with the controls beside each selected filter.
 The search field filters resident names only. Press `z` or Enter on a selected
 result to center and highlight that resident on the fortress map.
 
@@ -122,4 +155,7 @@ extraction paths like `mods/SoulSearch-0.1.0/SoulSearch/info.txt`.
 
 ## Roadmap
 
-See `docs/SoulSearch.todo` for the implementation checklist.
+The product roadmap is [`docs/project.todo`](docs/project.todo). Architecture
+cleanup analysis and its historical implementation checklist are in
+[`docs/cleanup-report.md`](docs/cleanup-report.md) and
+[`docs/cleanup.todo`](docs/cleanup.todo).

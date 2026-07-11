@@ -353,55 +353,34 @@ test instead of merging them into a new all-purpose module.
 
 ### P3. Remove small redundancies after the structural work
 
-**Evidence and suggested fixes**
+**Implementation update**
 
-- `get_deviation_pen()` returns `COLOR_LIGHTGREEN` for both `tier_distance >= 4`
-  and `>= 2` (`ui.lua:158-163`). Collapse the redundant branch unless a
-  distinct extreme-value color is intended.
-- `update_add_filter_button()` and `update_add_skill_button()` always set static
-  labels (`ui.lua:1343-1352`). Set them during construction and remove the
-  refresh methods, or make the labels actually reflect open/closed state.
-- `copy_selected_descriptors()` copies only the array, not descriptors
-  (`search.lua:475-482`). Rename it to make the shallow behavior explicit or
-  remove it once descriptor immutability is established.
-- `format_position()` is currently unused (`ui.lua:101-109`). Remove it unless
-  it is part of a near-term diagnostic/UI feature.
-- The entrypoint asks for a `search` field when loading `search.lua`
-  (`soulsearch.lua:36`), but that module exports functions such as `apply`, not
-  a `search` field. This forces the fallback for `search.lua`, while modules
-  whose required fields exist remain cached, so `refresh_scripts()` does not
-  reload the module set consistently. Decide whether this function validates or
-  reloads: use `apply` if it only validates the loaded search contract, or use
-  one explicit DFHack reload path for every internal module if development
-  hot-reload is the intended behavior.
+- The normal and extreme deviation pens are intentionally distinct and recorded
+  in `docs/ui-baseline.md`; `get_deviation_pen()` remains unchanged.
+- Static add-label refresh methods, `format_position()`, shallow descriptor-copy
+  helpers, and the obsolete `search` contract check were removed during Phases
+  2, 5, and 6.
+- The remaining unused `get_filter_action()` lookup was removed in Phase 7;
+  hit testing uses the ordered action metadata directly.
+- Module loading now validates `apply()` and `soulsearch reload` performs an
+  explicit, dependency-safe internal-module reload.
 
 These should be handled after tests/catalog/state boundaries land, so small
 edits do not become mixed with behavior-sensitive moves.
 
 ### P3. Correct documentation and developer-workflow drift
 
-**Evidence**
+**Implementation update**
 
-- README's roadmap points to `docs/SoulSearch.todo`, but the tracked checklist
-  is `docs/project.todo` (`README.md:123-125`).
-- README says resident collection snapshots positions and describes
-  "checkbox-driven" filters (`README.md:17-24`), while position is read live at
-  zoom time and the current UI uses ordered high/low filter controls.
-- README's status says phases 1-5 are in place even though the checklist has
-  evolved into a completed feature list plus one architecture-cleanup item.
-- The build reports syntax only, and there is no automated check for stale docs,
-  tests, or packaging.
-
-**How to clean it up**
-
-- Update README architecture/status/usage text to match the current modules and
-  ordered relevance filters.
-- Point the roadmap at `docs/project.todo` and link this report from the open
-  architecture-cleanup task when implementation begins.
-- Document the validation matrix: parse check, pure tests, packaging check, and
-  in-game smoke test.
-- Optionally add a publish verification that inspects archive structure and
-  confirms `info.txt` plus the public command are present.
+- README now describes ordered high/low filters, live zoom position reads, the
+  descriptor catalog, filter-state owner, search input, UI boundaries, cache
+  lifecycle, and explicit reload behavior.
+- The roadmap now points to `docs/project.todo` and links this report plus the
+  historical cleanup checklist.
+- Build, pure test, publish/package verification, and interactive smoke gates
+  are documented separately.
+- `Publish.ps1` invokes `VerifyPackage.ps1`, which compares the zip and
+  expanded folder exactly against the `src/` payload.
 
 ## Recommended implementation sequence
 

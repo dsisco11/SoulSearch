@@ -241,8 +241,8 @@ function get_known_keys()
 end
 
 ---Finds keys that use the forward-compatible fallback category.
----This is intended for tests and opt-in development diagnostics; it never
----prints during normal use.
+---This supports tests and explicit development inspection; it never prints
+---during normal use.
 ---@param skill_keys string[]
 ---@return string[]
 function get_uncategorized(skill_keys)

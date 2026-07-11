@@ -48,12 +48,6 @@ local VALID_FILTER_DIRECTIONS = {
     [FILTER_LOW]=true,
 }
 
----@param descriptor_id string
----@return SoulSearchFilterDescriptor|nil
-local function get_descriptor_by_id(descriptor_id)
-    return descriptors.get_catalog().by_id[descriptor_id]
-end
-
 ---@param row SoulSearchResidentRow
 ---@param descriptor SoulSearchFilterDescriptor
 ---@return number|nil
@@ -86,7 +80,7 @@ local function resolve_selected_filters(selected_filters)
                 type(selected_filter.id) == 'string' and
                 not seen[selected_filter.id] and
                 VALID_FILTER_DIRECTIONS[selected_filter.direction] then
-            local descriptor = get_descriptor_by_id(selected_filter.id)
+            local descriptor = descriptors.get_catalog().by_id[selected_filter.id]
             if descriptor then
                 seen[selected_filter.id] = true
                 table.insert(result, {

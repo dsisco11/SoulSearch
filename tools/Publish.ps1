@@ -84,6 +84,17 @@ try {
     }
 
     Compress-Archive -Path (Join-Path $tempRoot "*") -DestinationPath $zipPath
+    $verifyScript = Join-Path $scriptRoot "VerifyPackage.ps1"
+    $verifyArgs = @{
+        SourceDir = $sourcePath
+        ZipPath = $zipPath
+        PackageRoot = $safePackageName
+        NoRootFolder = $NoRootFolder
+    }
+    if (-not $NoExpandedFolder) {
+        $verifyArgs.ExpandedPath = $expandedPath
+    }
+    & $verifyScript @verifyArgs
     Write-Host "Created $zipPath"
     if (-not $NoExpandedFolder) {
         Write-Host "Created $expandedPath"
