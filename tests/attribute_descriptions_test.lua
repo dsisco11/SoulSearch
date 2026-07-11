@@ -8,6 +8,9 @@ return function(test, repo_root)
             'Muscular power for carrying, melee force, and movement.',
             descriptions.get_tooltip('physical_attribute', 'STRENGTH'))
         test.assert_equal(
+            'Affects close combat and some labor skills; delays suffocation.',
+            descriptions.get_tooltip('physical_attribute', 'TOUGHNESS'))
+        test.assert_equal(
             'Ability to concentrate on a task.',
             descriptions.get_tooltip('mental_attribute', 'FOCUS'))
         test.assert_equal(
