@@ -41,7 +41,7 @@ function create_filter_panel(inputs)
         },
         widgets.Label{
             frame=ui_layout.get_frame('filter_underline'),
-            text=ui_format.title_underline('Search filters'),
+            text=ui_format.get_title_underline('Search filters'),
             text_pen=COLOR_GREY,
         },
         widgets.HotkeyLabel{
@@ -168,7 +168,7 @@ function create_results_panel(inputs)
         widgets.Label{
             view_id='result_header_underline',
             frame=ui_layout.get_frame('result_underline'),
-            text=ui_format.title_underline('Results'),
+            text=ui_format.get_title_underline('Results'),
             text_pen=COLOR_GREY,
         },
         widgets.List{
@@ -207,7 +207,7 @@ function create_stats_panel()
         },
         widgets.Label{
             frame=ui_layout.get_frame('stats_underline'),
-            text=ui_format.title_underline('Stats'),
+            text=ui_format.get_title_underline('Stats'),
             text_pen=COLOR_GREY,
         },
         widgets.Label{

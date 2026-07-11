@@ -12,7 +12,7 @@ return function(test, repo_root)
     local format = soulsearch_env.load_ui_format(repo_root)
 
     test.case('UI format: result row snapshot preserves widths', function()
-        local text = format.result_choice{
+        local text = format.format_result_choice{
             name=('A'):rep(50),
             profession='Stoneworker',
         }
@@ -21,7 +21,7 @@ return function(test, repo_root)
     end)
 
     test.case('UI format: active filter snapshot uses metadata labels', function()
-        local tokens = format.active_filter_choice(
+        local tokens = format.format_active_filter_choice(
             {label='Mining', kind='skill'},
             'low',
             2,
@@ -36,10 +36,11 @@ return function(test, repo_root)
     end)
 
     test.case('UI format: picker snapshots preserve CP437 and category pens', function()
-        local filter = format.available_filter_choice{
+        local filter = format.format_available_filter_choice{
             label='Strength', kind='physical_attribute'}
-        local skill = format.available_skill_choice{label='Mining', kind='skill'}
-        local category = format.skill_category_choice('Mining Skills')
+        local skill = format.format_available_skill_choice{
+            label='Mining', kind='skill'}
+        local category = format.format_skill_category_choice('Mining Skills')
         test.assert_sequence({'Strength'}, token_texts(filter))
         test.assert_sequence({string.char(16) .. ' ', 'Mining'}, token_texts(skill))
         test.assert_sequence({'Mining Skills'}, token_texts(category))
@@ -49,11 +50,11 @@ return function(test, repo_root)
 
     test.case('UI format: stats header and values preserve glyphs and padding', function()
         local tokens = {}
-        format.add_stats_column_header(tokens, 'value', true)
+        format.append_stats_column_header_tokens(tokens, 'value', true)
         test.assert_equal('Stat                     ', tokens[2].text)
         test.assert_equal('Delta ' .. string.char(25), tokens[3].text)
         local record_tokens = {}
-        format.add_attribute_record(record_tokens, {
+        format.append_attribute_record_tokens(record_tokens, {
             label='Strength', deviation=250, tier_distance=2, pen='physical'})
         test.assert_equal('  Strength                 ', record_tokens[1].text)
         test.assert_equal('+250', record_tokens[2].text)
@@ -61,7 +62,7 @@ return function(test, repo_root)
     end)
 
     test.case('UI format: selected filter tokens preserve direction and skill value', function()
-        local tokens = format.stats_header{
+        local tokens = format.format_stats_header{
             row={}, name='Urist', profession='Miner',
             filter_criteria={{
                 label='Mining', kind='skill', direction='low', value=2.35,

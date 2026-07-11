@@ -13,7 +13,7 @@ local CP437_ARROW_DOWN = string.char(25)
 ---@param text any
 ---@param width integer
 ---@return string
-function truncate(text, width)
+function truncate_text(text, width)
     text = tostring(text or '')
     if width <= 0 or #text <= width then
         return text
@@ -26,15 +26,15 @@ end
 
 ---@param result SoulSearchResult
 ---@return string
-function result_choice(result)
+function format_result_choice(result)
     return ('%-45s %s'):format(
-        truncate(result.name, 45),
-        truncate(result.profession or '', 18))
+        truncate_text(result.name, 45),
+        truncate_text(result.profession or '', 18))
 end
 
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
 ---@return dfhack.color|dfhack.pen
-function category_pen(descriptor)
+function get_category_pen(descriptor)
     if descriptor.kind == 'skill' then return COLOR_YELLOW end
     if descriptor.kind == 'physical_attribute' then return COLOR_LIGHTGREEN end
     if descriptor.kind == 'mental_attribute' then return COLOR_LIGHTBLUE end
@@ -44,7 +44,7 @@ end
 ---@param deviation number
 ---@param tier_distance number
 ---@return dfhack.color|dfhack.pen
-function deviation_pen(deviation, tier_distance)
+function get_deviation_pen(deviation, tier_distance)
     if deviation < 0 then
         return tier_distance >= 2 and COLOR_LIGHTRED or COLOR_RED
     end
@@ -53,39 +53,39 @@ end
 
 ---@param value number
 ---@return string
-function deviation(value)
+function format_deviation(value)
     return value > 0 and ('+%d'):format(value) or tostring(value)
 end
 
 ---@param value number|nil
 ---@return string
-function skill_value(value)
+function format_skill_value(value)
     value = math.floor((value or 0) * 10) / 10
     return ('%.1f'):format(value)
 end
 
 ---@param criterion SoulSearchFilterCriterion
 ---@return string
-function evaluation_value(criterion)
+function format_evaluation_value(criterion)
     if criterion.kind == 'skill' then
-        return skill_value(criterion.value)
+        return format_skill_value(criterion.value)
     end
-    return deviation(criterion.deviation)
+    return format_deviation(criterion.deviation)
 end
 
 ---@param title any
 ---@return string
-function title_underline(title)
+function get_title_underline(title)
     return ('-'):rep(#tostring(title or ''))
 end
 
 ---@param tokens table[]
 ---@param title string
 ---@param pen dfhack.color|dfhack.pen
-function add_underlined_title(tokens, title, pen)
+function append_underlined_title_tokens(tokens, title, pen)
     table.insert(tokens, {text=title, pen=pen})
     table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text=title_underline(title), pen=pen})
+    table.insert(tokens, {text=get_title_underline(title), pen=pen})
     table.insert(tokens, NEWLINE)
 end
 
@@ -94,18 +94,19 @@ end
 ---@param priority_index integer|nil
 ---@param priority_count integer
 ---@return table[]
-function active_filter_choice(descriptor, mode, priority_index, priority_count)
+function format_active_filter_choice(
+        descriptor, mode, priority_index, priority_count)
     local state = {
         high_selected=mode == FILTER_HIGH,
         low_selected=mode == FILTER_LOW,
         can_move_up=priority_index and priority_index > 1,
         can_move_down=priority_index and priority_index < priority_count,
     }
-    local label = truncate(
+    local label = truncate_text(
         descriptor.label,
         layout.ACTIVE_FILTER_BUTTON_START_X - 1)
     local tokens = {
-        {text=label, pen=category_pen(descriptor)},
+        {text=label, pen=get_category_pen(descriptor)},
         {
             text=(' '):rep(math.max(
                 1,
@@ -131,29 +132,29 @@ end
 
 ---@param descriptor SoulSearchFilterDescriptor
 ---@return table[]
-function available_filter_choice(descriptor)
-    return {{text=descriptor.label, pen=category_pen(descriptor)}}
+function format_available_filter_choice(descriptor)
+    return {{text=descriptor.label, pen=get_category_pen(descriptor)}}
 end
 
 ---@param descriptor SoulSearchFilterDescriptor
 ---@return table[]
-function available_skill_choice(descriptor)
+function format_available_skill_choice(descriptor)
     return {
         {text=CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
-        {text=descriptor.label, pen=category_pen(descriptor)},
+        {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
 end
 
 ---@param category string
 ---@return table[]
-function skill_category_choice(category)
+function format_skill_category_choice(category)
     return {{text=category, pen=COLOR_WHITE}}
 end
 
 ---@param tokens table[]
 ---@param sort_key string|nil
 ---@param sort_reverse boolean
-function add_stats_column_header(tokens, sort_key, sort_reverse)
+function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     local function marker(active_key)
         if sort_key ~= active_key then return '' end
         return ' ' .. (sort_reverse and CP437_ARROW_DOWN or CP437_ARROW_UP)
@@ -179,23 +180,23 @@ end
 
 ---@param tokens table[]
 ---@param record SoulSearchStatsRecord
-function add_attribute_record(tokens, record)
+function append_attribute_record_tokens(tokens, record)
     table.insert(tokens, {
         text=('  %-' .. layout.STATS_LABEL_WIDTH .. 's '):format(record.label),
         pen=record.pen,
     })
     table.insert(tokens, {
-        text=deviation(record.deviation),
-        pen=deviation_pen(record.deviation, record.tier_distance),
+        text=format_deviation(record.deviation),
+        pen=get_deviation_pen(record.deviation, record.tier_distance),
     })
     table.insert(tokens, NEWLINE)
 end
 
 ---@param tokens table[]
 ---@param filter_criteria SoulSearchFilterCriterion[]|nil
-function add_selected_filter_section(tokens, filter_criteria)
+function append_selected_filter_section_tokens(tokens, filter_criteria)
     if not filter_criteria or #filter_criteria == 0 then return end
-    add_underlined_title(tokens, 'Selected filters', COLOR_WHITE)
+    append_underlined_title_tokens(tokens, 'Selected filters', COLOR_WHITE)
     for _, criterion in ipairs(filter_criteria) do
         local is_low = criterion.direction == FILTER_LOW
         local function matched_pen(pen)
@@ -208,13 +209,13 @@ function add_selected_filter_section(tokens, filter_criteria)
         })
         table.insert(tokens, {
             text=('%-' .. MATCHED_FILTER_LABEL_WIDTH .. 's'):format(
-                truncate(criterion.label, MATCHED_FILTER_LABEL_WIDTH)),
-            pen=matched_pen(category_pen(criterion)),
+                truncate_text(criterion.label, MATCHED_FILTER_LABEL_WIDTH)),
+            pen=matched_pen(get_category_pen(criterion)),
         })
         table.insert(tokens, {
             text=('%' .. MATCHED_FILTER_VALUE_WIDTH .. 's'):format(
-                evaluation_value(criterion)),
-            pen=matched_pen(deviation_pen(
+                format_evaluation_value(criterion)),
+            pen=matched_pen(get_deviation_pen(
                 criterion.deviation,
                 criterion.tier_distance)),
         })
@@ -225,7 +226,7 @@ end
 
 ---@param result SoulSearchResult|nil
 ---@return table[]
-function stats_header(result)
+function format_stats_header(result)
     local tokens = {}
     if not result or not result.row then
         return {{text='No resident selected.', pen=COLOR_DARKGREY}}
@@ -235,6 +236,6 @@ function stats_header(result)
     table.insert(tokens, {text=result.profession or '', pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
-    add_selected_filter_section(tokens, result.filter_criteria)
+    append_selected_filter_section_tokens(tokens, result.filter_criteria)
     return tokens
 end

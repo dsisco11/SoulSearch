@@ -107,7 +107,7 @@ end
 ---@param result SoulSearchResult|nil
 ---@return table[]
 function header(result)
-    return ui_format.stats_header(result)
+    return ui_format.format_stats_header(result)
 end
 
 ---@param result SoulSearchResult|nil
@@ -117,19 +117,20 @@ end
 function body(result, sort_key, sort_reverse)
     if not result or not result.row then return '' end
     local tokens = {}
-    ui_format.add_stats_column_header(tokens, sort_key, sort_reverse)
+    ui_format.append_stats_column_header_tokens(
+        tokens, sort_key, sort_reverse)
     local sections, flat = build_records(result)
     if sort_key then
         sort_records(flat, sort_key, sort_reverse)
         for _, record in ipairs(flat) do
-            ui_format.add_attribute_record(tokens, record)
+            ui_format.append_attribute_record_tokens(tokens, record)
         end
         return tokens
     end
     for section_index, records in ipairs(sections) do
         if section_index > 1 then table.insert(tokens, NEWLINE) end
         for _, record in ipairs(records) do
-            ui_format.add_attribute_record(tokens, record)
+            ui_format.append_attribute_record_tokens(tokens, record)
         end
     end
     return tokens

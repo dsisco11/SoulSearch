@@ -83,7 +83,7 @@ end
 ---@return integer tooltip_width
 local function get_tooltip_box(text, max_width)
     local text_width = math.min(#text, math.min(52, max_width - 2))
-    local tooltip_text = ui_format.truncate(text, text_width)
+    local tooltip_text = ui_format.truncate_text(text, text_width)
     return tooltip_text, #tooltip_text + 2
 end
 
@@ -368,7 +368,7 @@ function SoulSearchWindow:refresh_active_filter_choices(selected)
     local priority_count = filter_state.count(self.filter_state)
     for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
         table.insert(choices, {
-            text=ui_format.active_filter_choice(
+            text=ui_format.format_active_filter_choice(
                 descriptor,
                 filter_state.get_direction(self.filter_state, descriptor.id),
                 filter_state.get_priority(self.filter_state, descriptor.id),
@@ -414,7 +414,7 @@ function SoulSearchWindow:update_available_filter_choices(selected)
         if not filter_state.contains(self.filter_state, descriptor.id) and
                 text_match.contains(descriptor.label, self.attribute_query) then
             table.insert(choices, {
-                text=ui_format.available_filter_choice(descriptor),
+                text=ui_format.format_available_filter_choice(descriptor),
                 descriptor=descriptor,
                 search_key=descriptor.label,
             })
@@ -436,7 +436,7 @@ function SoulSearchWindow:update_available_skill_choices(selected)
             local category = descriptor.category or 'Other Skills'
             choices_by_category[category] = choices_by_category[category] or {}
             table.insert(choices_by_category[category], {
-                text=ui_format.available_skill_choice(descriptor),
+                text=ui_format.format_available_skill_choice(descriptor),
                 descriptor=descriptor,
                 search_key=descriptor.label,
             })
@@ -446,7 +446,7 @@ function SoulSearchWindow:update_available_skill_choices(selected)
         local category_choices = choices_by_category[category]
         if category_choices and #category_choices > 0 then
             table.insert(choices, {
-                text=ui_format.skill_category_choice(category),
+                text=ui_format.format_skill_category_choice(category),
                 search_key=category,
             })
             for _, choice in ipairs(category_choices) do
@@ -477,7 +477,7 @@ function SoulSearchWindow:recompute_results()
     local choices = {}
     for _, result in ipairs(self.results) do
         table.insert(choices, {
-            text=ui_format.result_choice(result),
+            text=ui_format.format_result_choice(result),
             result=result,
             search_key=result.name,
         })
@@ -485,7 +485,8 @@ function SoulSearchWindow:recompute_results()
 
     local result_header = ('Results (%d)'):format(#choices)
     self.subviews.result_header:setText(result_header)
-    self.subviews.result_header_underline:setText(ui_format.title_underline(result_header))
+    self.subviews.result_header_underline:setText(
+        ui_format.get_title_underline(result_header))
 
     local selected = ui_refresh.get_result_selection(
         self.results,
