@@ -374,7 +374,7 @@ function SoulSearchWindow:refresh_active_filter_choices(selected)
         })
     end
     if #choices == 0 then
-        table.insert(choices, {text='Use Add attribute/trait or Add skill.'})
+        table.insert(choices, {text='Use Add attribute or Add skill.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
 end
