@@ -540,7 +540,7 @@ or owns their formatting and stats-record transformation.
 ✔ `SoulSearchWindow` primarily composes components and coordinates events.
   @done(26-07-11 08:24)
 ✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-11 08:24)
-☐ Full in-game visual, mouse, focus, drag, resize, tooltip, stats sort, refresh,
+✔ Full in-game visual, mouse, focus, drag, resize, tooltip, stats sort, refresh, @done(26-07-11 09:33)
   and zoom smoke checks match the baseline.
 
 ## Phase 6 - DFHack adapters, diagnostics, caches, and module lifecycle
