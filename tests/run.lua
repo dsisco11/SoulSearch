@@ -19,6 +19,9 @@ local suites = {
     (require('ui_format_test')),
     (require('stats_presenter_test')),
     (require('ui_components_test')),
+    (require('residents_test')),
+    (require('lifecycle_test')),
+    (require('module_registry_test')),
 }
 
 for _, register_suite in ipairs(suites) do

@@ -37,6 +37,14 @@ environment stubs only the external APIs needed by the modules under test:
 - UI component factories run with inert widget constructors to verify explicit
   inputs and focus-sensitive child order without pretending to emulate DFHack
   widget behavior.
+- Resident row tests use plain snapshot fixtures; collection fixtures cover
+  missing souls, personalities, attributes, translations, and unknown skills.
+  Expected absence is handled explicitly, while unexpected DFHack API errors
+  remain visible instead of being converted into missing data.
+- Lifecycle fixtures prove descriptor, race-median, and skill-name caches are
+  reused within a world and reset only at the explicit world boundary.
+- The production module registry validates real module contracts and defines a
+  complete dependency-safe clear/reload order for development reloads.
 
 The tests do not emulate DFHack widget behavior or claim to validate in-game
 behavior. Visual layout, focus, mouse handling, live unit access, refresh, and

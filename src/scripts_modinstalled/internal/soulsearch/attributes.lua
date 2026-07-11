@@ -52,12 +52,21 @@ end
 ---@param kind 'physical_attribute'|'mental_attribute'
 ---@param raw_value string
 local function set_attribute_median(medians, kind, raw_value)
+    -- Supported DF 0.53 creature raws encode seven percentile values after the
+    -- attribute key. The fourth numeric value (split field 6) is the documented
+    -- median; vanilla dwarven STRENGTH, for example, is 1250.
     local parts = split_colon(raw_value)
     local key = parts[2]
     if not key then
         return
     end
     medians[kind][key] = tonumber(parts[6]) or medians[kind][key]
+end
+
+---Clears race median data between world/module lifecycle generations. Callers
+---own the boundary and must not reset during an evaluation/search pass.
+function reset_cache()
+    median_cache = {}
 end
 
 ---Gets physical and mental attribute medians for a creature race.

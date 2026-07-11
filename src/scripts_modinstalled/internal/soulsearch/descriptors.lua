@@ -169,6 +169,12 @@ end
 
 local catalog
 
+---Clears immutable descriptor metadata between module/world generations.
+---Callers must invoke this only between UI/search passes.
+function reset_cache()
+    catalog = nil
+end
+
 ---Returns the descriptor catalog for this loaded script environment.
 ---DF enum metadata is stable for that lifetime; reloading this module creates a
 ---new environment and catalog, so lookup/search never rebuilds it implicitly.

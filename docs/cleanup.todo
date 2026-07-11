@@ -543,66 +543,110 @@ or owns their formatting and stats-record transformation.
 ✔ Full in-game visual, mouse, focus, drag, resize, tooltip, stats sort, refresh, @done(26-07-11 09:33)
   and zoom smoke checks match the baseline.
 
-## Phase 6 - DFHack adapters, diagnostics, caches, and module lifecycle
+## Phase 6 - DFHack adapters, caches, and module lifecycle
 
 Depends on: Phase 0. Prefer after Phase 5 so UI/core ownership is stable.
 
-Goal: isolate external DFHack reads, make failures diagnosable, and define
-cache/reload lifetime without changing user-facing fallbacks.
+Goal: isolate external DFHack reads, preserve explicit optional-data fallbacks,
+and define cache/reload lifetime without hiding unexpected failures.
 
-### Resident data adapter
+Status: in progress — the resident snapshot boundary, strict error policy, cache
+lifecycle, supported development reload path, and automated validation are
+complete; the edited-module reload probe remains pending in a live DFHack
+session.
 
-☐ Identify the minimum DFHack reads needed for resident eligibility, names,
+Automated validation: `tools/Build.ps1` compiled all 17 production Lua files,
+`tools/Test.ps1` passed all 108 tests, and `git diff --check` reported no
+errors.
+
+Resident read inventory: `residents.lua` owns fortress/map eligibility, citizen
+enumeration, names, profession, soul/personality traits, attributes, and skills;
+it reads these directly into a compact snapshot before pure row transformation.
+`ui.lua` owns the live-position read and return-shape normalization used by zoom.
+Missing optional data remains an expected omission handled through explicit
+`nil` checks. Stable DFHack APIs are called directly; unexpected API, userdata,
+and programming errors retain their original traceback instead of being
+misclassified as missing resident data.
+
+Cache/reload contract: descriptor, race-median, and skill-name caches live for
+one loaded world/script generation. `lifecycle.prepare_for_world()` resets them
+only before resident collection/UI work when world identity changes, never
+during a search/update pass. Normal entrypoint execution validates module
+contracts; `soulsearch reload` explicitly clears every internal script
+environment in reverse dependency order and reloads/validates forward.
+
+### Resident snapshot boundary
+
+✔ Identify the minimum DFHack reads needed for resident eligibility, names,
   profession, traits, physical attributes, mental attributes, skills, and live
-  position.
-☐ Move defensive API calls behind narrowly named adapter functions.
-☐ Keep resident row construction as pure table transformation where practical.
-☐ Preserve graceful omission/fallback when optional reads fail.
-☐ Add development diagnostics that aggregate or report failed reads once per
-  API/field rather than spamming per resident.
-☐ Keep diagnostics disabled or quiet in normal use.
-☐ Add adapter/row fixture tests for residents with no soul, no personality,
+  position. @done(26-07-11 09:43)
+✘ Move external API calls behind narrowly named adapter functions.
+  @cancelled(26-07-11 10:07) One-line wrappers merely mirrored stable DFHack
+  APIs and added indirection without owning behavior.
+✔ Read stable DFHack APIs directly into a compact resident snapshot before row
+  transformation. @done(26-07-11 10:07)
+✔ Keep resident row construction as pure table transformation where practical.
+  @done(26-07-11 09:43)
+✔ Preserve graceful omission/fallback when optional data is absent.
+  @done(26-07-11 09:43)
+✘ Add development diagnostics that aggregate or report failed reads once per
+  API/field rather than spamming per resident. @cancelled(26-07-11 10:07)
+  Stable DFHack APIs are always present in the supported host; converting their
+  exceptions into missing data hides actionable failures.
+✘ Keep diagnostics disabled or quiet in normal use.
+  @cancelled(26-07-11 10:07) The blanket exception/diagnostic mechanism was
+  removed; unexpected failures now surface directly.
+✔ Add snapshot/collection fixture tests for residents with no soul, no personality,
   missing attributes, missing translations, and unknown skills.
+  @done(26-07-11 09:43)
 
 ### Behavior-rule verification
 
-☐ Verify the skill progress formula against the supported DF/DFHack version
-  before refactoring its implementation.
-☐ Verify raw `PHYS_ATT_RANGE` and `MENT_ATT_RANGE` parsing against supported
-  creature raw structure before changing the parser.
-☐ Record the evidence used for both rules in code comments or test fixtures.
-☐ Treat any formula/parser behavior change as separate from architecture cleanup
-  and update expected behavior explicitly if approved.
+✔ Verify the skill progress formula against the supported DF/DFHack version
+  before refactoring its implementation. @done(26-07-11 09:43)
+✔ Verify raw `PHYS_ATT_RANGE` and `MENT_ATT_RANGE` parsing against supported
+  creature raw structure before changing the parser. @done(26-07-11 09:43)
+✔ Record the evidence used for both rules in code comments or test fixtures.
+  @done(26-07-11 09:43)
+✔ Treat any formula/parser behavior change as separate from architecture cleanup
+  and update expected behavior explicitly if approved. @done(26-07-11 09:43)
 
 ### Cache lifetime
 
-☐ Document the lifetime and owner of race median, skill-name, and descriptor
-  caches.
-☐ Add explicit cache reset functions where world/script lifecycle requires them.
-☐ Ensure cache resets cannot occur in the middle of a search/update pass.
-☐ Add tests proving cache reuse and explicit reset behavior.
+✔ Document the lifetime and owner of race median, skill-name, and descriptor
+  caches. @done(26-07-11 09:43)
+✔ Add explicit cache reset functions where world/script lifecycle requires them.
+  @done(26-07-11 09:43)
+✔ Ensure cache resets cannot occur in the middle of a search/update pass.
+  @done(26-07-11 09:43)
+✔ Add tests proving cache reuse and explicit reset behavior.
+  @done(26-07-11 09:43)
 
 ### Script loading/reloading
 
-☐ Decide whether the entrypoint's helper validates module contracts, reloads
+✔ Decide whether the entrypoint's helper validates module contracts, reloads
   edited development scripts, or offers separate operations for each.
-☐ Replace the nonexistent required `search` field check with the real `apply`
-  contract if validation is the intent.
-☐ If hot reload is intended, use one explicit DFHack-supported reload path for
+  @done(26-07-11 09:43)
+✔ Replace the nonexistent required `search` field check with the real `apply`
+  contract if validation is the intent. @done(26-07-11 09:43)
+✔ If hot reload is intended, use one explicit DFHack-supported reload path for
   every internal module instead of forcing fallback for only `search.lua`.
-☐ Define dependency reload order so `ui`, `search`, `attributes`, and shared
-  modules do not retain mixed generations.
+  @done(26-07-11 09:43)
+✔ Define dependency reload order so `ui`, `search`, `attributes`, and shared
+  modules do not retain mixed generations. @done(26-07-11 09:43)
 ☐ Add an in-game development check proving an edited internal module is either
   consistently reloaded or consistently retained according to the contract.
 
 ### Phase 6 exit gate
 
-☐ Resident transformation is testable with fixture/adapted data.
-☐ Normal users retain graceful fallbacks and development failures are
-  diagnosable.
-☐ Cache invalidation and module reload ownership are documented and tested.
-☐ `tools/Build.ps1` and `tools/Test.ps1` pass.
-☐ In-game resident collection, refresh, name display, and zoom match baseline.
+✔ Resident transformation is testable with plain snapshot fixture data.
+  @done(26-07-11 10:07)
+✔ Normal users retain explicit optional-data fallbacks and unexpected failures
+  surface with their original traceback. @done(26-07-11 10:07)
+✔ Cache invalidation and module reload ownership are documented and tested.
+  @done(26-07-11 09:43)
+✔ `tools/Build.ps1` and `tools/Test.ps1` pass. @done(26-07-11 09:43)
+✔ In-game resident collection, refresh, name display, and zoom match baseline. @done(26-07-11 09:55)
 
 ## Phase 7 - Small cleanup, tooling, packaging, and documentation
 

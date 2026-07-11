@@ -324,19 +324,20 @@ test instead of merging them into a new all-purpose module.
 - `residents.lua` mixes defensive DFHack calls, enum traversal, name
   translation, skill-progress calculation, and row construction
   (`residents.lua:34-177`).
-- Several `pcall` failures are silently treated as missing data
-  (`residents.lua:56-84`, `residents.lua:134-143`). This is safe for users but
-  makes compatibility regressions difficult to diagnose.
+- The former resident reads silently treated `pcall` failures as missing data,
+  which hid programming errors and DFHack API contract regressions behind
+  ordinary resident fallbacks.
 - Attribute raw parsing and caching similarly combine DF global access with
   evaluation in `attributes.lua:54-97`.
 
 **How to clean it up**
 
-- Introduce narrow adapter functions for DFHack reads and keep row/evaluation
-  transformation pure where practical.
-- Centralize the "safe read" policy. In normal mode, preserve graceful
-  fallback; in a development/debug mode, count or report failed reads once per
-  field/API instead of silently discarding all evidence.
+- Read stable DFHack APIs directly into a compact resident snapshot, then keep
+  row/evaluation transformation pure. Avoid one-line wrappers that merely
+  mirror DFHack's existing API.
+- Handle legitimate optional data, such as a missing soul or translation, with
+  explicit `nil` checks. Call stable DFHack APIs directly so unexpected errors
+  retain their original traceback instead of masquerading as missing data.
 - Make cache lifetime explicit. Provide a cache reset tied to script/world
   lifecycle rather than relying only on module reload semantics.
 - Verify the skill progress formula and raw attribute-range parsing against the
@@ -345,8 +346,9 @@ test instead of merging them into a new all-purpose module.
 
 **Done when**
 
-- Snapshot transformation can be tested with fixture units/adapters.
-- Compatibility failures are diagnosable without spamming normal users.
+- Snapshot transformation can be tested with plain fixture tables.
+- Compatibility and programming failures surface clearly, while legitimate
+  missing resident data retains its user-facing fallback.
 - Cache invalidation has a documented owner.
 
 ### P3. Remove small redundancies after the structural work

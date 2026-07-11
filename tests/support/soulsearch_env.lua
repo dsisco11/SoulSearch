@@ -254,4 +254,41 @@ function M.load_ui_components(repo_root)
         globals)
 end
 
+function M.load_residents(repo_root, df_enums_override, dfhack_override)
+    local df_enums = df_enums_override or M.load_df_enums(repo_root)
+    local globals = {
+        df=M.make_df_stub(),
+        dfhack=dfhack_override,
+        reqscript=function(name)
+            if name == 'internal/soulsearch/df_enums' then return df_enums end
+            error('unexpected reqscript: ' .. tostring(name))
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/residents.lua',
+        globals)
+end
+
+function M.load_lifecycle(repo_root, modules, df_stub)
+    local globals = {
+        df=df_stub or {global={world={}}},
+        reqscript=function(name)
+            local module = modules[name]
+            assert(module, 'unexpected reqscript: ' .. tostring(name))
+            return module
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/lifecycle.lua',
+        globals)
+end
+
+function M.load_module_registry(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/module_registry.lua')
+end
+
 return M

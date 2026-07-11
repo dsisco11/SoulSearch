@@ -1,10 +1,5 @@
 --@ module=true
 
----@class SoulSearchPosition
----@field x integer
----@field y integer
----@field z integer
-
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
@@ -30,18 +25,22 @@ local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
 local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
+
+---@class SoulSearchPosition
+---@field x integer
+---@field y integer
+---@field z integer
+
 ---@param x integer|table
 ---@param y integer|nil
 ---@param z integer|nil
 ---@return SoulSearchPosition|nil
-local function make_position(x, y, z)
+local function normalize_position(x, y, z)
     if type(x) == 'table' then
         return {x=x.x, y=x.y, z=x.z}
     end
-    if type(x) ~= 'number' or type(y) ~= 'number' or type(z) ~= 'number' then
-        return nil
-    end
-    if x < 0 or y < 0 or z < 0 then
+    if type(x) ~= 'number' or type(y) ~= 'number' or type(z) ~= 'number' or
+            x < 0 or y < 0 or z < 0 then
         return nil
     end
     return {x=x, y=y, z=z}
@@ -166,11 +165,7 @@ local function get_live_position(result)
         return nil
     end
 
-    local ok, x, y, z = pcall(dfhack.units.getPosition, result.unit)
-    if ok then
-        return make_position(x, y, z)
-    end
-    return nil
+    return normalize_position(dfhack.units.getPosition(result.unit))
 end
 
 ---@param window widgets.Window
