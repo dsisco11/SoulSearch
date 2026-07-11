@@ -43,7 +43,7 @@
 ✔ Add ability to click stats attribute headers to change sorting order. @done(26-07-06 04:00)
 ✔ Rename mod to "SoulSearch". @done(26-07-06 04:09)
 ✔ Add code comments. @done(26-07-06 06:49)
-☐ Cleanup code architecture.
+✔ Cleanup code architecture. @done(26-07-11 11:23)
 ☐ Replace text-based underlines/borders with actual CP437 line-drawing characters.
 ☐ Remove redundant tooltips (such as "Clear filters" button tooltip).
 ☐ Reword tooltips for "add attribute/skill filter" buttons to be more clear about what they do.
