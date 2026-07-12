@@ -16,14 +16,14 @@ Behavioral invariants
     ☐ Existing UI geometry, focus behavior, mouse hitboxes, result selection retention, zoom behavior, and ranking semantics remain intact.
 
 Phase 0 - Characterize the existing pipeline
-    ☐ Add characterization coverage for the current getCitizens -> resident snapshot -> search.apply flow before changing ownership.
-    ☐ Lock current attribute, trait, and skill filter ordering, matched-count, weighted-score, score, name, and unit-ID tie-break behavior.
-    ☐ Lock current filter-state validation, direction toggling, movement, clearing, replacement, save/load, and preset round-trip behavior.
-    ☐ Lock safe snapshot behavior for a citizen with a soul and for missing optional name, profession, traits, attributes, or skills.
-    ☐ Record the current filter-panel layout, picker exclusivity, keyboard controls, and result-selection behavior used by UI tests.
+    ✔ Add characterization coverage for the current getCitizens -> resident snapshot -> search.apply flow before changing ownership. @done(26-07-12)
+    ✔ Lock current attribute, trait, and skill filter ordering, matched-count, weighted-score, score, name, and unit-ID tie-break behavior. @done(26-07-12)
+    ✔ Lock current filter-state validation, direction toggling, movement, clearing, replacement, save/load, and preset round-trip behavior. @done(26-07-12)
+    ✔ Lock safe snapshot behavior for a citizen with a soul and for missing optional name, profession, traits, attributes, or skills. @done(26-07-12)
+    ✔ Record the current filter-panel layout, picker exclusivity, keyboard controls, and result-selection behavior used by UI tests. @done(26-07-12)
     Phase gate
-        ☐ Run tools/Build.ps1.
-        ☐ Run tools/Test.ps1 and record the passing test count before implementation.
+        ✔ Run tools/Build.ps1. @done(26-07-12; 22 production Lua files)
+        ✔ Run tools/Test.ps1 and record the passing test count before implementation. @done(26-07-12; 134 tests, 0 failures)
 
 Phase 1 - Define candidate and filter contracts
     ☐ Add a SoulSearchCandidateProvider contract with get_units() returning df.unit[] or nil plus an optional error.

@@ -107,4 +107,29 @@ return function(test, repo_root)
         test.assert_false(ok)
         test.assert_true(tostring(err):find('citizen read failed', 1, true) ~= nil)
     end)
+
+    test.case('resident collection: uses the citizen source and preserves its order', function()
+        local citizen_args
+        local first = {id=30, status={}}
+        local second = {id=10, status={}}
+        local dfhack_stub = {
+            isMapLoaded=function() return true end,
+            world={isFortressMode=function() return true end},
+            units={
+                getCitizens=function(...)
+                    citizen_args = {...}
+                    return {first, second}
+                end,
+                getVisibleName=function() return nil end,
+                getProfessionName=function() return nil end,
+                getMentalAttrValue=function() return nil end,
+                getPhysicalAttrValue=function() return nil end,
+            },
+            translation={translateName=function() return nil end},
+        }
+        local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
+        local rows = residents.collect_residents()
+        test.assert_sequence({false, true}, citizen_args)
+        test.assert_sequence({30, 10}, {rows[1].unit_id, rows[2].unit_id})
+    end)
 end
