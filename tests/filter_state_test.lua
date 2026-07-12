@@ -185,6 +185,19 @@ return function(test, repo_root)
         test.assert_equal('high', filters[2].direction)
     end)
 
+    test.case('filter state behavior projections preserve ranking order and isolation', function()
+        local state = filter_state.new{
+            {id='trait:PATIENCE', direction='low'},
+            {id='skill:MINING', direction='high'},
+        }
+        test.assert_sequence({}, ids(filter_state.get_candidate_filters(state)))
+        local ranking = filter_state.get_ranking_filters(state)
+        test.assert_sequence({'trait:PATIENCE', 'skill:MINING'}, ids(ranking))
+        ranking[1].id = 'skill:SWORD'
+        test.assert_sequence({'trait:PATIENCE', 'skill:MINING'},
+            ids(filter_state.get_ranking_filters(state)))
+    end)
+
     test.case('filter state replace validates and preserves preset order', function()
         local state = filter_state.new{{id='skill:MINING', direction='high'}}
         test.assert_true(filter_state.replace(state, {

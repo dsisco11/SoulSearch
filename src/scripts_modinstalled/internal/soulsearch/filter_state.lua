@@ -7,6 +7,8 @@ local descriptors = reqscript('internal/soulsearch/descriptors')
 
 local FILTER_HIGH = 'high'
 local FILTER_LOW = 'low'
+local FILTER_BEHAVIOR_CANDIDATE = 'candidate'
+local FILTER_BEHAVIOR_RANKING = 'ranking'
 
 ---@type table<SoulSearchFilterState, SoulSearchSelectedFilter[]>
 local filters_by_state = setmetatable({}, {__mode='k'})
@@ -83,6 +85,35 @@ end
 ---@return SoulSearchSelectedFilter[]
 function get_filters(state)
     return copy_filters(get_internal_filters(state))
+end
+
+---@param state SoulSearchFilterState
+---@param behavior SoulSearchFilterBehavior
+---@return SoulSearchSelectedFilter[]
+local function get_filters_by_behavior(state, behavior)
+    local result = {}
+    local catalog = descriptors.get_catalog()
+    for _, filter in ipairs(get_internal_filters(state)) do
+        local descriptor = catalog.by_id[filter.id]
+        if descriptor and descriptor.behavior == behavior then
+            table.insert(result, {id=filter.id, direction=filter.direction})
+        end
+    end
+    return result
+end
+
+---Returns an isolated ordered copy of filters that select candidate units.
+---@param state SoulSearchFilterState
+---@return SoulSearchSelectedFilter[]
+function get_candidate_filters(state)
+    return get_filters_by_behavior(state, FILTER_BEHAVIOR_CANDIDATE)
+end
+
+---Returns an isolated ordered copy of filters that rank already-selected rows.
+---@param state SoulSearchFilterState
+---@return SoulSearchSelectedFilter[]
+function get_ranking_filters(state)
+    return get_filters_by_behavior(state, FILTER_BEHAVIOR_RANKING)
 end
 
 ---@param state SoulSearchFilterState

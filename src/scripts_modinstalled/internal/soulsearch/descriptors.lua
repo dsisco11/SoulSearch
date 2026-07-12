@@ -3,6 +3,7 @@
 ---@class SoulSearchFilterDescriptor
 ---@field id string
 ---@field kind SoulSearchStatKind
+---@field behavior SoulSearchFilterBehavior
 ---@field key string
 ---@field label string
 ---@field category string|nil
@@ -20,6 +21,8 @@
 
 local df_enums = reqscript('internal/soulsearch/df_enums')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
+
+---@alias SoulSearchFilterBehavior 'candidate'|'ranking'
 
 ---@param name string
 ---@return string
@@ -87,6 +90,7 @@ local function make_descriptor(kind, key, label)
     return {
         id=kind .. ':' .. key,
         kind=kind,
+        behavior='ranking',
         key=key,
         label=label,
     }

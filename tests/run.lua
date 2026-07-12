@@ -12,6 +12,7 @@ local suites = {
     (require('attributes_test')),
     (require('attribute_descriptions_test')),
     (require('metadata_test')),
+    (require('candidate_provider_test')),
     (require('filter_state_test')),
     (require('filter_defaults_test')),
     (require('role_presets_test')),

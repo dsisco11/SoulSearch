@@ -130,6 +130,13 @@ return function(test, repo_root)
             catalog.by_id['skill:UNLISTED_SKILL'].category)
     end)
 
+    test.case('descriptor catalog: current filters are ranking descriptors', function()
+        local descriptors = soulsearch_env.load_descriptors(repo_root)
+        for _, descriptor in ipairs(descriptors.get_catalog().flat) do
+            test.assert_equal('ranking', descriptor.behavior)
+        end
+    end)
+
     test.case('descriptor catalog: rejects duplicate descriptor IDs', function()
         local duplicate_df = soulsearch_env.make_df_stub()
         duplicate_df.personality_facet_type = {

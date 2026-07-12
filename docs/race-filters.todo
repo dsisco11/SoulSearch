@@ -26,15 +26,15 @@ Phase 0 - Characterize the existing pipeline
         ✔ Run tools/Test.ps1 and record the passing test count before implementation. @done(26-07-12; 134 tests, 0 failures)
 
 Phase 1 - Define candidate and filter contracts
-    ☐ Add a SoulSearchCandidateProvider contract with get_units() returning df.unit[] or nil plus an optional error.
-    ☐ Add descriptor behavior metadata with the explicit values candidate and ranking.
-    ☐ Mark existing attribute, trait, and skill descriptors as ranking descriptors.
-    ☐ Add filter-state projections for get_candidate_filters() and get_ranking_filters() without exposing mutable internal tables.
-    ☐ Keep the serialized selected-filter shape as ordered {id, direction} entries for preset compatibility.
-    ☐ Update module registration and lifecycle cache-reset contracts for each new production module.
+    ✔ Add a SoulSearchCandidateProvider contract with get_units() returning df.unit[] or nil plus an optional error. @done(26-07-12)
+    ✔ Add descriptor behavior metadata with the explicit values candidate and ranking. @done(26-07-12)
+    ✔ Mark existing attribute, trait, and skill descriptors as ranking descriptors. @done(26-07-12)
+    ✔ Add filter-state projections for get_candidate_filters() and get_ranking_filters() without exposing mutable internal tables. @done(26-07-12)
+    ✔ Keep the serialized selected-filter shape as ordered {id, direction} entries for preset compatibility. @done(26-07-12)
+    ✔ Update module registration and lifecycle cache-reset contracts for each new production module. @done(26-07-12; candidate_provider is stateless and needs no reset hook)
     Phase gate
-        ☐ Contract tests prove candidate and ranking projections preserve validation, direction, and relative order.
-        ☐ Existing ranking and preset tests remain unchanged and green.
+        ✔ Contract tests prove candidate and ranking projections preserve validation, direction, and relative order. @done(26-07-12)
+        ✔ Existing ranking and preset tests remain unchanged and green. @done(26-07-12; 138 tests, 0 failures)
 
 Phase 2 - Implement internal unit-scope providers
     ☐ Add an internal unit-scope provider factory with all_active, fort_residents, and citizens_and_pets scopes.
