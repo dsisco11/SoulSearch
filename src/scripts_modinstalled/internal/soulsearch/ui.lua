@@ -32,6 +32,7 @@ local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
 local FILTER_KIND_RACE = filter_constants.kind.RACE
+local RACE_GROUP_ID_PREFIX = filter_constants.race.group_id_prefix
 local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
@@ -1044,14 +1045,23 @@ end
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_race_choices(selected)
     local choices = {}
+    local has_group_choice = false
+    local inserted_group_gap = false
     for _, descriptor in ipairs(self.race_filter_descriptors) do
         if not filter_state.contains(self.filter_state, descriptor.id) and
                 text_match.contains(descriptor.label, self.race_query) then
+            local is_group = descriptor.id:sub(1, #RACE_GROUP_ID_PREFIX) ==
+                RACE_GROUP_ID_PREFIX
+            if not is_group and has_group_choice and not inserted_group_gap then
+                table.insert(choices, {text=''})
+                inserted_group_gap = true
+            end
             table.insert(choices, {
                 text=ui_format.format_available_filter_choice(descriptor),
                 descriptor=descriptor,
                 search_key=descriptor.label,
             })
+            has_group_choice = has_group_choice or is_group
         end
     end
     if #choices == 0 then
