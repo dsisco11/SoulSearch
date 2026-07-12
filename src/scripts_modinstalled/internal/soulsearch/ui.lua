@@ -1,12 +1,14 @@
 --@ module=true
 
 local gui = require('gui')
+local dialogs = require('gui.dialogs')
 local widgets = require('gui.widgets')
 
 local residents = reqscript('internal/soulsearch/residents')
 local search = reqscript('internal/soulsearch/search')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
+local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
 local ui_components = reqscript('internal/soulsearch/ui_components')
@@ -214,6 +216,7 @@ end
 ---@field suppress_result_select_refresh boolean
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
+---@field preset_picker_open boolean
 ---@field filter_catalog SoulSearchFilterCatalog
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field skill_filter_descriptors SoulSearchFilterDescriptor[]
@@ -239,6 +242,7 @@ function SoulSearchWindow:init()
     self.suppress_result_select_refresh = false
     self.add_filter_open = false
     self.add_skill_open = false
+    self.preset_picker_open = false
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
     self.filter_catalog = filter_catalog
@@ -259,9 +263,14 @@ function SoulSearchWindow:init()
     append_views(views, ui_components.create_filter_panel{
         is_attribute_picker_open=function() return self.add_filter_open end,
         is_skill_picker_open=function() return self.add_skill_open end,
+        is_preset_picker_open=function() return self.preset_picker_open end,
         on_toggle_attribute_picker=function() self:toggle_add_filter_dropdown() end,
         on_toggle_skill_picker=function() self:toggle_add_skill_dropdown() end,
         on_clear=function() self:clear_filters() end,
+        on_toggle_preset_picker=function() self:toggle_preset_picker() end,
+        on_close_preset_picker=function() self:close_preset_picker() end,
+        on_save_preset=function() self:save_filter_preset() end,
+        on_load_preset=function(name) self:load_filter_preset(name) end,
         on_close_picker=function() self:close_add_filter_dropdown() end,
         on_attribute_query=function(text)
             self.attribute_query = text
@@ -291,6 +300,7 @@ function SoulSearchWindow:init()
     self:refresh_views{
         active_filters=true,
         pickers=true,
+        presets=true,
     }
 end
 
@@ -309,7 +319,7 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_filter_action_tooltip()
-    if self.add_filter_open or self.add_skill_open then
+    if self.add_filter_open or self.add_skill_open or self.preset_picker_open then
         return nil
     end
 
@@ -352,6 +362,7 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_filter_descriptor_tooltip()
+    if self.preset_picker_open then return nil end
     if self.add_filter_open then
         return get_descriptor_tooltip(
             self.subviews.available_filter_list,
@@ -450,6 +461,18 @@ end
 function SoulSearchWindow:refresh_picker_choices()
     self:update_available_filter_choices()
     self:update_available_skill_choices()
+end
+
+---Refreshes the saved preset names displayed by the preset picker.
+function SoulSearchWindow:refresh_preset_choices()
+    local choices = {}
+    for _, name in ipairs(filter_presets.list()) do
+        table.insert(choices, {text=name, name=name, search_key=name})
+    end
+    if #choices == 0 then
+        table.insert(choices, {text='No saved presets.'})
+    end
+    self.subviews.preset_list:setChoices(choices)
 end
 
 ---Dispatches one explicit pass over the requested derived views.
@@ -677,6 +700,64 @@ function SoulSearchWindow:clear_filters()
     return true
 end
 
+---@return boolean
+function SoulSearchWindow:save_filter_preset()
+    dialogs.showInputPrompt(
+        'Save filter preset',
+        'Preset name:',
+        COLOR_WHITE,
+        '',
+        function(name) self:save_filter_preset_named(name) end,
+        nil,
+        40)
+end
+
+---@param name string
+---@return boolean
+function SoulSearchWindow:save_filter_preset_named(name)
+    local success, err = filter_presets.save(
+        name, filter_state.get_filters(self.filter_state))
+    if not success then
+        print('SoulSearch: ' .. err)
+        return false
+    end
+    self:refresh_views{presets=true}
+    return true
+end
+
+---@param name string
+---@return boolean
+function SoulSearchWindow:load_filter_preset(name)
+    local filters, err = filter_presets.load(name)
+    if not filters then
+        print('SoulSearch: ' .. err)
+        return false
+    end
+    filter_state.replace(self.filter_state, filters)
+    self.preset_picker_open = false
+    filter_state.save(self.filter_state)
+    self:on_filter_state_changed(1)
+    return true
+end
+
+---Opens or closes the saved-filter preset picker.
+function SoulSearchWindow:toggle_preset_picker()
+    self.preset_picker_open = not self.preset_picker_open
+    if self.preset_picker_open then
+        self.add_filter_open = false
+        self.add_skill_open = false
+    end
+    self:refresh_views{pickers=true, presets=true}
+end
+
+---@return boolean
+function SoulSearchWindow:close_preset_picker()
+    if not self.preset_picker_open then return false end
+    self.preset_picker_open = false
+    self:refresh_views{pickers=true}
+    return true
+end
+
 ---@param filter_id string
 ---@param direction SoulSearchFilterDirection
 ---@return boolean
@@ -699,6 +780,7 @@ function SoulSearchWindow:toggle_add_filter_dropdown()
     self.add_filter_open = not self.add_filter_open
     if self.add_filter_open then
         self.add_skill_open = false
+        self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
 end
@@ -708,6 +790,7 @@ function SoulSearchWindow:toggle_add_skill_dropdown()
     self.add_skill_open = not self.add_skill_open
     if self.add_skill_open then
         self.add_filter_open = false
+        self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
 end
@@ -744,7 +827,7 @@ end
 
 ---@return boolean
 function SoulSearchWindow:handle_filter_action_click()
-    if self.add_filter_open or self.add_skill_open then
+    if self.add_filter_open or self.add_skill_open or self.preset_picker_open then
         return false
     end
 

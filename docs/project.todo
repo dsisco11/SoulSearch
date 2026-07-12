@@ -52,7 +52,7 @@
 ✔ BUG: stats-panel 'stat' & 'delta' header scrolls with the list, should be fixed so that they stay in place while the list scrolls. @done(26-07-11 13:02)
 ✔ Add tooltips for all attribute names in the stat & filter panels, should explain what the attribute is and what it does. @done(26-07-11 00:00)
 ✔ Add tooltips for all skill names in the stat & filter panels, should explain what the skill is and what it does. @done(26-07-11 13:55)
-☐ Add filter presets, so that users can save and load their favorite filter combinations.
+✔ Add filter presets, so that users can save and load their favorite filter combinations. @done(26-07-11 00:00)
 ☐ Provide filter preset defaults for common jobs, such as Scholar, Marksdwarf, Sheriff, etc.
 ☐ Add race filters, so users can e.g. search for animals like dogs, or search specifically for dwarves, elves, humans, etc. (Default should target all humanoid races).
 ☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)

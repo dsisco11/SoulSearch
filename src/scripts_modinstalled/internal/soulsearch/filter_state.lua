@@ -30,6 +30,20 @@ local function copy_filters(filters)
     return copy
 end
 
+---@param first SoulSearchSelectedFilter[]
+---@param second SoulSearchSelectedFilter[]
+---@return boolean
+local function filters_equal(first, second)
+    if #first ~= #second then return false end
+    for index, filter in ipairs(first) do
+        local other = second[index]
+        if filter.id ~= other.id or filter.direction ~= other.direction then
+            return false
+        end
+    end
+    return true
+end
+
 ---@param state SoulSearchFilterState
 ---@return SoulSearchSelectedFilter[]
 local function get_internal_filters(state)
@@ -140,6 +154,21 @@ function clear(state)
         return false
     end
     filters_by_state[state] = {}
+    return true
+end
+
+---Replaces the active filters with a validated ordered copy. This is used by
+---preset loading so stale descriptor IDs are safely ignored.
+---@param state SoulSearchFilterState
+---@param filters SoulSearchSelectedFilter[]|nil
+---@return boolean changed
+function replace(state, filters)
+    local valid = validate(filters)
+    local current = get_internal_filters(state)
+    if filters_equal(current, valid) then
+        return false
+    end
+    filters_by_state[state] = valid
     return true
 end
 

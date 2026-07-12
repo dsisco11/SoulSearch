@@ -8,6 +8,9 @@ return function(test, repo_root)
         test.assert_sequence({
             'Add an attribute or trait to the ranking criteria.',
             'Add a skill to the ranking criteria.',
+            'Save the current filters or load a saved preset.',
+            'Save the current ordered filters under this preset name.',
+            'Close',
             'Close',
             'Close',
         }, (function()
@@ -32,21 +35,28 @@ return function(test, repo_root)
             on_toggle_attribute_picker=noop,
             on_toggle_skill_picker=noop,
             on_clear=noop,
+            is_preset_picker_open=function() return false end,
+            on_toggle_preset_picker=noop,
+            on_close_preset_picker=noop,
+            on_save_preset=noop,
+            on_load_preset=noop,
             on_close_picker=noop,
             on_attribute_query=noop,
             on_skill_query=noop,
             on_add=noop,
         }
-        test.assert_equal(8, #views)
+        test.assert_equal(10, #views)
         test.assert_equal('add_filter_button', views[3].view_id)
         test.assert_equal('add_skill_button', views[4].view_id)
         test.assert_equal('clear_filters_button', views[5].view_id)
-        test.assert_equal('filter_list', views[6].view_id)
-        test.assert_equal('available_filter_window', views[7].view_id)
-        test.assert_equal('close_filter_picker_button', views[7].subviews[1].view_id)
-        test.assert_equal('attribute_search_field', views[7].subviews[2].view_id)
-        test.assert_equal('available_filter_list', views[7].subviews[3].view_id)
-        test.assert_equal('available_skill_window', views[8].view_id)
+        test.assert_equal('preset_button', views[6].view_id)
+        test.assert_equal('filter_list', views[7].view_id)
+        test.assert_equal('available_filter_window', views[8].view_id)
+        test.assert_equal('close_filter_picker_button', views[8].subviews[1].view_id)
+        test.assert_equal('attribute_search_field', views[8].subviews[2].view_id)
+        test.assert_equal('available_filter_list', views[8].subviews[3].view_id)
+        test.assert_equal('available_skill_window', views[9].view_id)
+        test.assert_equal('preset_picker_window', views[10].view_id)
     end)
 
     test.case('UI components: results and stats expose explicit panel views', function()

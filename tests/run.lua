@@ -13,6 +13,7 @@ local suites = {
     (require('attribute_descriptions_test')),
     (require('metadata_test')),
     (require('filter_state_test')),
+    (require('filter_presets_test')),
     (require('search_test')),
     (require('ui_refresh_test')),
     (require('ui_glyphs_test')),

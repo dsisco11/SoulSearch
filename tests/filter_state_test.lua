@@ -184,4 +184,19 @@ return function(test, repo_root)
         test.assert_equal('low', filters[1].direction)
         test.assert_equal('high', filters[2].direction)
     end)
+
+    test.case('filter state replace validates and preserves preset order', function()
+        local state = filter_state.new{{id='skill:MINING', direction='high'}}
+        test.assert_true(filter_state.replace(state, {
+            {id='trait:PATIENCE', direction='low'},
+            {id='skill:SWORD', direction='high'},
+            {id='skill:UNKNOWN', direction='high'},
+        }))
+        test.assert_sequence({'trait:PATIENCE', 'skill:SWORD'},
+            ids(filter_state.get_filters(state)))
+        test.assert_false(filter_state.replace(state, {
+            {id='trait:PATIENCE', direction='low'},
+            {id='skill:SWORD', direction='high'},
+        }))
+    end)
 end

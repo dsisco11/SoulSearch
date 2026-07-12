@@ -154,6 +154,21 @@ function M.load_ui_refresh(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/ui_refresh.lua')
 end
 
+function M.load_filter_presets(repo_root, json_stub, scriptmanager_stub, dfhack_stub)
+    local globals = {
+        dfhack=dfhack_stub or {filesystem={listdir=function() return {} end}},
+        require=function(name)
+            if name == 'json' then return json_stub end
+            if name == 'script-manager' then return scriptmanager_stub end
+            error('unexpected require: ' .. tostring(name))
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/filter_presets.lua',
+        globals)
+end
+
 function M.load_text_match(repo_root)
     return module_loader.load(
         repo_root,

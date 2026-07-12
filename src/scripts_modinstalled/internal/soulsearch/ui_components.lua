@@ -8,6 +8,9 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 CONTROL_TOOLTIPS = {
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
+    {id='preset_button', text='Save the current filters or load a saved preset.'},
+    {id='save_preset_button', text='Save the current ordered filters under this preset name.'},
+    {id='close_preset_picker_button', text='Close'},
     {id='close_filter_picker_button', text='Close'},
     {id='close_skill_picker_button', text='Close'},
 }
@@ -25,6 +28,11 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field on_toggle_attribute_picker fun()
 ---@field on_toggle_skill_picker fun()
 ---@field on_clear fun()
+---@field is_preset_picker_open fun(): boolean
+---@field on_toggle_preset_picker fun()
+---@field on_close_preset_picker fun()
+---@field on_save_preset fun()
+---@field on_load_preset fun(name: string)
 ---@field on_close_picker fun()
 ---@field on_attribute_query fun(text: string)
 ---@field on_skill_query fun(text: string)
@@ -65,12 +73,20 @@ function create_filter_panel(inputs)
             label='Clear filters',
             on_activate=inputs.on_clear,
         },
+        widgets.HotkeyLabel{
+            view_id='preset_button',
+            frame=ui_layout.get_frame('presets'),
+            key='CUSTOM_P',
+            label='Filter presets',
+            on_activate=inputs.on_toggle_preset_picker,
+        },
         widgets.List{
             view_id='filter_list',
             frame=ui_layout.get_frame('filter_list'),
             visible=function()
                 return not inputs.is_attribute_picker_open() and
-                    not inputs.is_skill_picker_open()
+                    not inputs.is_skill_picker_open() and
+                    not inputs.is_preset_picker_open()
             end,
         },
         widgets.Window{
@@ -130,6 +146,37 @@ function create_filter_panel(inputs)
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
                             inputs.on_add(choice.descriptor.id)
+                        end
+                    end,
+                },
+            },
+        },
+        widgets.Window{
+            view_id='preset_picker_window',
+            frame=ui_layout.get_frame('preset_picker'),
+            frame_title='Filter presets',
+            draggable=false,
+            visible=inputs.is_preset_picker_open,
+            subviews={
+                widgets.HotkeyLabel{
+                    view_id='close_preset_picker_button',
+                    frame=ui_layout.get_frame('picker_close'),
+                    label='[X]',
+                    on_activate=inputs.on_close_preset_picker,
+                },
+                widgets.HotkeyLabel{
+                    view_id='save_preset_button',
+                    frame=ui_layout.get_frame('preset_save'),
+                    key='CUSTOM_W',
+                    label='Save preset',
+                    on_activate=inputs.on_save_preset,
+                },
+                widgets.List{
+                    view_id='preset_list',
+                    frame=ui_layout.get_frame('preset_list'),
+                    on_submit=function(index, choice)
+                        if choice and choice.name then
+                            inputs.on_load_preset(choice.name)
                         end
                     end,
                 },

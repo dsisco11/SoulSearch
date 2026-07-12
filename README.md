@@ -26,7 +26,8 @@ The current implementation includes:
 - `ui.lua` composes the window and coordinates events; formatting, layout,
   components, refresh dispatch, and Stats presentation have dedicated modules.
 - `soulsearch` opens the panel with name search, ordered high/low filters,
-  ranked results, Stats, refresh, zoom, and close controls.
+  JSON-backed filter presets, ranked results, Stats, refresh, zoom, and close
+  controls.
 
 The command currently validates fortress mode and opens the resident search
 panel.
@@ -129,6 +130,12 @@ list to add traits, attributes, and skills such as `Agility`; set their high/low
 directions and priorities with the controls beside each selected filter.
 The search field filters resident names only. Press `z` or Enter on a selected
 result to center and highlight that resident on the fortress map.
+
+Select **Filter presets** in the Search filters panel to open the preset menu.
+Choose **Save preset** and enter a name in the prompt to save the current filter
+order and high/low directions; select a saved name and press Enter to load it. Presets
+are stored as individual JSON files under DFHack's mod-state directory,
+`dfhack-config/mods/soulsearch/presets/`, so they survive mod updates.
 
 ## Troubleshooting
 
