@@ -276,6 +276,12 @@ function create_results_panel(inputs)
             text=ui_format.get_title_underline('Results'),
             text_pen=COLOR_GREY,
         },
+        widgets.Label{
+            view_id='result_columns',
+            frame=ui_layout.get_frame('result_columns'),
+            text=ui_format.format_result_columns(),
+            text_pen=COLOR_GREY,
+        },
         widgets.List{
             view_id='result_list',
             frame=ui_layout.get_frame('result_list'),

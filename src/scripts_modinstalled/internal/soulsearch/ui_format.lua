@@ -9,6 +9,9 @@ local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
+local RESULT_NAME_WIDTH = layout.RESULT_NAME_WIDTH
+local RESULT_UNIT_ID_WIDTH = layout.RESULT_UNIT_ID_WIDTH
+local RESULT_PROFESSION_WIDTH = layout.RESULT_PROFESSION_WIDTH
 
 ---@param text any
 ---@param width integer
@@ -47,9 +50,18 @@ end
 ---@param result SoulSearchResult
 ---@return string
 function format_result_choice(result)
-    return ('%-45s %s'):format(
-        truncate_text(result.name, 45),
-        truncate_text(result.profession or '', 18))
+    return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_UNIT_ID_WIDTH ..
+        's %-' .. RESULT_PROFESSION_WIDTH .. 's'):format(
+        truncate_text(result.name, RESULT_NAME_WIDTH),
+        truncate_text('#' .. tostring(result.unit_id), RESULT_UNIT_ID_WIDTH),
+        truncate_text(result.profession or '', RESULT_PROFESSION_WIDTH))
+end
+
+---@return string
+function format_result_columns()
+    return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_UNIT_ID_WIDTH ..
+        's %-' .. RESULT_PROFESSION_WIDTH .. 's'):format(
+        'Name', 'Unit ID', 'Profession')
 end
 
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion

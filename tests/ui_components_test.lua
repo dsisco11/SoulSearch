@@ -113,7 +113,8 @@ return function(test, repo_root)
         }
         test.assert_equal('result_header', results[1].view_id)
         test.assert_equal('result_header_underline', results[2].view_id)
-        test.assert_equal('result_list', results[3].view_id)
+        test.assert_equal('result_columns', results[3].view_id)
+        test.assert_equal('result_list', results[4].view_id)
 
         local stats = components.create_stats_panel()
         test.assert_equal('stats_header', stats[3].view_id)

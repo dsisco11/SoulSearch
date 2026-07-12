@@ -14,10 +14,15 @@ return function(test, repo_root)
     test.case('UI format: result row snapshot preserves widths', function()
         local text = format.format_result_choice{
             name=('A'):rep(50),
+            unit_id=12345,
             profession='Stoneworker',
         }
-        test.assert_equal(('A'):rep(42) .. '... Stoneworker', text)
-        test.assert_equal(57, #text)
+        test.assert_equal(('A'):rep(32) .. '... #12345    Stoneworker' ..
+            (' '):rep(7), text)
+        test.assert_equal(64, #text)
+        test.assert_equal('Name' .. (' '):rep(31) .. ' Unit ID' ..
+            (' '):rep(2) .. ' Profession' .. (' '):rep(8),
+            format.format_result_columns())
     end)
 
     test.case('UI format: tooltip text wraps without truncation', function()

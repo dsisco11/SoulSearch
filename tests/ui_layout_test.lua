@@ -17,6 +17,11 @@ return function(test, repo_root)
         test.assert_equal(layout.STATS_LEFT, layout.get_frame('stats_header').l)
         test.assert_equal(layout.STATS_CONTENT_TOP,
             layout.get_frame('stats_header').t)
+        test.assert_equal(5, layout.get_frame('result_columns').t)
+        test.assert_equal(6, layout.get_frame('result_list').t)
+        test.assert_equal(35, layout.RESULT_NAME_WIDTH)
+        test.assert_equal(9, layout.RESULT_UNIT_ID_WIDTH)
+        test.assert_equal(18, layout.RESULT_PROFESSION_WIDTH)
     end)
 
     test.case('UI layout: returned frames cannot mutate metadata', function()

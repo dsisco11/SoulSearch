@@ -11,6 +11,9 @@ RESULTS_LEFT = 41
 RESULTS_WIDTH = 64
 STATS_LEFT = 107
 DIVIDER_XS = {RESULTS_LEFT - 2, STATS_LEFT - 2}
+RESULT_NAME_WIDTH = 35
+RESULT_UNIT_ID_WIDTH = 9
+RESULT_PROFESSION_WIDTH = 18
 HEADER_ROW = 2
 UNDERLINE_ROW = 3
 PICKER_TOP = 7
@@ -83,6 +86,7 @@ FRAMES = {
     preset_list={l=0, t=3, r=0, b=0},
     result_title={l=RESULTS_LEFT, t=HEADER_ROW, w=RESULTS_WIDTH, h=1},
     result_underline={l=RESULTS_LEFT, t=UNDERLINE_ROW, w=RESULTS_WIDTH, h=1},
+    result_columns={l=RESULTS_LEFT, t=5, w=RESULTS_WIDTH, h=1},
     result_list={l=RESULTS_LEFT, t=6, w=RESULTS_WIDTH, b=0},
     stats_title={l=STATS_LEFT, t=HEADER_ROW, r=1, h=1},
     stats_underline={l=STATS_LEFT, t=UNDERLINE_ROW, r=1, h=1},
