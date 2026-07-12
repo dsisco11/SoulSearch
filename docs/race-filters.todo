@@ -95,7 +95,7 @@ Phase 6 - Add the Race filter UI
     ✔ Add race picker state, query state, choices, refresh routing, close behavior, and mutual exclusion with every other picker. @done(26-07-12)
     ✔ Show compound choices first and individual race choices afterward; search both by display label. @done(26-07-12)
     ✔ Show a useful empty-search result when no race choice matches. @done(26-07-12)
-    ✔ Present race directions as Include and Exclude while retaining high and low in serialized state for compatibility. @done(26-07-12)
+    ✔ Present race directions with the established [+] and [-] actions while retaining high and low in serialized state for compatibility. @done(26-07-12)
     ✔ Reuse the existing direction-toggle and remove controls without changing their established hitboxes for ranking filters. @done(26-07-12)
     ✔ Visually distinguish race filters as their own category. @done(26-07-12)
     ✔ Do not offer ranking movement controls for race filters or count them as priority positions. @done(26-07-12)

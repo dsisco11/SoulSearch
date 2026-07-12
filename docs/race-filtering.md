@@ -8,8 +8,8 @@ The default candidate scope is **Humanoids**. A race filter can be included or
 excluded. Included filters are combined; exclusions are then removed from that
 combined set. If no valid included race filter remains, SoulSearch restores
 Humanoids automatically. The serialized preset values remain `high` and `low`
-for compatibility, although the UI presents them as Include and Exclude for
-race filters.
+for compatibility. In the UI, `[+]` includes a race scope and `[-]` excludes
+one, matching the established filter action pattern.
 
 ## Creature types
 

@@ -154,11 +154,7 @@ function format_active_filter_choice(
         local pen = COLOR_DARKGREY
         local label = action.label
         if is_race then
-            if action.callback == 'set_high' then
-                label = '[I]'
-            elseif action.callback == 'set_low' then
-                label = '[E]'
-            elseif action.callback == 'move_up' or action.callback == 'move_down' then
+            if action.callback == 'move_up' or action.callback == 'move_down' then
                 label = '   '
             end
         end
