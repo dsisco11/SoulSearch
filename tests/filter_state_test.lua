@@ -307,4 +307,16 @@ return function(test, repo_root)
         test.assert_false(filter_state.clear(state))
         test.assert_equal('high', filter_state.get_candidate_filters(state)[1].direction)
     end)
+
+    test.case('filter state removes humanoids when another race is included', function()
+        local state = filter_state.new{
+            {id='race:group:HUMANOIDS', direction='high'},
+            {id='race:group:TAMEABLE_ANIMALS', direction='high'},
+        }
+        test.assert_true(filter_state.remove(state, 'race:group:HUMANOIDS'))
+        local candidates = filter_state.get_candidate_filters(state)
+        test.assert_equal(1, #candidates)
+        test.assert_equal('race:group:TAMEABLE_ANIMALS', candidates[1].id)
+        test.assert_equal('high', candidates[1].direction)
+    end)
 end
