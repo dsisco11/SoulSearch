@@ -361,9 +361,9 @@ function SoulSearchWindow:get_filter_action_tooltip()
     local descriptor = choice and choice.descriptor
     if descriptor and descriptor.kind == FILTER_KIND_RACE and action then
         if action.callback == 'set_high' then
-            return 'Include in the candidate scope.'
+            return 'Include in results.'
         elseif action.callback == 'set_low' then
-            return 'Exclude from the candidate scope.'
+            return 'Exclude from results.'
         elseif action.callback == 'move_up' or action.callback == 'move_down' then
             return nil
         end
