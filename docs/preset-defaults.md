@@ -4,7 +4,8 @@ Skill presets are selectable configurations. They are not written as or loaded
 from custom preset JSON files.
 
 SoulSearch includes one skill preset for each of the table's 137 current
-skill rows. There are no inferred occupation or role presets. Their filter
+skill rows. Role presets are documented separately in
+[`docs/role-presets.md`](role-presets.md). Their filter
 order follows the table's primary `A` attributes first, followed by `B`, then
 `C`, which matches SoulSearch's priority-based ranking.
 

@@ -8,7 +8,7 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 CONTROL_TOOLTIPS = {
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
-    {id='preset_button', text='Save the current filters or load a custom or skill preset.'},
+    {id='preset_button', text='Save the current filters or load a custom, role, or skill preset.'},
     {id='save_preset_button', text='Save the current ordered filters under this preset name.'},
     {id='close_preset_picker_button', text='Close'},
     {id='close_filter_picker_button', text='Close'},
@@ -35,6 +35,7 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field on_save_preset fun()
 ---@field on_load_preset fun(name: string)
 ---@field on_load_default_preset fun(id: string)
+---@field on_load_role_preset fun(id: string)
 ---@field on_close_picker fun()
 ---@field on_attribute_query fun(text: string)
 ---@field on_skill_query fun(text: string)
@@ -184,7 +185,9 @@ function create_filter_panel(inputs)
                     view_id='preset_list',
                     frame=ui_layout.get_frame('preset_list'),
                     on_submit=function(index, choice)
-                        if choice and choice.default_id then
+                        if choice and choice.role_id then
+                            inputs.on_load_role_preset(choice.role_id)
+                        elseif choice and choice.default_id then
                             inputs.on_load_default_preset(choice.default_id)
                         elseif choice and choice.name then
                             inputs.on_load_preset(choice.name)

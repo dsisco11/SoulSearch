@@ -14,6 +14,7 @@ local suites = {
     (require('metadata_test')),
     (require('filter_state_test')),
     (require('filter_defaults_test')),
+    (require('role_presets_test')),
     (require('filter_presets_test')),
     (require('search_test')),
     (require('ui_refresh_test')),

@@ -9,6 +9,7 @@ local search = reqscript('internal/soulsearch/search')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
+local role_presets = reqscript('internal/soulsearch/role_presets')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
@@ -278,6 +279,7 @@ function SoulSearchWindow:init()
         on_save_preset=function() self:save_filter_preset() end,
         on_load_preset=function(name) self:load_filter_preset(name) end,
         on_load_default_preset=function(id) self:load_default_filter_preset(id) end,
+        on_load_role_preset=function(id) self:load_role_filter_preset(id) end,
         on_close_picker=function() self:close_add_filter_dropdown() end,
         on_attribute_query=function(text)
             self.attribute_query = text
@@ -474,6 +476,7 @@ end
 function SoulSearchWindow:refresh_preset_choices()
     local choices = {}
     local defaults = filter_defaults.get_all()
+    local roles = role_presets.get_all()
     local saved = filter_presets.list()
     local has_saved = false
     for _, name in ipairs(saved) do
@@ -482,10 +485,26 @@ function SoulSearchWindow:refresh_preset_choices()
             break
         end
     end
+
     if has_saved then table.insert(choices, {text='Custom presets'}) end
     for _, name in ipairs(saved) do
         if text_match.contains(name, self.preset_query) then
             table.insert(choices, {text='  ' .. name, name=name, search_key=name})
+        end
+    end
+
+    local has_roles = false
+    for _, preset in ipairs(roles) do
+        if text_match.contains(preset.label, self.preset_query) then
+            has_roles = true
+            break
+        end
+    end
+    if has_roles then table.insert(choices, {text='Role presets'}) end
+    for _, preset in ipairs(roles) do
+        if text_match.contains(preset.label, self.preset_query) then
+            table.insert(choices, {text='  ' .. preset.label, role_id=preset.id,
+                search_key=preset.label})
         end
     end
 
@@ -778,6 +797,18 @@ function SoulSearchWindow:load_default_filter_preset(id)
     local filters = filter_defaults.get(id)
     if not filters then
         print('SoulSearch: unknown built-in preset "' .. tostring(id) .. '".')
+        return false
+    end
+    self:apply_loaded_filter_preset(filters)
+    return true
+end
+
+---@param id string
+---@return boolean
+function SoulSearchWindow:load_role_filter_preset(id)
+    local filters = role_presets.get(id)
+    if not filters then
+        print('SoulSearch: unknown role preset "' .. tostring(id) .. '".')
         return false
     end
     self:apply_loaded_filter_preset(filters)

@@ -175,6 +175,21 @@ function M.load_filter_defaults(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/filter_defaults.lua')
 end
 
+function M.load_role_presets(repo_root, descriptors_override)
+    local descriptors = descriptors_override or M.load_descriptors(repo_root)
+    local globals = {
+        reqscript=function(name)
+            assert(name == 'internal/soulsearch/descriptors',
+                'unexpected reqscript: ' .. tostring(name))
+            return descriptors
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/role_presets.lua',
+        globals)
+end
+
 function M.load_text_match(repo_root)
     return module_loader.load(
         repo_root,

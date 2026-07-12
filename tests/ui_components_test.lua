@@ -8,7 +8,7 @@ return function(test, repo_root)
         test.assert_sequence({
             'Add an attribute or trait to the ranking criteria.',
             'Add a skill to the ranking criteria.',
-            'Save the current filters or load a custom or skill preset.',
+            'Save the current filters or load a custom, role, or skill preset.',
             'Save the current ordered filters under this preset name.',
             'Close',
             'Close',
@@ -42,6 +42,7 @@ return function(test, repo_root)
             on_save_preset=noop,
             on_load_preset=noop,
             on_load_default_preset=noop,
+            on_load_role_preset=noop,
             on_close_picker=noop,
             on_attribute_query=noop,
             on_skill_query=noop,
