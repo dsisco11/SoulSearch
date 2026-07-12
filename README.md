@@ -114,9 +114,9 @@ soulsearch reload
 ```
 
 Normal `soulsearch` execution validates the retained internal-module contracts.
-`soulsearch reload` clears internal script environments in reverse dependency
-order, then reloads and validates them forward so a UI does not retain mixed
-module generations.
+`soulsearch reload` clears runtime modules in reverse dependency order, runs
+them again in dependency order, then validates the rebuilt set so a UI does not
+retain mixed module generations. Close the SoulSearch window before reloading.
 
 ## Usage
 

@@ -32,6 +32,7 @@ local suites = {
     (require('residents_test')),
     (require('lifecycle_test')),
     (require('module_registry_test')),
+    (require('soulsearch_command_test')),
 }
 
 for _, register_suite in ipairs(suites) do
