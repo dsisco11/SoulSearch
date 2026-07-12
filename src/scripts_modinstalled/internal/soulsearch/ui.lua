@@ -404,7 +404,11 @@ function SoulSearchWindow:get_stats_attribute_tooltip()
     local stats = self.subviews.stats
     if not stats then return nil end
     local x, y = stats:getMousePos()
-    local record = self.stats_records and self.stats_records[y + 1]
+    -- Label mouse coordinates are relative to the visible viewport. Its
+    -- records, however, retain every line, including section gaps, so apply
+    -- the one-based first visible line when it has been scrolled.
+    local record_index = (stats.start_line_num or 1) + y
+    local record = self.stats_records and self.stats_records[record_index]
     if record and ui_layout.is_stats_label_cell(x, y) then
         return attribute_descriptions.get_tooltip(record.kind, record.key)
     end
