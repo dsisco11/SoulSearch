@@ -81,7 +81,7 @@ return function(test, repo_root)
         test.assert_equal(2, calls)
     end)
 
-    test.case('resident collection: optional data falls back and API errors surface', function()
+    test.case('resident collection: unnamed units use the game-readable name', function()
         local unit = {id=12, status={}}
         local dfhack_stub = {
             isMapLoaded=function() return true end,
@@ -89,6 +89,7 @@ return function(test, repo_root)
             units={
                 getCitizens=function() return {unit} end,
                 getVisibleName=function() return nil end,
+                getReadableName=function() return 'Stray horse (Tame)' end,
                 getProfessionName=function() return nil end,
                 getMentalAttrValue=function() return nil end,
                 getPhysicalAttrValue=function() return nil end,
@@ -98,7 +99,7 @@ return function(test, repo_root)
         local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
         local rows = residents.collect_residents()
         test.assert_equal(1, #rows)
-        test.assert_equal('Unit #12', rows[1].name)
+        test.assert_equal('Stray horse (Tame)', rows[1].name)
         test.assert_equal('', rows[1].profession)
         test.assert_nil(next(rows[1].traits))
 
@@ -121,6 +122,7 @@ return function(test, repo_root)
                     return {first, second}
                 end,
                 getVisibleName=function() return nil end,
+                getReadableName=function(unit) return unit.id == 10 and 'Stray dog (Tame)' or 'Stray cat (Tame)' end,
                 getProfessionName=function() return nil end,
                 getMentalAttrValue=function() return nil end,
                 getPhysicalAttrValue=function() return nil end,
@@ -131,6 +133,8 @@ return function(test, repo_root)
         local rows = residents.collect_residents()
         test.assert_sequence({false, true}, citizen_args)
         test.assert_sequence({30, 10}, {rows[1].unit_id, rows[2].unit_id})
+        test.assert_sequence({'Stray cat (Tame)', 'Stray dog (Tame)'},
+            {rows[1].name, rows[2].name})
     end)
 
     test.case('resident collection: snapshots only provider candidates and tolerates animals', function()
@@ -139,6 +143,9 @@ return function(test, repo_root)
         local dfhack_stub = {
             units={
                 getVisibleName=function() return nil end,
+                getReadableName=function(unit)
+                    return unit.id == 10 and 'War dog' or 'Stray cat (Tame)'
+                end,
                 getProfessionName=function() return nil end,
                 getMentalAttrValue=function() return nil end,
                 getPhysicalAttrValue=function() return nil end,
@@ -150,7 +157,7 @@ return function(test, repo_root)
             get_units=function() return {animal, citizen} end,
         }
         test.assert_sequence({10, 30}, {rows[1].unit_id, rows[2].unit_id})
-        test.assert_equal('Unit #10', rows[1].name)
+        test.assert_equal('War dog', rows[1].name)
         test.assert_equal('', rows[1].profession)
         test.assert_nil(next(rows[1].traits))
 

@@ -15,6 +15,7 @@
 ---@field unit_id integer
 ---@field native_name string|nil
 ---@field english_name string|nil
+---@field readable_name string|nil
 ---@field profession string|nil
 ---@field traits table<string, number>
 ---@field mental_attributes table<string, number>
@@ -136,6 +137,9 @@ local function get_display_name(snapshot)
     if english_name then
         return english_name
     end
+    if snapshot.readable_name then
+        return snapshot.readable_name
+    end
     return ('Unit #%d'):format(snapshot.unit_id)
 end
 
@@ -152,12 +156,21 @@ end
 ---@return SoulSearchResidentSnapshot
 local function read_resident(unit)
     local visible_name = dfhack.units.getVisibleName(unit)
+    local native_name = translate_visible_name(visible_name, false)
+    local english_name = translate_visible_name(visible_name, true)
+    local readable_name
+    if not native_name and not english_name and
+            type(dfhack.units.getReadableName) == 'function' then
+        local name = dfhack.units.getReadableName(unit)
+        readable_name = nonempty_string(name) and name or nil
+    end
     local soul = unit.status and unit.status.current_soul
     return {
         unit=unit,
         unit_id=unit.id,
-        native_name=translate_visible_name(visible_name, false),
-        english_name=translate_visible_name(visible_name, true),
+        native_name=native_name,
+        english_name=english_name,
+        readable_name=readable_name,
         profession=dfhack.units.getProfessionName(unit),
         traits=read_trait_values(unit),
         mental_attributes=read_mental_attribute_values(unit),
