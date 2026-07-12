@@ -24,7 +24,7 @@ local ROLE_ROWS = {
     {id='broker', label='Broker', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:MEMORY', 'mental_attribute:INTUITION', 'mental_attribute:EMPATHY', 'mental_attribute:SOCIAL_AWARENESS', 'mental_attribute:LINGUISTIC_ABILITY'}},
     {id='chief_medical_dwarf', label='Chief Medical Dwarf', skills={{'DIAGNOSE', 'DIAGNOSIS'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:MEMORY', 'mental_attribute:INTUITION'}},
     {id='interrogator', label='Interrogator', skills={{'JUDGING_INTENT'}}, attributes={'mental_attribute:EMPATHY', 'mental_attribute:SOCIAL_AWARENESS', 'mental_attribute:INTUITION'}},
-    {id='doctor', label='Doctor', skills={{'DIAGNOSE', 'DIAGNOSIS'}, {'SURGERY'}, {'SET_BONE', 'BONE_SETTING'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'physical_attribute:AGILITY', 'mental_attribute:KINESTHETIC_SENSE', 'physical_attribute:STRENGTH', 'mental_attribute:MEMORY', 'mental_attribute:SPATIAL_SENSE', 'mental_attribute:FOCUS', 'mental_attribute:INTUITION'}},
+    {id='doctor', label='Doctor', skills={{'DIAGNOSE', 'DIAGNOSIS'}, {'SURGERY'}, {'SET_BONE', 'BONE_SETTING'}, {'SUTURE', 'SUTURER'}, {'DRESS_WOUNDS', 'WOUND_DRESSER'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'physical_attribute:AGILITY', 'mental_attribute:KINESTHETIC_SENSE', 'physical_attribute:STRENGTH', 'mental_attribute:MEMORY', 'mental_attribute:SPATIAL_SENSE', 'mental_attribute:FOCUS', 'mental_attribute:INTUITION'}},
     {id='animal_trainer', label='Animal Trainer', skills={{'ANIMALTRAIN'}}, attributes={'physical_attribute:AGILITY', 'mental_attribute:EMPATHY', 'physical_attribute:TOUGHNESS', 'mental_attribute:PATIENCE', 'physical_attribute:ENDURANCE', 'mental_attribute:INTUITION'}},
 }
 
@@ -51,6 +51,8 @@ local SKILL_DEFAULTS = {
     APPRAISAL='appraiser', JUDGING_INTENT='judge_of_intent',
     NEGOTIATION='negotiator', DIAGNOSE='diagnostician', DIAGNOSIS='diagnostician',
     SURGERY='surgeon', SET_BONE='bone_doctor', BONE_SETTING='bone_doctor',
+    SUTURE='suturer', SUTURER='suturer', DRESS_WOUNDS='wound_dresser',
+    WOUND_DRESSER='wound_dresser',
     ANIMALTRAIN='animal_trainer', AXE='axeman', SWORD='swordsman',
     DAGGER='knife_user', MACE='maceman', HAMMER='hammerman', SPEAR='spearman',
     PIKE='pikeman', WHIP='lasher', WRESTLING='wrestler',

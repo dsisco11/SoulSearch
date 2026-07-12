@@ -38,7 +38,8 @@ return function(test, repo_root)
         make_catalog({'ORGANIZATION', 'RECORD_KEEPING', 'APPRAISAL',
             'JUDGING_INTENT', 'NEGOTIATION', 'DIAGNOSIS', 'HAMMER', 'CROSSBOW',
             'ARCHERY', 'SNEAK', 'SWORD', 'MELEE_COMBAT', 'SHIELD', 'ARMOR',
-            'SURGERY', 'BONE_SETTING', 'ANIMALTRAIN', 'DODGING', 'DISCIPLINE',
+            'SURGERY', 'BONE_SETTING', 'SUTURE', 'DRESS_WOUNDS', 'ANIMALTRAIN',
+            'DODGING', 'DISCIPLINE',
             'AXE', 'DAGGER', 'MACE', 'SPEAR', 'PIKE', 'WHIP', 'WRESTLING'}))
 
     test.case('role presets: expose the researched roles in a stable order', function()
@@ -70,6 +71,8 @@ return function(test, repo_root)
         local marksdwarf = ids(assert(role_presets.get('marksdwarf')))
         test.assert_equal(true, contains(marksdwarf, 'physical_attribute:TOUGHNESS'))
         test.assert_equal(true, contains(marksdwarf, 'physical_attribute:ENDURANCE'))
+        local doctor = ids(assert(role_presets.get('doctor')))
+        test.assert_equal(true, contains(doctor, 'mental_attribute:EMPATHY'))
     end)
 
     test.case('role presets: separate complete combat presets and add dodging', function()
