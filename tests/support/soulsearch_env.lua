@@ -169,6 +169,12 @@ function M.load_filter_presets(repo_root, json_stub, scriptmanager_stub, dfhack_
         globals)
 end
 
+function M.load_filter_defaults(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/filter_defaults.lua')
+end
+
 function M.load_text_match(repo_root)
     return module_loader.load(
         repo_root,

@@ -136,6 +136,10 @@ Choose **Save preset** and enter a name in the prompt to save the current filter
 order and high/low directions; select a saved name and press Enter to load it. Presets
 are stored as individual JSON files under DFHack's mod-state directory,
 `dfhack-config/mods/soulsearch/presets/`, so they survive mod updates.
+The same menu also includes built-in job presets. These are shipped configurations,
+not JSON files, and their order follows the Dwarf Fortress Wiki's primary (A),
+secondary (B), and tertiary (C) associated-attribute table; see
+[`docs/preset-defaults.md`](docs/preset-defaults.md) for the mappings.
 
 ## Troubleshooting
 

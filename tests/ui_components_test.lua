@@ -40,6 +40,7 @@ return function(test, repo_root)
             on_close_preset_picker=noop,
             on_save_preset=noop,
             on_load_preset=noop,
+            on_load_default_preset=noop,
             on_close_picker=noop,
             on_attribute_query=noop,
             on_skill_query=noop,

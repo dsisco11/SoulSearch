@@ -8,6 +8,7 @@ local residents = reqscript('internal/soulsearch/residents')
 local search = reqscript('internal/soulsearch/search')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
+local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
@@ -271,6 +272,7 @@ function SoulSearchWindow:init()
         on_close_preset_picker=function() self:close_preset_picker() end,
         on_save_preset=function() self:save_filter_preset() end,
         on_load_preset=function(name) self:load_filter_preset(name) end,
+        on_load_default_preset=function(id) self:load_default_filter_preset(id) end,
         on_close_picker=function() self:close_add_filter_dropdown() end,
         on_attribute_query=function(text)
             self.attribute_query = text
@@ -466,11 +468,17 @@ end
 ---Refreshes the saved preset names displayed by the preset picker.
 function SoulSearchWindow:refresh_preset_choices()
     local choices = {}
-    for _, name in ipairs(filter_presets.list()) do
-        table.insert(choices, {text=name, name=name, search_key=name})
+    table.insert(choices, {text='Built-in presets'})
+    for _, preset in ipairs(filter_defaults.get_all()) do
+        table.insert(choices, {
+            text='  ' .. preset.label,
+            default_id=preset.id,
+            search_key=preset.label,
+        })
     end
-    if #choices == 0 then
-        table.insert(choices, {text='No saved presets.'})
+    table.insert(choices, {text='Saved presets'})
+    for _, name in ipairs(filter_presets.list()) do
+        table.insert(choices, {text='  ' .. name, name=name, search_key=name})
     end
     self.subviews.preset_list:setChoices(choices)
 end
@@ -733,11 +741,28 @@ function SoulSearchWindow:load_filter_preset(name)
         print('SoulSearch: ' .. err)
         return false
     end
+    self:apply_loaded_filter_preset(filters)
+    return true
+end
+
+---@param id string
+---@return boolean
+function SoulSearchWindow:load_default_filter_preset(id)
+    local filters = filter_defaults.get(id)
+    if not filters then
+        print('SoulSearch: unknown built-in preset "' .. tostring(id) .. '".')
+        return false
+    end
+    self:apply_loaded_filter_preset(filters)
+    return true
+end
+
+---@param filters SoulSearchSelectedFilter[]
+function SoulSearchWindow:apply_loaded_filter_preset(filters)
     filter_state.replace(self.filter_state, filters)
     self.preset_picker_open = false
     filter_state.save(self.filter_state)
     self:on_filter_state_changed(1)
-    return true
 end
 
 ---Opens or closes the saved-filter preset picker.
