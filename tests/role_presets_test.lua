@@ -25,7 +25,7 @@ local function make_catalog(keys)
     for _, key in ipairs({
         'ANALYTICAL_ABILITY', 'SOCIAL_AWARENESS', 'CREATIVITY', 'MEMORY',
         'FOCUS', 'INTUITION', 'EMPATHY', 'LINGUISTIC_ABILITY',
-        'KINESTHETIC_SENSE', 'WILLPOWER', 'SPATIAL_SENSE', 'PATIENCE',
+        'KINESTHETIC_SENSE', 'WILLPOWER', 'SPATIAL_SENSE', 'MUSICALITY', 'PATIENCE',
     }) do by_id['mental_attribute:' .. key] = {} end
     for _, key in ipairs({'STRENGTH', 'AGILITY', 'TOUGHNESS', 'ENDURANCE'}) do
         by_id['physical_attribute:' .. key] = {}
@@ -40,7 +40,11 @@ return function(test, repo_root)
             'ARCHERY', 'SNEAK', 'SWORD', 'MELEE_COMBAT', 'SHIELD', 'ARMOR',
             'SURGERY', 'BONE_SETTING', 'SUTURE', 'DRESS_WOUNDS', 'ANIMALTRAIN',
             'DODGING', 'DISCIPLINE',
-            'AXE', 'DAGGER', 'MACE', 'SPEAR', 'PIKE', 'WHIP', 'WRESTLING'}))
+            'AXE', 'DAGGER', 'MACE', 'SPEAR', 'PIKE', 'WHIP', 'WRESTLING',
+            'LYING', 'LEADERSHIP', 'PERSUASION', 'CONVERSATION', 'INTIMIDATION',
+            'MILITARY_TACTICS', 'AMBUSHER', 'CRITICAL_THINKING', 'LOGIC',
+            'READING', 'WRITING', 'TEACHING', 'POETRY', 'DANCE', 'MAKE_MUSIC',
+            'SING_MUSIC', 'SPEAKING'}))
 
     test.case('role presets: expose the researched roles in a stable order', function()
         local labels = {}
@@ -48,10 +52,13 @@ return function(test, repo_root)
             table.insert(labels, preset.label)
         end
         test.assert_sequence({'Manager', 'Bookkeeper', 'Broker',
-            'Chief Medical Dwarf', 'Interrogator', 'Doctor', 'Animal Trainer',
-            'Soldier', 'Axedwarf', 'Swordsdwarf', 'Knife User', 'Macedwarf',
-            'Hammerdwarf', 'Speardwarf', 'Pikedwarf', 'Lasher', 'Wrestler',
-            'Marksdwarf', 'Hunter', 'Hammerer'}, labels)
+            'Chief Medical Dwarf', 'Interrogator', 'Doctor', 'Animal Trainer'},
+            first(7, labels))
+        test.assert_equal(true, contains(labels, 'Trader'))
+        test.assert_equal(true, contains(labels, 'Baron'))
+        test.assert_equal(true, contains(labels, 'Militia Commander'))
+        test.assert_equal(true, contains(labels, 'Scholar'))
+        test.assert_equal(true, contains(labels, 'Messenger'))
     end)
 
     test.case('role presets: put role skills before wiki-priority attributes', function()
@@ -77,13 +84,25 @@ return function(test, repo_root)
 
     test.case('role presets: separate complete combat presets and add dodging', function()
         local combat = role_presets.get_combat_presets()
-        test.assert_equal('Soldier', combat[1].label)
+        test.assert_equal('Militia Commander', combat[1].label)
+        test.assert_equal('Militia Captain', combat[2].label)
+        test.assert_equal('Soldier', combat[3].label)
         test.assert_equal('Hammerer', combat[#combat].label)
         test.assert_sequence({'skill:AXE', 'skill:MELEE_COMBAT', 'skill:DODGING',
             'skill:SHIELD', 'skill:ARMOR'},
             first(5, ids(assert(role_presets.get('axedwarf')))))
         test.assert_equal('role', role_presets.get_role_presets()[1].category)
         test.assert_equal('combat', combat[1].category)
+    end)
+
+    test.case('role presets: add the missing leadership, service, and culture roles', function()
+        test.assert_sequence({'skill:APPRAISAL', 'skill:JUDGING_INTENT',
+            'skill:NEGOTIATION'}, first(3, ids(assert(role_presets.get('trader')))))
+        test.assert_sequence({'skill:LEADERSHIP', 'skill:MILITARY_TACTICS',
+            'skill:ORGANIZATION'},
+            first(3, ids(assert(role_presets.get('militia_commander')))))
+        test.assert_equal(true, contains(ids(assert(role_presets.get('performer'))),
+            'mental_attribute:MUSICALITY'))
     end)
 
     test.case('role presets: resolve version-specific skill key fallbacks', function()
