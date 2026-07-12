@@ -17,6 +17,7 @@ MODULES = {
     {name='internal/soulsearch/attributes', contract='evaluate'},
     {name='internal/soulsearch/descriptors', contract='get_catalog'},
     {name='internal/soulsearch/candidate_provider', contract='new'},
+    {name='internal/soulsearch/unit_scope_provider', contract='new'},
     {name='internal/soulsearch/filter_state', contract='get_filters'},
     {name='internal/soulsearch/filter_defaults', contract='get_all'},
     {name='internal/soulsearch/role_presets', contract='get_all'},

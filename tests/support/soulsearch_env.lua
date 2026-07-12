@@ -154,6 +154,23 @@ function M.load_candidate_provider(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/candidate_provider.lua')
 end
 
+function M.load_unit_scope_provider(repo_root, df_stub, dfhack_stub)
+    local candidate_provider = M.load_candidate_provider(repo_root)
+    local globals = {
+        df=df_stub,
+        dfhack=dfhack_stub,
+        reqscript=function(name)
+            assert(name == 'internal/soulsearch/candidate_provider',
+                'unexpected reqscript: ' .. tostring(name))
+            return candidate_provider
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/unit_scope_provider.lua',
+        globals)
+end
+
 function M.load_ui_refresh(repo_root)
     return module_loader.load(
         repo_root,

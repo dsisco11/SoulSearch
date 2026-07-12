@@ -37,16 +37,16 @@ Phase 1 - Define candidate and filter contracts
         ✔ Existing ranking and preset tests remain unchanged and green. @done(26-07-12; 138 tests, 0 failures)
 
 Phase 2 - Implement internal unit-scope providers
-    ☐ Add an internal unit-scope provider factory with all_active, fort_residents, and citizens_and_pets scopes.
-    ☐ Implement all_active from active, alive map units and preserve source order.
-    ☐ Implement fort_residents from DFHack resident classification, including the intended insane-resident behavior.
-    ☐ Implement citizens_and_pets as the default from fort-controlled citizens and tame/owned animals without duplicate units.
-    ☐ Keep scope selection injectable but non-user-facing in this feature.
-    ☐ Propagate unloaded-map and non-fortress-mode errors without returning partial candidates.
-    ☐ Expand the test environment with active-unit vectors and DFHack citizenship, residency, fort-control, tame, pet, alive, and active predicates.
+    ✔ Add an internal unit-scope provider factory with all_active, fort_residents, and citizens_and_pets scopes. @done(26-07-12)
+    ✔ Implement all_active from active, alive map units and preserve source order. @done(26-07-12)
+    ✔ Implement fort_residents from DFHack resident classification, including the intended insane-resident behavior. @done(26-07-12)
+    ✔ Implement citizens_and_pets as the default from fort-controlled citizens and tame/owned animals without duplicate units. @done(26-07-12)
+    ✔ Keep scope selection injectable but non-user-facing in this feature. @done(26-07-12)
+    ✔ Propagate unloaded-map and non-fortress-mode errors without returning partial candidates. @done(26-07-12)
+    ✔ Expand the test environment with active-unit vectors and DFHack citizenship, residency, fort-control, tame, pet, alive, and active predicates. @done(26-07-12)
     Phase gate
-        ☐ Provider tests distinguish citizens, tame animals, residents, visitors, wildlife, hostiles, inactive units, and dead units.
-        ☐ The default provider includes citizens and pets/livestock while excluding unrelated wildlife and hostiles.
+        ✔ Provider tests distinguish citizens, tame animals, residents, visitors, wildlife, hostiles, inactive units, and dead units. @done(26-07-12)
+        ✔ The default provider includes citizens and pets/livestock while excluding unrelated wildlife and hostiles. @done(26-07-12; 143 tests, 0 failures)
 
 Phase 3 - Build the race catalog and compound predicates
     ☐ Add a dedicated race catalog module rather than embedding creature-raw policy in descriptors.lua or search.lua.
