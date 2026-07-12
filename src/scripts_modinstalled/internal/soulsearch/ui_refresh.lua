@@ -4,6 +4,7 @@
 ---@field active_filters boolean|nil
 ---@field pickers boolean|nil
 ---@field presets boolean|nil
+---@field candidates boolean|nil
 ---@field results boolean|nil
 ---@field stats boolean|nil
 ---@field selected_filter integer|nil
@@ -13,6 +14,7 @@
 ---@field refresh_active_filter_choices fun(self: SoulSearchRefreshOwner, selected: integer|nil)
 ---@field refresh_picker_choices fun(self: SoulSearchRefreshOwner)
 ---@field refresh_preset_choices fun(self: SoulSearchRefreshOwner)
+---@field refresh_candidates fun(self: SoulSearchRefreshOwner)
 ---@field recompute_results fun(self: SoulSearchRefreshOwner): SoulSearchResult|nil
 ---@field refresh_stats fun(self: SoulSearchRefreshOwner, result: SoulSearchResult|nil)
 ---@field get_selected_result fun(self: SoulSearchRefreshOwner): SoulSearchResult|nil
@@ -30,6 +32,9 @@ function apply(owner, request)
     end
     if request.presets then
         owner:refresh_preset_choices()
+    end
+    if request.candidates then
+        owner:refresh_candidates()
     end
 
     local result = request.result

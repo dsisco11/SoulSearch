@@ -78,17 +78,17 @@ Phase 4 - Implement the active race-filter provider and state invariants
         ✔ Tests cover removal of the final positive, negative-only input, stale IDs, clear, replace, save/load, and preset load. @done(26-07-12; 154 tests, 0 failures)
 
 Phase 5 - Move candidate acquisition ahead of snapshots and ranking
-    ☐ Separate resident/unit snapshot construction from candidate collection in residents.lua.
-    ☐ Replace direct getCitizens() ownership with snapshot construction over units supplied by the provider chain.
-    ☐ Make snapshots safe for animals and other units without souls, skills, translated names, professions, traits, or mental attributes.
-    ☐ Preserve unit identity and live position access required by result selection and map zoom.
-    ☐ Change UI refresh orchestration to build the provider chain, obtain candidates, snapshot them, then invoke search.apply.
-    ☐ Pass only ranking filters to search.apply; do not add race branches to value evaluation, scoring, or result comparison.
-    ☐ Recompute candidates and results whenever active race filters change.
+    ✔ Separate resident/unit snapshot construction from candidate collection in residents.lua. @done(26-07-12)
+    ✔ Replace direct getCitizens() ownership with snapshot construction over units supplied by the provider chain. @done(26-07-12)
+    ✔ Make snapshots safe for animals and other units without souls, skills, translated names, professions, traits, or mental attributes. @done(26-07-12)
+    ✔ Preserve unit identity and live position access required by result selection and map zoom. @done(26-07-12)
+    ✔ Change UI refresh orchestration to build the provider chain, obtain candidates, snapshot them, then invoke search.apply. @done(26-07-12)
+    ✔ Pass only ranking filters to search.apply; do not add race branches to value evaluation, scoring, or result comparison. @done(26-07-12)
+    ✔ Recompute candidates and results whenever active race filters change. @done(26-07-12)
     Phase gate
-        ☐ Search tests prove race selection changes membership but never scoring or ordering among the surviving rows.
-        ☐ Existing ranking characterization tests remain green without race-specific conditions in search.lua.
-        ☐ Snapshot tests cover citizens, named pets, unnamed livestock, and units without souls.
+        ✔ Search tests prove race selection changes membership but never scoring or ordering among the surviving rows. @done(26-07-12)
+        ✔ Existing ranking characterization tests remain green without race-specific conditions in search.lua. @done(26-07-12)
+        ✔ Snapshot tests cover citizens, named pets, unnamed livestock, and units without souls. @done(26-07-12; 157 tests, 0 failures)
 
 Phase 6 - Add the Race filter UI
     ☐ Add a dedicated Add race filter control and picker alongside the Attribute and Skill controls.

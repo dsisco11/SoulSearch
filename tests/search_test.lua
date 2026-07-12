@@ -111,6 +111,18 @@ return function(test, repo_root)
         test.assert_equal('low', filters[5].direction)
     end)
 
+    test.case('search filters: candidate descriptors are ignored by the ranker', function()
+        local result = search.apply({resident(1, 'Miner', {skills={MINING=2}})}, {
+            selected_filters={
+                selected_filter('race:group', 'HUMANOIDS'),
+                selected_filter('skill', 'MINING'),
+            },
+        })[1]
+        test.assert_equal(1, result.matched_count)
+        test.assert_equal(1, #result.filter_criteria)
+        test.assert_equal('skill:MINING', result.filter_criteria[1].id)
+    end)
+
     test.case('result model: contains only consumed presentation and sort data', function()
         local result = search.apply({resident(1, 'Urist')}, {
             selected_filters={},

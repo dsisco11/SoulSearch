@@ -81,7 +81,7 @@ local function resolve_selected_filters(selected_filters)
                 not seen[selected_filter.id] and
                 VALID_FILTER_DIRECTIONS[selected_filter.direction] then
             local descriptor = descriptors.get_catalog().by_id[selected_filter.id]
-            if descriptor then
+            if descriptor and descriptor.behavior == 'ranking' then
                 seen[selected_filter.id] = true
                 table.insert(result, {
                     descriptor=descriptor,

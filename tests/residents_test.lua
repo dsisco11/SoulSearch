@@ -132,4 +132,32 @@ return function(test, repo_root)
         test.assert_sequence({false, true}, citizen_args)
         test.assert_sequence({30, 10}, {rows[1].unit_id, rows[2].unit_id})
     end)
+
+    test.case('resident collection: snapshots only provider candidates and tolerates animals', function()
+        local citizen = {id=30, status={}}
+        local animal = {id=10, status={}}
+        local dfhack_stub = {
+            units={
+                getVisibleName=function() return nil end,
+                getProfessionName=function() return nil end,
+                getMentalAttrValue=function() return nil end,
+                getPhysicalAttrValue=function() return nil end,
+            },
+            translation={translateName=function() return nil end},
+        }
+        local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
+        local rows = residents.collect_from_provider{
+            get_units=function() return {animal, citizen} end,
+        }
+        test.assert_sequence({10, 30}, {rows[1].unit_id, rows[2].unit_id})
+        test.assert_equal('Unit #10', rows[1].name)
+        test.assert_equal('', rows[1].profession)
+        test.assert_nil(next(rows[1].traits))
+
+        local missing, err = residents.collect_from_provider{
+            get_units=function() return nil, 'candidate source unavailable' end,
+        }
+        test.assert_nil(missing)
+        test.assert_equal('candidate source unavailable', err)
+    end)
 end

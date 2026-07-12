@@ -14,6 +14,7 @@ local function make_owner()
     end
     function owner:refresh_picker_choices() record(self, 'pickers') end
     function owner:refresh_preset_choices() record(self, 'presets') end
+    function owner:refresh_candidates() record(self, 'candidates') end
     function owner:recompute_results()
         record(self, 'results')
         return {unit_id=42}
@@ -52,6 +53,14 @@ return function(test, repo_root)
         test.assert_sequence({'pickers'}, owner.calls)
         test.assert_nil(owner.counts.results)
         test.assert_nil(owner.counts.stats)
+    end)
+
+    test.case('UI refresh: candidate refresh precedes result recomputation', function()
+        local owner = make_owner()
+        ui_refresh.apply(owner, {candidates=true, results=true})
+        test.assert_sequence({'candidates', 'results', 'stats'}, owner.calls)
+        test.assert_equal(1, owner.counts.candidates)
+        test.assert_equal(1, owner.counts.results)
     end)
 
     test.case('UI refresh: preset change never recomputes results', function()

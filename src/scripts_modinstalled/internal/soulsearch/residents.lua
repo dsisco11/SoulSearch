@@ -181,6 +181,29 @@ function build_resident_row(snapshot)
     }
 end
 
+---Builds immutable search rows for a provider-selected sequence of units.
+---@param units df.unit[]|nil
+---@return SoulSearchResidentRow[]
+function collect_units(units)
+    local rows = {}
+    for _, unit in ipairs(units or {}) do
+        table.insert(rows, build_resident_row(read_resident(unit)))
+    end
+    return rows
+end
+
+---Collects and snapshots units from an already-scoped candidate provider.
+---@param provider SoulSearchCandidateProvider
+---@return SoulSearchResidentRow[]|nil rows
+---@return string|nil error
+function collect_from_provider(provider)
+    assert(type(provider) == 'table' and type(provider.get_units) == 'function',
+        'SoulSearch resident collection requires a candidate provider')
+    local units, err = provider.get_units()
+    if not units then return nil, err end
+    return collect_units(units)
+end
+
 ---Clears the job-skill ID/name cache. Lifecycle code calls this between update
 ---passes, never during resident collection or search evaluation.
 function reset_cache()
@@ -208,9 +231,5 @@ function collect_residents()
         return nil, reason
     end
 
-    local rows = {}
-    for _, unit in ipairs(dfhack.units.getCitizens(false, true)) do
-        table.insert(rows, build_resident_row(read_resident(unit)))
-    end
-    return rows
+    return collect_units(dfhack.units.getCitizens(false, true))
 end

@@ -5,6 +5,8 @@ local dialogs = require('gui.dialogs')
 local widgets = require('gui.widgets')
 
 local residents = reqscript('internal/soulsearch/residents')
+local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
+local race_filter_provider = reqscript('internal/soulsearch/race_filter_provider')
 local search = reqscript('internal/soulsearch/search')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
@@ -562,6 +564,7 @@ function SoulSearchWindow:on_filter_state_changed(selected)
     self:refresh_views{
         active_filters=true,
         pickers=true,
+        candidates=true,
         results=true,
         selected_filter=selected,
     }
@@ -632,7 +635,7 @@ function SoulSearchWindow:recompute_results()
 
     self.results = search.apply(self.rows, {
         query=self.query,
-        selected_filters=filter_state.get_filters(self.filter_state),
+        selected_filters=filter_state.get_ranking_filters(self.filter_state),
     })
 
     local choices = {}
@@ -963,16 +966,24 @@ function SoulSearchWindow:handle_filter_action_click()
     return true
 end
 
----Reloads resident rows from the current fortress map.
-function SoulSearchWindow:refresh_residents()
-    local rows, err = residents.collect_residents()
+---Rebuilds rows from the active unit scope and race candidate filters.
+function SoulSearchWindow:refresh_candidates()
+    local scope_provider = unit_scope_provider.new()
+    local provider = race_filter_provider.new(
+        scope_provider,
+        filter_state.get_candidate_filters(self.filter_state))
+    local rows, err = residents.collect_from_provider(provider)
     if not rows then
         print(err)
         self.rows = {}
     else
         self.rows = rows
     end
-    self:refresh_views{results=true}
+end
+
+---Reloads candidate rows and then recomputes their ranking results.
+function SoulSearchWindow:refresh_residents()
+    self:refresh_views{candidates=true, results=true}
 end
 
 ---@param delta integer
