@@ -106,16 +106,16 @@ Phase 6 - Add the Race filter UI
         ✔ Attribute, Skill, and Preset picker behavior and existing filter-action hitboxes remain green. @done(26-07-12; 162 tests, 0 failures)
 
 Phase 7 - Presets, documentation, and compatibility
-    ☐ Save candidate and ranking filters through the existing JSON preset format without changing the public entry shape.
-    ☐ Load existing presets with no race entry by adding include Humanoids.
-    ☐ Ignore stale individual-race IDs and restore Humanoids if no valid positive race remains.
-    ☐ Verify custom, role, and skill presets preserve their ranking order while acquiring the default race scope.
-    ☐ Update README usage and architecture sections for race filtering, candidate providers, include/exclude semantics, and default scope.
-    ☐ Document the compound race definitions and the internal unit-scope choices for future scoped-window/settings work.
+    ✔ Save candidate and ranking filters through the existing JSON preset format without changing the public entry shape. @done(26-07-12)
+    ✔ Load existing presets with no race entry by adding include Humanoids. @done(26-07-12)
+    ✔ Ignore stale individual-race IDs and restore Humanoids if no valid positive race remains. @done(26-07-12)
+    ✔ Verify custom, role, and skill presets preserve their ranking order while acquiring the default race scope. @done(26-07-12)
+    ✔ Update README usage and architecture sections for race filtering, candidate providers, include/exclude semantics, and default scope. @done(26-07-12)
+    ✔ Document the compound race definitions and the internal unit-scope choices for future scoped-window/settings work. @done(26-07-12)
     ☐ Update docs/project.todo only after all automated and live acceptance gates pass.
     Phase gate
-        ☐ Preset tests cover current JSON, legacy no-race presets, invalid race IDs, negative exclusions, and stable-ID round trips.
-        ☐ Documentation describes implemented behavior and does not present internal unit-scope selection as user-facing.
+        ✔ Preset tests cover current JSON, legacy no-race presets, invalid race IDs, negative exclusions, and stable-ID round trips. @done(26-07-12; 165 tests, 0 failures)
+        ✔ Documentation describes implemented behavior and does not present internal unit-scope selection as user-facing. @done(26-07-12)
 
 Phase 8 - Final automated and live validation
     ☐ Run tools/Build.ps1.

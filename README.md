@@ -1,9 +1,9 @@
 # SoulSearch
 
-SoulSearch is a DFHack mod that provides an in-game panel for searching fortress
-residents by personality traits, attributes, and skills. Search filters are
-ordered relevance criteria: partial matches remain visible, while residents who
-match more and higher-priority criteria rank first.
+SoulSearch is a DFHack mod that searches fortress units by race, personality
+traits, attributes, and skills. Race filters define the candidate set; the
+other filters are ordered relevance criteria, so partial matches remain visible
+while units matching more and higher-priority criteria rank first.
 
 SoulSearch is implemented as the Lua-only DFHack command `soulsearch`. Native
 C++ plugin code remains out of scope unless profiling later identifies a real
@@ -21,13 +21,14 @@ The current implementation includes:
   live only when zooming.
 - The immutable descriptor catalog owns filter metadata; `filter_state.lua`
   owns ordered `{id, direction}` state for the loaded script session.
-- `search.apply()` accepts rows, a name query, and ordered selected filters,
-  then returns relevance-ranked results.
+- Unit-scope and race-filter candidate providers choose units before snapshots;
+  `search.apply()` receives only ranking filters and returns relevance-ranked
+  results.
 - `ui.lua` composes the window and coordinates events; formatting, layout,
   components, refresh dispatch, and Stats presentation have dedicated modules.
-- `soulsearch` opens the panel with name search, ordered high/low filters,
-  JSON-backed filter presets, ranked results, Stats, refresh, zoom, and close
-  controls.
+- `soulsearch` opens the panel with name search, race Include/Exclude scope
+  filters, ordered high/low ranking filters, JSON-backed filter presets,
+  ranked results, Stats, refresh, zoom, and close controls.
 
 The command currently validates fortress mode and opens the resident search
 panel.
@@ -125,15 +126,20 @@ After DFHack can see the script path, run:
 soulsearch
 ```
 
-The command opens the SoulSearch panel in fortress mode. Use the Search filters
-list to add traits, attributes, and skills such as `Agility`; set their high/low
-directions and priorities with the controls beside each selected filter.
+The command opens the SoulSearch panel in fortress mode. By default, its
+candidate scope is **Humanoids**. Use **Add race filter** to include another
+race or creature type, or exclude a race from the included candidates. Race
+filters use `[I]` and `[E]` for Include and Exclude and do not participate in
+ranking order. Use the Search filters list to add traits, attributes, and
+skills such as `Agility`; set their high/low directions and priorities with the
+controls beside each selected filter.
 The search field filters resident names only. Press `z` or Enter on a selected
 result to center and highlight that resident on the fortress map.
 
 Select **Filter presets** in the Search filters panel to open the preset menu.
-Choose **Save preset** and enter a name in the prompt to save the current filter
-order and high/low directions; select a saved name and press Enter to load it. Presets
+Choose **Save preset** and enter a name in the prompt to save the current race
+scope, ranking-filter order, and directions; select a saved name and press
+Enter to load it. Presets
 are stored as individual JSON files under DFHack's mod-state directory,
 `dfhack-config/mods/soulsearch/presets/`, so they survive mod updates.
 Custom presets are listed first. The same menu also includes role presets and skill presets;
@@ -142,6 +148,9 @@ Dwarf Fortress Wiki's primary (A), secondary (B), and tertiary (C)
 associated-attribute table; see
 [`docs/preset-defaults.md`](docs/preset-defaults.md) for the mappings.
 Use the preset menu's Search field to find a built-in skill or saved preset.
+
+See [`docs/race-filtering.md`](docs/race-filtering.md) for the compound creature
+types and implementation notes on candidate scope.
 
 ## Troubleshooting
 

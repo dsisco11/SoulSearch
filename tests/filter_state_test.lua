@@ -12,6 +12,8 @@ end
 
 return function(test, repo_root)
     local filter_state, descriptors = soulsearch_env.load_filter_state(repo_root)
+    local filter_defaults = soulsearch_env.load_filter_defaults(repo_root)
+    local role_presets = soulsearch_env.load_role_presets(repo_root, descriptors)
 
     local transition_cases = {
         {
@@ -243,6 +245,53 @@ return function(test, repo_root)
             {id='trait:PATIENCE', direction='low'},
             {id='skill:SWORD', direction='high'},
         }))
+    end)
+
+    test.case('filter state replace: legacy and stale race presets restore humanoids', function()
+        local state = filter_state.new()
+        test.assert_true(filter_state.replace(state, {
+            {id='skill:MINING', direction='high'},
+        }))
+        local filters = filter_state.get_filters(state)
+        test.assert_equal('race:group:HUMANOIDS', filters[1].id)
+        test.assert_equal('high', filters[1].direction)
+        test.assert_equal('skill:MINING', filters[2].id)
+
+        test.assert_true(filter_state.replace(state, {
+            {id='race:raw:STALE', direction='high'},
+            {id='race:group:HUMANOIDS', direction='low'},
+            {id='skill:SWORD', direction='low'},
+        }))
+        filters = filter_state.get_filters(state)
+        test.assert_equal('race:group:HUMANOIDS', filters[1].id)
+        test.assert_equal('high', filters[1].direction)
+        test.assert_equal('skill:SWORD', filters[2].id)
+        test.assert_equal('low', filters[2].direction)
+    end)
+
+    test.case('filter state: shipped presets acquire humanoids without reordering ranks', function()
+        local sources = {
+            filter_defaults.get_all()[1].filters,
+            role_presets.get_role_presets()[1].filters,
+            role_presets.get_combat_presets()[1].filters,
+        }
+        for _, source in ipairs(sources) do
+            local state = filter_state.new(source)
+            local candidates = filter_state.get_candidate_filters(state)
+            test.assert_equal('race:group:HUMANOIDS', candidates[1].id)
+            local ranking = filter_state.get_ranking_filters(state)
+            local expected = {}
+            for _, filter in ipairs(source) do
+                if descriptors.get_catalog().by_id[filter.id] then
+                    table.insert(expected, filter)
+                end
+            end
+            test.assert_equal(#expected, #ranking)
+            for index, filter in ipairs(expected) do
+                test.assert_equal(filter.id, ranking[index].id)
+                test.assert_equal(filter.direction, ranking[index].direction)
+            end
+        end
     end)
 
     test.case('filter state always restores a positive humanoid candidate scope', function()

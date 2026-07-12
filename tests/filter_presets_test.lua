@@ -38,6 +38,20 @@ return function(test, repo_root)
         test.assert_equal('low', reread[1].direction)
     end)
 
+    test.case('filter presets: preserve mixed race and ranking entries', function()
+        local original = {
+            {id='race:group:HUMANOIDS', direction='high'},
+            {id='race:raw:DWARF', direction='low'},
+            {id='skill:MINING', direction='high'},
+        }
+        test.assert_true(presets.save('Dwarf Miners', original))
+        local loaded = assert(presets.load('Dwarf Miners'))
+        for index, filter in ipairs(original) do
+            test.assert_equal(filter.id, loaded[index].id)
+            test.assert_equal(filter.direction, loaded[index].direction)
+        end
+    end)
+
     test.case('filter presets: names are listed alphabetically and safely', function()
         test.assert_sequence({'broken', 'Miner', 'Sheriff'}, presets.list())
         test.assert_false(presets.save('../escape', {}))
