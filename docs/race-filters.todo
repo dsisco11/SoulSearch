@@ -63,19 +63,19 @@ Phase 3 - Build the race catalog and compound predicates
         ✔ Reordering the raw vector does not change a saved individual-race filter ID or its resolved creature. @done(26-07-12; 148 tests, 0 failures)
 
 Phase 4 - Implement the active race-filter provider and state invariants
-    ☐ Add a race candidate provider that wraps any SoulSearchCandidateProvider.
-    ☐ Resolve active race descriptors once per provider pass instead of once per unit.
-    ☐ Union all positive race matches.
-    ☐ Remove every negative race match after inclusion so exclusions always win.
-    ☐ Preserve upstream order and suppress duplicates when compounds and individual races overlap.
-    ☐ Make a new or first-loaded filter state default to include race:group:HUMANOIDS.
-    ☐ Prevent remove, clear, replace, preset load, or stale-ID validation from leaving state without a positive race scope; restore Humanoids.
-    ☐ Define Clear all as clearing ranking filters and resetting candidate filters to include Humanoids.
-    ☐ Ensure negative-only external/preset input is normalized by adding positive Humanoids before applying exclusions.
+    ✔ Add a race candidate provider that wraps any SoulSearchCandidateProvider. @done(26-07-12)
+    ✔ Resolve active race descriptors once per provider pass instead of once per unit. @done(26-07-12)
+    ✔ Union all positive race matches. @done(26-07-12)
+    ✔ Remove every negative race match after inclusion so exclusions always win. @done(26-07-12)
+    ✔ Preserve upstream order and suppress duplicates when compounds and individual races overlap. @done(26-07-12)
+    ✔ Make a new or first-loaded filter state default to include race:group:HUMANOIDS. @done(26-07-12)
+    ✔ Prevent remove, clear, replace, preset load, or stale-ID validation from leaving state without a positive race scope; restore Humanoids. @done(26-07-12)
+    ✔ Define Clear all as clearing ranking filters and resetting candidate filters to include Humanoids. @done(26-07-12)
+    ✔ Ensure negative-only external/preset input is normalized by adding positive Humanoids before applying exclusions. @done(26-07-12)
     Phase gate
-        ☐ Tests cover dwarves/elves/humans under Humanoids and dogs under animal groups.
-        ☐ Tests cover multiple-positive union, overlapping groups, exclusions, all humanoids except dwarves, and trainable animals except dogs.
-        ☐ Tests cover removal of the final positive, negative-only input, stale IDs, clear, replace, save/load, and preset load.
+        ✔ Tests cover dwarves/elves/humans under Humanoids and dogs under animal groups. @done(26-07-12)
+        ✔ Tests cover multiple-positive union, overlapping groups, exclusions, all humanoids except dwarves, and trainable animals except dogs. @done(26-07-12)
+        ✔ Tests cover removal of the final positive, negative-only input, stale IDs, clear, replace, save/load, and preset load. @done(26-07-12; 154 tests, 0 failures)
 
 Phase 5 - Move candidate acquisition ahead of snapshots and ranking
     ☐ Separate resident/unit snapshot construction from candidate collection in residents.lua.

@@ -183,6 +183,26 @@ function M.load_unit_scope_provider(repo_root, df_stub, dfhack_stub)
         globals)
 end
 
+function M.load_race_filter_provider(repo_root, df_stub)
+    local descriptors = M.load_descriptors(repo_root, df_stub)
+    local race_catalog = M.load_race_catalog(repo_root, df_stub)
+    local candidate_provider = M.load_candidate_provider(repo_root)
+    local globals = {
+        reqscript=function(name)
+            if name == 'internal/soulsearch/candidate_provider' then
+                return candidate_provider
+            end
+            if name == 'internal/soulsearch/descriptors' then return descriptors end
+            if name == 'internal/soulsearch/race_catalog' then return race_catalog end
+            error('unexpected reqscript: ' .. tostring(name))
+        end,
+    }
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/race_filter_provider.lua',
+        globals)
+end
+
 function M.load_ui_refresh(repo_root)
     return module_loader.load(
         repo_root,

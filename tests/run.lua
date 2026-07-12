@@ -15,6 +15,7 @@ local suites = {
     (require('candidate_provider_test')),
     (require('unit_scope_provider_test')),
     (require('race_catalog_test')),
+    (require('race_filter_provider_test')),
     (require('filter_state_test')),
     (require('filter_defaults_test')),
     (require('role_presets_test')),

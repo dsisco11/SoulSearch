@@ -15,7 +15,7 @@ return function(test, repo_root)
         test.assert_equal('internal/soulsearch/df_enums', calls[1])
         test.assert_equal('internal/soulsearch/ui', calls[#calls])
         local race_catalog_index, descriptor_index
-        local candidate_index, scope_index, state_index
+        local candidate_index, scope_index, state_index, race_filter_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/race_catalog' then
                 race_catalog_index = index
@@ -27,11 +27,14 @@ return function(test, repo_root)
                 scope_index = index
             elseif name == 'internal/soulsearch/filter_state' then
                 state_index = index
+            elseif name == 'internal/soulsearch/race_filter_provider' then
+                race_filter_index = index
             end
         end
         test.assert_true(race_catalog_index < descriptor_index)
         test.assert_true(candidate_index < scope_index)
         test.assert_true(scope_index < state_index)
+        test.assert_true(state_index < race_filter_index)
         test.assert_true(loaded['internal/soulsearch/search'].apply ~= nil)
         test.assert_true(
             loaded['internal/soulsearch/candidate_provider'].new ~= nil)
@@ -39,6 +42,8 @@ return function(test, repo_root)
             loaded['internal/soulsearch/race_catalog'].get_descriptors ~= nil)
         test.assert_true(
             loaded['internal/soulsearch/unit_scope_provider'].new ~= nil)
+        test.assert_true(
+            loaded['internal/soulsearch/race_filter_provider'].new ~= nil)
     end)
 
     test.case('module registry: missing contracts fail clearly', function()
