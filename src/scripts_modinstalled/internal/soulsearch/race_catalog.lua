@@ -14,9 +14,10 @@ local RACE = filter_constants.race
 local COMPOUNDS = {
     -- Humanoids: caste has both [CAN_LEARN] and [CAN_SPEAK].
     {key=RACE.group.HUMANOIDS, label='Humanoids'},
-    -- Trainable: caste has [PET], [PET_EXOTIC], [TRAINABLE_HUNTING], or
-    -- [TRAINABLE_WAR].
-    {key=RACE.group.TRAINABLE_ANIMALS, label='Trainable Animals'},
+    -- Tameable: caste has [PET] or [PET_EXOTIC].
+    {key=RACE.group.TAMEABLE_ANIMALS, label='Tameable Animals'},
+    -- Work: caste has [TRAINABLE_HUNTING] or [TRAINABLE_WAR].
+    {key=RACE.group.WORK_ANIMALS, label='Work Animals'},
     -- Domestic: caste has [COMMON_DOMESTIC] and an ownership role: [PET],
     -- [PACK_ANIMAL], [WAGON_PULLER], or [MOUNT].
     {key=RACE.group.DOMESTIC_ANIMALS, label='Domestic Animals'},
@@ -101,9 +102,12 @@ end
 ---@return boolean
 local function matches_compound(raw, caste, key)
     if key == RACE.group.HUMANOIDS then return is_humanoid(raw, caste) end
-    if key == RACE.group.TRAINABLE_ANIMALS then
+    if key == RACE.group.TAMEABLE_ANIMALS then
+        return has_any_caste_flag(raw, caste, {'PET', 'PET_EXOTIC'})
+    end
+    if key == RACE.group.WORK_ANIMALS then
         return has_any_caste_flag(raw, caste, {
-            'PET', 'PET_EXOTIC', 'TRAINABLE_HUNTING', 'TRAINABLE_WAR',
+            'TRAINABLE_HUNTING', 'TRAINABLE_WAR',
         })
     end
     if key == RACE.group.DOMESTIC_ANIMALS then

@@ -29,7 +29,8 @@ return function(test, repo_root)
         }))
         test.assert_sequence({
             'race:group:HUMANOIDS',
-            'race:group:TRAINABLE_ANIMALS',
+            'race:group:TAMEABLE_ANIMALS',
+            'race:group:WORK_ANIMALS',
             'race:group:DOMESTIC_ANIMALS',
             'race:group:WILD_ANIMALS',
             'race:group:MEGABEASTS',
@@ -43,7 +44,8 @@ return function(test, repo_root)
     test.case('race catalog: compound predicates use documented caste flags', function()
         local raws = {
             raw('DWARF', 'dwarf', {CAN_LEARN=true, CAN_SPEAK=true}),
-            raw('DOG', 'dog', {PET=true, TRAINABLE_HUNTING=true}),
+            raw('DOG', 'dog', {TRAINABLE_HUNTING=true}),
+            raw('CAT', 'cat', {PET=true}),
             raw('COW', 'cow', {COMMON_DOMESTIC=true, PACK_ANIMAL=true}),
             raw('DEER', 'deer', {NATURAL=true}),
             raw('DRAGON', 'dragon', {MEGABEAST=true}),
@@ -55,9 +57,9 @@ return function(test, repo_root)
             by_id[descriptor.id] = descriptor
         end
         local cases = {
-            {'HUMANOIDS', 1}, {'TRAINABLE_ANIMALS', 2},
-            {'DOMESTIC_ANIMALS', 3}, {'WILD_ANIMALS', 4},
-            {'MEGABEASTS', 5}, {'VERMIN', 6},
+            {'HUMANOIDS', 1}, {'WORK_ANIMALS', 2},
+            {'TAMEABLE_ANIMALS', 3}, {'DOMESTIC_ANIMALS', 4},
+            {'WILD_ANIMALS', 5}, {'MEGABEASTS', 6}, {'VERMIN', 7},
         }
         for _, case in ipairs(cases) do
             test.assert_true(catalog.matches_unit(
@@ -65,6 +67,10 @@ return function(test, repo_root)
         end
         test.assert_false(catalog.matches_unit(
             by_id['race:group:WILD_ANIMALS'], {race=1, caste=0}))
+        test.assert_false(catalog.matches_unit(
+            by_id['race:group:TAMEABLE_ANIMALS'], {race=2, caste=0}))
+        test.assert_false(catalog.matches_unit(
+            by_id['race:group:WORK_ANIMALS'], {race=3, caste=0}))
         test.assert_true(catalog.matches_unit(
             by_id['race:raw:DOG'], {race=2, caste=0}))
     end)
@@ -89,7 +95,7 @@ return function(test, repo_root)
             {}, raw('DOG', 'dog', {PET=true}), {creature_id='MISSING_NAME'},
         }))
         local descriptors = catalog.get_descriptors()
-        test.assert_equal(8, #descriptors)
+        test.assert_equal(9, #descriptors)
         test.assert_false(catalog.matches_unit(descriptors[1], {race=2, caste=99}))
         test.assert_false(catalog.matches_unit(descriptors[1], {race=99, caste=0}))
     end)

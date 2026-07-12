@@ -52,7 +52,7 @@ Phase 3 - Build the race catalog and compound predicates
     ✔ Add a dedicated race catalog module rather than embedding creature-raw policy in descriptors.lua or search.lua. @done(26-07-12)
     ✔ Generate individual descriptors with stable IDs in the form race:raw:<CREATURE_ID>. @done(26-07-12)
     ✔ Generate compound descriptors with IDs in the form race:group:<KEY>. @done(26-07-12)
-    ✔ Define ordered compounds for Humanoids, Trainable Animals, Domestic Animals, Wild Animals, Megabeasts, and Vermin. @done(26-07-12)
+    ✔ Define ordered compounds for Humanoids, Tameable Animals, Work Animals, Domestic Animals, Wild Animals, Megabeasts, and Vermin. @done(26-07-12)
     ✔ Derive compound membership from centralized creature/caste raw predicates and document the exact flags used by each group. @done(26-07-12)
     ✔ Handle missing world raws, creature IDs, names, castes, and flags without crashing or accidentally matching a unit. @done(26-07-12)
     ✔ Display compounds first in their defined order, then individual races alphabetically by display label with stable-ID tie-breaking. @done(26-07-12)
@@ -74,7 +74,7 @@ Phase 4 - Implement the active race-filter provider and state invariants
     ✔ Ensure negative-only external/preset input is normalized by adding positive Humanoids before applying exclusions. @done(26-07-12)
     Phase gate
         ✔ Tests cover dwarves/elves/humans under Humanoids and dogs under animal groups. @done(26-07-12)
-        ✔ Tests cover multiple-positive union, overlapping groups, exclusions, all humanoids except dwarves, and trainable animals except dogs. @done(26-07-12)
+        ✔ Tests cover multiple-positive union, overlapping groups, exclusions, all humanoids except dwarves, tameable animals except dogs, and work-animal predicates. @done(26-07-12)
         ✔ Tests cover removal of the final positive, negative-only input, stale IDs, clear, replace, save/load, and preset load. @done(26-07-12; 154 tests, 0 failures)
 
 Phase 5 - Move candidate acquisition ahead of snapshots and ranking
@@ -126,7 +126,7 @@ Phase 8 - Final automated and live validation
     ☐ Inspect the final diff for accidental raw-index persistence, race logic in search.lua, or unrelated changes.
     Fortress-mode smoke pass
         ☐ Open SoulSearch with defaults and confirm humanoids appear while pets/livestock do not.
-        ☐ Include Trainable Animals and confirm eligible animals appear without changing humanoid ranking order.
+        ☐ Include Tameable Animals or Work Animals and confirm eligible animals appear without changing humanoid ranking order.
         ☐ Exclude Dwarves from Humanoids and confirm other matching humanoids remain.
         ☐ Search specifically for Dogs and confirm dog units can be selected and zoomed to.
         ☐ Verify unnamed animals and units without souls display without errors.

@@ -41,7 +41,7 @@ return function(test, repo_root)
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {
                 filter('race:group:HUMANOIDS'),
-                filter('race:group:TRAINABLE_ANIMALS'),
+                filter('race:group:WORK_ANIMALS'),
                 filter('race:raw:DWARF', 'low'),
             })
         local units, err = provider.get_units()
@@ -81,7 +81,7 @@ return function(test, repo_root)
 
         provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {
-                filter('race:group:TRAINABLE_ANIMALS'),
+                filter('race:group:TAMEABLE_ANIMALS'),
                 filter('race:raw:DOG', 'low'),
             })
         test.assert_sequence({4}, ids(provider.get_units()))

@@ -77,7 +77,7 @@ return function(test, repo_root)
         local first = descriptors.get_catalog()
         local second = descriptors.get_catalog()
         test.assert_true(first == second)
-        test.assert_equal(18, #first.flat)
+        test.assert_equal(19, #first.flat)
 
         local seen = {}
         for _, descriptor in ipairs(first.flat) do
@@ -112,7 +112,8 @@ return function(test, repo_root)
         }, descriptor_ids(catalog.groups.traits))
         test.assert_sequence({
             'race:group:HUMANOIDS',
-            'race:group:TRAINABLE_ANIMALS',
+            'race:group:TAMEABLE_ANIMALS',
+            'race:group:WORK_ANIMALS',
             'race:group:DOMESTIC_ANIMALS',
             'race:group:WILD_ANIMALS',
             'race:group:MEGABEASTS',
@@ -132,7 +133,8 @@ return function(test, repo_root)
             'trait:BRAVERY',
             'trait:PATIENCE',
             'race:group:HUMANOIDS',
-            'race:group:TRAINABLE_ANIMALS',
+            'race:group:TAMEABLE_ANIMALS',
+            'race:group:WORK_ANIMALS',
             'race:group:DOMESTIC_ANIMALS',
             'race:group:WILD_ANIMALS',
             'race:group:MEGABEASTS',

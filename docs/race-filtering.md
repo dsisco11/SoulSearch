@@ -17,8 +17,8 @@ The race picker lists these compound creature types before individual creature
 raw IDs, which are ordered alphabetically by display label:
 
 - **Humanoids**: a caste with both `CAN_LEARN` and `CAN_SPEAK`.
-- **Trainable Animals**: a caste with `PET`, `PET_EXOTIC`,
-  `TRAINABLE_HUNTING`, or `TRAINABLE_WAR`.
+- **Tameable Animals**: a caste with `PET` or `PET_EXOTIC`.
+- **Work Animals**: a caste with `TRAINABLE_HUNTING` or `TRAINABLE_WAR`.
 - **Domestic Animals**: a `COMMON_DOMESTIC` caste with a pet, pack-animal,
   wagon-puller, or mount role.
 - **Wild Animals**: a `NATURAL` caste that is not humanoid.
