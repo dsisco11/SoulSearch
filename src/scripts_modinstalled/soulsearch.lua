@@ -68,6 +68,7 @@ end
 function main(...)
     local args = {...}
     local modules = args[1] == 'reload' and reload_modules() or validate_modules()
+    modules['internal/soulsearch/keybindings'].ensure_default()
     modules['internal/soulsearch/lifecycle'].prepare_for_world()
     modules['internal/soulsearch/ui'].open(table.unpack(args))
 end

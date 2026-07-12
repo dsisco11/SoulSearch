@@ -30,6 +30,7 @@ local suites = {
     (require('stats_presenter_test')),
     (require('ui_components_test')),
     (require('residents_test')),
+    (require('keybindings_test')),
     (require('lifecycle_test')),
     (require('module_registry_test')),
     (require('soulsearch_command_test')),

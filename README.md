@@ -126,10 +126,15 @@ After DFHack can see the script path, run:
 soulsearch
 ```
 
+The first manual SoulSearch launch in a DFHack session adds the default
+`Ctrl-F@dwarfmode/Default` binding when no existing binding runs a SoulSearch
+command. Use `gui/keybinds` to change or remove it, then save from that screen
+to persist your choice across DFHack restarts.
+
 The command opens the SoulSearch panel in fortress mode. By default, its
 candidate scope is **Humanoids**. Use **Add race filter** to include another
 race or creature type, or exclude a race from the included candidates. Race
-filters use `[I]` and `[E]` for Include and Exclude and do not participate in
+filters use `[+]` to Include and `[-]` to Exclude and do not participate in
 ranking order. Use the Search filters list to add traits, attributes, and
 skills such as `Agility`; set their high/low directions and priorities with the
 controls beside each selected filter.
