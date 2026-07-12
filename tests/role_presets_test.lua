@@ -6,6 +6,12 @@ local function ids(filters)
     return result
 end
 
+local function first(count, values)
+    local result = {}
+    for index = 1, count do table.insert(result, values[index]) end
+    return result
+end
+
 local function make_catalog(keys)
     local by_id = {}
     for _, key in ipairs(keys) do by_id['skill:' .. key] = {} end
@@ -25,7 +31,8 @@ return function(test, repo_root)
         make_catalog({'ORGANIZATION', 'RECORD_KEEPING', 'APPRAISAL',
             'JUDGING_INTENT', 'NEGOTIATION', 'DIAGNOSIS', 'HAMMER', 'CROSSBOW',
             'ARCHERY', 'SNEAK', 'SWORD', 'MELEE_COMBAT', 'SHIELD', 'ARMOR',
-            'SURGERY', 'BONE_SETTING', 'ANIMALTRAIN'}))
+            'SURGERY', 'BONE_SETTING', 'ANIMALTRAIN', 'DODGING', 'DISCIPLINE',
+            'AXE', 'DAGGER', 'MACE', 'SPEAR', 'PIKE', 'WHIP', 'WRESTLING'}))
 
     test.case('role presets: expose the researched roles in a stable order', function()
         local labels = {}
@@ -33,8 +40,10 @@ return function(test, repo_root)
             table.insert(labels, preset.label)
         end
         test.assert_sequence({'Manager', 'Bookkeeper', 'Broker',
-            'Chief Medical Dwarf', 'Interrogator', 'Hammerer', 'Marksdwarf',
-            'Hunter', 'Swordsdwarf', 'Doctor', 'Animal Trainer'}, labels)
+            'Chief Medical Dwarf', 'Interrogator', 'Doctor', 'Animal Trainer',
+            'Soldier', 'Axedwarf', 'Swordsdwarf', 'Knife User', 'Macedwarf',
+            'Hammerdwarf', 'Speardwarf', 'Pikedwarf', 'Lasher', 'Wrestler',
+            'Marksdwarf', 'Hunter', 'Hammerer'}, labels)
     end)
 
     test.case('role presets: put role skills before wiki-priority attributes', function()
@@ -43,9 +52,21 @@ return function(test, repo_root)
             'mental_attribute:SOCIAL_AWARENESS',
             'mental_attribute:CREATIVITY'}, ids(assert(role_presets.get('manager'))))
         test.assert_sequence({'skill:CROSSBOW', 'skill:ARCHERY', 'skill:HAMMER',
+            'skill:DODGING', 'skill:SHIELD', 'skill:ARMOR',
             'physical_attribute:AGILITY', 'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:KINESTHETIC_SENSE', 'mental_attribute:FOCUS'},
             ids(assert(role_presets.get('marksdwarf'))))
+    end)
+
+    test.case('role presets: separate complete combat presets and add dodging', function()
+        local combat = role_presets.get_combat_presets()
+        test.assert_equal('Soldier', combat[1].label)
+        test.assert_equal('Hammerer', combat[#combat].label)
+        test.assert_sequence({'skill:AXE', 'skill:MELEE_COMBAT', 'skill:DODGING',
+            'skill:SHIELD', 'skill:ARMOR'},
+            first(5, ids(assert(role_presets.get('axedwarf')))))
+        test.assert_equal('role', role_presets.get_role_presets()[1].category)
+        test.assert_equal('combat', combat[1].category)
     end)
 
     test.case('role presets: resolve version-specific skill key fallbacks', function()

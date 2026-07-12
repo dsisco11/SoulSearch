@@ -476,7 +476,8 @@ end
 function SoulSearchWindow:refresh_preset_choices()
     local choices = {}
     local defaults = filter_defaults.get_all()
-    local roles = role_presets.get_all()
+    local roles = role_presets.get_role_presets()
+    local combat = role_presets.get_combat_presets()
     local saved = filter_presets.list()
     local has_saved = false
     for _, name in ipairs(saved) do
@@ -502,6 +503,21 @@ function SoulSearchWindow:refresh_preset_choices()
     end
     if has_roles then table.insert(choices, {text='Role presets'}) end
     for _, preset in ipairs(roles) do
+        if text_match.contains(preset.label, self.preset_query) then
+            table.insert(choices, {text='  ' .. preset.label, role_id=preset.id,
+                search_key=preset.label})
+        end
+    end
+
+    local has_combat = false
+    for _, preset in ipairs(combat) do
+        if text_match.contains(preset.label, self.preset_query) then
+            has_combat = true
+            break
+        end
+    end
+    if has_combat then table.insert(choices, {text='Combat presets'}) end
+    for _, preset in ipairs(combat) do
         if text_match.contains(preset.label, self.preset_query) then
             table.insert(choices, {text='  ' .. preset.label, role_id=preset.id,
                 search_key=preset.label})
