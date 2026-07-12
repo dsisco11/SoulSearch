@@ -15,6 +15,7 @@ MODULES = {
     {name='internal/soulsearch/ui_glyphs', contract='get_glyph'},
     {name='internal/soulsearch/ui_layout', contract='get_frame'},
     {name='internal/soulsearch/attributes', contract='evaluate'},
+    {name='internal/soulsearch/race_catalog', contract='get_descriptors'},
     {name='internal/soulsearch/descriptors', contract='get_catalog'},
     {name='internal/soulsearch/candidate_provider', contract='new'},
     {name='internal/soulsearch/unit_scope_provider', contract='new'},

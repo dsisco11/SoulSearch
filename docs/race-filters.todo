@@ -49,18 +49,18 @@ Phase 2 - Implement internal unit-scope providers
         ✔ The default provider includes citizens and pets/livestock while excluding unrelated wildlife and hostiles. @done(26-07-12; 143 tests, 0 failures)
 
 Phase 3 - Build the race catalog and compound predicates
-    ☐ Add a dedicated race catalog module rather than embedding creature-raw policy in descriptors.lua or search.lua.
-    ☐ Generate individual descriptors with stable IDs in the form race:raw:<CREATURE_ID>.
-    ☐ Generate compound descriptors with IDs in the form race:group:<KEY>.
-    ☐ Define ordered compounds for Humanoids, Trainable Animals, Domestic Animals, Wild Animals, Megabeasts, and Vermin.
-    ☐ Derive compound membership from centralized creature/caste raw predicates and document the exact flags used by each group.
-    ☐ Handle missing world raws, creature IDs, names, castes, and flags without crashing or accidentally matching a unit.
-    ☐ Display compounds first in their defined order, then individual races alphabetically by display label with stable-ID tie-breaking.
-    ☐ Keep citizen, resident, visitor, and hostile classifications out of the race catalog; they belong to unit scope.
-    ☐ Reset raw-derived race metadata through the existing world/module lifecycle.
+    ✔ Add a dedicated race catalog module rather than embedding creature-raw policy in descriptors.lua or search.lua. @done(26-07-12)
+    ✔ Generate individual descriptors with stable IDs in the form race:raw:<CREATURE_ID>. @done(26-07-12)
+    ✔ Generate compound descriptors with IDs in the form race:group:<KEY>. @done(26-07-12)
+    ✔ Define ordered compounds for Humanoids, Trainable Animals, Domestic Animals, Wild Animals, Megabeasts, and Vermin. @done(26-07-12)
+    ✔ Derive compound membership from centralized creature/caste raw predicates and document the exact flags used by each group. @done(26-07-12)
+    ✔ Handle missing world raws, creature IDs, names, castes, and flags without crashing or accidentally matching a unit. @done(26-07-12)
+    ✔ Display compounds first in their defined order, then individual races alphabetically by display label with stable-ID tie-breaking. @done(26-07-12)
+    ✔ Keep citizen, resident, visitor, and hostile classifications out of the race catalog; they belong to unit scope. @done(26-07-12)
+    ✔ Reset raw-derived race metadata through the existing world/module lifecycle. @done(26-07-12)
     Phase gate
-        ☐ Catalog tests cover stable IDs, labels, ordering, duplicate protection, missing raws, and every compound predicate.
-        ☐ Reordering the raw vector does not change a saved individual-race filter ID or its resolved creature.
+        ✔ Catalog tests cover stable IDs, labels, ordering, duplicate protection, missing raws, and every compound predicate. @done(26-07-12)
+        ✔ Reordering the raw vector does not change a saved individual-race filter ID or its resolved creature. @done(26-07-12; 148 tests, 0 failures)
 
 Phase 4 - Implement the active race-filter provider and state invariants
     ☐ Add a race candidate provider that wraps any SoulSearchCandidateProvider.

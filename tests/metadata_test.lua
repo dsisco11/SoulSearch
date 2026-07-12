@@ -77,7 +77,7 @@ return function(test, repo_root)
         local first = descriptors.get_catalog()
         local second = descriptors.get_catalog()
         test.assert_true(first == second)
-        test.assert_equal(12, #first.flat)
+        test.assert_equal(18, #first.flat)
 
         local seen = {}
         for _, descriptor in ipairs(first.flat) do
@@ -111,6 +111,14 @@ return function(test, repo_root)
             'trait:PATIENCE',
         }, descriptor_ids(catalog.groups.traits))
         test.assert_sequence({
+            'race:group:HUMANOIDS',
+            'race:group:TRAINABLE_ANIMALS',
+            'race:group:DOMESTIC_ANIMALS',
+            'race:group:WILD_ANIMALS',
+            'race:group:MEGABEASTS',
+            'race:group:VERMIN',
+        }, descriptor_ids(catalog.groups.races))
+        test.assert_sequence({
             'skill:MINING',
             'skill:PERSUASION',
             'skill:SWIMMING',
@@ -123,6 +131,12 @@ return function(test, repo_root)
             'mental_attribute:WILLPOWER',
             'trait:BRAVERY',
             'trait:PATIENCE',
+            'race:group:HUMANOIDS',
+            'race:group:TRAINABLE_ANIMALS',
+            'race:group:DOMESTIC_ANIMALS',
+            'race:group:WILD_ANIMALS',
+            'race:group:MEGABEASTS',
+            'race:group:VERMIN',
         }, descriptor_ids(catalog.flat))
         test.assert_equal('Mining', catalog.by_id['skill:MINING'].label)
         test.assert_equal('Labor', catalog.by_id['skill:MINING'].category)
@@ -130,10 +144,11 @@ return function(test, repo_root)
             catalog.by_id['skill:UNLISTED_SKILL'].category)
     end)
 
-    test.case('descriptor catalog: current filters are ranking descriptors', function()
+    test.case('descriptor catalog: races are candidates and stats are ranking descriptors', function()
         local descriptors = soulsearch_env.load_descriptors(repo_root)
         for _, descriptor in ipairs(descriptors.get_catalog().flat) do
-            test.assert_equal('ranking', descriptor.behavior)
+            local expected = descriptor.kind == 'race' and 'candidate' or 'ranking'
+            test.assert_equal(expected, descriptor.behavior)
         end
     end)
 

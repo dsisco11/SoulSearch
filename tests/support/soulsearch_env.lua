@@ -91,14 +91,19 @@ end
 function M.load_descriptors(repo_root, df_override)
     local df_enums = M.load_df_enums(repo_root)
     local skill_categories = M.load_skill_categories(repo_root)
+    local df = df_override or M.make_df_stub()
+    local race_catalog = M.load_race_catalog(repo_root, df)
     local globals = {
-        df=df_override or M.make_df_stub(),
+        df=df,
         reqscript=function(name)
             if name == 'internal/soulsearch/df_enums' then
                 return df_enums
             end
             if name == 'internal/soulsearch/skill_categories' then
                 return skill_categories
+            end
+            if name == 'internal/soulsearch/race_catalog' then
+                return race_catalog
             end
             error('unexpected reqscript: ' .. tostring(name))
         end,
@@ -146,6 +151,13 @@ function M.load_filter_state(repo_root)
         repo_root,
         'src/scripts_modinstalled/internal/soulsearch/filter_state.lua',
         globals), descriptors
+end
+
+function M.load_race_catalog(repo_root, df_stub)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/race_catalog.lua',
+        {df=df_stub or M.make_df_stub()})
 end
 
 function M.load_candidate_provider(repo_root)

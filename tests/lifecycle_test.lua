@@ -4,7 +4,7 @@ return function(test, repo_root)
     test.case('lifecycle: cache resets occur once per world boundary', function()
         local calls = {}
         local modules = {}
-        for _, name in ipairs{'attributes', 'descriptors', 'residents'} do
+        for _, name in ipairs{'attributes', 'race_catalog', 'descriptors', 'residents'} do
             modules['internal/soulsearch/' .. name] = {
                 reset_cache=function() calls[name] = (calls[name] or 0) + 1 end,
                 reset=function() calls[name] = (calls[name] or 0) + 1 end,
@@ -15,7 +15,7 @@ return function(test, repo_root)
         test.assert_true(lifecycle.prepare_for_world(first))
         test.assert_false(lifecycle.prepare_for_world(first))
         test.assert_true(lifecycle.prepare_for_world(second))
-        for _, name in ipairs{'attributes', 'descriptors', 'residents'} do
+        for _, name in ipairs{'attributes', 'race_catalog', 'descriptors', 'residents'} do
             test.assert_equal(2, calls[name])
         end
     end)
