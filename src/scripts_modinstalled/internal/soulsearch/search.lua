@@ -38,9 +38,11 @@
 local attributes = reqscript('internal/soulsearch/attributes')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local text_match = reqscript('internal/soulsearch/text_match')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local FILTER_HIGH = 'high'
-local FILTER_LOW = 'low'
+local FILTER_HIGH = filter_constants.direction.HIGH
+local FILTER_LOW = filter_constants.direction.LOW
 local MATCHED_FILTER_SCORE = 10
 local FILTER_PRIORITY_WEIGHT_BONUS = 0.2
 local VALID_FILTER_DIRECTIONS = {
@@ -81,7 +83,7 @@ local function resolve_selected_filters(selected_filters)
                 not seen[selected_filter.id] and
                 VALID_FILTER_DIRECTIONS[selected_filter.direction] then
             local descriptor = descriptors.get_catalog().by_id[selected_filter.id]
-            if descriptor and descriptor.behavior == 'ranking' then
+            if descriptor and descriptor.behavior == filter_constants.behavior.RANKING then
                 seen[selected_filter.id] = true
                 table.insert(result, {
                     descriptor=descriptor,

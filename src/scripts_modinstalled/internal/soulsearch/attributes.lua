@@ -17,8 +17,10 @@
 ---@field low_score_scale number
 
 local personality = reqscript('modtools/set-personality')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local FILTER_LOW = 'low'
+local FILTER_LOW = filter_constants.direction.LOW
 local DEFAULT_TRAIT_BASELINE = 50
 local DEFAULT_ATTRIBUTE_BASELINE = 1000
 local ATTRIBUTE_TIER_WIDTH = 250

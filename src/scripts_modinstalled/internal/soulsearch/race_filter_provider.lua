@@ -6,10 +6,12 @@ local candidate_provider =
     reqscript('internal/soulsearch/candidate_provider')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local race_catalog = reqscript('internal/soulsearch/race_catalog')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local FILTER_HIGH = 'high'
-local FILTER_LOW = 'low'
-local DEFAULT_RACE_FILTER_ID = 'race:group:HUMANOIDS'
+local FILTER_HIGH = filter_constants.direction.HIGH
+local FILTER_LOW = filter_constants.direction.LOW
+local DEFAULT_RACE_FILTER_ID = filter_constants.default_race_filter_id
 
 ---@param filter SoulSearchSelectedFilter
 ---@param catalog SoulSearchFilterCatalog
@@ -17,8 +19,8 @@ local DEFAULT_RACE_FILTER_ID = 'race:group:HUMANOIDS'
 local function get_race_descriptor(filter, catalog)
     local descriptor = type(filter) == 'table' and
         type(filter.id) == 'string' and catalog.by_id[filter.id] or nil
-    if descriptor and descriptor.kind == 'race' and
-            descriptor.behavior == 'candidate' and
+    if descriptor and descriptor.kind == filter_constants.kind.RACE and
+            descriptor.behavior == filter_constants.behavior.CANDIDATE and
             (filter.direction == FILTER_HIGH or filter.direction == FILTER_LOW) then
         return descriptor
     end

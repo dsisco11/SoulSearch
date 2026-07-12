@@ -7,21 +7,25 @@
 ---@field key string
 ---@field label string
 
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
+local RACE = filter_constants.race
+
 local COMPOUNDS = {
     -- Humanoids: caste has both [CAN_LEARN] and [CAN_SPEAK].
-    {key='HUMANOIDS', label='Humanoids'},
+    {key=RACE.group.HUMANOIDS, label='Humanoids'},
     -- Trainable: caste has [PET], [PET_EXOTIC], [TRAINABLE_HUNTING], or
     -- [TRAINABLE_WAR].
-    {key='TRAINABLE_ANIMALS', label='Trainable Animals'},
+    {key=RACE.group.TRAINABLE_ANIMALS, label='Trainable Animals'},
     -- Domestic: caste has [COMMON_DOMESTIC] and an ownership role: [PET],
     -- [PACK_ANIMAL], [WAGON_PULLER], or [MOUNT].
-    {key='DOMESTIC_ANIMALS', label='Domestic Animals'},
+    {key=RACE.group.DOMESTIC_ANIMALS, label='Domestic Animals'},
     -- Wild: caste has [NATURAL] but is not humanoid.
-    {key='WILD_ANIMALS', label='Wild Animals'},
+    {key=RACE.group.WILD_ANIMALS, label='Wild Animals'},
     -- Megabeasts: caste has [MEGABEAST] or [SEMIMEGABEAST].
-    {key='MEGABEASTS', label='Megabeasts'},
+    {key=RACE.group.MEGABEASTS, label='Megabeasts'},
     -- Vermin: caste has one of the game's VERMIN_* flags.
-    {key='VERMIN', label='Vermin'},
+    {key=RACE.group.VERMIN, label='Vermin'},
 }
 
 local VERMIN_FLAGS = {
@@ -96,26 +100,26 @@ end
 ---@param key string
 ---@return boolean
 local function matches_compound(raw, caste, key)
-    if key == 'HUMANOIDS' then return is_humanoid(raw, caste) end
-    if key == 'TRAINABLE_ANIMALS' then
+    if key == RACE.group.HUMANOIDS then return is_humanoid(raw, caste) end
+    if key == RACE.group.TRAINABLE_ANIMALS then
         return has_any_caste_flag(raw, caste, {
             'PET', 'PET_EXOTIC', 'TRAINABLE_HUNTING', 'TRAINABLE_WAR',
         })
     end
-    if key == 'DOMESTIC_ANIMALS' then
+    if key == RACE.group.DOMESTIC_ANIMALS then
         return has_caste_flag(raw, caste, 'COMMON_DOMESTIC') and
             has_any_caste_flag(raw, caste, {
                 'PET', 'PACK_ANIMAL', 'WAGON_PULLER', 'MOUNT',
             })
     end
-    if key == 'WILD_ANIMALS' then
+    if key == RACE.group.WILD_ANIMALS then
         return has_caste_flag(raw, caste, 'NATURAL') and
             not is_humanoid(raw, caste)
     end
-    if key == 'MEGABEASTS' then
+    if key == RACE.group.MEGABEASTS then
         return has_any_caste_flag(raw, caste, {'MEGABEAST', 'SEMIMEGABEAST'})
     end
-    if key == 'VERMIN' then
+    if key == RACE.group.VERMIN then
         return has_any_caste_flag(raw, caste, VERMIN_FLAGS)
     end
     return false
@@ -148,9 +152,9 @@ local function build_descriptors()
     local result = {}
     for _, compound in ipairs(COMPOUNDS) do
         table.insert(result, {
-            id='race:group:' .. compound.key,
-            kind='race',
-            behavior='candidate',
+            id=RACE.group_id_prefix .. compound.key,
+            kind=filter_constants.kind.RACE,
+            behavior=filter_constants.behavior.CANDIDATE,
             key=compound.key,
             label=compound.label,
         })
@@ -166,9 +170,9 @@ local function build_descriptors()
                 'duplicate SoulSearch creature ID: ' .. creature_id)
             seen_ids[creature_id] = true
             table.insert(individual, {
-                id='race:raw:' .. creature_id,
-                kind='race',
-                behavior='candidate',
+                id=RACE.raw_id_prefix .. creature_id,
+                kind=filter_constants.kind.RACE,
+                behavior=filter_constants.behavior.CANDIDATE,
                 key=creature_id,
                 label=get_label(raw),
             })
@@ -205,13 +209,15 @@ end
 ---@param unit df.unit|nil
 ---@return boolean
 function matches_unit(descriptor, unit)
-    if not descriptor or descriptor.kind ~= 'race' then return false end
+    if not descriptor or descriptor.kind ~= filter_constants.kind.RACE then
+        return false
+    end
     local raw, caste = get_unit_raws(unit)
     if not raw then return false end
-    if descriptor.id:sub(1, 9) == 'race:raw:' then
+    if descriptor.id:sub(1, #RACE.raw_id_prefix) == RACE.raw_id_prefix then
         return descriptor.key == get_creature_id(raw)
     end
-    if descriptor.id:sub(1, 11) == 'race:group:' then
+    if descriptor.id:sub(1, #RACE.group_id_prefix) == RACE.group_id_prefix then
         -- Compound tags are caste-level. A missing caste must never create an
         -- accidental match from similarly named creature-level flags.
         return caste ~= nil and matches_compound(raw, caste, descriptor.key)

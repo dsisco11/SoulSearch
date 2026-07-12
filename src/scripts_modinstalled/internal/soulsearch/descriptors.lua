@@ -23,6 +23,8 @@
 local df_enums = reqscript('internal/soulsearch/df_enums')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local race_catalog = reqscript('internal/soulsearch/race_catalog')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
 ---@alias SoulSearchFilterBehavior 'candidate'|'ranking'
 ---@alias SoulSearchFilterKind SoulSearchStatKind|'race'
@@ -93,7 +95,7 @@ local function make_descriptor(kind, key, label)
     return {
         id=kind .. ':' .. key,
         kind=kind,
-        behavior='ranking',
+        behavior=filter_constants.behavior.RANKING,
         key=key,
         label=label,
     }

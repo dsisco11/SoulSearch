@@ -2,9 +2,11 @@
 
 local layout = reqscript('internal/soulsearch/ui_layout')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local FILTER_HIGH = 'high'
-local FILTER_LOW = 'low'
+local FILTER_HIGH = filter_constants.direction.HIGH
+local FILTER_LOW = filter_constants.direction.LOW
 local MATCHED_FILTER_LABEL_WIDTH = 24
 local MATCHED_FILTER_VALUE_WIDTH = 6
 

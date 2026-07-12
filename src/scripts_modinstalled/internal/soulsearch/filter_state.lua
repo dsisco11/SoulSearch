@@ -4,12 +4,14 @@
 local FilterState = {}
 
 local descriptors = reqscript('internal/soulsearch/descriptors')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local FILTER_HIGH = 'high'
-local FILTER_LOW = 'low'
-local FILTER_BEHAVIOR_CANDIDATE = 'candidate'
-local FILTER_BEHAVIOR_RANKING = 'ranking'
-local DEFAULT_RACE_FILTER_ID = 'race:group:HUMANOIDS'
+local FILTER_HIGH = filter_constants.direction.HIGH
+local FILTER_LOW = filter_constants.direction.LOW
+local FILTER_BEHAVIOR_CANDIDATE = filter_constants.behavior.CANDIDATE
+local FILTER_BEHAVIOR_RANKING = filter_constants.behavior.RANKING
+local DEFAULT_RACE_FILTER_ID = filter_constants.default_race_filter_id
 
 ---@type table<SoulSearchFilterState, SoulSearchSelectedFilter[]>
 local filters_by_state = setmetatable({}, {__mode='k'})

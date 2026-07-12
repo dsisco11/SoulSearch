@@ -7,15 +7,18 @@
 
 local candidate_provider =
     reqscript('internal/soulsearch/candidate_provider')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
+local UNIT_SCOPE = filter_constants.unit_scope
 
-local DEFAULT_SCOPE = 'citizens_and_pets'
+local DEFAULT_SCOPE = filter_constants.default_unit_scope
 
 local PREDICATE_BY_SCOPE = {
-    all_active=function() return true end,
-    fort_residents=function(unit)
+    [UNIT_SCOPE.ALL_ACTIVE]=function() return true end,
+    [UNIT_SCOPE.FORT_RESIDENTS]=function(unit)
         return dfhack.units.isResident(unit, true)
     end,
-    citizens_and_pets=function(unit)
+    [UNIT_SCOPE.CITIZENS_AND_PETS]=function(unit)
         return dfhack.units.isFortControlled(unit)
     end,
 }

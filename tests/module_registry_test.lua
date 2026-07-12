@@ -8,16 +8,22 @@ return function(test, repo_root)
         local loaded = registry.load_all(function(name)
             table.insert(calls, name)
             for _, spec in ipairs(registry.MODULES) do
-                if spec.name == name then return {[spec.contract]=function() end} end
+                if spec.name == name then
+                    local value = spec.contract_type == 'table' and {} or
+                        function() end
+                    return {[spec.contract]=value}
+                end
             end
         end)
         test.assert_equal(#registry.MODULES, #calls)
         test.assert_equal('internal/soulsearch/df_enums', calls[1])
         test.assert_equal('internal/soulsearch/ui', calls[#calls])
-        local race_catalog_index, descriptor_index
+        local constants_index, race_catalog_index, descriptor_index
         local candidate_index, scope_index, state_index, race_filter_index
         for index, name in ipairs(calls) do
-            if name == 'internal/soulsearch/race_catalog' then
+            if name == 'internal/soulsearch/filter_constants' then
+                constants_index = index
+            elseif name == 'internal/soulsearch/race_catalog' then
                 race_catalog_index = index
             elseif name == 'internal/soulsearch/descriptors' then
                 descriptor_index = index
@@ -31,6 +37,7 @@ return function(test, repo_root)
                 race_filter_index = index
             end
         end
+        test.assert_true(constants_index < race_catalog_index)
         test.assert_true(race_catalog_index < descriptor_index)
         test.assert_true(candidate_index < scope_index)
         test.assert_true(scope_index < state_index)
@@ -44,6 +51,9 @@ return function(test, repo_root)
             loaded['internal/soulsearch/unit_scope_provider'].new ~= nil)
         test.assert_true(
             loaded['internal/soulsearch/race_filter_provider'].new ~= nil)
+        test.assert_true(type(
+            loaded['internal/soulsearch/filter_constants'].FILTER_CONSTANTS) ==
+            'table')
     end)
 
     test.case('module registry: missing contracts fail clearly', function()

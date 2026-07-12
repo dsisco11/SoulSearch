@@ -3,6 +3,7 @@
 ---@class SoulSearchModuleSpec
 ---@field name string
 ---@field contract string
+---@field contract_type string|nil
 
 ---Dependencies precede consumers so an explicit environment clear/reload
 ---cannot leave local reqscript references pointing at mixed generations.
@@ -14,6 +15,11 @@ MODULES = {
     {name='internal/soulsearch/attribute_descriptions', contract='get_tooltip'},
     {name='internal/soulsearch/ui_glyphs', contract='get_glyph'},
     {name='internal/soulsearch/ui_layout', contract='get_frame'},
+    {
+        name='internal/soulsearch/filter_constants',
+        contract='FILTER_CONSTANTS',
+        contract_type='table',
+    },
     {name='internal/soulsearch/attributes', contract='evaluate'},
     {name='internal/soulsearch/race_catalog', contract='get_descriptors'},
     {name='internal/soulsearch/descriptors', contract='get_catalog'},
@@ -42,9 +48,11 @@ function load_all(loader)
     local loaded = {}
     for _, spec in ipairs(MODULES) do
         local module = loader(spec.name)
-        assert(type(module[spec.contract]) == 'function',
-            ('SoulSearch module %s is missing %s()'):format(
-                spec.name, spec.contract))
+        local expected_type = spec.contract_type or 'function'
+        local suffix = expected_type == 'function' and '()' or ''
+        assert(type(module[spec.contract]) == expected_type,
+            ('SoulSearch module %s is missing %s%s'):format(
+                spec.name, spec.contract, suffix))
         loaded[spec.name] = module
     end
     return loaded

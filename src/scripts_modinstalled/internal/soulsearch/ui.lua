@@ -21,14 +21,16 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 local attribute_descriptions = reqscript('internal/soulsearch/attribute_descriptions')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
 local view
 local saved_stats_sort_key
 local saved_stats_sort_reverse = false
 local saved_stats_sort_phase = 0
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
-local FILTER_HIGH = 'high'
-local FILTER_LOW = 'low'
+local FILTER_HIGH = filter_constants.direction.HIGH
+local FILTER_LOW = filter_constants.direction.LOW
 local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}

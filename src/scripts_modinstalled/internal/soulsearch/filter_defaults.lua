@@ -1,5 +1,8 @@
 --@ module=true
 
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
+
 ---@class SoulSearchBuiltInFilterPreset
 ---@field id string
 ---@field label string
@@ -183,7 +186,10 @@ local function build_filters(marks)
     for _, priority in ipairs({'A', 'B', 'C'}) do
         for index, filter_id in ipairs(ATTRIBUTE_IDS) do
             if marks:sub(index, index) == priority then
-                table.insert(filters, {id=filter_id, direction='high'})
+        table.insert(filters, {
+            id=filter_id,
+            direction=filter_constants.direction.HIGH,
+        })
             end
         end
     end

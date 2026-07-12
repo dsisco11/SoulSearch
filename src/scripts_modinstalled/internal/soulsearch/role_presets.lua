@@ -8,6 +8,8 @@
 
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
 -- Skill key fallbacks cover the small naming differences between DF versions.
 -- Attributes are ordered by the Wiki's A, then B, then C priority columns.
@@ -115,14 +117,14 @@ local function build_filters(row, catalog)
     for _, keys in ipairs(row.skills) do
         local id, key = find_skill_id(catalog, keys)
         if id then
-            table.insert(filters, {id=id, direction='high'})
+        table.insert(filters, {id=id, direction=filter_constants.direction.HIGH})
             seen[id] = true
             table.insert(skill_keys, key)
         end
     end
     for _, id in ipairs(row.attributes) do
         if catalog.by_id[id] and not seen[id] then
-            table.insert(filters, {id=id, direction='high'})
+        table.insert(filters, {id=id, direction=filter_constants.direction.HIGH})
             seen[id] = true
         end
     end
