@@ -26,9 +26,10 @@ FILTER_CONSTANTS.unit_scope = {
     ALL_ACTIVE='all_active',
     FORT_RESIDENTS='fort_residents',
     CITIZENS_AND_PETS='citizens_and_pets',
+    VISITORS='visitors',
 }
 FILTER_CONSTANTS.default_unit_scope =
-    FILTER_CONSTANTS.unit_scope.CITIZENS_AND_PETS
+    FILTER_CONSTANTS.unit_scope.FORT_RESIDENTS
 
 FILTER_CONSTANTS.race = {
     group_id_prefix='race:group:',

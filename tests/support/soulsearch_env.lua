@@ -394,6 +394,7 @@ function M.load_ui_components(repo_root)
     local widgets = {
         Label=constructor('Label'),
         HotkeyLabel=constructor('HotkeyLabel'),
+        CycleHotkeyLabel=constructor('CycleHotkeyLabel'),
         EditField=constructor('EditField'),
         List=constructor('List'),
         Window=constructor('Window'),

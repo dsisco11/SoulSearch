@@ -6,6 +6,7 @@ local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 CONTROL_TOOLTIPS = {
+    {id='unit_scope', text='Choose which units are searched.'},
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
     {id='add_race_button', text='Add a race to the candidate scope.'},
@@ -28,6 +29,9 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field is_attribute_picker_open fun(): boolean
 ---@field is_skill_picker_open fun(): boolean
 ---@field is_race_picker_open fun(): boolean
+---@field unit_scope SoulSearchUnitScope
+---@field unit_scope_options {label: string, value: SoulSearchUnitScope}[]
+---@field on_unit_scope_change fun(scope: SoulSearchUnitScope)
 ---@field on_toggle_attribute_picker fun()
 ---@field on_toggle_skill_picker fun()
 ---@field on_toggle_race_picker fun()
@@ -59,6 +63,15 @@ function create_filter_panel(inputs)
             frame=ui_layout.get_frame('filter_underline'),
             text=ui_format.get_title_underline('Search filters'),
             text_pen=COLOR_GREY,
+        },
+        widgets.CycleHotkeyLabel{
+            view_id='unit_scope',
+            frame=ui_layout.get_frame('unit_scope'),
+            key='CUSTOM_V',
+            label='Search',
+            options=inputs.unit_scope_options,
+            initial_option=inputs.unit_scope,
+            on_change=inputs.on_unit_scope_change,
         },
         widgets.HotkeyLabel{
             view_id='add_filter_button',

@@ -6,6 +6,7 @@ return function(test, repo_root)
 
     test.case('UI components: control tooltips explain non-obvious actions', function()
         test.assert_sequence({
+            'Choose which units are searched.',
             'Add an attribute or trait to the ranking criteria.',
             'Add a skill to the ranking criteria.',
             'Add a race to the candidate scope.',
@@ -35,6 +36,9 @@ return function(test, repo_root)
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return false end,
+            unit_scope='fort_residents',
+            unit_scope_options={{label='Residents', value='fort_residents'}},
+            on_unit_scope_change=noop,
             on_toggle_attribute_picker=noop,
             on_toggle_skill_picker=noop,
             on_toggle_race_picker=noop,
@@ -53,23 +57,25 @@ return function(test, repo_root)
             on_race_query=noop,
             on_add=noop,
         }
-        test.assert_equal(12, #views)
-        test.assert_equal('add_filter_button', views[3].view_id)
-        test.assert_equal('add_skill_button', views[4].view_id)
-        test.assert_equal('add_race_button', views[5].view_id)
-        test.assert_equal('clear_filters_button', views[6].view_id)
-        test.assert_equal('preset_button', views[7].view_id)
-        test.assert_equal('filter_list', views[8].view_id)
-        test.assert_equal('available_filter_window', views[9].view_id)
-        test.assert_equal('close_filter_picker_button', views[9].subviews[1].view_id)
-        test.assert_equal('attribute_search_field', views[9].subviews[2].view_id)
-        test.assert_equal('available_filter_list', views[9].subviews[3].view_id)
-        test.assert_equal('available_race_window', views[10].view_id)
-        test.assert_equal('close_race_picker_button', views[10].subviews[1].view_id)
-        test.assert_equal('race_search_field', views[10].subviews[2].view_id)
-        test.assert_equal('available_race_list', views[10].subviews[3].view_id)
-        test.assert_equal('available_skill_window', views[11].view_id)
-        test.assert_equal('preset_picker_window', views[12].view_id)
+        test.assert_equal(13, #views)
+        test.assert_equal('unit_scope', views[3].view_id)
+        test.assert_equal('CycleHotkeyLabel', views[3].widget_kind)
+        test.assert_equal('add_filter_button', views[4].view_id)
+        test.assert_equal('add_skill_button', views[5].view_id)
+        test.assert_equal('add_race_button', views[6].view_id)
+        test.assert_equal('clear_filters_button', views[7].view_id)
+        test.assert_equal('preset_button', views[8].view_id)
+        test.assert_equal('filter_list', views[9].view_id)
+        test.assert_equal('available_filter_window', views[10].view_id)
+        test.assert_equal('close_filter_picker_button', views[10].subviews[1].view_id)
+        test.assert_equal('attribute_search_field', views[10].subviews[2].view_id)
+        test.assert_equal('available_filter_list', views[10].subviews[3].view_id)
+        test.assert_equal('available_race_window', views[11].view_id)
+        test.assert_equal('close_race_picker_button', views[11].subviews[1].view_id)
+        test.assert_equal('race_search_field', views[11].subviews[2].view_id)
+        test.assert_equal('available_race_list', views[11].subviews[3].view_id)
+        test.assert_equal('available_skill_window', views[12].view_id)
+        test.assert_equal('preset_picker_window', views[13].view_id)
     end)
 
     test.case('UI components: race picker hides the active filter list', function()
@@ -77,6 +83,9 @@ return function(test, repo_root)
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return true end,
+            unit_scope='fort_residents',
+            unit_scope_options={{label='Residents', value='fort_residents'}},
+            on_unit_scope_change=noop,
             on_toggle_attribute_picker=noop,
             on_toggle_skill_picker=noop,
             on_toggle_race_picker=noop,
@@ -95,11 +104,11 @@ return function(test, repo_root)
             on_race_query=noop,
             on_add=noop,
         }
-        test.assert_false(views[8].visible())
-        test.assert_true(views[10].visible())
         test.assert_false(views[9].visible())
-        test.assert_false(views[11].visible())
+        test.assert_true(views[11].visible())
+        test.assert_false(views[10].visible())
         test.assert_false(views[12].visible())
+        test.assert_false(views[13].visible())
     end)
 
     test.case('UI components: results and stats expose explicit panel views', function()

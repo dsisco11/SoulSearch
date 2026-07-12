@@ -256,6 +256,7 @@ function SoulSearchWindow:init()
     self.add_race_open = false
     self.preset_picker_open = false
     self.preset_query = ''
+    self.unit_scope = unit_scope_provider.get_default_scope()
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
     self.filter_catalog = filter_catalog
@@ -278,6 +279,9 @@ function SoulSearchWindow:init()
         is_attribute_picker_open=function() return self.add_filter_open end,
         is_skill_picker_open=function() return self.add_skill_open end,
         is_race_picker_open=function() return self.add_race_open end,
+        unit_scope=self.unit_scope,
+        unit_scope_options=unit_scope_provider.get_options(),
+        on_unit_scope_change=function(scope) self:set_unit_scope(scope) end,
         is_preset_picker_open=function() return self.preset_picker_open end,
         on_toggle_attribute_picker=function() self:toggle_add_filter_dropdown() end,
         on_toggle_skill_picker=function() self:toggle_add_skill_dropdown() end,
@@ -1029,7 +1033,7 @@ end
 
 ---Rebuilds rows from the active unit scope and race candidate filters.
 function SoulSearchWindow:refresh_candidates()
-    local scope_provider = unit_scope_provider.new()
+    local scope_provider = unit_scope_provider.new(self.unit_scope)
     local provider = race_filter_provider.new(
         scope_provider,
         filter_state.get_candidate_filters(self.filter_state))
@@ -1040,6 +1044,16 @@ function SoulSearchWindow:refresh_candidates()
     else
         self.rows = rows
     end
+end
+
+---@param scope SoulSearchUnitScope
+---@return boolean changed
+function SoulSearchWindow:set_unit_scope(scope)
+    if scope == self.unit_scope then return false end
+    unit_scope_provider.new(scope)
+    self.unit_scope = scope
+    self:refresh_views{candidates=true, results=true}
+    return true
 end
 
 ---@param selected integer|nil

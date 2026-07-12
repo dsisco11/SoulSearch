@@ -3,7 +3,7 @@
 -- Scope providers are evaluated fresh for each request and have no
 -- world-derived cache, so lifecycle.lua has no reset hook to invoke here.
 
----@alias SoulSearchUnitScope 'all_active'|'fort_residents'|'citizens_and_pets'
+---@alias SoulSearchUnitScope 'all_active'|'fort_residents'|'citizens_and_pets'|'visitors'
 
 local candidate_provider =
     reqscript('internal/soulsearch/candidate_provider')
@@ -13,6 +13,20 @@ local UNIT_SCOPE = filter_constants.unit_scope
 
 local DEFAULT_SCOPE = filter_constants.default_unit_scope
 
+local SCOPE_OPTIONS = {
+    {label='Residents', value=UNIT_SCOPE.FORT_RESIDENTS},
+    {label='Visitors', value=UNIT_SCOPE.VISITORS},
+    {label='All units', value=UNIT_SCOPE.ALL_ACTIVE},
+}
+
+---@param unit df.unit
+---@return boolean
+local function is_visitor(unit)
+    return dfhack.units.isVisitor(unit) or
+        dfhack.units.isMerchant(unit) or
+        dfhack.units.isDiplomat(unit)
+end
+
 local PREDICATE_BY_SCOPE = {
     [UNIT_SCOPE.ALL_ACTIVE]=function() return true end,
     [UNIT_SCOPE.FORT_RESIDENTS]=function(unit)
@@ -21,6 +35,7 @@ local PREDICATE_BY_SCOPE = {
     [UNIT_SCOPE.CITIZENS_AND_PETS]=function(unit)
         return dfhack.units.isFortControlled(unit)
     end,
+    [UNIT_SCOPE.VISITORS]=is_visitor,
 }
 
 ---@return string|nil
@@ -69,4 +84,13 @@ end
 ---@return SoulSearchUnitScope
 function get_default_scope()
     return DEFAULT_SCOPE
+end
+
+---@return {label: string, value: SoulSearchUnitScope}[]
+function get_options()
+    local options = {}
+    for _, option in ipairs(SCOPE_OPTIONS) do
+        table.insert(options, {label=option.label, value=option.value})
+    end
+    return options
 end

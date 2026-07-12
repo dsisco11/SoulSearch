@@ -132,14 +132,16 @@ command. Use `gui/keybinds` to change or remove it, then save from that screen
 to persist your choice across DFHack restarts.
 
 The command opens the SoulSearch panel in fortress mode. By default, its
-candidate scope is **Humanoids**. Use **Add race filter** to include another
-race or creature type, or exclude a race from the included candidates. Race
-filters use `[+]` to Include and `[-]` to Exclude and do not participate in
-ranking order. Use the Search filters list to add traits, attributes, and
-skills such as `Agility`; set their high/low directions and priorities with the
-controls beside each selected filter.
-The search field filters resident names only. Press `z` or Enter on a selected
-result to center and highlight that resident on the fortress map.
+unit scope is **Residents** and its candidate race scope is **Humanoids**. Use
+the **Search** cycle control to switch between Residents, Visitors, and All
+units. Use **Add race filter** to include another race or creature type, or
+exclude a race from the included candidates. Race filters use `[+]` to Include
+and `[-]` to Exclude and do not participate in ranking order. Use the Search
+filters list to add traits, attributes, and skills such as `Agility`; set their
+high/low directions and priorities with the controls beside each selected
+filter.
+The search field filters result names only. Press `z` or Enter on a selected
+result to center and highlight that unit on the fortress map.
 
 Select **Filter presets** in the Search filters panel to open the preset menu.
 Choose **Save preset** and enter a name in the prompt to save the current race

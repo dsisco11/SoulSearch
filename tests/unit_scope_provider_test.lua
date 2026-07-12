@@ -27,6 +27,9 @@ local function make_environment(overrides)
             isFortControlled=function(unit)
                 return unit == citizen or unit == pet
             end,
+            isVisitor=function(unit) return unit == visitor end,
+            isMerchant=function() return false end,
+            isDiplomat=function() return false end,
         },
     }
     return {
@@ -64,15 +67,33 @@ return function(test, repo_root)
         end
     end)
 
-    test.case('unit scopes: default is fort-controlled citizens and pets', function()
+    test.case('unit scopes: default is fortress residents', function()
         local env = make_environment()
         local provider = soulsearch_env.load_unit_scope_provider(
             repo_root, env.df, env.dfhack).new()
-        test.assert_equal('citizens_and_pets',
+        test.assert_equal('fort_residents',
             soulsearch_env.load_unit_scope_provider(repo_root, env.df, env.dfhack)
                 .get_default_scope())
         local units = provider.get_units()
-        test.assert_sequence({1, 2}, unit_ids(units))
+        test.assert_sequence({1, 3}, unit_ids(units))
+    end)
+
+    test.case('unit scopes: visitors include regular visitors', function()
+        local env = make_environment()
+        local provider = soulsearch_env.load_unit_scope_provider(
+            repo_root, env.df, env.dfhack).new('visitors')
+        test.assert_sequence({4}, unit_ids(provider.get_units()))
+    end)
+
+    test.case('unit scopes: dropdown options are isolated and player-facing', function()
+        local env = make_environment()
+        local scopes = soulsearch_env.load_unit_scope_provider(
+            repo_root, env.df, env.dfhack)
+        local options = scopes.get_options()
+        test.assert_sequence({'Residents', 'Visitors', 'All units'},
+            {options[1].label, options[2].label, options[3].label})
+        options[1].label = 'Changed'
+        test.assert_equal('Residents', scopes.get_options()[1].label)
     end)
 
     test.case('unit scopes: unavailable contexts return no partial candidates', function()
