@@ -8,7 +8,7 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 CONTROL_TOOLTIPS = {
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
-    {id='preset_button', text='Save the current filters or load a saved preset.'},
+    {id='preset_button', text='Save the current filters or load a custom or skill preset.'},
     {id='save_preset_button', text='Save the current ordered filters under this preset name.'},
     {id='close_preset_picker_button', text='Close'},
     {id='close_filter_picker_button', text='Close'},

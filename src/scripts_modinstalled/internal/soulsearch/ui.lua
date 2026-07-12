@@ -474,23 +474,6 @@ end
 function SoulSearchWindow:refresh_preset_choices()
     local choices = {}
     local defaults = filter_defaults.get_all()
-    local has_defaults = false
-    for _, preset in ipairs(defaults) do
-        if text_match.contains(preset.label, self.preset_query) then
-            has_defaults = true
-            break
-        end
-    end
-    if has_defaults then table.insert(choices, {text='Built-in presets'}) end
-    for _, preset in ipairs(defaults) do
-        if text_match.contains(preset.label, self.preset_query) then
-            table.insert(choices, {
-                text='  ' .. preset.label,
-                default_id=preset.id,
-                search_key=preset.label,
-            })
-        end
-    end
     local saved = filter_presets.list()
     local has_saved = false
     for _, name in ipairs(saved) do
@@ -499,10 +482,28 @@ function SoulSearchWindow:refresh_preset_choices()
             break
         end
     end
-    if has_saved then table.insert(choices, {text='Saved presets'}) end
+    if has_saved then table.insert(choices, {text='Custom presets'}) end
     for _, name in ipairs(saved) do
         if text_match.contains(name, self.preset_query) then
             table.insert(choices, {text='  ' .. name, name=name, search_key=name})
+        end
+    end
+
+    local has_defaults = false
+    for _, preset in ipairs(defaults) do
+        if text_match.contains(preset.label, self.preset_query) then
+            has_defaults = true
+            break
+        end
+    end
+    if has_defaults then table.insert(choices, {text='Skill presets'}) end
+    for _, preset in ipairs(defaults) do
+        if text_match.contains(preset.label, self.preset_query) then
+            table.insert(choices, {
+                text='  ' .. preset.label,
+                default_id=preset.id,
+                search_key=preset.label,
+            })
         end
     end
     if #choices == 0 then table.insert(choices, {text='No matching presets.'}) end

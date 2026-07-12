@@ -1,9 +1,9 @@
-# Built-in filter presets
+# Skill presets
 
-The built-in skill presets are selectable configurations. They are not written as
-or loaded from user preset JSON files.
+Skill presets are selectable configurations. They are not written as or loaded
+from custom preset JSON files.
 
-SoulSearch includes one built-in preset for each of the table's 137 current
+SoulSearch includes one skill preset for each of the table's 137 current
 skill rows. There are no inferred occupation or role presets. Their filter
 order follows the table's primary `A` attributes first, followed by `B`, then
 `C`, which matches SoulSearch's priority-based ranking.
