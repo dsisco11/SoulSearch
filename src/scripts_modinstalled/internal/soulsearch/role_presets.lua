@@ -7,6 +7,7 @@
 ---@field filters SoulSearchSelectedFilter[]
 
 local descriptors = reqscript('internal/soulsearch/descriptors')
+local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 
 -- Skill key fallbacks cover the small naming differences between DF versions.
 -- Attributes are ordered by the Wiki's A, then B, then C priority columns.
@@ -43,13 +44,28 @@ local COMBAT_ROWS = {
     {id='hammerer', label='Hammerer', skills={{'HAMMER'}, {'DODGING'}}, attributes=COMBAT_ATTRIBUTES},
 }
 
+-- These IDs intentionally reuse the wiki-backed skill preset mappings rather
+-- than duplicating the associated mental/physical attribute data here.
+local SKILL_DEFAULTS = {
+    ORGANIZATION='organizer', RECORD_KEEPING='record_keeper',
+    APPRAISAL='appraiser', JUDGING_INTENT='judge_of_intent',
+    NEGOTIATION='negotiator', DIAGNOSE='diagnostician', DIAGNOSIS='diagnostician',
+    SURGERY='surgeon', SET_BONE='bone_doctor', BONE_SETTING='bone_doctor',
+    ANIMALTRAIN='animal_trainer', AXE='axeman', SWORD='swordsman',
+    DAGGER='knife_user', MACE='maceman', HAMMER='hammerman', SPEAR='spearman',
+    PIKE='pikeman', WHIP='lasher', WRESTLING='wrestler',
+    CROSSBOW='crossbowman', ARCHERY='archer', SNEAK='ambusher',
+    MELEE_COMBAT='fighter', DODGING='dodger', SHIELD='shield_user',
+    ARMOR='armor_user', DISCIPLINE='discipline',
+}
+
 ---@param catalog SoulSearchFilterCatalog
 ---@param keys string[]
----@return string|nil
+---@return string|nil, string|nil
 local function find_skill_id(catalog, keys)
     for _, key in ipairs(keys) do
         local id = 'skill:' .. key
-        if catalog.by_id[id] then return id end
+        if catalog.by_id[id] then return id, key end
     end
 end
 
@@ -58,12 +74,33 @@ end
 ---@return SoulSearchSelectedFilter[]
 local function build_filters(row, catalog)
     local filters = {}
+    local seen = {}
+    local skill_keys = {}
     for _, keys in ipairs(row.skills) do
-        local id = find_skill_id(catalog, keys)
-        if id then table.insert(filters, {id=id, direction='high'}) end
+        local id, key = find_skill_id(catalog, keys)
+        if id then
+            table.insert(filters, {id=id, direction='high'})
+            seen[id] = true
+            table.insert(skill_keys, key)
+        end
     end
     for _, id in ipairs(row.attributes) do
-        if catalog.by_id[id] then table.insert(filters, {id=id, direction='high'}) end
+        if catalog.by_id[id] and not seen[id] then
+            table.insert(filters, {id=id, direction='high'})
+            seen[id] = true
+        end
+    end
+    for _, skill_key in ipairs(skill_keys) do
+        local default_id = SKILL_DEFAULTS[skill_key]
+        local defaults = default_id and filter_defaults.get(default_id)
+        if defaults then
+            for _, filter in ipairs(defaults) do
+                if catalog.by_id[filter.id] and not seen[filter.id] then
+                    table.insert(filters, {id=filter.id, direction=filter.direction})
+                    seen[filter.id] = true
+                end
+            end
+        end
     end
     return filters
 end

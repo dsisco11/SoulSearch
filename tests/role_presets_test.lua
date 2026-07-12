@@ -12,6 +12,13 @@ local function first(count, values)
     return result
 end
 
+local function contains(values, expected)
+    for _, value in ipairs(values) do
+        if value == expected then return true end
+    end
+    return false
+end
+
 local function make_catalog(keys)
     local by_id = {}
     for _, key in ipairs(keys) do by_id['skill:' .. key] = {} end
@@ -50,12 +57,19 @@ return function(test, repo_root)
         test.assert_sequence({'skill:ORGANIZATION',
             'mental_attribute:ANALYTICAL_ABILITY',
             'mental_attribute:SOCIAL_AWARENESS',
-            'mental_attribute:CREATIVITY'}, ids(assert(role_presets.get('manager'))))
+            'mental_attribute:CREATIVITY'},
+            first(4, ids(assert(role_presets.get('manager')))))
         test.assert_sequence({'skill:CROSSBOW', 'skill:ARCHERY', 'skill:HAMMER',
             'skill:DODGING', 'skill:SHIELD', 'skill:ARMOR',
             'physical_attribute:AGILITY', 'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:KINESTHETIC_SENSE', 'mental_attribute:FOCUS'},
-            ids(assert(role_presets.get('marksdwarf'))))
+            first(10, ids(assert(role_presets.get('marksdwarf')))))
+    end)
+
+    test.case('role presets: merge each selected skill preset attributes', function()
+        local marksdwarf = ids(assert(role_presets.get('marksdwarf')))
+        test.assert_equal(true, contains(marksdwarf, 'physical_attribute:TOUGHNESS'))
+        test.assert_equal(true, contains(marksdwarf, 'physical_attribute:ENDURANCE'))
     end)
 
     test.case('role presets: separate complete combat presets and add dodging', function()

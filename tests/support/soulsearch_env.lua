@@ -177,11 +177,12 @@ end
 
 function M.load_role_presets(repo_root, descriptors_override)
     local descriptors = descriptors_override or M.load_descriptors(repo_root)
+    local filter_defaults = M.load_filter_defaults(repo_root)
     local globals = {
         reqscript=function(name)
-            assert(name == 'internal/soulsearch/descriptors',
-                'unexpected reqscript: ' .. tostring(name))
-            return descriptors
+            if name == 'internal/soulsearch/descriptors' then return descriptors end
+            if name == 'internal/soulsearch/filter_defaults' then return filter_defaults end
+            error('unexpected reqscript: ' .. tostring(name))
         end,
     }
     return module_loader.load(
