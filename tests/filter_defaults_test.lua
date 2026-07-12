@@ -9,13 +9,17 @@ end
 return function(test, repo_root)
     local defaults = soulsearch_env.load_filter_defaults(repo_root)
 
-    test.case('built-in presets: expose the documented job defaults', function()
+    test.case('built-in presets: expose every wiki skill-table row', function()
         local labels = {}
         for _, preset in ipairs(defaults.get_all()) do
             table.insert(labels, preset.label)
         end
-        test.assert_sequence(
-            {'Miner', 'Marksdwarf', 'Scholar', 'Sheriff', 'Manager'}, labels)
+        test.assert_equal(137, #labels)
+        test.assert_equal('Miner', labels[1])
+        test.assert_equal('Stone carver', labels[#labels])
+        test.assert_nil(defaults.get('scholar'))
+        test.assert_nil(defaults.get('sheriff'))
+        test.assert_nil(defaults.get('manager'))
     end)
 
     test.case('built-in presets: preserve wiki A, B, C priority order', function()
@@ -24,12 +28,12 @@ return function(test, repo_root)
             'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:KINESTHETIC_SENSE',
             'mental_attribute:FOCUS',
-        }, ids(assert(defaults.get('marksdwarf'))))
+        }, ids(assert(defaults.get('crossbowman'))))
         test.assert_sequence({
             'mental_attribute:ANALYTICAL_ABILITY',
+            'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:MEMORY',
-            'mental_attribute:INTUITION',
-        }, ids(assert(defaults.get('scholar'))))
+        }, ids(assert(defaults.get('mathematician'))))
     end)
 
     test.case('built-in presets: reads do not alias the catalog', function()

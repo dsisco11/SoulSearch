@@ -31,6 +31,7 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field is_preset_picker_open fun(): boolean
 ---@field on_toggle_preset_picker fun()
 ---@field on_close_preset_picker fun()
+---@field on_preset_query fun(text: string)
 ---@field on_save_preset fun()
 ---@field on_load_preset fun(name: string)
 ---@field on_load_default_preset fun(id: string)
@@ -171,6 +172,13 @@ function create_filter_panel(inputs)
                     key='CUSTOM_W',
                     label='Save preset',
                     on_activate=inputs.on_save_preset,
+                },
+                widgets.EditField{
+                    view_id='preset_search_field',
+                    frame=ui_layout.get_frame('preset_search'),
+                    label_text='Search: ',
+                    key='CUSTOM_F',
+                    on_change=inputs.on_preset_query,
                 },
                 widgets.List{
                     view_id='preset_list',

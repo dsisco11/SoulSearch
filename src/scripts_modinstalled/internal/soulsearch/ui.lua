@@ -244,6 +244,7 @@ function SoulSearchWindow:init()
     self.add_filter_open = false
     self.add_skill_open = false
     self.preset_picker_open = false
+    self.preset_query = ''
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
     self.filter_catalog = filter_catalog
@@ -270,6 +271,10 @@ function SoulSearchWindow:init()
         on_clear=function() self:clear_filters() end,
         on_toggle_preset_picker=function() self:toggle_preset_picker() end,
         on_close_preset_picker=function() self:close_preset_picker() end,
+        on_preset_query=function(text)
+            self.preset_query = text
+            self:refresh_views{presets=true}
+        end,
         on_save_preset=function() self:save_filter_preset() end,
         on_load_preset=function(name) self:load_filter_preset(name) end,
         on_load_default_preset=function(id) self:load_default_filter_preset(id) end,
@@ -468,18 +473,39 @@ end
 ---Refreshes the saved preset names displayed by the preset picker.
 function SoulSearchWindow:refresh_preset_choices()
     local choices = {}
-    table.insert(choices, {text='Built-in presets'})
-    for _, preset in ipairs(filter_defaults.get_all()) do
-        table.insert(choices, {
-            text='  ' .. preset.label,
-            default_id=preset.id,
-            search_key=preset.label,
-        })
+    local defaults = filter_defaults.get_all()
+    local has_defaults = false
+    for _, preset in ipairs(defaults) do
+        if text_match.contains(preset.label, self.preset_query) then
+            has_defaults = true
+            break
+        end
     end
-    table.insert(choices, {text='Saved presets'})
-    for _, name in ipairs(filter_presets.list()) do
-        table.insert(choices, {text='  ' .. name, name=name, search_key=name})
+    if has_defaults then table.insert(choices, {text='Built-in presets'}) end
+    for _, preset in ipairs(defaults) do
+        if text_match.contains(preset.label, self.preset_query) then
+            table.insert(choices, {
+                text='  ' .. preset.label,
+                default_id=preset.id,
+                search_key=preset.label,
+            })
+        end
     end
+    local saved = filter_presets.list()
+    local has_saved = false
+    for _, name in ipairs(saved) do
+        if text_match.contains(name, self.preset_query) then
+            has_saved = true
+            break
+        end
+    end
+    if has_saved then table.insert(choices, {text='Saved presets'}) end
+    for _, name in ipairs(saved) do
+        if text_match.contains(name, self.preset_query) then
+            table.insert(choices, {text='  ' .. name, name=name, search_key=name})
+        end
+    end
+    if #choices == 0 then table.insert(choices, {text='No matching presets.'}) end
     self.subviews.preset_list:setChoices(choices)
 end
 

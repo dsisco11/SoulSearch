@@ -38,6 +38,7 @@ return function(test, repo_root)
             is_preset_picker_open=function() return false end,
             on_toggle_preset_picker=noop,
             on_close_preset_picker=noop,
+            on_preset_query=noop,
             on_save_preset=noop,
             on_load_preset=noop,
             on_load_default_preset=noop,
