@@ -31,6 +31,7 @@ local saved_stats_sort_phase = 0
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
+local FILTER_KIND_RACE = filter_constants.kind.RACE
 local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
 local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
@@ -222,10 +223,12 @@ end
 ---@field suppress_result_select_refresh boolean
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
+---@field add_race_open boolean
 ---@field preset_picker_open boolean
 ---@field filter_catalog SoulSearchFilterCatalog
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field skill_filter_descriptors SoulSearchFilterDescriptor[]
+---@field race_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field filter_state SoulSearchFilterState
 SoulSearchWindow = defclass(SoulSearchWindow, widgets.Window)
 SoulSearchWindow.ATTRS {
@@ -242,12 +245,14 @@ function SoulSearchWindow:init()
     self.query = ''
     self.attribute_query = ''
     self.skill_query = ''
+    self.race_query = ''
     self.stats_sort_key = saved_stats_sort_key
     self.stats_sort_reverse = saved_stats_sort_reverse
     self.stats_sort_phase = saved_stats_sort_phase
     self.suppress_result_select_refresh = false
     self.add_filter_open = false
     self.add_skill_open = false
+    self.add_race_open = false
     self.preset_picker_open = false
     self.preset_query = ''
     local filter_catalog = descriptors.get_catalog()
@@ -258,6 +263,7 @@ function SoulSearchWindow:init()
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.mental_attributes)
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
+    self.race_filter_descriptors = filter_descriptor_groups.races or {}
     self.filter_state = filter_state.load()
 
     local views = {}
@@ -270,9 +276,11 @@ function SoulSearchWindow:init()
     append_views(views, ui_components.create_filter_panel{
         is_attribute_picker_open=function() return self.add_filter_open end,
         is_skill_picker_open=function() return self.add_skill_open end,
+        is_race_picker_open=function() return self.add_race_open end,
         is_preset_picker_open=function() return self.preset_picker_open end,
         on_toggle_attribute_picker=function() self:toggle_add_filter_dropdown() end,
         on_toggle_skill_picker=function() self:toggle_add_skill_dropdown() end,
+        on_toggle_race_picker=function() self:toggle_add_race_dropdown() end,
         on_clear=function() self:clear_filters() end,
         on_toggle_preset_picker=function() self:toggle_preset_picker() end,
         on_close_preset_picker=function() self:close_preset_picker() end,
@@ -291,6 +299,10 @@ function SoulSearchWindow:init()
         end,
         on_skill_query=function(text)
             self.skill_query = text
+            self:refresh_views{pickers=true}
+        end,
+        on_race_query=function(text)
+            self.race_query = text
             self:refresh_views{pickers=true}
         end,
         on_add=function(filter_id) self:add_filter(filter_id) end,
@@ -332,17 +344,30 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_filter_action_tooltip()
-    if self.add_filter_open or self.add_skill_open or self.preset_picker_open then
+    if self.add_filter_open or self.add_skill_open or self.add_race_open or
+            self.preset_picker_open then
         return nil
     end
 
     local filter_list = self.subviews.filter_list
-    if not filter_list or not filter_list:getIdxUnderMouse() then
+    local index = filter_list and filter_list:getIdxUnderMouse()
+    if not index then
         return nil
     end
 
     local x = filter_list:getMousePos()
     local action = ui_layout.get_filter_action_at_x(x)
+    local choice = self.active_filter_choices and self.active_filter_choices[index]
+    local descriptor = choice and choice.descriptor
+    if descriptor and descriptor.kind == FILTER_KIND_RACE and action then
+        if action.callback == 'set_high' then
+            return 'Include in the candidate scope.'
+        elseif action.callback == 'set_low' then
+            return 'Exclude from the candidate scope.'
+        elseif action.callback == 'move_up' or action.callback == 'move_down' then
+            return nil
+        end
+    end
     return action and action.tooltip or nil
 end
 
@@ -369,6 +394,9 @@ end
 local function get_descriptor_tooltip(list, choices)
     local index = list and list:getIdxUnderMouse()
     local descriptor = index and choices and choices[index] and choices[index].descriptor
+    if descriptor and descriptor.kind == FILTER_KIND_RACE then
+        return 'Candidate scope filter. Include adds matching units; Exclude removes them.'
+    end
     return descriptor and attribute_descriptions.get_tooltip(
         descriptor.kind, descriptor.key) or nil
 end
@@ -383,6 +411,11 @@ function SoulSearchWindow:get_filter_descriptor_tooltip()
     end
     if self.add_skill_open then
         return nil
+    end
+    if self.add_race_open then
+        return get_descriptor_tooltip(
+            self.subviews.available_race_list,
+            self.available_race_choices)
     end
     return get_descriptor_tooltip(
         self.subviews.filter_list,
@@ -455,20 +488,24 @@ end
 ---@param selected integer|nil
 function SoulSearchWindow:refresh_active_filter_choices(selected)
     local choices = {}
-    local priority_count = filter_state.count(self.filter_state)
+    local ranking_priorities = {}
+    local ranking_filters = filter_state.get_ranking_filters(self.filter_state)
+    for index, filter in ipairs(ranking_filters) do
+        ranking_priorities[filter.id] = index
+    end
     for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
         table.insert(choices, {
             text=ui_format.format_active_filter_choice(
                 descriptor,
                 filter_state.get_direction(self.filter_state, descriptor.id),
-                filter_state.get_priority(self.filter_state, descriptor.id),
-                priority_count),
+                ranking_priorities[descriptor.id],
+                #ranking_filters),
             descriptor=descriptor,
             search_key=descriptor.label,
         })
     end
     if #choices == 0 then
-        table.insert(choices, {text='Use Add attribute or Add skill.'})
+        table.insert(choices, {text='Use Add attribute, Add skill, or Add race.'})
     end
     self.subviews.filter_list:setChoices(choices, selected)
     self.active_filter_choices = choices
@@ -478,6 +515,7 @@ end
 function SoulSearchWindow:refresh_picker_choices()
     self:update_available_filter_choices()
     self:update_available_skill_choices()
+    self:update_available_race_choices()
 end
 
 ---Refreshes the saved preset names displayed by the preset picker.
@@ -750,6 +788,7 @@ function SoulSearchWindow:add_filter(filter_id)
     end
     self.add_filter_open = false
     self.add_skill_open = false
+    self.add_race_open = false
     self:on_filter_state_changed(self:get_filter_choice_index(filter_id))
     return true
 end
@@ -775,6 +814,7 @@ function SoulSearchWindow:clear_filters()
 
     self.add_filter_open = false
     self.add_skill_open = false
+    self.add_race_open = false
     self:on_filter_state_changed(1)
     return true
 end
@@ -854,6 +894,7 @@ function SoulSearchWindow:toggle_preset_picker()
     if self.preset_picker_open then
         self.add_filter_open = false
         self.add_skill_open = false
+        self.add_race_open = false
     end
     self:refresh_views{pickers=true, presets=true}
 end
@@ -877,6 +918,7 @@ function SoulSearchWindow:set_filter_direction(filter_id, direction)
     if not was_active then
         self.add_filter_open = false
         self.add_skill_open = false
+        self.add_race_open = false
     end
     local selected = self:get_filter_choice_index(filter_id)
     self:on_filter_state_changed(selected)
@@ -888,6 +930,7 @@ function SoulSearchWindow:toggle_add_filter_dropdown()
     self.add_filter_open = not self.add_filter_open
     if self.add_filter_open then
         self.add_skill_open = false
+        self.add_race_open = false
         self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
@@ -898,6 +941,18 @@ function SoulSearchWindow:toggle_add_skill_dropdown()
     self.add_skill_open = not self.add_skill_open
     if self.add_skill_open then
         self.add_filter_open = false
+        self.add_race_open = false
+        self.preset_picker_open = false
+    end
+    self:refresh_views{pickers=true}
+end
+
+---Opens or closes the race candidate-scope picker.
+function SoulSearchWindow:toggle_add_race_dropdown()
+    self.add_race_open = not self.add_race_open
+    if self.add_race_open then
+        self.add_filter_open = false
+        self.add_skill_open = false
         self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
@@ -905,12 +960,14 @@ end
 
 ---@return boolean
 function SoulSearchWindow:close_add_filter_dropdown()
-    if not self.add_filter_open and not self.add_skill_open then
+    if not self.add_filter_open and not self.add_skill_open and
+            not self.add_race_open then
         return false
     end
 
     self.add_filter_open = false
     self.add_skill_open = false
+    self.add_race_open = false
     self:refresh_views{pickers=true}
     return true
 end
@@ -935,7 +992,8 @@ end
 
 ---@return boolean
 function SoulSearchWindow:handle_filter_action_click()
-    if self.add_filter_open or self.add_skill_open or self.preset_picker_open then
+    if self.add_filter_open or self.add_skill_open or self.add_race_open or
+            self.preset_picker_open then
         return false
     end
 
@@ -981,6 +1039,26 @@ function SoulSearchWindow:refresh_candidates()
     else
         self.rows = rows
     end
+end
+
+---@param selected integer|nil
+function SoulSearchWindow:update_available_race_choices(selected)
+    local choices = {}
+    for _, descriptor in ipairs(self.race_filter_descriptors) do
+        if not filter_state.contains(self.filter_state, descriptor.id) and
+                text_match.contains(descriptor.label, self.race_query) then
+            table.insert(choices, {
+                text=ui_format.format_available_filter_choice(descriptor),
+                descriptor=descriptor,
+                search_key=descriptor.label,
+            })
+        end
+    end
+    if #choices == 0 then
+        table.insert(choices, {text='No matching races.'})
+    end
+    self.subviews.available_race_list:setChoices(choices, selected)
+    self.available_race_choices = choices
 end
 
 ---Reloads candidate rows and then recomputes their ranking results.

@@ -340,6 +340,7 @@ local function make_presentation_globals()
         COLOR_RED='red',
         COLOR_LIGHTRED='lightred',
         COLOR_LIGHTBLUE='lightblue',
+        COLOR_LIGHTCYAN='lightcyan',
         COLOR_LIGHTMAGENTA='lightmagenta',
     }
 end

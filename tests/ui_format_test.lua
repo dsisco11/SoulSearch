@@ -56,6 +56,21 @@ return function(test, repo_root)
         test.assert_equal('yellow', skill[2].pen)
     end)
 
+    test.case('UI format: race rows use Include and Exclude without movement', function()
+        local tokens = format.format_active_filter_choice(
+            {label='Humanoids', kind='race'},
+            'low',
+            nil,
+            0)
+        test.assert_sequence(
+            {'Humanoids', (' '):rep(12), '[I]', '[E]', '   ', '   ', '[x]'},
+            token_texts(tokens))
+        test.assert_equal('lightcyan', tokens[1].pen)
+        test.assert_equal('lightred', tokens[4].pen)
+        test.assert_equal('darkgrey', tokens[5].pen)
+        test.assert_equal('darkgrey', tokens[6].pen)
+    end)
+
     test.case('UI format: stats header and values preserve glyphs and padding', function()
         local tokens = {}
         format.append_stats_column_header_tokens(tokens, 'value', true)

@@ -189,6 +189,27 @@ return function(test, repo_root)
         test.assert_equal('high', filters[3].direction)
     end)
 
+    test.case('filter state move: candidate filters never acquire ranking priority', function()
+        local state = filter_state.new{
+            {id='race:group:HUMANOIDS', direction='high'},
+            {id='skill:MINING', direction='high'},
+        }
+        local changed, priority = filter_state.move(
+            state, 'race:group:HUMANOIDS', 1)
+        test.assert_false(changed)
+        test.assert_equal(1, priority)
+        test.assert_sequence({
+            'race:group:HUMANOIDS',
+            'skill:MINING',
+        }, (function()
+            local result = {}
+            for _, filter in ipairs(filter_state.get_filters(state)) do
+                table.insert(result, filter.id)
+            end
+            return result
+        end)())
+    end)
+
     test.case('filter state behavior projections preserve ranking order and isolation', function()
         local state = filter_state.new{
             {id='trait:PATIENCE', direction='low'},

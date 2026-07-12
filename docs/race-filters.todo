@@ -91,19 +91,19 @@ Phase 5 - Move candidate acquisition ahead of snapshots and ranking
         ✔ Snapshot tests cover citizens, named pets, unnamed livestock, and units without souls. @done(26-07-12; 157 tests, 0 failures)
 
 Phase 6 - Add the Race filter UI
-    ☐ Add a dedicated Add race filter control and picker alongside the Attribute and Skill controls.
-    ☐ Add race picker state, query state, choices, refresh routing, close behavior, and mutual exclusion with every other picker.
-    ☐ Show compound choices first and individual race choices afterward; search both by display label.
-    ☐ Show a useful empty-search result when no race choice matches.
-    ☐ Present race directions as Include and Exclude while retaining high and low in serialized state for compatibility.
-    ☐ Reuse the existing direction-toggle and remove controls without changing their established hitboxes for ranking filters.
-    ☐ Visually distinguish race filters as their own category.
-    ☐ Do not offer ranking movement controls for race filters or count them as priority positions.
-    ☐ When the last positive race is removed, immediately display the restored Humanoids filter and refreshed humanoid results.
-    ☐ Update filter-panel help and tooltips to distinguish candidate scope from ranking criteria.
+    ✔ Add a dedicated Add race filter control and picker alongside the Attribute and Skill controls. @done(26-07-12)
+    ✔ Add race picker state, query state, choices, refresh routing, close behavior, and mutual exclusion with every other picker. @done(26-07-12)
+    ✔ Show compound choices first and individual race choices afterward; search both by display label. @done(26-07-12)
+    ✔ Show a useful empty-search result when no race choice matches. @done(26-07-12)
+    ✔ Present race directions as Include and Exclude while retaining high and low in serialized state for compatibility. @done(26-07-12)
+    ✔ Reuse the existing direction-toggle and remove controls without changing their established hitboxes for ranking filters. @done(26-07-12)
+    ✔ Visually distinguish race filters as their own category. @done(26-07-12)
+    ✔ Do not offer ranking movement controls for race filters or count them as priority positions. @done(26-07-12)
+    ✔ When the last positive race is removed, immediately display the restored Humanoids filter and refreshed humanoid results. @done(26-07-12)
+    ✔ Update filter-panel help and tooltips to distinguish candidate scope from ranking criteria. @done(26-07-12)
     Phase gate
-        ☐ UI component, layout, formatting, refresh, tooltip, keyboard, and mouse tests cover the Race picker and active race rows.
-        ☐ Attribute, Skill, and Preset picker behavior and existing filter-action hitboxes remain green.
+        ✔ UI component, layout, formatting, refresh, tooltip, keyboard, and mouse tests cover the Race picker and active race rows. @done(26-07-12; 162 tests, 0 failures)
+        ✔ Attribute, Skill, and Preset picker behavior and existing filter-action hitboxes remain green. @done(26-07-12; 162 tests, 0 failures)
 
 Phase 7 - Presets, documentation, and compatibility
     ☐ Save candidate and ranking filters through the existing JSON preset format without changing the public entry shape.

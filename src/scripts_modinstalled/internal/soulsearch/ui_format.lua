@@ -55,6 +55,9 @@ end
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
 ---@return dfhack.color|dfhack.pen
 function get_category_pen(descriptor)
+    if descriptor.kind == filter_constants.kind.RACE then
+        return COLOR_LIGHTCYAN
+    end
     if descriptor.kind == 'skill' then return COLOR_YELLOW end
     if descriptor.kind == 'physical_attribute' then return COLOR_LIGHTGREEN end
     if descriptor.kind == 'mental_attribute' then return COLOR_LIGHTBLUE end
@@ -116,6 +119,7 @@ end
 ---@return table[]
 function format_active_filter_choice(
         descriptor, mode, priority_index, priority_count)
+    local is_race = descriptor.kind == filter_constants.kind.RACE
     local state = {
         high_selected=mode == FILTER_HIGH,
         low_selected=mode == FILTER_LOW,
@@ -136,16 +140,27 @@ function format_active_filter_choice(
     }
     for _, action in ipairs(layout.FILTER_ACTIONS) do
         local pen = COLOR_DARKGREY
+        local label = action.label
+        if is_race then
+            if action.callback == 'set_high' then
+                label = '[I]'
+            elseif action.callback == 'set_low' then
+                label = '[E]'
+            elseif action.callback == 'move_up' or action.callback == 'move_down' then
+                label = '   '
+            end
+        end
         if action.pen_rule == 'high_selected' and state.high_selected then
             pen = COLOR_LIGHTGREEN
         elseif action.pen_rule == 'low_selected' and state.low_selected then
             pen = COLOR_LIGHTRED
-        elseif action.pen_rule == 'enabled' and state[action.enabled_rule] then
+        elseif not is_race and action.pen_rule == 'enabled' and
+                state[action.enabled_rule] then
             pen = COLOR_WHITE
         elseif action.pen_rule == 'remove' then
             pen = COLOR_LIGHTRED
         end
-        table.insert(tokens, {text=action.label, pen=pen})
+        table.insert(tokens, {text=label, pen=pen})
     end
     return tokens
 end

@@ -8,11 +8,13 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 CONTROL_TOOLTIPS = {
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
+    {id='add_race_button', text='Add a race to the candidate scope.'},
     {id='preset_button', text='Save the current filters or load a custom, role, or skill preset.'},
     {id='save_preset_button', text='Save the current ordered filters under this preset name.'},
     {id='close_preset_picker_button', text='Close'},
     {id='close_filter_picker_button', text='Close'},
     {id='close_skill_picker_button', text='Close'},
+    {id='close_race_picker_button', text='Close'},
 }
 
 STATS_HEADER_TOOLTIPS = {
@@ -25,8 +27,10 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@class SoulSearchFilterPanelInputs
 ---@field is_attribute_picker_open fun(): boolean
 ---@field is_skill_picker_open fun(): boolean
+---@field is_race_picker_open fun(): boolean
 ---@field on_toggle_attribute_picker fun()
 ---@field on_toggle_skill_picker fun()
+---@field on_toggle_race_picker fun()
 ---@field on_clear fun()
 ---@field is_preset_picker_open fun(): boolean
 ---@field on_toggle_preset_picker fun()
@@ -39,6 +43,7 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field on_close_picker fun()
 ---@field on_attribute_query fun(text: string)
 ---@field on_skill_query fun(text: string)
+---@field on_race_query fun(text: string)
 ---@field on_add fun(filter_id: string)
 
 ---@param inputs SoulSearchFilterPanelInputs
@@ -70,6 +75,13 @@ function create_filter_panel(inputs)
             on_activate=inputs.on_toggle_skill_picker,
         },
         widgets.HotkeyLabel{
+            view_id='add_race_button',
+            frame=ui_layout.get_frame('add_race'),
+            key='CUSTOM_G',
+            label='Add race filter',
+            on_activate=inputs.on_toggle_race_picker,
+        },
+        widgets.HotkeyLabel{
             view_id='clear_filters_button',
             frame=ui_layout.get_frame('clear_filters'),
             key='CUSTOM_C',
@@ -89,6 +101,7 @@ function create_filter_panel(inputs)
             visible=function()
                 return not inputs.is_attribute_picker_open() and
                     not inputs.is_skill_picker_open() and
+                    not inputs.is_race_picker_open() and
                     not inputs.is_preset_picker_open()
             end,
         },
@@ -114,6 +127,37 @@ function create_filter_panel(inputs)
                 },
                 widgets.List{
                     view_id='available_filter_list',
+                    frame=ui_layout.get_frame('picker_list'),
+                    on_submit=function(index, choice)
+                        if choice and choice.descriptor then
+                            inputs.on_add(choice.descriptor.id)
+                        end
+                    end,
+                },
+            },
+        },
+        widgets.Window{
+            view_id='available_race_window',
+            frame=ui_layout.get_frame('picker'),
+            frame_title='Select race',
+            draggable=false,
+            visible=inputs.is_race_picker_open,
+            subviews={
+                widgets.HotkeyLabel{
+                    view_id='close_race_picker_button',
+                    frame=ui_layout.get_frame('picker_close'),
+                    label='[X]',
+                    on_activate=inputs.on_close_picker,
+                },
+                widgets.EditField{
+                    view_id='race_search_field',
+                    frame=ui_layout.get_frame('picker_search'),
+                    label_text='Search: ',
+                    key='CUSTOM_G',
+                    on_change=inputs.on_race_query,
+                },
+                widgets.List{
+                    view_id='available_race_list',
                     frame=ui_layout.get_frame('picker_list'),
                     on_submit=function(index, choice)
                         if choice and choice.descriptor then
