@@ -307,7 +307,8 @@ function create_filter_panel_button(on_activate)
     return widgets.HotkeyLabel{
         view_id='filters_button',
         frame=ui_layout.get_frame('filters_button'),
-        label='Edit filters',
+        label='[Edit filters]',
+        text_pen=COLOR_LIGHTCYAN,
         on_activate=on_activate,
     }
 end
