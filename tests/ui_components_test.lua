@@ -13,7 +13,7 @@ return function(test, repo_root)
         test.assert_sequence({
             'Edit the current filters.',
             'Close',
-            'Choose which units are searched.',
+            'Choose which units are included in the results.',
             'Add an attribute or trait to the ranking criteria.',
             'Add a skill to the ranking criteria.',
             'Add a race to the candidate scope.',
@@ -74,10 +74,11 @@ return function(test, repo_root)
         test.assert_equal('Window', views.widget_kind)
         test.assert_false(views.visible())
         local subviews = views.subviews
-        test.assert_equal(13, #subviews)
+        test.assert_equal(14, #subviews)
         test.assert_equal('close_filter_panel_button', subviews[1].view_id)
-        test.assert_equal('HotkeyLabel', by_id(subviews, 'unit_scope').widget_kind)
-        test.assert_equal('Search: Residents', by_id(subviews, 'unit_scope').label)
+        test.assert_equal('Label', by_id(subviews, 'unit_scope_label').widget_kind)
+        test.assert_equal('Include: Residents', by_id(subviews, 'unit_scope_label').text)
+        test.assert_equal('[Edit]', by_id(subviews, 'unit_scope_edit').label)
         test.assert_equal('add_filter_button', by_id(subviews, 'add_filter_button').view_id)
         test.assert_equal('available_filter_list',
             by_id(subviews, 'available_filter_window').subviews[3].view_id)

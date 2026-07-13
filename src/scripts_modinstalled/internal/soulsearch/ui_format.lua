@@ -76,7 +76,7 @@ end
 ---@param label string
 ---@return string
 function format_unit_scope_control(label)
-    return 'Search: ' .. label
+    return 'Include: ' .. label
 end
 
 ---@param label string

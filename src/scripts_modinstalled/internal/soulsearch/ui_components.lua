@@ -8,7 +8,7 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 CONTROL_TOOLTIPS = {
     {id='filters_button', text='Edit the current filters.'},
     {id='close_filter_panel_button', text='Close'},
-    {id='unit_scope', text='Choose which units are searched.'},
+    {id='unit_scope_edit', text='Choose which units are included in the results.'},
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
     {id='add_race_button', text='Add a race to the candidate scope.'},
@@ -79,12 +79,16 @@ function create_filter_panel(inputs)
             label='[X]',
             on_activate=inputs.on_close_filter_panel,
         },
-        widgets.HotkeyLabel{
-            view_id='unit_scope',
+        widgets.Label{
+            view_id='unit_scope_label',
             frame=ui_layout.get_frame('unit_scope'),
-            key='CUSTOM_V',
-            label=ui_format.format_unit_scope_control(
+            text=ui_format.format_unit_scope_control(
                 unit_scope_label),
+        },
+        widgets.HotkeyLabel{
+            view_id='unit_scope_edit',
+            frame=ui_layout.get_frame('unit_scope_edit'),
+            label='[Edit]',
             on_activate=inputs.on_toggle_unit_scope_picker,
         },
         widgets.HotkeyLabel{

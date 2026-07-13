@@ -1197,7 +1197,7 @@ function SoulSearchWindow:update_unit_scope_picker()
         })
     end
     self.subviews.unit_scope_picker_list:setChoices(choices, selected)
-    self.subviews.unit_scope:setText(ui_format.format_unit_scope_control(
+    self.subviews.unit_scope_label:setText(ui_format.format_unit_scope_control(
         selected_label))
 end
 

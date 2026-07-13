@@ -64,7 +64,7 @@
 ✔ Update "race filter" tooltip, remove last half of description. @done(26-07-12)
 ✔ Rename "Search filters" button to "Edit filters" to make it more clear what the button does. @done(26-07-12)
 ✔ Make Edit filters button look more like a button, and less like a text label. (e.g. add a border around it, or make it a different color, etc.). @done(26-07-12)
-☐ Update filters modal to replace unit scope control with a more clear control like: "Include: <selection> [Edit]". The "Edit" button would open the options dropdown menu. Also, move the included-units control down to right above the active filters list.
+✔ Update filters modal to replace unit scope control with a more clear control like: "Include: <selection> [Edit]". The "Edit" button would open the options dropdown menu. Also, move the included-units control down to right above the active filters list. @done(26-07-12)
 ☐ Add an "Active filters" counter to the main window, right beside the "Edit filters" button.
 ☐ Refactor code so that we can spawn multiple SoulSearch windows. this will allow the system to persist settings for "scoped" windows.
 ☐ Add soul-search "stats view" modal window popover to the base games "unit card" window, so that users can quickly see the stats of a unit without having to open the full SoulSearch window.
