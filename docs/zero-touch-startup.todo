@@ -32,6 +32,22 @@ this document. Every completed phase gate must have a dated entry identifying
 the commands, tests, package paths, or live DFHack observations that justify
 marking it complete.
 
+## Superseding correction - hotkey persistence (2026-07-13)
+
+Phase 1 incorrectly assumed that `dfhack.hotkey.addKeybind()` persists a
+binding across restarts. DFHack's `gui/keybinds` implementation shows that
+`addKeybind()` is session-only; persistence requires a user-managed init file.
+The old `default-keybinding.json` marker could therefore survive while the
+binding disappeared, causing a false opt-out. The marker adapter and all
+marker/opt-out behavior have been removed.
+
+The current policy is intentionally simpler: on every bootstrap attempt, add
+`Ctrl-F@dwarfmode/Default -> gui/soulsearch` only when no command is already
+bound to that exact hotkey. Do not replace an existing binding. A player whose
+`Ctrl-F` is occupied can configure SoulSearch manually through `gui/keybinds`.
+The historical Phase 1 and Phase 6 opt-out requirements below are superseded
+where they conflict with this correction.
+
 ## Target behavior
 
 - [ ] A clean packaged installation automatically makes the default

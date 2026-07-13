@@ -6,10 +6,11 @@
 soulsearch
 ===========
 
-Tags: fort | units | inspection
+Tags: fort | gameplay | units | inspection
 
-Automatically seed first-run setup after installation. Running the command
-manually performs full runtime setup without opening the UI.
+Automatically seed the default keybinding after installation when `Ctrl-F` is
+unclaimed. Running the command manually performs full runtime setup without
+opening the UI.
 
 Usage
 -----
@@ -20,8 +21,8 @@ Usage
     disable soulsearch
 
 Use `gui/soulsearch` to open the SoulSearch units search panel. Manual setup
-retries incomplete first-run setup, but does not recreate a binding that the
-player has intentionally removed.
+also attempts default-keybinding setup, but never replaces another command's
+`Ctrl-F` binding.
 ]====]
 
 local MODULE_REGISTRY_SCRIPT = 'internal/soulsearch/module_registry'

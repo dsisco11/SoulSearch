@@ -138,7 +138,7 @@ before reloading, so you do not need to close them manually; run
 
 | Command | Arguments | Purpose |
 | --- | --- | --- |
-| `soulsearch` | none | Explicitly initialize runtime state and retry an incomplete first-run keybinding decision without opening the UI. It does not recreate a binding the player intentionally removed. |
+| `soulsearch` | none | Explicitly initialize runtime state and seed the default `Ctrl-F` binding if that hotkey is unclaimed, without opening the UI. |
 | `soulsearch reload` | none | Dismiss SoulSearch screens and rebuild the runtime module generation. |
 | `gui/soulsearch` | none | Initialize if needed, then open a SoulSearch window. |
 | `enable soulsearch` | none | Enable automatic bootstrap for the current DFHack session and retry first-run setup. |
@@ -160,15 +160,10 @@ You can always open the window directly with:
 gui/soulsearch
 ```
 
-Automatic bootstrap seeds `Ctrl-F@dwarfmode/Default -> gui/soulsearch` once
-when no valid SoulSearch GUI binding exists. Existing custom bindings take
-precedence. Use `gui/keybinds` to change or remove bindings, then save from
-that screen to persist your choice across DFHack restarts. SoulSearch records
-that first-run decision
-in `dfhack-config/mods/soulsearch/default-keybinding.json`, so it does not
-recreate a binding you later remove. If that marker is reported as corrupt,
-close DFHack, remove only that file, and run `soulsearch` to make a new
-first-run decision.
+Automatic bootstrap adds `Ctrl-F@dwarfmode/Default -> gui/soulsearch` whenever
+that exact hotkey is unclaimed. It never replaces another command's `Ctrl-F`
+binding. If you want a different SoulSearch hotkey, configure it with
+`gui/keybinds`; an existing `Ctrl-F` assignment remains authoritative.
 
 `disable soulsearch` does not delete bindings, close existing SoulSearch
 windows, or block explicit `soulsearch` and `gui/soulsearch` commands. Its
