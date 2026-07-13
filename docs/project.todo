@@ -69,6 +69,7 @@
 ✔ Refactor code so that we can spawn multiple SoulSearch windows. this will allow the system to persist settings for "scoped" windows. @done(26-07-12 21:21)
 ☐ Make SoulSearch work immediately after installation without requiring a manual initialization command: automatically bootstrap the default Ctrl + F binding while preserving user customization and saved removal. Keep `gui/soulsearch` as the UI command and `soulsearch` as idempotent runtime setup/validation and reload. See `docs/zero-touch-startup.todo`.
 ☐ Add soul-search "stats view" modal window popover to the base games "unit card" window, so that users can quickly see the stats of a unit without having to open the full SoulSearch window.
+☐ Evaluate whether any of the projects ui elements/patterns can be replaced with built-in dfhack ui widgets which provide the same functionality.
 ☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)
 ☐ Make soul search window panels resizeable.
 ☐ Make soul search panels size to fit available window space, so that the user can resize the window and the panels will automatically resize to fit the new window size.
