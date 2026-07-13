@@ -65,6 +65,15 @@ function snapshot()
     return copy
 end
 
+---Visits the screens that were live when iteration began. Callbacks may remove
+---or add registry entries without changing which screens this pass visits.
+---@param callback fun(screen: table)
+function for_each_snapshot(callback)
+    assert(type(callback) == 'function',
+        'SoulSearch screen registry callback must be a function.')
+    for _, screen in ipairs(snapshot()) do callback(screen) end
+end
+
 ---@return table[]
 function get_frames()
     local frames = {}

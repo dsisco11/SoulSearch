@@ -41,13 +41,28 @@ return function(test, repo_root)
         local path = repo_root .. separator ..
             'src/scripts_modinstalled/soulsearch.lua'
         local registry_state = 'incomplete'
-        local clear_calls = {}
+        local events = {}
         local lifecycle = {}
-        function lifecycle.prepare_for_world() lifecycle.prepared = true end
+        function lifecycle.prepare_for_world()
+            lifecycle.prepared = true
+            table.insert(events, {'prepare'})
+        end
         local keybindings = {}
-        function keybindings.ensure_default() keybindings.ensured = true end
-        local ui = {}
-        function ui.open(...) ui.opened_with = {...} end
+        function keybindings.ensure_default()
+            keybindings.ensured = true
+            table.insert(events, {'keybindings'})
+        end
+        local old_ui = {dismiss_count=0}
+        function old_ui.dismiss_all()
+            old_ui.dismiss_count = old_ui.dismiss_count + 1
+            table.insert(events, {'dismiss_all'})
+        end
+        local new_ui = {open_count=0}
+        function new_ui.open(...)
+            new_ui.open_count = new_ui.open_count + 1
+            new_ui.opened_with = {...}
+            table.insert(events, {'open'})
+        end
         local registry = {
             MODULES={
                 {name='internal/soulsearch/lifecycle'},
@@ -64,7 +79,7 @@ return function(test, repo_root)
                 return {
                     ['internal/soulsearch/keybindings']=keybindings,
                     ['internal/soulsearch/lifecycle']=lifecycle,
-                    ['internal/soulsearch/ui']=ui,
+                    ['internal/soulsearch/ui']=new_ui,
                 }
             end,
         }
@@ -72,11 +87,11 @@ return function(test, repo_root)
             dfhack_flags={},
             dfhack={
                 run_command=function(command, ...)
-                    table.insert(clear_calls, {command, ...})
+                    table.insert(events, {command, ...})
                     registry_state = 'ready'
                 end,
                 run_script=function(name)
-                    table.insert(clear_calls, {'run_script', name})
+                    table.insert(events, {'run_script', name})
                     registry_state = 'ready'
                 end,
             },
@@ -84,6 +99,7 @@ return function(test, repo_root)
                 if name == 'internal/soulsearch/module_registry' then
                     return registry_state == 'ready' and registry or {}
                 end
+                if name == 'internal/soulsearch/ui' then return old_ui end
                 error('unexpected reqscript: ' .. tostring(name))
             end,
         }
@@ -94,26 +110,32 @@ return function(test, repo_root)
         test.assert_sequence({
             'devel/clear-script-env',
             'internal/soulsearch/module_registry',
-        }, clear_calls[1])
+        }, events[1])
         test.assert_sequence({
             'run_script',
             'internal/soulsearch/module_registry',
-        }, clear_calls[2])
+        }, events[2])
+        test.assert_sequence({'dismiss_all'}, events[3])
         test.assert_sequence({
             'devel/clear-script-env',
             'internal/soulsearch/ui',
             'internal/soulsearch/lifecycle',
-        }, clear_calls[3])
+        }, events[4])
         test.assert_sequence({
             'run_script',
             'internal/soulsearch/lifecycle',
-        }, clear_calls[4])
+        }, events[5])
         test.assert_sequence({
             'run_script',
             'internal/soulsearch/ui',
-        }, clear_calls[5])
+        }, events[6])
+        test.assert_sequence({'keybindings'}, events[7])
+        test.assert_sequence({'prepare'}, events[8])
+        test.assert_sequence({'open'}, events[9])
+        test.assert_equal(1, old_ui.dismiss_count)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)
-        test.assert_sequence({'reload'}, ui.opened_with)
+        test.assert_equal(1, new_ui.open_count)
+        test.assert_equal(0, #new_ui.opened_with)
     end)
 end

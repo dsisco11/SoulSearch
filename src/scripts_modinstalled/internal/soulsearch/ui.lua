@@ -1390,6 +1390,17 @@ function SoulSearchScreen:onDestroy()
     self:cleanup()
 end
 
+---Dismisses every screen owned by this loaded UI generation. Registry
+---iteration uses a snapshot because each dismissal removes its own screen.
+function dismiss_all()
+    screen_registry.for_each_snapshot(function(screen)
+        screen:dismiss()
+        -- Keep teardown idempotent even if a screen implementation does not
+        -- synchronously invoke its normal dismissal callback.
+        screen_registry.remove(screen)
+    end)
+end
+
 ---Opens a new SoulSearch screen.
 ---@param options table|nil
 ---@return SoulSearchScreen|nil
@@ -1400,8 +1411,6 @@ function open(options)
         return nil
     end
 
-    -- Keep the old command-layer `reload` argument harmless until Phase 4
-    -- consumes it before dispatching to this options-table API.
     options = type(options) == 'table' and options or nil
     local screen_width, screen_height = dfhack.screen.getWindowSize()
     local settings = window_config.resolve(options, screen_width, screen_height)

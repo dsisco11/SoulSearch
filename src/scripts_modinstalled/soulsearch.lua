@@ -49,6 +49,11 @@ end
 ---coordinator while its dependency/consumer modules are cleared and rebuilt.
 ---@return table<string, table>
 local function reload_modules()
+    local old_ui = reqscript('internal/soulsearch/ui')
+    assert(type(old_ui.dismiss_all) == 'function',
+        'SoulSearch UI module cannot safely dismiss windows for reload.')
+    old_ui.dismiss_all()
+
     local script_names = module_registry.get_script_names()
     -- The registry is the current command's coordinator. Clearing it here can
     -- leave reqscript() with a partially rebuilt environment before load_all()
@@ -67,10 +72,15 @@ end
 ---@param ... any
 function main(...)
     local args = {...}
-    local modules = args[1] == 'reload' and reload_modules() or validate_modules()
+    local is_reload = args[1] == 'reload'
+    local modules = is_reload and reload_modules() or validate_modules()
     modules['internal/soulsearch/keybindings'].ensure_default()
     modules['internal/soulsearch/lifecycle'].prepare_for_world()
-    modules['internal/soulsearch/ui'].open(table.unpack(args))
+    if is_reload then
+        modules['internal/soulsearch/ui'].open()
+    else
+        modules['internal/soulsearch/ui'].open(table.unpack(args))
+    end
 end
 
 if dfhack_flags.module then

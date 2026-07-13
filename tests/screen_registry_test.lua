@@ -41,6 +41,34 @@ return function(test, repo_root)
         test.assert_equal(0, registry.count())
     end)
 
+    test.case('screen registry: snapshot iteration tolerates registry mutation', function()
+        registry.clear()
+        local first = screen(1, 1, 20, 10)
+        local second = screen(2, 2, 20, 10)
+        local third = screen(3, 3, 20, 10)
+        local added_during_iteration = screen(4, 4, 20, 10)
+        registry.add(first)
+        registry.add(second)
+        registry.add(third)
+
+        local visited = {}
+        registry.for_each_snapshot(function(active)
+            table.insert(visited, active)
+            registry.remove(active)
+            if active == first then
+                registry.remove(third)
+                registry.add(added_during_iteration)
+            end
+        end)
+
+        test.assert_equal(3, #visited)
+        test.assert_true(visited[1] == first)
+        test.assert_true(visited[2] == second)
+        test.assert_true(visited[3] == third)
+        test.assert_equal(1, registry.count())
+        test.assert_true(registry.contains(added_during_iteration))
+    end)
+
     test.case('screen registry: overlapping frames cascade diagonally', function()
         registry.clear()
         local base = {l=10, t=10, w=60, h=30}

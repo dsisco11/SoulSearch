@@ -127,23 +127,23 @@ Phase gate:
 
 ## Phase 4 - Make reload and lifecycle handling multi-window safe
 
-☐ Add a registry operation that safely snapshots/iterates all live screens for
-  bulk dismissal or invalidation.
-☐ In `soulsearch.lua`, obtain the old loaded UI module and call
+✔ Add a registry operation that safely snapshots/iterates all live screens for
+  bulk dismissal or invalidation. @done(26-07-12)
+✔ In `soulsearch.lua`, obtain the old loaded UI module and call
   `old_ui.dismiss_all()` before `devel/clear-script-env` clears any consumer
-  modules, so no window retains callbacks into obsolete classes.
-☐ Consume the `reload` control argument in the command layer; after rebuilding,
-  call the new `ui.open()` with no literal `"reload"` argument.
-☐ Update `soulsearch_command_test.lua` to assert teardown occurs before the
-  clear command and that exactly one new default window opens afterward.
-☐ Ensure dismissal callbacks can modify the registry during bulk teardown
-  without skipping screens or raising iteration errors.
-☐ Decide lifecycle ownership explicitly: retain settings across ordinary
+  modules, so no window retains callbacks into obsolete classes. @done(26-07-12)
+✔ Consume the `reload` control argument in the command layer; after rebuilding,
+  call the new `ui.open()` with no literal `"reload"` argument. @done(26-07-12)
+✔ Update `soulsearch_command_test.lua` to assert teardown occurs before the
+  clear command and that exactly one new default window opens afterward. @done(26-07-12)
+✔ Ensure dismissal callbacks can modify the registry during bulk teardown
+  without skipping screens or raising iteration errors. @done(26-07-12)
+✔ Decide lifecycle ownership explicitly: retain settings across ordinary
   close/reopen and world changes while modules remain loaded; clear settings only
-  when the settings module is reloaded or its test-only `clear()` is invoked.
-☐ Preserve the existing cache reset behavior in `lifecycle.prepare_for_world()`.
-☐ Add command/registry tests for reload with zero, one, and multiple live
-  screens, including idempotent callbacks and dismissal during registry iteration.
+  when the settings module is reloaded or its test-only `clear()` is invoked. @done(26-07-12)
+✔ Preserve the existing cache reset behavior in `lifecycle.prepare_for_world()`. @done(26-07-12)
+✔ Add command/registry tests for reload with zero, one, and multiple live
+  screens, including idempotent callbacks and dismissal during registry iteration. @done(26-07-12)
 ☐ Verify reload leaves no stale registry entries or callable old-window
   callbacks.
 

@@ -505,7 +505,7 @@ end
 ---reached, proving the guard runs before any DFHack UI construction.
 ---@param repo_root string
 ---@param unavailable_reason string|nil
----@return table ui_environment
+---@return table ui_environment, table screen_registry
 function M.load_ui_open_guard(repo_root, unavailable_reason)
     local function class()
         local result = {}
@@ -528,11 +528,13 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
     local residents = {
         get_unavailable_reason=function() return unavailable_reason end,
     }
+    local screen_registry = M.load_screen_registry(repo_root)
     local empty_module = {}
     local modules = {
         ['internal/soulsearch/residents']=residents,
         ['internal/soulsearch/filter_constants']=filter_constants,
         ['internal/soulsearch/ui_layout']=layout,
+        ['internal/soulsearch/screen_registry']=screen_registry,
     }
     local widgets = {
         Window=class(),
@@ -568,7 +570,7 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
             error('SoulSearchScreen was constructed for an unavailable context')
         end,
     })
-    return environment
+    return environment, screen_registry
 end
 
 return M
