@@ -464,4 +464,75 @@ function M.load_module_registry(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/module_registry.lua')
 end
 
+---Loads ui.lua with only the interfaces needed to characterize open() rejecting
+---an unavailable context. The screen constructor deliberately fails if it is
+---reached, proving the guard runs before any DFHack UI construction.
+---@param repo_root string
+---@param unavailable_reason string|nil
+---@return table ui_environment
+function M.load_ui_open_guard(repo_root, unavailable_reason)
+    local function class()
+        local result = {}
+        function result.ATTRS() end
+        return result
+    end
+
+    local filter_constants = {
+        FILTER_CONSTANTS={
+            direction={HIGH='high', LOW='low'},
+            kind={RACE='race'},
+            race={group_id_prefix='race:group:'},
+        },
+    }
+    local layout = {
+        WINDOW_FRAME={w=150, h=45},
+        WINDOW_RESIZE_MIN={w=1, h=1},
+        copy_dimensions=function(frame) return frame end,
+    }
+    local residents = {
+        get_unavailable_reason=function() return unavailable_reason end,
+    }
+    local empty_module = {}
+    local modules = {
+        ['internal/soulsearch/residents']=residents,
+        ['internal/soulsearch/filter_constants']=filter_constants,
+        ['internal/soulsearch/ui_layout']=layout,
+    }
+    local widgets = {
+        Window=class(),
+    }
+    local globals = {
+        COLOR_DARKGREY='darkgrey',
+        COLOR_BLACK='black',
+        COLOR_WHITE='white',
+        DEFAULT_NIL=nil,
+        defclass=function() return class() end,
+        dfhack={
+            pen={parse=function(value) return value end},
+            screen={
+                getMousePos=function() return nil end,
+                getWindowSize=function() return 150, 45 end,
+            },
+        },
+        require=function(name)
+            if name == 'gui' then return {FRAME_THIN='thin'} end
+            if name == 'gui.dialogs' then return {} end
+            if name == 'gui.widgets' then return widgets end
+            error('unexpected require: ' .. tostring(name))
+        end,
+        reqscript=function(name)
+            return modules[name] or empty_module
+        end,
+    }
+    local environment = module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui.lua', globals)
+    environment.SoulSearchScreen = setmetatable({}, {
+        __call=function()
+            error('SoulSearchScreen was constructed for an unavailable context')
+        end,
+    })
+    return environment
+end
+
 return M

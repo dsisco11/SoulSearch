@@ -1,4 +1,41 @@
 return function(test, repo_root)
+    test.case('soulsearch command: normal invocation prepares and opens without arguments', function()
+        local separator = package.config:sub(1, 1)
+        local path = repo_root .. separator ..
+            'src/scripts_modinstalled/soulsearch.lua'
+        local lifecycle = {}
+        function lifecycle.prepare_for_world() lifecycle.prepared = true end
+        local keybindings = {}
+        function keybindings.ensure_default() keybindings.ensured = true end
+        local ui = {}
+        function ui.open(...) ui.opened_with = {...} end
+        local registry = {
+            load_all=function()
+                return {
+                    ['internal/soulsearch/keybindings']=keybindings,
+                    ['internal/soulsearch/lifecycle']=lifecycle,
+                    ['internal/soulsearch/ui']=ui,
+                }
+            end,
+            get_script_names=function() return {} end,
+        }
+        local environment = {
+            dfhack_flags={},
+            dfhack={},
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/module_registry')
+                return registry
+            end,
+        }
+        setmetatable(environment, {__index=_G})
+        local chunk = assert(loadfile(path, 't', environment))
+        chunk()
+
+        test.assert_true(lifecycle.prepared)
+        test.assert_true(keybindings.ensured)
+        test.assert_equal(0, #ui.opened_with)
+    end)
+
     test.case('soulsearch command: reload repairs an incomplete registry environment', function()
         local separator = package.config:sub(1, 1)
         local path = repo_root .. separator ..

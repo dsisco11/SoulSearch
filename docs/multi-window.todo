@@ -7,20 +7,21 @@ does not add settings files, scoped integrations, or base-game UI hooks.
 
 ## Phase 0 - Characterize the current singleton behavior
 
-☐ Add tests that capture the current `ui.open()` world/context validation.
-☐ Keep pure-Lua coverage focused on extracted settings, registry, command, and
+✔ Add tests that capture the current `ui.open()` world/context validation. @done(26-07-12)
+✔ Keep pure-Lua coverage focused on extracted settings, registry, command, and
   orchestration seams; reserve actual ZScreen rendering/focus behavior for live
-  DFHack validation unless a small injected screen factory is sufficient.
-☐ Record the settings that currently survive close/reopen: ordered filters,
+  DFHack validation unless a small injected screen factory is sufficient. @done(26-07-12)
+✔ Record the settings that currently survive close/reopen: ordered filters,
   result sort, stats sort, and window frame.
-☐ Record settings that currently reset: unit scope and all transient UI state.
-☐ Confirm the existing command and Ctrl+F paths both delegate to `ui.open()`.
-☐ Keep the existing filter validation invariant: every state has at least one
-  positive race candidate filter, defaulting to humanoids.
+  @done(26-07-12)
+✔ Record settings that currently reset: unit scope and all transient UI state. @done(26-07-12)
+✔ Confirm the existing command and Ctrl+F paths both delegate to `ui.open()`. @done(26-07-12)
+✔ Keep the existing filter validation invariant: every state has at least one
+  positive race candidate filter, defaulting to humanoids. @done(26-07-12)
 
 Phase gate:
-☐ Existing behavior is covered well enough to distinguish intentional changes
-  from regressions during the singleton removal.
+✔ Existing behavior is covered well enough to distinguish intentional changes
+  from regressions during the singleton removal. @done(26-07-12)
 
 ## Phase 1 - Introduce session settings identities
 
