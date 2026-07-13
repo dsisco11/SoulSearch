@@ -363,48 +363,52 @@ evidence above remains the implementation basis.
 
 ## Phase 3 - Harden command, reload, and missed-startup behavior
 
-- [ ] Add or expand command/startup tests proving:
-  - [ ] automatic module loading seeds first-run setup without opening UI;
-  - [ ] automatic bootstrap does not call full registry validation;
-  - [ ] repeated module loads do not duplicate setup;
-  - [ ] enable and disable flags do not reach ordinary argument parsing;
-  - [ ] `isEnabled()` follows module, enable, and disable transitions;
-  - [ ] module re-entry through `reqscript()`, GUI opening, or reload preserves
+- [x] Add or expand command/startup tests proving:
+  - [x] automatic module loading seeds first-run setup without opening UI;
+  - [x] automatic bootstrap does not call full registry validation;
+  - [x] repeated module loads do not duplicate setup;
+  - [x] enable and disable flags do not reach ordinary argument parsing;
+  - [x] `isEnabled()` follows module, enable, and disable transitions;
+  - [x] module re-entry through `reqscript()`, GUI opening, or reload preserves
         an explicit disabled state;
-  - [ ] explicit `soulsearch` remains usable while automatic bootstrap is
+  - [x] explicit `soulsearch` remains usable while automatic bootstrap is
         disabled;
-  - [ ] `gui/soulsearch` initializes and opens while automatic bootstrap is
+  - [x] `gui/soulsearch` initializes and opens while automatic bootstrap is
         disabled or was missed;
-  - [ ] missing hotkey/config APIs do not open UI or throw from automatic
+  - [x] missing hotkey/config APIs do not open UI or throw from automatic
         startup;
-  - [ ] an initial `unavailable` result remains retryable: after the API becomes
+  - [x] an initial `unavailable` result remains retryable: after the API becomes
         available, a later `soulsearch` or `gui/soulsearch` attempt completes
         the first-run decision exactly once without duplicating a binding;
-  - [ ] invalid ordinary arguments still report the exact usage contract; and
-  - [ ] no callback or reloadable module reference is duplicated or stale.
-- [ ] Narrow the existing test named “module API initializes only when
+  - [x] invalid ordinary arguments still report the exact usage contract; and
+  - [x] no callback or reloadable module reference is duplicated or stale.
+      @done(26-07-13: no callback is required or registered)
+- [x] Narrow the existing test named “module API initializes only when
       requested”: module loading may perform minimal bootstrap, but must not
-      perform full runtime/world/UI initialization.
-- [ ] Make `soulsearch reload` preserve the current automatic enabled/disabled
-      state unless explicitly documented otherwise.
-- [ ] Ensure reload reconstructs internal modules without clearing or executing
+      perform full runtime/world/UI initialization. @done(26-07-13)
+- [x] Make `soulsearch reload` preserve the current automatic enabled/disabled
+      state unless explicitly documented otherwise. @done(26-07-13)
+- [x] Ensure reload reconstructs internal modules without clearing or executing
       the active top-level `soulsearch.lua` environment as part of its own
-      internal registry sequence.
-- [ ] After reload, rerun only idempotent startup setup required to bind the
+      internal registry sequence. @done(26-07-13)
+- [x] After reload, rerun only idempotent startup setup required to bind the
       fresh generation. Do not recreate an opted-out binding or reopen UI.
-- [ ] If a state-change callback exists, prove reload leaves exactly one
+      @done(26-07-13)
+- [x] If a state-change callback exists, prove reload leaves exactly one
       callback and that its next invocation dynamically resolves the current
-      module generation.
-- [ ] Preserve `gui/soulsearch` as the hot-install and missed-scan fallback.
-- [ ] Document the developer recovery commands for scripts added after DFHack's
-      initial scan, based on Phase 0 evidence.
+      module generation. @done(26-07-13: no callback was introduced)
+- [x] Preserve `gui/soulsearch` as the hot-install and missed-scan fallback.
+      @done(26-07-13)
+- [x] Document the developer recovery commands for scripts added after DFHack's
+      initial scan, based on Phase 0 evidence. @done(26-07-13)
 
 ### Phase 3 gate
 
-- [ ] Startup, native enable/disable, manual setup, GUI opening, reload, and
+- [x] Startup, native enable/disable, manual setup, GUI opening, reload, and
       missed-scan recovery have independent tested contracts with no stale
-      runtime generation or UI side effect.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+      runtime generation or UI side effect. @done(26-07-13)
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+      @done(26-07-13: 33 Lua files, 217 tests)
 
 ## Phase 4 - Coordinate optional overlay integration
 
@@ -573,7 +577,7 @@ when closing this plan independently.
 | 0 | 2026-07-13 | DFHack 53.15-r1 docs/source audit; dev script path; `getModStatePath` and non-atomic JSON-write behavior; Build (32 files), Test (201 passing), diff check. Manual cold-start, flags, and persisted-hotkey checks cancelled by project decision. | Complete |
 | 1 | 2026-07-13 | Added versioned global marker adapter and structured keybinding outcomes; preserved customization/removal; added corruption, failure, retry, and idempotence tests. Build: 33 files. Test: 209 passing. | Complete |
 | 2 | 2026-07-13 | Added public enableable bootstrap; deferred full registry acquisition; preserved explicit initialization/reload; added automatic-load and enable/disable command tests. Build: 33 files. Test: 212 passing. | Complete |
-| 3 | | Startup/command/reload/missed-scan tests, enabled-state preservation, stale-generation proof, build/test/diff commands | Pending |
+| 3 | 2026-07-13 | Expanded startup, missed-scan, disabled-bootstrap, retry, invalid-argument, and reload tests; documented hot-install recovery. No state-change callback is needed. Build: 33 files. Test: 217 passing. | Complete |
 | 4 | | Optional independent overlay discovery/activation, Ctrl-F ownership, coordinated reload, or recorded N/A if the popover is not yet present | Pending |
 | 5 | | README/help/version, build/test/publish/package/diff commands, test counts and package paths | Pending |
 | 6 | | Dated isolated clean-install, binding customization/removal, enable/disable/reload, overlay independence, restored configuration | Pending |

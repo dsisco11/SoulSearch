@@ -65,6 +65,11 @@ For local development without repeatedly copying files, add this line to
 The leading `+` tells DFHack to search this development copy before other script
 directories.
 
+If you add an enableable SoulSearch script while DFHack is already running,
+its initial module scan has already happened. For development recovery, run
+`enable` with no arguments or `:lua require('script-manager').reload()` to
+rescan modules. A normal packaged installation does not require either command.
+
 ## Validation and publishing
 
 Run the syntax-only Lua build check with:

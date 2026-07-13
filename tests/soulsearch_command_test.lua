@@ -86,6 +86,50 @@ return function(test, repo_root)
         test.assert_equal(0, requested)
     end)
 
+    test.case('soulsearch module load: repeated scans leave setup idempotent', function()
+        local keybindings = {calls=0, added=0}
+        function keybindings.ensure_default()
+            keybindings.calls = keybindings.calls + 1
+            if keybindings.calls == 1 then
+                keybindings.added = keybindings.added + 1
+                return {status='added'}
+            end
+            return {status='existing'}
+        end
+        local environment = {
+            dfhack_flags={module=true},
+            dfhack={},
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/keybindings')
+                return keybindings
+            end,
+        }
+        load_script(command_path, environment)()
+        load_script(command_path, environment)()
+
+        test.assert_true(environment.isEnabled())
+        test.assert_equal(2, keybindings.calls)
+        test.assert_equal(1, keybindings.added)
+    end)
+
+    test.case('soulsearch module load: unavailable setup fails soft without loading the runtime', function()
+        local requested = 0
+        local environment = {
+            dfhack_flags={module=true},
+            dfhack={},
+            reqscript=function(name)
+                requested = requested + 1
+                assert(name == 'internal/soulsearch/keybindings')
+                return {ensure_default=function() return {status='unavailable'} end}
+            end,
+        }
+        local ok = pcall(load_script(command_path, environment))
+
+        test.assert_true(ok)
+        test.assert_true(environment.isEnabled())
+        test.assert_equal(1, requested)
+    end)
+
     test.case('soulsearch enable and disable flags only control bootstrap state', function()
         local keybindings = {calls=0}
         function keybindings.ensure_default()
@@ -140,6 +184,39 @@ return function(test, repo_root)
         test.assert_true(lifecycle.prepared)
     end)
 
+    test.case('soulsearch command: manual setup retries an unavailable bootstrap result', function()
+        local lifecycle = {}
+        function lifecycle.prepare_for_world() lifecycle.prepared = true end
+        local keybindings = {calls=0}
+        function keybindings.ensure_default()
+            keybindings.calls = keybindings.calls + 1
+            return {status=keybindings.calls == 1 and 'unavailable' or 'added'}
+        end
+        local registry = {
+            load_all=function()
+                return {
+                    ['internal/soulsearch/keybindings']=keybindings,
+                    ['internal/soulsearch/lifecycle']=lifecycle,
+                }
+            end,
+            get_script_names=function() return {} end,
+        }
+        local environment = {
+            dfhack_flags={module=true},
+            dfhack={},
+            reqscript=function(name)
+                if name == 'internal/soulsearch/keybindings' then return keybindings end
+                assert(name == 'internal/soulsearch/module_registry')
+                return registry
+            end,
+        }
+        load_script(command_path, environment)()
+        environment.initialize()
+
+        test.assert_equal(2, keybindings.calls)
+        test.assert_true(lifecycle.prepared)
+    end)
+
     test.case('gui/soulsearch: initializes then opens without arguments', function()
         local initialized = 0
         local ui = {open_count=0}
@@ -163,6 +240,42 @@ return function(test, repo_root)
         test.assert_equal(1, initialized)
         test.assert_equal(1, ui.open_count)
         test.assert_equal(0, #ui.opened_with)
+    end)
+
+    test.case('gui/soulsearch: remains a fallback while bootstrap is disabled or missed', function()
+        local initialized, opened = 0, 0
+        local chunk = load_script(gui_path, {
+            reqscript=function(name)
+                assert(name == 'soulsearch')
+                return {
+                    isEnabled=function() return false end,
+                    initialize=function()
+                        initialized = initialized + 1
+                        return {['internal/soulsearch/ui']={
+                            open=function() opened = opened + 1 end,
+                        }}
+                    end,
+                }
+            end,
+        })
+        chunk()
+
+        test.assert_equal(1, initialized)
+        test.assert_equal(1, opened)
+    end)
+
+    test.case('soulsearch command: invalid arguments preserve the usage contract', function()
+        local usage
+        local chunk = load_script(command_path, {
+            dfhack_flags={},
+            dfhack={},
+            qerror=function(message) usage = message; error(message) end,
+            reqscript=function() error('invalid arguments must not load modules') end,
+        })
+        local ok = pcall(chunk, 'invalid')
+
+        test.assert_false(ok)
+        test.assert_equal('Usage: soulsearch [reload]', usage)
     end)
 
     test.case('soulsearch command: reload repairs an incomplete registry environment without opening UI', function()
@@ -209,7 +322,8 @@ return function(test, repo_root)
                 }
             end,
         }
-        local chunk = load_script(command_path, {
+        local environment = {
+            bootstrap_enabled=false,
             dfhack_flags={},
             dfhack={
                 run_command=function(command, ...)
@@ -228,7 +342,8 @@ return function(test, repo_root)
                 if name == 'internal/soulsearch/ui' then return old_ui end
                 error('unexpected reqscript: ' .. tostring(name))
             end,
-        })
+        }
+        local chunk = load_script(command_path, environment)
         chunk('reload')
 
         test.assert_sequence({
@@ -259,5 +374,6 @@ return function(test, repo_root)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)
         test.assert_equal(0, new_ui.open_count)
+        test.assert_false(environment.isEnabled())
     end)
 end
