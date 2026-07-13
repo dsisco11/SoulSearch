@@ -308,6 +308,7 @@ function SoulSearchWindow:init()
     table.insert(views, ui_components.create_filter_panel_button(function()
         self:toggle_filter_panel()
     end))
+    table.insert(views, ui_components.create_active_filter_count())
     append_views(views, ui_components.create_results_panel{
         on_select=function(result)
             if not self.suppress_result_select_refresh then
@@ -573,6 +574,8 @@ function SoulSearchWindow:refresh_active_filter_choices(selected)
     end
     self.subviews.filter_list:setChoices(choices, selected)
     self.active_filter_choices = choices
+    self.subviews.active_filter_count:setText(
+        'Filters: ' .. filter_state.count(self.filter_state))
 end
 
 ---Refreshes the two picker lists from filter state and picker queries.

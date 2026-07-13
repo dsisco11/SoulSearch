@@ -86,10 +86,14 @@ return function(test, repo_root)
             by_id(subviews, 'unit_scope_picker_window').subviews[1].view_id)
         test.assert_equal('filters_button',
             components.create_filter_panel_button(noop).view_id)
-        test.assert_equal('[Edit filters]',
+        test.assert_equal('[Edit]',
             components.create_filter_panel_button(noop).label)
-        test.assert_equal('lightcyan',
+        test.assert_equal('yellow',
             components.create_filter_panel_button(noop).text_pen)
+        local active_filter_count = components.create_active_filter_count()
+        test.assert_equal('active_filter_count', active_filter_count.view_id)
+        test.assert_equal('Filters: 0', active_filter_count.text)
+        test.assert_equal('grey', active_filter_count.text_pen)
     end)
 
     test.case('UI components: race picker hides the active filter list', function()
