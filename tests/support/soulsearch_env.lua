@@ -505,7 +505,7 @@ end
 ---reached, proving the guard runs before any DFHack UI construction.
 ---@param repo_root string
 ---@param unavailable_reason string|nil
----@return table ui_environment, table screen_registry
+---@return table ui_environment, table screen_registry, table ui_state
 function M.load_ui_open_guard(repo_root, unavailable_reason)
     local function class()
         local result = {}
@@ -529,12 +529,26 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
         get_unavailable_reason=function() return unavailable_reason end,
     }
     local screen_registry = M.load_screen_registry(repo_root)
+    local ui_state = {}
+    local window_config = {
+        resolve=function(options)
+            ui_state.options = options
+            return {
+                settings_id=(options and options.settings_id) or 'default',
+                explicit={},
+                frame={l=1, t=2, w=110, h=45},
+            }
+        end,
+    }
+    local window_settings = {update=function() end}
     local empty_module = {}
     local modules = {
         ['internal/soulsearch/residents']=residents,
         ['internal/soulsearch/filter_constants']=filter_constants,
         ['internal/soulsearch/ui_layout']=layout,
         ['internal/soulsearch/screen_registry']=screen_registry,
+        ['internal/soulsearch/window_config']=window_config,
+        ['internal/soulsearch/window_settings']=window_settings,
     }
     local widgets = {
         Window=class(),
@@ -570,7 +584,7 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
             error('SoulSearchScreen was constructed for an unavailable context')
         end,
     })
-    return environment, screen_registry
+    return environment, screen_registry, ui_state
 end
 
 return M

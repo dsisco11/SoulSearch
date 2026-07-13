@@ -51,4 +51,26 @@ return function(test, repo_root)
         ui.dismiss_all()
         test.assert_equal(4, #dismissals)
     end)
+
+    test.case('UI open: scoped options construct one new screen', function()
+        local ui, _, state = soulsearch_env.load_ui_open_guard(repo_root, nil)
+        local constructed
+        ui.SoulSearchScreen = setmetatable({}, {
+            __call=function(_, attributes)
+                constructed = attributes
+                return {show=function(self) return self end}
+            end,
+        })
+        local options = {
+            settings_id='creatures:miners',
+            filters={{id='skill:MINING', direction='high'}},
+            unit_scope='fort_residents',
+        }
+        local screen = ui.open(options)
+
+        test.assert_true(screen ~= nil)
+        test.assert_true(state.options == options)
+        test.assert_equal('creatures:miners', constructed.settings_id)
+        test.assert_equal('creatures:miners', constructed.settings.settings_id)
+    end)
 end

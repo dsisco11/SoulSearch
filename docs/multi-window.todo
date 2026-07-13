@@ -154,31 +154,31 @@ Phase gate:
 
 ## Phase 5 - Scoped-window readiness and compatibility coverage
 
-☐ Add tests showing explicit filter and unit-scope overrides initialize only
-  the new window and do not mutate repository inputs or existing windows.
-☐ Verify explicit overrides replace only the fields supplied by the caller;
-  unspecified fields continue from that identity's saved snapshot or defaults.
-☐ Add tests showing windows with the same identity are independent while open;
+✔ Add tests showing explicit filter and unit-scope overrides initialize only
+  the new window and do not mutate repository inputs or existing windows. @done(26-07-12)
+✔ Verify explicit overrides replace only the fields supplied by the caller;
+  unspecified fields continue from that identity's saved snapshot or defaults. @done(26-07-12)
+✔ Add tests showing windows with the same identity are independent while open;
   field updates merge into the latest saved identity, and subsequently opened
-  windows inherit the merged state without stale-field rollback.
-☐ Add tests showing different settings identities retain separate filters,
-  scope, sorting, and geometry for the session.
-☐ Verify malformed or stale scoped filter overrides use normal filter-state
-  validation and restore the required positive default race scope.
-☐ Document `ui.open(options)` beside the future scoped-window work, including
-  the stable `settings_id` contract and session-only lifetime.
-☐ Document that callers must pass initial scope through options rather than
-  mutating a live window or module global after creation.
-☐ Keep preset JSON persistence independent from window settings identities.
-☐ Update README development-reload guidance: users no longer need to close
-  SoulSearch manually before `soulsearch reload`.
-☐ Update README usage text to say repeated command or Ctrl+F invocations create
-  additional windows and only one ZScreen has keyboard focus at a time.
+  windows inherit the merged state without stale-field rollback. @done(26-07-12)
+✔ Add tests showing different settings identities retain separate filters,
+  scope, sorting, and geometry for the session. @done(26-07-12)
+✔ Verify malformed or stale scoped filter overrides use normal filter-state
+  validation and restore the required positive default race scope. @done(26-07-12)
+✔ Document `ui.open(options)` beside the future scoped-window work, including
+  the stable `settings_id` contract and session-only lifetime. @done(26-07-12)
+✔ Document that callers must pass initial scope through options rather than
+  mutating a live window or module global after creation. @done(26-07-12)
+✔ Keep preset JSON persistence independent from window settings identities. @done(26-07-12)
+✔ Update README development-reload guidance: users no longer need to close
+  SoulSearch manually before `soulsearch reload`. @done(26-07-12)
+✔ Update README usage text to say repeated command or Ctrl+F invocations create
+  additional windows and only one ZScreen has keyboard focus at a time. @done(26-07-12)
 
 Phase gate:
-☐ A future creatures-menu or profession integration can create a scoped window
+✔ A future creatures-menu or profession integration can create a scoped window
   through `ui.open{settings_id=..., filters=..., unit_scope=...}` without changing
-  the multi-window lifecycle or settings architecture.
+  the multi-window lifecycle or settings architecture. @done(26-07-12)
 
 ## Phase 6 - Automated and live validation
 

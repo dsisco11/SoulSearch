@@ -62,6 +62,30 @@ return function(test, repo_root)
         test.assert_equal(2, persisted.frame.l)
     end)
 
+    test.case('window config: scoped options initialize only their new window', function()
+        local config, settings = soulsearch_env.load_window_config(repo_root)
+        settings.clear()
+        settings.update('default', {
+            filters={{id='skill:SWORD', direction='high'}},
+            unit_scope='fort_residents',
+        })
+        local existing = config.resolve(nil, 200, 100)
+        local scoped = config.resolve({
+            settings_id='creatures:miners',
+            filters={{id='skill:MINING', direction='low'}},
+            unit_scope='visitors',
+        }, 200, 100)
+
+        test.assert_sequence(
+            {'race:group:HUMANOIDS', 'skill:SWORD'}, ids(existing.filters))
+        test.assert_equal('fort_residents', existing.unit_scope)
+        test.assert_sequence(
+            {'race:group:HUMANOIDS', 'skill:MINING'}, ids(scoped.filters))
+        test.assert_equal('visitors', scoped.unit_scope)
+        test.assert_nil(settings.load('creatures:miners'))
+        test.assert_equal('skill:SWORD', settings.load().filters[1].id)
+    end)
+
     test.case('window config: malformed sorts fall back to unsorted', function()
         local config, settings = soulsearch_env.load_window_config(repo_root)
         settings.clear()
@@ -99,25 +123,38 @@ return function(test, repo_root)
         test.assert_sequence({'race:group:HUMANOIDS'}, ids(resolved.filters))
     end)
 
-    test.case('window config: instance settings are isolated and reopen latest identity', function()
+    test.case('window config: different identities retain every session field independently', function()
         local config, settings = soulsearch_env.load_window_config(repo_root)
         settings.clear()
         settings.update('miners', {
             filters={{id='skill:MINING', direction='high'}},
             unit_scope='citizens',
+            result_sort={key='name', reverse=false, phase=1},
+            stats_sort={key='value', reverse=true, phase=1},
+            frame={l=1, t=2, w=100, h=35},
         })
         settings.update('soldiers', {
             filters={{id='skill:SWORD', direction='high'}},
             unit_scope='fort_residents',
+            result_sort={key='profession', reverse=true, phase=2},
+            stats_sort={key='label', reverse=false, phase=1},
+            frame={l=7, t=8, w=90, h=34},
         })
         local miners = config.resolve({settings_id='miners'}, 200, 100)
         local soldiers = config.resolve({settings_id='soldiers'}, 200, 100)
         miners.filters[2].direction = 'low'
         miners.unit_scope = 'visitors'
+        miners.result_sort.key = 'unit_id'
+        miners.frame.l = 20
         test.assert_equal('high', soldiers.filters[2].direction)
         test.assert_equal('fort_residents', soldiers.unit_scope)
+        test.assert_equal('profession', soldiers.result_sort.key)
+        test.assert_equal('label', soldiers.stats_sort.key)
+        test.assert_equal(7, soldiers.frame.l)
         test.assert_equal('high',
             settings.load('miners').filters[1].direction)
+        test.assert_equal('name', settings.load('miners').result_sort.key)
+        test.assert_equal(1, settings.load('miners').frame.l)
 
         settings.update('miners', {
             filters={{id='trait:PATIENCE', direction='low'}},
@@ -126,5 +163,46 @@ return function(test, repo_root)
         test.assert_sequence(
             {'race:group:HUMANOIDS', 'trait:PATIENCE'}, ids(reopened.filters))
         test.assert_equal('low', reopened.filters[2].direction)
+    end)
+
+    test.case('window config: same-identity windows merge latest updates without rollback', function()
+        local config, settings = soulsearch_env.load_window_config(repo_root)
+        settings.clear()
+        local first = config.resolve({
+            settings_id='shared',
+            filters={{id='skill:MINING', direction='high'}},
+            unit_scope='citizens',
+        }, 200, 100)
+        settings.update('shared', first.explicit)
+        local second = config.resolve({settings_id='shared'}, 200, 100)
+
+        first.filters[2].id = 'skill:SWORD'
+        settings.update('shared', {filters=first.filters})
+        second.unit_scope = 'visitors'
+        settings.update('shared', {unit_scope=second.unit_scope})
+
+        test.assert_equal('skill:MINING', second.filters[2].id)
+        local reopened = config.resolve({settings_id='shared'}, 200, 100)
+        test.assert_sequence(
+            {'race:group:HUMANOIDS', 'skill:SWORD'}, ids(reopened.filters))
+        test.assert_equal('visitors', reopened.unit_scope)
+    end)
+
+    test.case('window config: scoped overrides validate and preserve caller inputs', function()
+        local config, settings = soulsearch_env.load_window_config(repo_root)
+        settings.clear()
+        local options = {
+            settings_id='scoped',
+            filters={
+                {id='skill:UNKNOWN', direction='low'},
+                {id='skill:MINING', direction='sideways'},
+            },
+            unit_scope='unknown',
+        }
+        local resolved = config.resolve(options, 200, 100)
+        test.assert_sequence({'race:group:HUMANOIDS'}, ids(resolved.filters))
+        test.assert_equal('citizens', resolved.unit_scope)
+        test.assert_equal('skill:UNKNOWN', options.filters[1].id)
+        test.assert_equal('sideways', options.filters[2].direction)
     end)
 end

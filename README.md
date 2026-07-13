@@ -116,7 +116,8 @@ soulsearch reload
 Normal `soulsearch` execution validates the retained internal-module contracts.
 `soulsearch reload` clears runtime modules in reverse dependency order, runs
 them again in dependency order, then validates the rebuilt set so a UI does not
-retain mixed module generations. Close the SoulSearch window before reloading.
+retain mixed module generations. It dismisses every open SoulSearch window
+before reloading, so you do not need to close them manually.
 
 ## Usage
 
@@ -131,8 +132,10 @@ The first manual SoulSearch launch in a DFHack session adds the default
 command. Use `gui/keybinds` to change or remove it, then save from that screen
 to persist your choice across DFHack restarts.
 
-The command opens the SoulSearch panel in fortress mode. By default, its
-unit scope is **Citizens** and its candidate race scope is **Humanoids**.
+The command opens a new SoulSearch panel in fortress mode. Repeated command or
+`Ctrl-F` invocations create additional windows; only one DFHack `ZScreen` has
+keyboard focus at a time. By default, each new panel's unit scope is
+**Citizens** and its candidate race scope is **Humanoids**.
 Click **Edit filters** to open the filter panel. Use its **Search** dropdown
 to choose between Citizens, Residents, Visitors, and All units. The active
 scope is marked in the dropdown list. Use **Add race filter** to
