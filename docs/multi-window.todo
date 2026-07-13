@@ -8,8 +8,9 @@ does not add settings files, scoped integrations, or base-game UI hooks.
 ## Phase 0 - Characterize the current singleton behavior
 
 ☐ Add tests that capture the current `ui.open()` world/context validation.
-☐ Add test seams for constructing and dismissing SoulSearch screens without a
-  live DFHack UI.
+☐ Keep pure-Lua coverage focused on extracted settings, registry, command, and
+  orchestration seams; reserve actual ZScreen rendering/focus behavior for live
+  DFHack validation unless a small injected screen factory is sufficient.
 ☐ Record the settings that currently survive close/reopen: ordered filters,
   result sort, stats sort, and window frame.
 ☐ Record settings that currently reset: unit scope and all transient UI state.
@@ -24,18 +25,26 @@ Phase gate:
 ## Phase 1 - Introduce session settings identities
 
 ☐ Add a dedicated in-memory window-settings repository keyed by `settings_id`.
-☐ Define the persisted settings snapshot: ordered filters, unit scope, result
+☐ Define the session settings snapshot: ordered filters, unit scope, result
   sort key/reverse/phase, stats sort key/reverse/phase, and window frame.
-☐ Default missing or empty identities to the stable `default` identity.
-☐ Make repository `load()` and `save()` defensively copy nested filters, sort
-  records, and frame data so callers cannot alias saved or live window state.
+☐ Normalize `settings_id`: accept non-empty strings and map missing or empty
+  identities to the stable `default` identity; reject other value types.
+☐ Make repository `load()` and field-level `update()` operations defensively
+  copy nested filters, sort records, and frame data so callers cannot alias saved
+  or live window state.
+☐ Make updates merge only the named fields into the latest identity snapshot;
+  never replace unrelated fields from a window's potentially stale local copy.
 ☐ Add `clear()` for lifecycle handling and isolated tests.
 ☐ Keep the repository module-local and session-only; do not use JSON,
   `script-manager.getModStatePath()`, or any other filesystem persistence.
 ☐ Remove the single saved-filter snapshot from `filter_state.lua`; retain only
   construction, validation, projections, and mutation of supplied filter state.
-☐ Add repository tests for missing identities, same-identity reopen, distinct
-  identities, defensive copying, overwrites, and clearing.
+☐ Add repository tests for identity normalization, missing identities,
+  same-identity reopen, distinct identities, defensive copying, field-level
+  merging, stale-window updates, overwrites, and clearing.
+☐ Add the settings repository to `module_registry.lua` in dependency order and
+  update `module_registry_test.lua`, `tests/run.lua`, and
+  `support/soulsearch_env.lua` for the new runtime module and suite.
 
 Phase gate:
 ☐ Multiple settings identities can coexist without sharing mutable state.
@@ -50,6 +59,10 @@ Phase gate:
   snapshot for the identity, then existing defaults.
 ☐ Validate filter and unit-scope overrides through the existing domain modules
   instead of trusting caller-provided values.
+☐ Normalize sort records to supported keys, boolean reverse values, and valid
+  phases; fall back to the existing unsorted defaults for malformed values.
+☐ Normalize frames to the current minimum dimensions and clamp positions and
+  extents to the available screen before constructing the window.
 ☐ Copy all option data before storing it on a window.
 ☐ Pass the resolved identity and settings into `SoulSearchScreen` and
   `SoulSearchWindow` constructors.
@@ -59,9 +72,14 @@ Phase gate:
   `fort_residents`.
 ☐ Keep query strings, results, selected unit, picker queries, modal visibility,
   tooltip state, and refresh suppression flags instance-only and non-persistent.
-☐ Centralize saving persistent window fields behind one window method.
-☐ Save after filter, unit-scope, result-sort, and stats-sort changes, and save
-  final geometry when the screen is dismissed.
+☐ Centralize session-setting updates behind window methods that submit only the
+  fields changed by that action.
+☐ Update only `filters`, `unit_scope`, `result_sort`, or `stats_sort` after the
+  corresponding action; update only `frame` after a user drag/resize or when an
+  explicit frame override must establish the identity's initial geometry.
+☐ Ensure opening with explicit scoped overrides establishes the resolved
+  identity settings on first change/dismissal without replacing unspecified saved
+  fields.
 
 Phase gate:
 ☐ Two directly constructed windows can use different settings and transient
@@ -75,14 +93,29 @@ Phase gate:
 ☐ Make every successful `ui.open(options)` create, show, register, and return a
   new screen instead of raising an existing one.
 ☐ Give each screen exactly one SoulSearch window and its tooltip overlay.
-☐ On dismissal, save that window's settings and unregister only that screen.
+☐ Add transient cascade placement for new windows whose resolved frame overlaps
+  a live SoulSearch window: offset diagonally, wrap/clamp to the screen, and let an
+  explicit `frame` override take precedence.
+☐ Track frame persistence separately from placement: do not write an automatic
+  cascade offset back unless the user subsequently moves/resizes the window; do
+  persist an explicit frame override for the identity.
+☐ Make registry cleanup idempotent and invoke it from both `onDismiss()` and
+  `onDestroy()` so externally removed screens cannot leave stale entries.
+☐ During dismissal/destruction, save a dirty or explicit frame at most once and
+  unregister only that screen; an untouched auto-cascaded frame remains transient.
 ☐ Ensure closing one window cannot clear, dismiss, or mutate another window.
 ☐ Keep unavailable-world validation ahead of screen construction and return
   `nil` when opening is rejected.
 ☐ Ensure the public `soulsearch` command and configurable Ctrl+F keybinding now
   spawn additional default-identity windows.
-☐ Add tests for repeated opens, unique screen/window instances, returned screen
-  handles, registry counts, and out-of-order dismissal.
+☐ Extract the live-screen registry into a small pure-Lua module so it can be
+  tested with dummy screen handles without emulating `gui.ZScreen`,
+  `widgets.Window`, or `defclass`.
+☐ Add pure-Lua registry tests for distinct screen handles, counts, overlap
+  lookup/cascade inputs, idempotent removal, and out-of-order dismissal; verify
+  actual repeated `ui.open()` construction and returned screens in live DFHack.
+☐ Add the registry module/suite to `module_registry.lua`,
+  `module_registry_test.lua`, `tests/run.lua`, and `support/soulsearch_env.lua`.
 
 Phase gate:
 ☐ At least three SoulSearch windows can coexist, and closing them in any order
@@ -92,28 +125,38 @@ Phase gate:
 
 ☐ Add a registry operation that safely snapshots/iterates all live screens for
   bulk dismissal or invalidation.
-☐ Before development reload clears consumer modules, dismiss all live
-  SoulSearch screens so no window retains callbacks into obsolete classes.
+☐ In `soulsearch.lua`, obtain the old loaded UI module and call
+  `old_ui.dismiss_all()` before `devel/clear-script-env` clears any consumer
+  modules, so no window retains callbacks into obsolete classes.
+☐ Consume the `reload` control argument in the command layer; after rebuilding,
+  call the new `ui.open()` with no literal `"reload"` argument.
+☐ Update `soulsearch_command_test.lua` to assert teardown occurs before the
+  clear command and that exactly one new default window opens afterward.
 ☐ Ensure dismissal callbacks can modify the registry during bulk teardown
   without skipping screens or raising iteration errors.
 ☐ Decide lifecycle ownership explicitly: retain settings across ordinary
   close/reopen and world changes while modules remain loaded; clear settings only
   when the settings module is reloaded or its test-only `clear()` is invoked.
 ☐ Preserve the existing cache reset behavior in `lifecycle.prepare_for_world()`.
-☐ Add tests for reload with zero, one, and multiple live screens.
+☐ Add command/registry tests for reload with zero, one, and multiple live
+  screens, including idempotent callbacks and dismissal during registry iteration.
 ☐ Verify reload leaves no stale registry entries or callable old-window
   callbacks.
 
 Phase gate:
-☐ Development reload is deterministic with multiple open windows and produces
-  a clean new module/session state.
+☐ Development reload dismisses every old screen before clearing modules, resets
+  module-owned session settings, rebuilds cleanly, and opens exactly one new
+  default window.
 
 ## Phase 5 - Scoped-window readiness and compatibility coverage
 
 ☐ Add tests showing explicit filter and unit-scope overrides initialize only
   the new window and do not mutate repository inputs or existing windows.
+☐ Verify explicit overrides replace only the fields supplied by the caller;
+  unspecified fields continue from that identity's saved snapshot or defaults.
 ☐ Add tests showing windows with the same identity are independent while open;
-  the most recent save is inherited only by subsequently opened windows.
+  field updates merge into the latest saved identity, and subsequently opened
+  windows inherit the merged state without stale-field rollback.
 ☐ Add tests showing different settings identities retain separate filters,
   scope, sorting, and geometry for the session.
 ☐ Verify malformed or stale scoped filter overrides use normal filter-state
@@ -123,6 +166,10 @@ Phase gate:
 ☐ Document that callers must pass initial scope through options rather than
   mutating a live window or module global after creation.
 ☐ Keep preset JSON persistence independent from window settings identities.
+☐ Update README development-reload guidance: users no longer need to close
+  SoulSearch manually before `soulsearch reload`.
+☐ Update README usage text to say repeated command or Ctrl+F invocations create
+  additional windows and only one ZScreen has keyboard focus at a time.
 
 Phase gate:
 ☐ A future creatures-menu or profession integration can create a scoped window
@@ -133,12 +180,17 @@ Phase gate:
 
 ☐ Run `tools/Build.ps1` and confirm all production Lua files compile.
 ☐ Run `tools/Test.ps1` and confirm the full suite passes.
-☐ Run `tools/Publish.ps1` and `tools/VerifyPackage.ps1` if runtime modules or
-  the module registry were added or renamed.
+☐ Run `tools/Publish.ps1` and `tools/VerifyPackage.ps1`; this refactor adds or
+  changes runtime modules and the module registry.
+☐ Run `git diff --check` and inspect the final diff for unrelated changes,
+  accidental filesystem-backed settings, stale singleton fields, and missing
+  module/test registration.
 ☐ In a loaded fortress, open at least three windows through both the command
   and Ctrl+F.
 ☐ Give each window different filters, unit scope, query, selected result, sort
   modes, position, and size; confirm no live cross-window updates occur.
+☐ Confirm newly spawned windows are visibly cascaded and clamped on screen
+  instead of appearing perfectly stacked, while explicit frames are respected.
 ☐ Exercise filter and preset modals independently in multiple windows.
 ☐ Close the windows in a different order from creation and confirm the others
   remain visible, interactive, and correctly focused.
@@ -146,6 +198,8 @@ Phase gate:
   scope, sorting, and frame are restored.
 ☐ Open two distinct test identities and confirm each restores only its own
   session settings.
+☐ Open two windows with the same identity, make interleaved changes to different
+  fields, close them in reverse order, and confirm no newer field is rolled back.
 ☐ Exercise result navigation, stats tooltips, filter hitboxes, zoom, drag, and
   resize to confirm existing UI behavior is preserved.
 ☐ Run `soulsearch reload` with multiple windows open and confirm all old windows
@@ -162,9 +216,9 @@ Final gate:
 
 ## Explicitly deferred
 
-☐ Durable settings persistence across DFHack restarts.
-☐ File formats, schema versions, or migrations for window settings.
-☐ Base-game unit-card stats popovers.
-☐ Creatures-menu widgets and concrete scoped-window integrations.
-☐ Live synchronization between already-open windows sharing a settings ID.
-☐ Resizable panel layout work beyond preserving current window behavior.
+- Durable settings persistence across DFHack restarts.
+- File formats, schema versions, or migrations for window settings.
+- Base-game unit-card stats popovers.
+- Creatures-menu widgets and concrete scoped-window integrations.
+- Live synchronization between already-open windows sharing a settings ID.
+- Resizable panel layout work beyond preserving current window behavior.
