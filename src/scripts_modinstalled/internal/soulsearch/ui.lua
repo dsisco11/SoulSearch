@@ -12,6 +12,7 @@ local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local window_settings = reqscript('internal/soulsearch/window_settings')
 local window_config = reqscript('internal/soulsearch/window_config')
+local screen_registry = reqscript('internal/soulsearch/screen_registry')
 local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 local role_presets = reqscript('internal/soulsearch/role_presets')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
@@ -26,7 +27,6 @@ local attribute_descriptions = reqscript('internal/soulsearch/attribute_descript
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local view
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
@@ -267,6 +267,9 @@ function SoulSearchWindow:init()
     end
     self.settings_id = settings.settings_id
     self.frame = ui_layout.copy_dimensions(settings.frame)
+    self.initial_frame = ui_layout.copy_dimensions(settings.frame)
+    self.frame_explicit = settings.explicit and settings.explicit.frame ~= nil
+    self.frame_dirty = false
     self.rows = {}
     self.results = {}
     self.query = ''
@@ -383,6 +386,24 @@ end
 function SoulSearchWindow:onDragBegin()
     SoulSearchWindow.super.onDragBegin(self)
     normalize_frame_for_drag(self)
+    self.frame_dirty = true
+end
+
+---@return boolean
+function SoulSearchWindow:should_persist_frame()
+    if self.frame_explicit or self.frame_dirty then return true end
+    local current = self.frame
+    local initial = self.initial_frame
+    return current.l ~= initial.l or current.t ~= initial.t or
+        current.w ~= initial.w or current.h ~= initial.h
+end
+
+function SoulSearchWindow:persist_frame_if_needed()
+    if not self:should_persist_frame() then return false end
+    self:update_session_settings{
+        frame=ui_layout.copy_dimensions(self.frame),
+    }
+    return true
 end
 
 ---Draws the main window body and section dividers.
@@ -1348,15 +1369,28 @@ function SoulSearchScreen:init()
     }
 end
 
----Saves window geometry and clears the cached screen reference when it closes.
-function SoulSearchScreen:onDismiss()
-    self.window:update_session_settings{
-        frame=ui_layout.copy_dimensions(self.window.frame),
-    }
-    view = nil
+function SoulSearchScreen:onShow()
+    screen_registry.add(self)
 end
 
----Opens or raises the SoulSearch screen.
+---@return boolean cleaned
+function SoulSearchScreen:cleanup()
+    if self.cleaned_up then return false end
+    self.cleaned_up = true
+    self.window:persist_frame_if_needed()
+    screen_registry.remove(self)
+    return true
+end
+
+function SoulSearchScreen:onDismiss()
+    self:cleanup()
+end
+
+function SoulSearchScreen:onDestroy()
+    self:cleanup()
+end
+
+---Opens a new SoulSearch screen.
 ---@param options table|nil
 ---@return SoulSearchScreen|nil
 function open(options)
@@ -1364,11 +1398,6 @@ function open(options)
     if err then
         print(err)
         return nil
-    end
-
-    if view then
-        view = view:raise()
-        return view
     end
 
     -- Keep the old command-layer `reload` argument harmless until Phase 4
@@ -1379,9 +1408,13 @@ function open(options)
     if next(settings.explicit) then
         window_settings.update(settings.settings_id, settings.explicit)
     end
-    view = SoulSearchScreen{
+    if not settings.explicit.frame then
+        settings.frame = screen_registry.place_frame(
+            settings.frame, screen_width, screen_height)
+    end
+    local screen = SoulSearchScreen{
         settings_id=settings.settings_id,
         settings=settings,
     }:show()
-    return view
+    return screen
 end

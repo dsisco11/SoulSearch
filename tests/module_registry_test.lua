@@ -20,6 +20,7 @@ return function(test, repo_root)
         test.assert_equal('internal/soulsearch/ui', calls[#calls])
         local constants_index, settings_index, race_catalog_index, descriptor_index
         local candidate_index, scope_index, state_index, config_index
+        local screen_registry_index
         local race_filter_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/filter_constants' then
@@ -38,6 +39,8 @@ return function(test, repo_root)
                 state_index = index
             elseif name == 'internal/soulsearch/window_config' then
                 config_index = index
+            elseif name == 'internal/soulsearch/screen_registry' then
+                screen_registry_index = index
             elseif name == 'internal/soulsearch/race_filter_provider' then
                 race_filter_index = index
             end
@@ -51,6 +54,7 @@ return function(test, repo_root)
         test.assert_true(settings_index < config_index)
         test.assert_true(scope_index < config_index)
         test.assert_true(state_index < config_index)
+        test.assert_true(screen_registry_index < #calls)
         test.assert_true(state_index < race_filter_index)
         test.assert_true(loaded['internal/soulsearch/search'].apply ~= nil)
         test.assert_true(
