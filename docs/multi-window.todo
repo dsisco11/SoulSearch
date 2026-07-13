@@ -55,39 +55,39 @@ Phase gate:
 
 ## Phase 2 - Make window construction instance-driven
 
-☐ Define the optional `ui.open(options)` window specification with
+✔ Define the optional `ui.open(options)` window specification with
   `settings_id`, `filters`, `unit_scope`, `result_sort`, `stats_sort`, and
-  `frame` fields.
-☐ Resolve initial settings in this order: explicit option override, saved
-  snapshot for the identity, then existing defaults.
-☐ Validate filter and unit-scope overrides through the existing domain modules
-  instead of trusting caller-provided values.
-☐ Normalize sort records to supported keys, boolean reverse values, and valid
-  phases; fall back to the existing unsorted defaults for malformed values.
-☐ Normalize frames to the current minimum dimensions and clamp positions and
-  extents to the available screen before constructing the window.
-☐ Copy all option data before storing it on a window.
-☐ Pass the resolved identity and settings into `SoulSearchScreen` and
-  `SoulSearchWindow` constructors.
-☐ Move module-level saved sort and frame values into the window-owned settings
-  snapshot/repository path.
-☐ Load the unit scope from the resolved settings instead of always resetting to
-  `fort_residents`.
-☐ Keep query strings, results, selected unit, picker queries, modal visibility,
-  tooltip state, and refresh suppression flags instance-only and non-persistent.
-☐ Centralize session-setting updates behind window methods that submit only the
-  fields changed by that action.
-☐ Update only `filters`, `unit_scope`, `result_sort`, or `stats_sort` after the
+  `frame` fields. @done(26-07-12)
+✔ Resolve initial settings in this order: explicit option override, saved
+  snapshot for the identity, then existing defaults. @done(26-07-12)
+✔ Validate filter and unit-scope overrides through the existing domain modules
+  instead of trusting caller-provided values. @done(26-07-12)
+✔ Normalize sort records to supported keys, boolean reverse values, and valid
+  phases; fall back to the existing unsorted defaults for malformed values. @done(26-07-12)
+✔ Normalize frames to the current minimum dimensions and clamp positions and
+  extents to the available screen before constructing the window. @done(26-07-12)
+✔ Copy all option data before storing it on a window. @done(26-07-12)
+✔ Pass the resolved identity and settings into `SoulSearchScreen` and
+  `SoulSearchWindow` constructors. @done(26-07-12)
+✔ Move module-level saved sort and frame values into the window-owned settings
+  snapshot/repository path. @done(26-07-12)
+✔ Load the unit scope from the resolved settings instead of always resetting to
+  `citizens`. @done(26-07-12)
+✔ Keep query strings, results, selected unit, picker queries, modal visibility,
+  tooltip state, and refresh suppression flags instance-only and non-persistent. @done(26-07-12)
+✔ Centralize session-setting updates behind window methods that submit only the
+  fields changed by that action. @done(26-07-12)
+✔ Update only `filters`, `unit_scope`, `result_sort`, or `stats_sort` after the
   corresponding action; update only `frame` after a user drag/resize or when an
-  explicit frame override must establish the identity's initial geometry.
-☐ Ensure opening with explicit scoped overrides establishes the resolved
+  explicit frame override must establish the identity's initial geometry. @done(26-07-12)
+✔ Ensure opening with explicit scoped overrides establishes the resolved
   identity settings on first change/dismissal without replacing unspecified saved
-  fields.
+  fields. @done(26-07-12)
 
 Phase gate:
-☐ Two directly constructed windows can use different settings and transient
-  state without affecting each other.
-☐ A later window inherits the latest snapshot for its identity.
+✔ Two directly constructed windows can use different settings and transient
+  state without affecting each other. @done(26-07-12)
+✔ A later window inherits the latest snapshot for its identity. @done(26-07-12)
 
 ## Phase 3 - Replace the singleton with a live-screen registry
 

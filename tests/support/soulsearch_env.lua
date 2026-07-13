@@ -470,6 +470,30 @@ function M.load_window_settings(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/window_settings.lua')
 end
 
+function M.load_window_config(repo_root)
+    local filter_state = M.load_filter_state(repo_root)
+    local unit_scope_provider = M.load_unit_scope_provider(
+        repo_root, M.make_df_stub(), {units={}})
+    local window_settings = M.load_window_settings(repo_root)
+    local ui_layout = M.load_ui_layout(repo_root)
+    local modules = {
+        ['internal/soulsearch/filter_state']=filter_state,
+        ['internal/soulsearch/unit_scope_provider']=unit_scope_provider,
+        ['internal/soulsearch/window_settings']=window_settings,
+        ['internal/soulsearch/ui_layout']=ui_layout,
+    }
+    local config = module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/window_config.lua', {
+            reqscript=function(name)
+                local module = modules[name]
+                assert(module, 'unexpected reqscript: ' .. tostring(name))
+                return module
+            end,
+        })
+    return config, window_settings
+end
+
 ---Loads ui.lua with only the interfaces needed to characterize open() rejecting
 ---an unavailable context. The screen constructor deliberately fails if it is
 ---reached, proving the guard runs before any DFHack UI construction.

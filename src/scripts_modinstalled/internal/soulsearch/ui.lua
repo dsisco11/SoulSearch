@@ -11,6 +11,7 @@ local search = reqscript('internal/soulsearch/search')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local window_settings = reqscript('internal/soulsearch/window_settings')
+local window_config = reqscript('internal/soulsearch/window_config')
 local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 local role_presets = reqscript('internal/soulsearch/role_presets')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
@@ -26,13 +27,6 @@ local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
 local view
-local saved_stats_sort_key
-local saved_stats_sort_reverse = false
-local saved_stats_sort_phase = 0
-local saved_result_sort_key
-local saved_result_sort_reverse = false
-local saved_result_sort_phase = 0
-local saved_window_frame
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
@@ -260,25 +254,31 @@ SoulSearchWindow.ATTRS {
     frame=ui_layout.copy_dimensions(ui_layout.WINDOW_FRAME),
     resizable=true,
     resize_min=ui_layout.copy_dimensions(ui_layout.WINDOW_RESIZE_MIN),
+    settings_id=DEFAULT_NIL,
+    settings=DEFAULT_NIL,
 }
 
 ---Creates controls and loads the initial resident/filter data.
 function SoulSearchWindow:init()
-    if saved_window_frame then
-        self.frame = ui_layout.copy_dimensions(saved_window_frame)
+    local settings = self.settings
+    if not settings then
+        local screen_width, screen_height = dfhack.screen.getWindowSize()
+        settings = window_config.resolve(nil, screen_width, screen_height)
     end
+    self.settings_id = settings.settings_id
+    self.frame = ui_layout.copy_dimensions(settings.frame)
     self.rows = {}
     self.results = {}
     self.query = ''
     self.attribute_query = ''
     self.skill_query = ''
     self.race_query = ''
-    self.stats_sort_key = saved_stats_sort_key
-    self.stats_sort_reverse = saved_stats_sort_reverse
-    self.stats_sort_phase = saved_stats_sort_phase
-    self.result_sort_key = saved_result_sort_key
-    self.result_sort_reverse = saved_result_sort_reverse
-    self.result_sort_phase = saved_result_sort_phase
+    self.stats_sort_key = settings.stats_sort.key
+    self.stats_sort_reverse = settings.stats_sort.reverse
+    self.stats_sort_phase = settings.stats_sort.phase
+    self.result_sort_key = settings.result_sort.key
+    self.result_sort_reverse = settings.result_sort.reverse
+    self.result_sort_phase = settings.result_sort.phase
     self.suppress_result_select_refresh = false
     self.filter_panel_open = false
     self.add_filter_open = false
@@ -287,7 +287,7 @@ function SoulSearchWindow:init()
     self.unit_scope_picker_open = false
     self.preset_picker_open = false
     self.preset_query = ''
-    self.unit_scope = unit_scope_provider.get_default_scope()
+    self.unit_scope = settings.unit_scope
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
     self.filter_catalog = filter_catalog
@@ -297,8 +297,7 @@ function SoulSearchWindow:init()
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
     self.race_filter_descriptors = filter_descriptor_groups.races or {}
-    local saved_settings = window_settings.load()
-    self.filter_state = filter_state.new(saved_settings and saved_settings.filters)
+    self.filter_state = filter_state.new(settings.filters)
 
     local views = {}
     -- Preserve the original child order: the modal results query remains first
@@ -666,12 +665,17 @@ function SoulSearchWindow:refresh_views(request)
     ui_refresh.apply(self, request)
 end
 
+---@param changes table
+function SoulSearchWindow:update_session_settings(changes)
+    window_settings.update(self.settings_id, changes)
+end
+
 ---Persists filter state and refreshes every view derived from it once.
 ---@param selected integer|nil
 function SoulSearchWindow:on_filter_state_changed(selected)
-    window_settings.update(nil, {
+    self:update_session_settings{
         filters=filter_state.get_filters(self.filter_state),
-    })
+    }
     self:refresh_views{
         active_filters=true,
         pickers=true,
@@ -818,9 +822,11 @@ function SoulSearchWindow:handle_result_header_click()
         self.result_sort_reverse = self.result_sort_phase == 2
     end
 
-    saved_result_sort_key = self.result_sort_key
-    saved_result_sort_reverse = self.result_sort_reverse
-    saved_result_sort_phase = self.result_sort_phase
+    self:update_session_settings{result_sort={
+        key=self.result_sort_key,
+        reverse=self.result_sort_reverse,
+        phase=self.result_sort_phase,
+    }}
     self:refresh_views{results=true}
     return true
 end
@@ -849,11 +855,11 @@ function SoulSearchWindow:handle_stats_header_click()
         self.stats_sort_reverse = column ~= STATS_SORT_VALUE
     end
 
-    -- Retain the presentation mode while this UI module remains loaded, which
-    -- matches the session lifetime used by the filter-state persistence model.
-    saved_stats_sort_key = self.stats_sort_key
-    saved_stats_sort_reverse = self.stats_sort_reverse
-    saved_stats_sort_phase = self.stats_sort_phase
+    self:update_session_settings{stats_sort={
+        key=self.stats_sort_key,
+        reverse=self.stats_sort_reverse,
+        phase=self.stats_sort_phase,
+    }}
     self:refresh_views{stats=true}
     return true
 end
@@ -989,9 +995,6 @@ end
 function SoulSearchWindow:apply_loaded_filter_preset(filters)
     filter_state.replace(self.filter_state, filters)
     self.preset_picker_open = false
-    window_settings.update(nil, {
-        filters=filter_state.get_filters(self.filter_state),
-    })
     self:on_filter_state_changed(1)
 end
 
@@ -1184,6 +1187,7 @@ function SoulSearchWindow:set_unit_scope(scope)
     if scope == self.unit_scope then return false end
     unit_scope_provider.new(scope)
     self.unit_scope = scope
+    self:update_session_settings{unit_scope=scope}
     self:refresh_views{candidates=true, results=true, pickers=true}
     return true
 end
@@ -1328,11 +1332,16 @@ end
 SoulSearchScreen = defclass(SoulSearchScreen, gui.ZScreen)
 SoulSearchScreen.ATTRS {
     focus_path='soulsearch',
+    settings_id=DEFAULT_NIL,
+    settings=DEFAULT_NIL,
 }
 
 ---Creates the main SoulSearch window and tooltip overlay.
 function SoulSearchScreen:init()
-    self.window = SoulSearchWindow{}
+    self.window = SoulSearchWindow{
+        settings_id=self.settings_id,
+        settings=self.settings,
+    }
     self:addviews{
         self.window,
         SoulSearchTooltip{owner=self.window},
@@ -1341,18 +1350,38 @@ end
 
 ---Saves window geometry and clears the cached screen reference when it closes.
 function SoulSearchScreen:onDismiss()
-    saved_window_frame = ui_layout.copy_dimensions(self.window.frame)
+    self.window:update_session_settings{
+        frame=ui_layout.copy_dimensions(self.window.frame),
+    }
     view = nil
 end
 
 ---Opens or raises the SoulSearch screen.
----@param ... any
-function open(...)
+---@param options table|nil
+---@return SoulSearchScreen|nil
+function open(options)
     local err = residents.get_unavailable_reason()
     if err then
         print(err)
-        return
+        return nil
     end
 
-    view = view and view:raise() or SoulSearchScreen{}:show()
+    if view then
+        view = view:raise()
+        return view
+    end
+
+    -- Keep the old command-layer `reload` argument harmless until Phase 4
+    -- consumes it before dispatching to this options-table API.
+    options = type(options) == 'table' and options or nil
+    local screen_width, screen_height = dfhack.screen.getWindowSize()
+    local settings = window_config.resolve(options, screen_width, screen_height)
+    if next(settings.explicit) then
+        window_settings.update(settings.settings_id, settings.explicit)
+    end
+    view = SoulSearchScreen{
+        settings_id=settings.settings_id,
+        settings=settings,
+    }:show()
+    return view
 end
