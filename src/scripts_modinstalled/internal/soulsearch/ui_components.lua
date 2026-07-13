@@ -85,10 +85,10 @@ function create_filter_panel(inputs)
             text=ui_format.format_unit_scope_control(
                 unit_scope_label),
         },
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='unit_scope_edit',
             frame=ui_layout.get_frame('unit_scope_edit'),
-            label='[Edit]',
+            label='Edit',
             on_activate=inputs.on_toggle_unit_scope_picker,
         },
         widgets.HotkeyLabel{
@@ -308,10 +308,10 @@ end
 ---@param on_activate fun()
 ---@return table
 function create_filter_panel_button(on_activate)
-    return widgets.HotkeyLabel{
+    return widgets.TextButton{
         view_id='filters_button',
         frame=ui_layout.get_frame('filters_button'),
-        label='[Edit]',
+        label='Edit',
         text_pen=COLOR_YELLOW,
         on_activate=on_activate,
     }

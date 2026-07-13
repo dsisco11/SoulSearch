@@ -78,7 +78,9 @@ return function(test, repo_root)
         test.assert_equal('close_filter_panel_button', subviews[1].view_id)
         test.assert_equal('Label', by_id(subviews, 'unit_scope_label').widget_kind)
         test.assert_equal('Include: Residents', by_id(subviews, 'unit_scope_label').text)
-        test.assert_equal('[Edit]', by_id(subviews, 'unit_scope_edit').label)
+        test.assert_equal('TextButton',
+            by_id(subviews, 'unit_scope_edit').widget_kind)
+        test.assert_equal('Edit', by_id(subviews, 'unit_scope_edit').label)
         test.assert_equal('add_filter_button', by_id(subviews, 'add_filter_button').view_id)
         test.assert_equal('available_filter_list',
             by_id(subviews, 'available_filter_window').subviews[3].view_id)
@@ -86,7 +88,9 @@ return function(test, repo_root)
             by_id(subviews, 'unit_scope_picker_window').subviews[1].view_id)
         test.assert_equal('filters_button',
             components.create_filter_panel_button(noop).view_id)
-        test.assert_equal('[Edit]',
+        test.assert_equal('TextButton',
+            components.create_filter_panel_button(noop).widget_kind)
+        test.assert_equal('Edit',
             components.create_filter_panel_button(noop).label)
         test.assert_equal('yellow',
             components.create_filter_panel_button(noop).text_pen)
