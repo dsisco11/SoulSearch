@@ -458,7 +458,7 @@ local function get_descriptor_tooltip(list, choices)
     local index = list and list:getIdxUnderMouse()
     local descriptor = index and choices and choices[index] and choices[index].descriptor
     if descriptor and descriptor.kind == FILTER_KIND_RACE then
-        return 'Candidate scope filter. Include adds matching units; Exclude removes them.'
+        return 'Filters by a creatures race.'
     end
     return descriptor and attribute_descriptions.get_tooltip(
         descriptor.kind, descriptor.key) or nil
