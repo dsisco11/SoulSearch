@@ -14,6 +14,9 @@ DIVIDER_XS = {RESULTS_LEFT - 2, STATS_LEFT - 2}
 RESULT_NAME_WIDTH = 35
 RESULT_UNIT_ID_WIDTH = 9
 RESULT_PROFESSION_WIDTH = 18
+RESULT_NAME_COLUMN_X = 0
+RESULT_UNIT_ID_COLUMN_X = RESULT_NAME_COLUMN_X + RESULT_NAME_WIDTH + 1
+RESULT_PROFESSION_COLUMN_X = RESULT_UNIT_ID_COLUMN_X + RESULT_UNIT_ID_WIDTH + 1
 HEADER_ROW = 2
 UNDERLINE_ROW = 3
 PICKER_TOP = 7
@@ -126,6 +129,25 @@ function get_filter_action_at_x(x)
             return action
         end
         offset = offset - action.width
+    end
+    return nil
+end
+
+---@param x integer|nil
+---@param y integer|nil
+---@return string|nil
+function get_result_header_column(x, y)
+    if not x or y ~= 0 then return nil end
+    if x >= RESULT_NAME_COLUMN_X and x < RESULT_NAME_COLUMN_X + RESULT_NAME_WIDTH then
+        return 'name'
+    end
+    if x >= RESULT_UNIT_ID_COLUMN_X and
+            x < RESULT_UNIT_ID_COLUMN_X + RESULT_UNIT_ID_WIDTH then
+        return 'unit_id'
+    end
+    if x >= RESULT_PROFESSION_COLUMN_X and
+            x < RESULT_PROFESSION_COLUMN_X + RESULT_PROFESSION_WIDTH then
+        return 'profession'
     end
     return nil
 end

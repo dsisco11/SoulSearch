@@ -29,6 +29,8 @@ return function(test, repo_root)
         test.assert_equal(
             'Difference from the attribute average.',
             components.STATS_VALUE_TOOLTIP)
+        test.assert_equal('Sort by unit ID.',
+            components.RESULT_HEADER_TOOLTIPS.unit_id)
     end)
 
     test.case('UI components: filter panel preserves child and picker order', function()

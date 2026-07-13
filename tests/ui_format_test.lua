@@ -23,6 +23,10 @@ return function(test, repo_root)
         test.assert_equal('Name' .. (' '):rep(31) .. ' Unit ID' ..
             (' '):rep(2) .. ' Profession' .. (' '):rep(8),
             format.format_result_columns())
+        test.assert_equal('Name ' .. string.char(24),
+            format.format_result_columns('name', false):sub(1, 6))
+        test.assert_equal('Unit ID ' .. string.char(25),
+            format.format_result_columns('unit_id', true):sub(37, 45))
     end)
 
     test.case('UI format: tooltip text wraps without truncation', function()

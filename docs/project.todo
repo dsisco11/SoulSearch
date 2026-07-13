@@ -58,7 +58,7 @@
 ✔ Add race filters, so users can e.g. search for animals like dogs, or search specifically for dwarves, elves, humans, etc. (Default should target all humanoid races). @done(26-07-12 15:24)
 ✔ Setup configurable keybind for opening soul search window (default Ctrl + F). @done(26-07-12)
 ✔ Add dropdown field to the search filters panel to allow users to specify whether they want to search for residents, visitors, or all units. (Default should be residents.) @done(26-07-12)
-☐ Make results list column headers clickable to sort by that column, complete with the same indicators and cycles as the stats panel. (e.g. click once to sort ascending, click again to sort descending, click a 3rd time to remove sorting by that column.)
+✔ Make results list column headers clickable to sort by that column, complete with the same indicators and cycles as the stats panel. (e.g. click once to sort ascending, click again to sort descending, click a 3rd time to remove sorting by that column.) @done(26-07-12)
 ☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)
 ☐ Refactor code so that we can spawn multiple SoulSearch windows. this will allow the system to persist settings for "scoped" windows.
 ☐ Add soul-search "stats view" modal window popover to the base games "unit card" window, so that users can quickly see the stats of a unit without having to open the full SoulSearch window.

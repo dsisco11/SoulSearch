@@ -39,6 +39,7 @@ return function(test, repo_root)
             weighted_score=10,
             score=1,
             name='Beta',
+            profession='Peasant',
             unit_id=2,
         }
         for key, value in pairs(overrides or {}) do
@@ -109,6 +110,26 @@ return function(test, repo_root)
         test.assert_equal('low', result.filter_criteria[2].direction)
         test.assert_equal('high', filters[4].direction)
         test.assert_equal('low', filters[5].direction)
+    end)
+
+    test.case('result column sort: uses the selected column then relevance', function()
+        local results = {
+            result_for_order{unit_id=7, name='Beta', profession='Miner'},
+            result_for_order{unit_id=3, name='Alpha', profession='Peasant'},
+            result_for_order{
+                unit_id=4, name='Alpha', profession='Woodworker', matched_count=2},
+        }
+        search.sort_results(results, 'name', false)
+        test.assert_sequence({4, 3, 7},
+            {results[1].unit_id, results[2].unit_id, results[3].unit_id})
+
+        search.sort_results(results, 'unit_id', true)
+        test.assert_sequence({7, 4, 3},
+            {results[1].unit_id, results[2].unit_id, results[3].unit_id})
+
+        search.sort_results(results, 'profession', false)
+        test.assert_sequence({'Miner', 'Peasant', 'Woodworker'},
+            {results[1].profession, results[2].profession, results[3].profession})
     end)
 
     test.case('search filters: candidate descriptors are ignored by the ranker', function()

@@ -194,6 +194,24 @@ function compare_results(left, right)
     return left.unit_id < right.unit_id
 end
 
+---@param results SoulSearchResult[]
+---@param sort_key 'name'|'unit_id'|'profession'|nil
+---@param sort_reverse boolean
+function sort_results(results, sort_key, sort_reverse)
+    if not sort_key then return end
+    table.sort(results, function(left, right)
+        local left_value = left[sort_key]
+        local right_value = right[sort_key]
+        if left_value ~= right_value then
+            if sort_reverse then
+                return left_value > right_value
+            end
+            return left_value < right_value
+        end
+        return compare_results(left, right)
+    end)
+end
+
 ---Filters and ranks resident rows.
 ---`selected_filters` is the only filter input. It is evaluated in array order;
 ---invalid entries are ignored according to `resolve_selected_filters()`.

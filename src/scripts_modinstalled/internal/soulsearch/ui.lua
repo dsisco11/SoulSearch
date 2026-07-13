@@ -28,6 +28,9 @@ local view
 local saved_stats_sort_key
 local saved_stats_sort_reverse = false
 local saved_stats_sort_phase = 0
+local saved_result_sort_key
+local saved_result_sort_reverse = false
+local saved_result_sort_phase = 0
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
@@ -218,6 +221,9 @@ end
 ---@field query string
 ---@field attribute_query string
 ---@field skill_query string
+---@field result_sort_key 'name'|'unit_id'|'profession'|nil
+---@field result_sort_reverse boolean
+---@field result_sort_phase integer
 ---@field stats_sort_key string|nil
 ---@field stats_sort_reverse boolean
 ---@field stats_sort_phase integer
@@ -250,6 +256,9 @@ function SoulSearchWindow:init()
     self.stats_sort_key = saved_stats_sort_key
     self.stats_sort_reverse = saved_stats_sort_reverse
     self.stats_sort_phase = saved_stats_sort_phase
+    self.result_sort_key = saved_result_sort_key
+    self.result_sort_reverse = saved_result_sort_reverse
+    self.result_sort_phase = saved_result_sort_phase
     self.suppress_result_select_refresh = false
     self.add_filter_open = false
     self.add_skill_open = false
@@ -393,6 +402,20 @@ function SoulSearchWindow:get_stats_header_tooltip()
     return column and ui_components.STATS_HEADER_TOOLTIPS[column] or nil
 end
 
+---@return string|nil
+function SoulSearchWindow:get_result_header_column()
+    local columns = self.subviews.result_columns
+    if not columns then return nil end
+    local x, y = columns:getMousePos()
+    return ui_layout.get_result_header_column(x, y)
+end
+
+---@return string|nil
+function SoulSearchWindow:get_result_header_tooltip()
+    local column = self:get_result_header_column()
+    return column and ui_components.RESULT_HEADER_TOOLTIPS[column] or nil
+end
+
 ---@param list widgets.List|nil
 ---@param choices table[]|nil
 ---@return string|nil
@@ -465,7 +488,8 @@ function SoulSearchWindow:get_tooltip_text()
         end
     end
 
-    return self:get_filter_action_tooltip() or self:get_stats_header_tooltip() or
+    return self:get_filter_action_tooltip() or self:get_result_header_tooltip() or
+        self:get_stats_header_tooltip() or
         self:get_stats_value_tooltip() or self:get_filter_descriptor_tooltip() or
         self:get_stats_attribute_tooltip() or ''
 end
@@ -682,6 +706,10 @@ function SoulSearchWindow:recompute_results()
         query=self.query,
         selected_filters=filter_state.get_ranking_filters(self.filter_state),
     })
+    search.sort_results(
+        self.results,
+        self.result_sort_key,
+        self.result_sort_reverse)
 
     local choices = {}
     for _, result in ipairs(self.results) do
@@ -696,6 +724,9 @@ function SoulSearchWindow:recompute_results()
     self.subviews.result_header:setText(result_header)
     self.subviews.result_header_underline:setText(
         ui_format.get_title_underline(result_header))
+    self.subviews.result_columns:setText(ui_format.format_result_columns(
+        self.result_sort_key,
+        self.result_sort_reverse))
 
     local selected = ui_refresh.get_result_selection(
         self.results,
@@ -723,6 +754,33 @@ function SoulSearchWindow:refresh_stats(result)
         self.stats_sort_key,
         self.stats_sort_reverse,
         self.frame_body)
+end
+
+---@return boolean
+function SoulSearchWindow:handle_result_header_click()
+    local column = self:get_result_header_column()
+    if not column then return false end
+
+    if self.result_sort_key == column then
+        self.result_sort_phase = self.result_sort_phase + 1
+    else
+        self.result_sort_key = column
+        self.result_sort_phase = 1
+    end
+
+    if self.result_sort_phase >= 3 then
+        self.result_sort_key = nil
+        self.result_sort_reverse = false
+        self.result_sort_phase = 0
+    else
+        self.result_sort_reverse = self.result_sort_phase == 2
+    end
+
+    saved_result_sort_key = self.result_sort_key
+    saved_result_sort_reverse = self.result_sort_reverse
+    saved_result_sort_phase = self.result_sort_phase
+    self:refresh_views{results=true}
+    return true
 end
 
 ---@return boolean
@@ -1102,6 +1160,9 @@ function SoulSearchWindow:onInput(keys)
         return true
     end
     if keys._MOUSE_L and self:handle_filter_action_click() then
+        return true
+    end
+    if keys._MOUSE_L and self:handle_result_header_click() then
         return true
     end
     if keys._MOUSE_L and self:handle_stats_header_click() then

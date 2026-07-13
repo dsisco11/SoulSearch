@@ -23,6 +23,12 @@ STATS_HEADER_TOOLTIPS = {
     value='Sort by baseline difference.',
 }
 
+RESULT_HEADER_TOOLTIPS = {
+    name='Sort by name.',
+    unit_id='Sort by unit ID.',
+    profession='Sort by profession.',
+}
+
 STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 
 ---@class SoulSearchFilterPanelInputs

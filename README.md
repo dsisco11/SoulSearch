@@ -139,7 +139,9 @@ exclude a race from the included candidates. Race filters use `[+]` to Include
 and `[-]` to Exclude and do not participate in ranking order. Use the Search
 filters list to add traits, attributes, and skills such as `Agility`; set their
 high/low directions and priorities with the controls beside each selected
-filter.
+filter. Click a result-list column header (Name, Unit ID, or Profession) to
+sort it ascending, click again for descending, and click a third time to
+restore relevance ranking. Arrows indicate the active column and direction.
 The search field filters result names only. Press `z` or Enter on a selected
 result to center and highlight that unit on the fortress map.
 

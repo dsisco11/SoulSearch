@@ -57,11 +57,20 @@ function format_result_choice(result)
         truncate_text(result.profession or '', RESULT_PROFESSION_WIDTH))
 end
 
+---@param sort_key string|nil
+---@param sort_reverse boolean
 ---@return string
-function format_result_columns()
+function format_result_columns(sort_key, sort_reverse)
+    local function marker(column)
+        if sort_key ~= column then return '' end
+        return ' ' .. (sort_reverse and glyphs.CP437_ARROW_DOWN or
+            glyphs.CP437_ARROW_UP)
+    end
     return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_UNIT_ID_WIDTH ..
         's %-' .. RESULT_PROFESSION_WIDTH .. 's'):format(
-        'Name', 'Unit ID', 'Profession')
+        'Name' .. marker('name'),
+        'Unit ID' .. marker('unit_id'),
+        'Profession' .. marker('profession'))
 end
 
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
