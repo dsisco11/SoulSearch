@@ -76,6 +76,8 @@ return function(test, repo_root)
         local subviews = views.subviews
         test.assert_equal(14, #subviews)
         test.assert_equal('close_filter_panel_button', subviews[1].view_id)
+        test.assert_equal('TextButton', subviews[1].widget_kind)
+        test.assert_equal('X', subviews[1].label)
         test.assert_equal('Label', by_id(subviews, 'unit_scope_label').widget_kind)
         test.assert_equal('Include: Residents', by_id(subviews, 'unit_scope_label').text)
         test.assert_equal('TextButton',
@@ -84,6 +86,16 @@ return function(test, repo_root)
         test.assert_equal('add_filter_button', by_id(subviews, 'add_filter_button').view_id)
         test.assert_equal('available_filter_list',
             by_id(subviews, 'available_filter_window').subviews[3].view_id)
+        for _, picker_id in ipairs({
+            'available_filter_window',
+            'available_race_window',
+            'available_skill_window',
+            'preset_picker_window',
+        }) do
+            local close_button = by_id(subviews, picker_id).subviews[1]
+            test.assert_equal('TextButton', close_button.widget_kind)
+            test.assert_equal('X', close_button.label)
+        end
         test.assert_equal('unit_scope_picker_list',
             by_id(subviews, 'unit_scope_picker_window').subviews[1].view_id)
         test.assert_equal('filters_button',

@@ -73,10 +73,10 @@ function create_filter_panel(inputs)
         end
     end
     local subviews = {
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='close_filter_panel_button',
             frame=ui_layout.get_frame('filter_panel_close'),
-            label='[X]',
+            label='X',
             on_activate=inputs.on_close_filter_panel,
         },
         widgets.Label{
@@ -144,10 +144,10 @@ function create_filter_panel(inputs)
             draggable=false,
             visible=inputs.is_attribute_picker_open,
             subviews={
-                widgets.HotkeyLabel{
+                widgets.TextButton{
                     view_id='close_filter_picker_button',
                     frame=ui_layout.get_frame('picker_close'),
-                    label='[X]',
+                    label='X',
                     on_activate=inputs.on_close_picker,
                 },
                 widgets.EditField{
@@ -175,10 +175,10 @@ function create_filter_panel(inputs)
             draggable=false,
             visible=inputs.is_race_picker_open,
             subviews={
-                widgets.HotkeyLabel{
+                widgets.TextButton{
                     view_id='close_race_picker_button',
                     frame=ui_layout.get_frame('picker_close'),
-                    label='[X]',
+                    label='X',
                     on_activate=inputs.on_close_picker,
                 },
                 widgets.EditField{
@@ -206,10 +206,10 @@ function create_filter_panel(inputs)
             draggable=false,
             visible=inputs.is_skill_picker_open,
             subviews={
-                widgets.HotkeyLabel{
+                widgets.TextButton{
                     view_id='close_skill_picker_button',
                     frame=ui_layout.get_frame('picker_close'),
-                    label='[X]',
+                    label='X',
                     on_activate=inputs.on_close_picker,
                 },
                 widgets.EditField{
@@ -237,10 +237,10 @@ function create_filter_panel(inputs)
             draggable=false,
             visible=inputs.is_preset_picker_open,
             subviews={
-                widgets.HotkeyLabel{
+                widgets.TextButton{
                     view_id='close_preset_picker_button',
                     frame=ui_layout.get_frame('picker_close'),
-                    label='[X]',
+                    label='X',
                     on_activate=inputs.on_close_preset_picker,
                 },
                 widgets.HotkeyLabel{
