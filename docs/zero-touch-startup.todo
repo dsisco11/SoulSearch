@@ -248,54 +248,60 @@ evidence above remains the implementation basis.
 
 ## Phase 1 - Make default-keybinding seeding first-run aware
 
-- [ ] Introduce a narrow preference adapter for the default-considered marker
+- [x] Introduce a narrow preference adapter for the default-considered marker
       selected in Phase 0. Keep file/API access out of keybinding policy tests
-      by injecting or wrapping the adapter.
-- [ ] Version the minimal preference schema so corrupt or future data is
-      detected instead of silently misinterpreted.
-- [ ] Treat unreadable, corrupt, or future-version marker data conservatively.
+      by injecting or wrapping the adapter. @done(26-07-13)
+- [x] Version the minimal preference schema so corrupt or future data is
+      detected instead of silently misinterpreted. @done(26-07-13)
+- [x] Treat unreadable, corrupt, or future-version marker data conservatively.
       If no valid binding exists, return a structured retryable error and do
       not seed a default that might recreate a user's opt-out. Require an
       explicit documented repair/reset path before replacing that state.
-- [ ] Refactor `keybindings.ensure_default()` or replace it with a clearly named
+      @done(26-07-13)
+- [x] Refactor `keybindings.ensure_default()` or replace it with a clearly named
       first-run API that returns the documented outcome instead of a bare
-      boolean.
-- [ ] Preserve existing behavior for a true first setup: add exactly
+      boolean. @done(26-07-13)
+- [x] Preserve existing behavior for a true first setup: add exactly
       `Ctrl-F@dwarfmode/Default -> gui/soulsearch` when no supported binding or
-      prior decision exists.
-- [ ] Record the default-considered marker after observing an existing valid
+      prior decision exists. @done(26-07-13)
+- [x] Record the default-considered marker after observing an existing valid
       binding, including a user's custom key combination for
-      `gui/soulsearch`.
-- [ ] After a successful first-run decision, treat a later absence of all valid
+      `gui/soulsearch`. @done(26-07-13)
+- [x] After a successful first-run decision, treat a later absence of all valid
       SoulSearch bindings as an intentional opt-out and do not recreate the
-      default.
-- [ ] Do not write the marker when hotkey enumeration is unavailable, returns
+      default. @done(26-07-13)
+- [x] Do not write the marker when hotkey enumeration is unavailable, returns
       an unusable value, or binding creation fails.
-- [ ] Make repeated calls in one session and across simulated restarts
-      idempotent.
-- [ ] Keep unsupported `gui/soulsearch` arguments from suppressing a valid
+      @done(26-07-13)
+- [x] Make repeated calls in one session and across simulated restarts
+      idempotent. @done(26-07-13)
+- [x] Keep unsupported `gui/soulsearch` arguments from suppressing a valid
       default, matching the public command's no-argument usage contract.
-- [ ] Add keybinding-policy and preference-adapter tests for:
-  - [ ] pristine first install;
-  - [ ] existing seeded default;
-  - [ ] existing custom valid binding;
-  - [ ] explicit post-seed removal/opt-out;
-  - [ ] invalid argument-bearing command;
-  - [ ] duplicate rows returned by a malformed/stub API;
-  - [ ] missing or partial hotkey API;
-  - [ ] add failure;
-  - [ ] marker read, write, corruption, and version failures;
-  - [ ] retry after a transient failure; and
-  - [ ] prevention of duplicate binding after a marker-write failure.
-- [ ] Register any new internal module in `module_registry.lua`, the pure-Lua
+      @done(26-07-13)
+- [x] Add keybinding-policy and preference-adapter tests for:
+  - [x] pristine first install;
+  - [x] existing seeded default;
+  - [x] existing custom valid binding;
+  - [x] explicit post-seed removal/opt-out;
+  - [x] invalid argument-bearing command;
+  - [x] duplicate rows returned by a malformed/stub API;
+  - [x] missing or partial hotkey API;
+  - [x] add failure;
+  - [x] marker read, write, corruption, and version failures;
+  - [x] retry after a transient failure; and
+  - [x] prevention of duplicate binding after a marker-write failure.
+      @done(26-07-13)
+- [x] Register any new internal module in `module_registry.lua`, the pure-Lua
       loader, and `tests/run.lua` at the same time it is introduced.
+      @done(26-07-13)
 
 ### Phase 1 gate
 
-- [ ] The default is added once for a new user, existing customization is
+- [x] The default is added once for a new user, existing customization is
       preserved, explicit removal remains removed, and transient failures stay
-      retryable under automated tests.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+      retryable under automated tests. @done(26-07-13)
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+      @done(26-07-13: 33 Lua files, 209 tests)
 
 ## Phase 2 - Add the automatic public bootstrap lifecycle
 
@@ -556,7 +562,7 @@ when closing this plan independently.
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
 | 0 | 2026-07-13 | DFHack 53.15-r1 docs/source audit; dev script path; `getModStatePath` and non-atomic JSON-write behavior; Build (32 files), Test (201 passing), diff check. Manual cold-start, flags, and persisted-hotkey checks cancelled by project decision. | Complete |
-| 1 | | First-run preference/keybinding implementation, ownership and failure cases, build/test/diff commands | Pending |
+| 1 | 2026-07-13 | Added versioned global marker adapter and structured keybinding outcomes; preserved customization/removal; added corruption, failure, retry, and idempotence tests. Build: 33 files. Test: 209 passing. | Complete |
 | 2 | | Enableable public bootstrap, lazy registry acquisition, enable/disable/help behavior, build/test/diff commands | Pending |
 | 3 | | Startup/command/reload/missed-scan tests, enabled-state preservation, stale-generation proof, build/test/diff commands | Pending |
 | 4 | | Optional independent overlay discovery/activation, Ctrl-F ownership, coordinated reload, or recorded N/A if the popover is not yet present | Pending |

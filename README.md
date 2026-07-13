@@ -148,7 +148,11 @@ gui/soulsearch
 Either command initializes the default `Ctrl-F@dwarfmode/Default` binding when
 no existing SoulSearch GUI binding exists. The binding runs `gui/soulsearch`.
 Use `gui/keybinds` to change or remove it, then save from that screen to persist
-your choice across DFHack restarts.
+your choice across DFHack restarts. SoulSearch records that first-run decision
+in `dfhack-config/mods/soulsearch/default-keybinding.json`, so it does not
+recreate a binding you later remove. If that marker is reported as corrupt,
+close DFHack, remove only that file, and run `soulsearch` to make a new
+first-run decision.
 
 `gui/soulsearch` opens a new SoulSearch panel in fortress mode. Repeated GUI
 command or `Ctrl-F` invocations create additional windows; only one DFHack
