@@ -418,38 +418,46 @@ which is proven by the clean-install full-window binding and command paths.
 Record `Not applicable - Stats popover not implemented` in the evidence table
 when closing this plan independently.
 
-- [ ] When the stats-popover work is present, complete its overlay registration
+Status: not applicable on 2026-07-13. The source contains only the existing
+`stats_presenter.lua`; no extracted Stats component, popover screen, or overlay
+registration script exists, and `docs/stats-popover.todo` remains unstarted.
+
+- [x] When the stats-popover work is present, complete its overlay registration
       with a dedicated module-loadable overlay script and
-      `default_enabled=true`.
-- [ ] Do not add `--@enable=true` to the overlay registration script merely to
+      `default_enabled=true`. @not-applicable(26-07-13)
+- [x] Do not add `--@enable=true` to the overlay registration script merely to
       solve automatic keybinding setup; that responsibility belongs to the
-      public `soulsearch.lua` bootstrap.
-- [ ] Do not add the top-level overlay registration script to SoulSearch's
-      internal module registry.
-- [ ] Ensure overlay activation resolves and initializes only the runtime needed
+      public `soulsearch.lua` bootstrap. @not-applicable(26-07-13)
+- [x] Do not add the top-level overlay registration script to SoulSearch's
+      internal module registry. @not-applicable(26-07-13)
+- [x] Ensure overlay activation resolves and initializes only the runtime needed
       for the popover and remains functional if automatic bootstrap was missed
-      or disabled.
-- [ ] Keep the global overlay framework's enabled state and the widget's saved
-      enabled/position state authoritative.
-- [ ] Keep `Ctrl-F` bound only to the full `gui/soulsearch` command. The
+      or disabled. @not-applicable(26-07-13)
+- [x] Keep the global overlay framework's enabled state and the widget's saved
+      enabled/position state authoritative. @not-applicable(26-07-13)
+- [x] Keep `Ctrl-F` bound only to the full `gui/soulsearch` command. The
       popover's `overlay_trigger()` may be used in a user-created binding but
       receives no competing default binding from SoulSearch.
-- [ ] Coordinate `soulsearch reload` with overlay environment clearing and
+      @not-applicable(26-07-13)
+- [x] Coordinate `soulsearch reload` with overlay environment clearing and
       rescan exactly as specified by `docs/stats-popover.todo`, while preserving
       the automatic bootstrap state and first-run keybinding decision.
+      @not-applicable(26-07-13)
 
 ### Phase 4 gate
 
-- [ ] When the Stats-popover feature is present, a clean package exposes both
+- [x] When the Stats-popover feature is present, a clean package exposes both
       access paths without a manual command:
       `Ctrl-F` opens the full UI and the default-enabled unit-card button opens
       the Stats popover when the overlay framework and saved widget state allow
-      it.
-- [ ] When the Stats-popover feature is present, disabling automatic SoulSearch
+      it. @not-applicable(26-07-13)
+- [x] When the Stats-popover feature is present, disabling automatic SoulSearch
       bootstrap does not mutate overlay state,
       and disabling the overlay framework does not mutate bootstrap state.
-- [ ] When the Stats-popover feature is present, its Phase 5 automated gate
+      @not-applicable(26-07-13)
+- [x] When the Stats-popover feature is present, its Phase 5 automated gate
       passes; otherwise this integration phase is recorded as not applicable.
+      @not-applicable(26-07-13)
 
 ## Phase 5 - Documentation, package verification, and release gates
 
@@ -578,6 +586,6 @@ when closing this plan independently.
 | 1 | 2026-07-13 | Added versioned global marker adapter and structured keybinding outcomes; preserved customization/removal; added corruption, failure, retry, and idempotence tests. Build: 33 files. Test: 209 passing. | Complete |
 | 2 | 2026-07-13 | Added public enableable bootstrap; deferred full registry acquisition; preserved explicit initialization/reload; added automatic-load and enable/disable command tests. Build: 33 files. Test: 212 passing. | Complete |
 | 3 | 2026-07-13 | Expanded startup, missed-scan, disabled-bootstrap, retry, invalid-argument, and reload tests; documented hot-install recovery. No state-change callback is needed. Build: 33 files. Test: 217 passing. | Complete |
-| 4 | | Optional independent overlay discovery/activation, Ctrl-F ownership, coordinated reload, or recorded N/A if the popover is not yet present | Pending |
+| 4 | 2026-07-13 | Not applicable - Stats popover not implemented. Source has only `stats_presenter.lua`; `docs/stats-popover.todo` remains unstarted. | Complete (N/A) |
 | 5 | | README/help/version, build/test/publish/package/diff commands, test counts and package paths | Pending |
 | 6 | | Dated isolated clean-install, binding customization/removal, enable/disable/reload, overlay independence, restored configuration | Pending |
