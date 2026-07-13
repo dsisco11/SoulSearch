@@ -221,16 +221,17 @@ end
 ---@field query string
 ---@field attribute_query string
 ---@field skill_query string
----@field result_sort_key 'name'|'unit_id'|'profession'|nil
----@field result_sort_reverse boolean
----@field result_sort_phase integer
 ---@field stats_sort_key string|nil
 ---@field stats_sort_reverse boolean
 ---@field stats_sort_phase integer
+---@field result_sort_key 'name'|'unit_id'|'profession'|nil
+---@field result_sort_reverse boolean
+---@field result_sort_phase integer
 ---@field suppress_result_select_refresh boolean
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
 ---@field add_race_open boolean
+---@field unit_scope_picker_open boolean
 ---@field preset_picker_open boolean
 ---@field filter_catalog SoulSearchFilterCatalog
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
@@ -263,6 +264,7 @@ function SoulSearchWindow:init()
     self.add_filter_open = false
     self.add_skill_open = false
     self.add_race_open = false
+    self.unit_scope_picker_open = false
     self.preset_picker_open = false
     self.preset_query = ''
     self.unit_scope = unit_scope_provider.get_default_scope()
@@ -288,9 +290,15 @@ function SoulSearchWindow:init()
         is_attribute_picker_open=function() return self.add_filter_open end,
         is_skill_picker_open=function() return self.add_skill_open end,
         is_race_picker_open=function() return self.add_race_open end,
+        is_unit_scope_picker_open=function()
+            return self.unit_scope_picker_open
+        end,
         unit_scope=self.unit_scope,
         unit_scope_options=unit_scope_provider.get_options(),
-        on_unit_scope_change=function(scope) self:set_unit_scope(scope) end,
+        on_unit_scope_change=function(scope) self:select_unit_scope(scope) end,
+        on_toggle_unit_scope_picker=function()
+            self:toggle_unit_scope_picker()
+        end,
         is_preset_picker_open=function() return self.preset_picker_open end,
         on_toggle_attribute_picker=function() self:toggle_add_filter_dropdown() end,
         on_toggle_skill_picker=function() self:toggle_add_skill_dropdown() end,
@@ -335,6 +343,7 @@ function SoulSearchWindow:init()
     end))
     self:addviews(views)
 
+    self:update_unit_scope_picker()
     self:refresh_residents()
     self:refresh_views{
         active_filters=true,
@@ -958,6 +967,7 @@ function SoulSearchWindow:toggle_preset_picker()
         self.add_filter_open = false
         self.add_skill_open = false
         self.add_race_open = false
+        self.unit_scope_picker_open = false
     end
     self:refresh_views{pickers=true, presets=true}
 end
@@ -982,6 +992,7 @@ function SoulSearchWindow:set_filter_direction(filter_id, direction)
         self.add_filter_open = false
         self.add_skill_open = false
         self.add_race_open = false
+        self.unit_scope_picker_open = false
     end
     local selected = self:get_filter_choice_index(filter_id)
     self:on_filter_state_changed(selected)
@@ -994,6 +1005,7 @@ function SoulSearchWindow:toggle_add_filter_dropdown()
     if self.add_filter_open then
         self.add_skill_open = false
         self.add_race_open = false
+        self.unit_scope_picker_open = false
         self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
@@ -1005,6 +1017,7 @@ function SoulSearchWindow:toggle_add_skill_dropdown()
     if self.add_skill_open then
         self.add_filter_open = false
         self.add_race_open = false
+        self.unit_scope_picker_open = false
         self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
@@ -1016,6 +1029,7 @@ function SoulSearchWindow:toggle_add_race_dropdown()
     if self.add_race_open then
         self.add_filter_open = false
         self.add_skill_open = false
+        self.unit_scope_picker_open = false
         self.preset_picker_open = false
     end
     self:refresh_views{pickers=true}
@@ -1024,13 +1038,14 @@ end
 ---@return boolean
 function SoulSearchWindow:close_add_filter_dropdown()
     if not self.add_filter_open and not self.add_skill_open and
-            not self.add_race_open then
+            not self.add_race_open and not self.unit_scope_picker_open then
         return false
     end
 
     self.add_filter_open = false
     self.add_skill_open = false
     self.add_race_open = false
+    self.unit_scope_picker_open = false
     self:refresh_views{pickers=true}
     return true
 end
@@ -1056,7 +1071,7 @@ end
 ---@return boolean
 function SoulSearchWindow:handle_filter_action_click()
     if self.add_filter_open or self.add_skill_open or self.add_race_open or
-            self.preset_picker_open then
+            self.unit_scope_picker_open or self.preset_picker_open then
         return false
     end
 
@@ -1110,8 +1125,53 @@ function SoulSearchWindow:set_unit_scope(scope)
     if scope == self.unit_scope then return false end
     unit_scope_provider.new(scope)
     self.unit_scope = scope
-    self:refresh_views{candidates=true, results=true}
+    self:refresh_views{candidates=true, results=true, pickers=true}
     return true
+end
+
+---Builds the unit-scope selector rows and reflects the active scope on its
+---control. The popup is intentionally a short modal directly below Search.
+function SoulSearchWindow:update_unit_scope_picker()
+    local choices = {}
+    local selected
+    local selected_label
+    for index, option in ipairs(unit_scope_provider.get_options()) do
+        local is_selected = option.value == self.unit_scope
+        if is_selected then
+            selected = index
+            selected_label = option.label
+        end
+        table.insert(choices, {
+            text=ui_format.format_unit_scope_choice(option.label, is_selected),
+            scope=option.value,
+        })
+    end
+    self.subviews.unit_scope_picker_list:setChoices(choices, selected)
+    self.subviews.unit_scope:setText(ui_format.format_unit_scope_control(
+        selected_label))
+end
+
+---Opens or closes the unit-scope selector.
+function SoulSearchWindow:toggle_unit_scope_picker()
+    self.unit_scope_picker_open = not self.unit_scope_picker_open
+    if self.unit_scope_picker_open then
+        self.add_filter_open = false
+        self.add_skill_open = false
+        self.add_race_open = false
+        self.preset_picker_open = false
+    end
+    self:update_unit_scope_picker()
+    self:refresh_views{pickers=true}
+end
+
+---@param scope SoulSearchUnitScope
+function SoulSearchWindow:select_unit_scope(scope)
+    self.unit_scope_picker_open = false
+    local changed = self:set_unit_scope(scope)
+    self:update_unit_scope_picker()
+    if not changed then
+        self:refresh_views{pickers=true}
+    end
 end
 
 ---@param selected integer|nil

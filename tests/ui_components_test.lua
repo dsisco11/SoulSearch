@@ -38,9 +38,11 @@ return function(test, repo_root)
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return false end,
+            is_unit_scope_picker_open=function() return false end,
             unit_scope='fort_residents',
             unit_scope_options={{label='Residents', value='fort_residents'}},
             on_unit_scope_change=noop,
+            on_toggle_unit_scope_picker=noop,
             on_toggle_attribute_picker=noop,
             on_toggle_skill_picker=noop,
             on_toggle_race_picker=noop,
@@ -59,9 +61,10 @@ return function(test, repo_root)
             on_race_query=noop,
             on_add=noop,
         }
-        test.assert_equal(13, #views)
+        test.assert_equal(14, #views)
         test.assert_equal('unit_scope', views[3].view_id)
-        test.assert_equal('CycleHotkeyLabel', views[3].widget_kind)
+        test.assert_equal('HotkeyLabel', views[3].widget_kind)
+        test.assert_equal('Search: Residents', views[3].label)
         test.assert_equal('add_filter_button', views[4].view_id)
         test.assert_equal('add_skill_button', views[5].view_id)
         test.assert_equal('add_race_button', views[6].view_id)
@@ -78,6 +81,8 @@ return function(test, repo_root)
         test.assert_equal('available_race_list', views[11].subviews[3].view_id)
         test.assert_equal('available_skill_window', views[12].view_id)
         test.assert_equal('preset_picker_window', views[13].view_id)
+        test.assert_equal('unit_scope_picker_window', views[14].view_id)
+        test.assert_equal('unit_scope_picker_list', views[14].subviews[1].view_id)
     end)
 
     test.case('UI components: race picker hides the active filter list', function()
@@ -85,9 +90,11 @@ return function(test, repo_root)
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return true end,
+            is_unit_scope_picker_open=function() return false end,
             unit_scope='fort_residents',
             unit_scope_options={{label='Residents', value='fort_residents'}},
             on_unit_scope_change=noop,
+            on_toggle_unit_scope_picker=noop,
             on_toggle_attribute_picker=noop,
             on_toggle_skill_picker=noop,
             on_toggle_race_picker=noop,
@@ -111,6 +118,39 @@ return function(test, repo_root)
         test.assert_false(views[10].visible())
         test.assert_false(views[12].visible())
         test.assert_false(views[13].visible())
+        test.assert_false(views[14].visible())
+    end)
+
+    test.case('UI components: unit-scope picker is a modal below the control', function()
+        local views = components.create_filter_panel{
+            is_attribute_picker_open=function() return false end,
+            is_skill_picker_open=function() return false end,
+            is_race_picker_open=function() return false end,
+            is_unit_scope_picker_open=function() return true end,
+            unit_scope='visitors',
+            unit_scope_options={{label='Visitors', value='visitors'}},
+            on_unit_scope_change=noop,
+            on_toggle_unit_scope_picker=noop,
+            on_toggle_attribute_picker=noop,
+            on_toggle_skill_picker=noop,
+            on_toggle_race_picker=noop,
+            on_clear=noop,
+            is_preset_picker_open=function() return false end,
+            on_toggle_preset_picker=noop,
+            on_close_preset_picker=noop,
+            on_preset_query=noop,
+            on_save_preset=noop,
+            on_load_preset=noop,
+            on_load_default_preset=noop,
+            on_load_role_preset=noop,
+            on_close_picker=noop,
+            on_attribute_query=noop,
+            on_skill_query=noop,
+            on_race_query=noop,
+            on_add=noop,
+        }
+        test.assert_true(views[14].visible())
+        test.assert_false(views[9].visible())
     end)
 
     test.case('UI components: results and stats expose explicit panel views', function()

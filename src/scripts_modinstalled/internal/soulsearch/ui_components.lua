@@ -35,9 +35,11 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field is_attribute_picker_open fun(): boolean
 ---@field is_skill_picker_open fun(): boolean
 ---@field is_race_picker_open fun(): boolean
+---@field is_unit_scope_picker_open fun(): boolean
 ---@field unit_scope SoulSearchUnitScope
 ---@field unit_scope_options {label: string, value: SoulSearchUnitScope}[]
 ---@field on_unit_scope_change fun(scope: SoulSearchUnitScope)
+---@field on_toggle_unit_scope_picker fun()
 ---@field on_toggle_attribute_picker fun()
 ---@field on_toggle_skill_picker fun()
 ---@field on_toggle_race_picker fun()
@@ -59,6 +61,13 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@param inputs SoulSearchFilterPanelInputs
 ---@return table[]
 function create_filter_panel(inputs)
+    local unit_scope_label
+    for _, option in ipairs(inputs.unit_scope_options) do
+        if option.value == inputs.unit_scope then
+            unit_scope_label = option.label
+            break
+        end
+    end
     return {
         widgets.Label{
             frame=ui_layout.get_frame('filter_title'),
@@ -70,14 +79,13 @@ function create_filter_panel(inputs)
             text=ui_format.get_title_underline('Search filters'),
             text_pen=COLOR_GREY,
         },
-        widgets.CycleHotkeyLabel{
+        widgets.HotkeyLabel{
             view_id='unit_scope',
             frame=ui_layout.get_frame('unit_scope'),
             key='CUSTOM_V',
-            label='Search',
-            options=inputs.unit_scope_options,
-            initial_option=inputs.unit_scope,
-            on_change=inputs.on_unit_scope_change,
+            label=ui_format.format_unit_scope_control(
+                unit_scope_label),
+            on_activate=inputs.on_toggle_unit_scope_picker,
         },
         widgets.HotkeyLabel{
             view_id='add_filter_button',
@@ -121,6 +129,7 @@ function create_filter_panel(inputs)
                 return not inputs.is_attribute_picker_open() and
                     not inputs.is_skill_picker_open() and
                     not inputs.is_race_picker_open() and
+                    not inputs.is_unit_scope_picker_open() and
                     not inputs.is_preset_picker_open()
             end,
         },
@@ -254,6 +263,28 @@ function create_filter_panel(inputs)
                             inputs.on_load_default_preset(choice.default_id)
                         elseif choice and choice.name then
                             inputs.on_load_preset(choice.name)
+                        end
+                    end,
+                },
+            },
+        },
+        -- Keep this last: sibling views paint in creation order, and this
+        -- short popup deliberately overlaps the controls beneath Search.
+        widgets.Window{
+            view_id='unit_scope_picker_window',
+            frame=ui_layout.get_unit_scope_picker_frame(
+                #inputs.unit_scope_options),
+            frame_title='Search scope',
+            draggable=false,
+            visible=inputs.is_unit_scope_picker_open,
+            subviews={
+                widgets.List{
+                    view_id='unit_scope_picker_list',
+                    frame=ui_layout.get_unit_scope_picker_list_frame(
+                        #inputs.unit_scope_options),
+                    on_submit=function(index, choice)
+                        if choice and choice.scope then
+                            inputs.on_unit_scope_change(choice.scope)
                         end
                     end,
                 },

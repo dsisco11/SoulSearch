@@ -38,6 +38,16 @@ return function(test, repo_root)
 
     test.case('UI layout: race control extends the filter panel in order', function()
         test.assert_equal(4, layout.get_frame('unit_scope').t)
+        test.assert_equal(5, layout.get_frame('unit_scope_picker').t)
+        test.assert_nil(layout.get_frame('unit_scope_picker').h)
+        test.assert_equal(0, layout.get_frame('unit_scope_picker_list').t)
+        test.assert_equal(4, layout.UNIT_SCOPE_PICKER_VERTICAL_PADDING)
+        test.assert_equal(3 + layout.UNIT_SCOPE_PICKER_VERTICAL_PADDING,
+            layout.get_unit_scope_picker_frame(3).h)
+        test.assert_equal(10 + layout.UNIT_SCOPE_PICKER_VERTICAL_PADDING,
+            layout.get_unit_scope_picker_frame(10).h)
+        test.assert_equal(3, layout.get_unit_scope_picker_list_frame(3).h)
+        test.assert_nil(layout.get_unit_scope_picker_list_frame(3).b)
         test.assert_equal(5, layout.get_frame('add_filter').t)
         test.assert_equal(6, layout.get_frame('add_skill').t)
         test.assert_equal(7, layout.get_frame('add_race').t)

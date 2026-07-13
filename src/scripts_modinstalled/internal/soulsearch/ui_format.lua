@@ -73,6 +73,19 @@ function format_result_columns(sort_key, sort_reverse)
         'Profession' .. marker('profession'))
 end
 
+---@param label string
+---@return string
+function format_unit_scope_control(label)
+    return 'Search: ' .. label
+end
+
+---@param label string
+---@param selected boolean
+---@return string
+function format_unit_scope_choice(label, selected)
+    return (selected and glyphs.CP437_ARROW_RIGHT or ' ') .. ' ' .. label
+end
+
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
 ---@return dfhack.color|dfhack.pen
 function get_category_pen(descriptor)

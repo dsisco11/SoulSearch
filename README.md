@@ -133,8 +133,9 @@ to persist your choice across DFHack restarts.
 
 The command opens the SoulSearch panel in fortress mode. By default, its
 unit scope is **Residents** and its candidate race scope is **Humanoids**. Use
-the **Search** cycle control to switch between Residents, Visitors, and All
-units. Use **Add race filter** to include another race or creature type, or
+the **Search** dropdown to choose between Residents, Visitors, and All units.
+The active scope is marked in the dropdown list. Use **Add race filter** to
+include another race or creature type, or
 exclude a race from the included candidates. Race filters use `[+]` to Include
 and `[-]` to Exclude and do not participate in ranking order. Use the Search
 filters list to add traits, attributes, and skills such as `Agility`; set their

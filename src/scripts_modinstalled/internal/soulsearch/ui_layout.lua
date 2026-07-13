@@ -21,6 +21,10 @@ HEADER_ROW = 2
 UNDERLINE_ROW = 3
 PICKER_TOP = 7
 STATS_CONTENT_TOP = 4
+WINDOW_FRAME_BORDER = 1
+WINDOW_CONTENT_INSET = 1
+UNIT_SCOPE_PICKER_VERTICAL_PADDING = 2 *
+    (WINDOW_FRAME_BORDER + WINDOW_CONTENT_INSET)
 
 STATS_LABEL_WIDTH = 24
 STATS_VALUE_COLUMN_X = 27
@@ -74,6 +78,8 @@ FRAMES = {
     filter_title={l=FILTER_LEFT, t=HEADER_ROW, w=FILTER_WIDTH, h=1},
     filter_underline={l=FILTER_LEFT, t=UNDERLINE_ROW, w=FILTER_WIDTH, h=1},
     unit_scope={l=FILTER_LEFT, t=4, w=25, h=1},
+    unit_scope_picker={l=FILTER_LEFT, t=5, w=25},
+    unit_scope_picker_list={l=0, t=0, r=0, b=0},
     add_filter={l=FILTER_LEFT, t=5, w=25, h=1},
     add_skill={l=FILTER_LEFT, t=6, w=25, h=1},
     add_race={l=FILTER_LEFT, t=7, w=25, h=1},
@@ -131,6 +137,25 @@ function get_filter_action_at_x(x)
         offset = offset - action.width
     end
     return nil
+end
+
+---@param option_count integer
+---@return table
+function get_unit_scope_picker_frame(option_count)
+    local frame = get_frame('unit_scope_picker')
+    -- Leave one row per option, plus the framed window's border and content
+    -- inset above and below the list.
+    frame.h = option_count + UNIT_SCOPE_PICKER_VERTICAL_PADDING
+    return frame
+end
+
+---@param option_count integer
+---@return table
+function get_unit_scope_picker_list_frame(option_count)
+    local frame = get_frame('unit_scope_picker_list')
+    frame.b = nil
+    frame.h = math.max(1, option_count)
+    return frame
 end
 
 ---@param x integer|nil
