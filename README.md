@@ -5,17 +5,20 @@ traits, attributes, and skills. Race filters define the candidate set; the
 other filters are ordered relevance criteria, so partial matches remain visible
 while units matching more and higher-priority criteria rank first.
 
-SoulSearch is implemented as Lua-only DFHack commands: `soulsearch` initializes
-runtime state and `gui/soulsearch` opens the UI. Native C++ plugin code remains
-out of scope unless profiling later identifies a real performance requirement.
+SoulSearch is implemented as Lua-only DFHack commands. DFHack automatically
+performs its minimal first-run bootstrap after installation; `soulsearch`
+performs explicit runtime setup, and `gui/soulsearch` opens the UI. Native C++
+plugin code remains out of scope unless profiling later identifies a real
+performance requirement.
 
 ## Status
 
 The current implementation includes:
 
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
-- `scripts_modinstalled/soulsearch.lua` defines the initialization and reload
-  command; `scripts_modinstalled/gui/soulsearch.lua` defines the GUI command.
+- `scripts_modinstalled/soulsearch.lua` defines the automatic bootstrap,
+  runtime setup, and reload command; `scripts_modinstalled/gui/soulsearch.lua`
+  defines the GUI command.
 - `scripts_modinstalled/internal/soulsearch/` contains private support modules.
 - Resident collection reads stable DFHack APIs into compact snapshots of names,
   professions, traits, attributes, and skills. Position is intentionally read
@@ -31,9 +34,10 @@ The current implementation includes:
   filters, ordered high/low ranking filters, JSON-backed filter presets,
   ranked results, Stats, refresh, zoom, and close controls.
 
-`soulsearch` initializes keybindings and world-scoped caches without opening a
-window. `gui/soulsearch` validates fortress mode and opens the resident search
-panel.
+On a normal installation, SoulSearch automatically seeds its default keybinding
+without opening a window. `soulsearch` explicitly initializes keybindings and
+world-scoped caches without opening a window. `gui/soulsearch` validates
+fortress mode and opens the resident search panel.
 
 ## Installation
 
@@ -134,30 +138,44 @@ before reloading, so you do not need to close them manually; run
 
 | Command | Arguments | Purpose |
 | --- | --- | --- |
-| `soulsearch` | none | Initialize runtime state, world-scoped caches, and the default GUI keybinding. |
+| `soulsearch` | none | Explicitly initialize runtime state and retry an incomplete first-run keybinding decision without opening the UI. It does not recreate a binding the player intentionally removed. |
 | `soulsearch reload` | none | Dismiss SoulSearch screens and rebuild the runtime module generation. |
 | `gui/soulsearch` | none | Initialize if needed, then open a SoulSearch window. |
+| `enable soulsearch` | none | Enable automatic bootstrap for the current DFHack session and retry first-run setup. |
+| `disable soulsearch` | none | Disable only automatic bootstrap for the current DFHack session. Existing bindings and explicit commands remain available. |
 
-After DFHack can see the script path, initialize SoulSearch with:
+For normal use, install the mod, start or restart DFHack, load a fortress, and
+press `Ctrl-F`. No manual initialization command is required.
+
+Use `soulsearch` only for explicit runtime setup or recovery after an
+incomplete first-run attempt:
 
 ```text
 soulsearch
 ```
 
-Then open the window with:
+You can always open the window directly with:
 
 ```text
 gui/soulsearch
 ```
 
-Either command initializes the default `Ctrl-F@dwarfmode/Default` binding when
-no existing SoulSearch GUI binding exists. The binding runs `gui/soulsearch`.
-Use `gui/keybinds` to change or remove it, then save from that screen to persist
-your choice across DFHack restarts. SoulSearch records that first-run decision
+Automatic bootstrap seeds `Ctrl-F@dwarfmode/Default -> gui/soulsearch` once
+when no valid SoulSearch GUI binding exists. Existing custom bindings take
+precedence. Use `gui/keybinds` to change or remove bindings, then save from
+that screen to persist your choice across DFHack restarts. SoulSearch records
+that first-run decision
 in `dfhack-config/mods/soulsearch/default-keybinding.json`, so it does not
 recreate a binding you later remove. If that marker is reported as corrupt,
 close DFHack, remove only that file, and run `soulsearch` to make a new
 first-run decision.
+
+`disable soulsearch` does not delete bindings, close existing SoulSearch
+windows, or block explicit `soulsearch` and `gui/soulsearch` commands. Its
+state is session-only; the automatic bootstrap is active again after a cold
+DFHack restart. SoulSearch does not enable, disable, place, or otherwise alter
+DFHack overlay widgets. A future Stats-popover overlay has separate global
+overlay-framework and saved widget-state ownership.
 
 `gui/soulsearch` opens a new SoulSearch panel in fortress mode. Repeated GUI
 command or `Ctrl-F` invocations create additional windows; only one DFHack

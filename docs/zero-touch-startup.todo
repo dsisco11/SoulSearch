@@ -461,51 +461,57 @@ registration script exists, and `docs/stats-popover.todo` remains unstarted.
 
 ## Phase 5 - Documentation, package verification, and release gates
 
-- [ ] Update README installation and usage text so the primary path is
+- [x] Update README installation and usage text so the primary path is
       `install -> restart/load DFHack -> Ctrl-F`, with no manual initialization
       step. Add the unit-card button as a second zero-touch path when the
-      separate Stats-popover feature is present.
-- [ ] Document the exceptional hot-install/missed-scan recovery path separately
-      from normal installation.
-- [ ] Document command ownership and arguments:
-  - [ ] `gui/soulsearch` opens the full UI;
-  - [ ] `soulsearch` performs runtime setup/validation and retries only an
+      separate Stats-popover feature is present. @done(26-07-13)
+- [x] Document the exceptional hot-install/missed-scan recovery path separately
+      from normal installation. @done(26-07-13)
+- [x] Document command ownership and arguments:
+  - [x] `gui/soulsearch` opens the full UI;
+  - [x] `soulsearch` performs runtime setup/validation and retries only an
         incomplete first-run decision;
-  - [ ] `soulsearch reload` reconstructs development runtime state;
-  - [ ] `enable soulsearch` activates automatic bootstrap for the session; and
-  - [ ] `disable soulsearch` deactivates only automatic bootstrap work.
-- [ ] Document keybinding ownership:
-  - [ ] the default is seeded once;
-  - [ ] existing custom bindings win;
-  - [ ] saved removal is respected;
-  - [ ] `gui/keybinds` is the supported edit surface; and
-  - [ ] disabling bootstrap does not delete bindings.
-- [ ] Document the independent overlay layers: global `enable overlay`, saved
+  - [x] `soulsearch reload` reconstructs development runtime state;
+  - [x] `enable soulsearch` activates automatic bootstrap for the session; and
+  - [x] `disable soulsearch` deactivates only automatic bootstrap work.
+      @done(26-07-13)
+- [x] Document keybinding ownership:
+  - [x] the default is seeded once;
+  - [x] existing custom bindings win;
+  - [x] saved removal is respected;
+  - [x] `gui/keybinds` is the supported edit surface; and
+  - [x] disabling bootstrap does not delete bindings.
+      @done(26-07-13)
+- [x] Document the independent overlay layers: global `enable overlay`, saved
       widget enablement/placement, and SoulSearch bootstrap state.
-- [ ] Update the Stats-popover README/help work to cross-reference this startup
-      contract without duplicating it.
-- [ ] Add package verification that the shipped
+      @done(26-07-13: documented as intentional nonownership until popover work exists)
+- [x] Update the Stats-popover README/help work to cross-reference this startup
+      contract without duplicating it. @not-applicable(26-07-13: popover work is unstarted)
+- [x] Add package verification that the shipped
       `scripts_modinstalled/soulsearch.lua` contains target-verified semantic
       module and enable annotations and that every new preference/bootstrap
       dependency is included. Do not hard-code an unverified alternate
-      whitespace spelling.
-- [ ] Choose and record the release version before publishing. Update
+      whitespace spelling. @done(26-07-13)
+- [x] Choose and record the release version before publishing. Update
       `NUMERIC_VERSION` and `DISPLAYED_VERSION` in `src/info.txt` as required.
-- [ ] Run the automated closure sequence separately:
-  - [ ] `tools/Build.ps1`;
-  - [ ] `tools/Test.ps1`;
-  - [ ] `tools/Publish.ps1`;
-  - [ ] `tools/VerifyPackage.ps1` through the publish workflow; and
-  - [ ] `git diff --check`.
-- [ ] Record total tests, failures, produced archive path, expanded package
+      @done(26-07-13: retained existing 1 / 0.1.0 metadata)
+- [x] Run the automated closure sequence separately:
+  - [x] `tools/Build.ps1`;
+  - [x] `tools/Test.ps1`;
+  - [x] `tools/Publish.ps1`;
+  - [x] `tools/VerifyPackage.ps1` through the publish workflow; and
+  - [x] `git diff --check`.
+      @done(26-07-13)
+- [x] Record total tests, failures, produced archive path, expanded package
       path, and exact packaged script path in the execution evidence.
+      @done(26-07-13)
 
 ### Phase 5 gate
 
-- [ ] Help, README, source, expanded package, and archive describe and contain
-      the same zero-touch startup behavior.
-- [ ] Automated build, tests, publish, package verification, and whitespace
-      checks are green.
+- [x] Help, README, source, expanded package, and archive describe and contain
+      the same zero-touch startup behavior. @done(26-07-13)
+- [x] Automated build, tests, publish, package verification, and whitespace
+      checks are green. @done(26-07-13)
 
 ## Phase 6 - Clean-install live acceptance
 
@@ -587,5 +593,5 @@ registration script exists, and `docs/stats-popover.todo` remains unstarted.
 | 2 | 2026-07-13 | Added public enableable bootstrap; deferred full registry acquisition; preserved explicit initialization/reload; added automatic-load and enable/disable command tests. Build: 33 files. Test: 212 passing. | Complete |
 | 3 | 2026-07-13 | Expanded startup, missed-scan, disabled-bootstrap, retry, invalid-argument, and reload tests; documented hot-install recovery. No state-change callback is needed. Build: 33 files. Test: 217 passing. | Complete |
 | 4 | 2026-07-13 | Not applicable - Stats popover not implemented. Source has only `stats_presenter.lua`; `docs/stats-popover.todo` remains unstarted. | Complete (N/A) |
-| 5 | | README/help/version, build/test/publish/package/diff commands, test counts and package paths | Pending |
+| 5 | 2026-07-13 | Retained version 1 / 0.1.0; updated README and package semantic checks. Build: 33 files. Test: 217 passing, 0 failures. Archive: `dist/SoulSearch-0.1.0.zip`. Expanded package: `dist/SoulSearch`. Script: `dist/SoulSearch/scripts_modinstalled/soulsearch.lua`. | Complete |
 | 6 | | Dated isolated clean-install, binding customization/removal, enable/disable/reload, overlay independence, restored configuration | Pending |

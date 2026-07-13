@@ -37,6 +37,19 @@ function Compare-PackageFileSet {
     }
 }
 
+function Assert-SoulSearchBootstrapPayload {
+    param(
+        [Parameter(Mandatory=$true)][string]$ScriptText,
+        [Parameter(Mandatory=$true)][string]$Label
+    )
+
+    foreach ($annotation in @('--@module=true', '--@enable=true')) {
+        if (-not $ScriptText.Contains($annotation)) {
+            throw "$Label soulsearch.lua is missing required $annotation annotation."
+        }
+    }
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path (Join-Path $scriptRoot "..")).Path
 $sourceCandidate = if ([IO.Path]::IsPathFullyQualified($SourceDir)) {
@@ -54,20 +67,38 @@ if ($sourceFiles -notcontains 'info.txt' -or
         $sourceFiles -notcontains 'scripts_modinstalled/soulsearch.lua') {
     throw "Source payload must contain info.txt and scripts_modinstalled/soulsearch.lua."
 }
+if ($sourceFiles -notcontains 'scripts_modinstalled/internal/soulsearch/keybindings.lua' -or
+        $sourceFiles -notcontains 'scripts_modinstalled/internal/soulsearch/keybinding_preferences.lua') {
+    throw "Source payload must contain SoulSearch bootstrap dependencies."
+}
+Assert-SoulSearchBootstrapPayload -ScriptText (
+    Get-Content -LiteralPath (Join-Path $sourcePath 'scripts_modinstalled/soulsearch.lua') -Raw
+) -Label 'Source'
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [IO.Compression.ZipFile]::OpenRead($resolvedZipPath)
+$zipPrefix = if ($NoRootFolder) { '' } else { "$PackageRoot/" }
 try {
     $zipFiles = @($archive.Entries |
         Where-Object { -not $_.FullName.EndsWith('/') } |
         ForEach-Object { $_.FullName } |
         Sort-Object)
+    $scriptEntry = $archive.GetEntry("${zipPrefix}scripts_modinstalled/soulsearch.lua")
+    if (-not $scriptEntry) {
+        throw 'Zip package is missing scripts_modinstalled/soulsearch.lua.'
+    }
+    $reader = [IO.StreamReader]::new($scriptEntry.Open())
+    try {
+        Assert-SoulSearchBootstrapPayload -ScriptText $reader.ReadToEnd() -Label 'Zip'
+    }
+    finally {
+        $reader.Dispose()
+    }
 }
 finally {
     $archive.Dispose()
 }
 
-$zipPrefix = if ($NoRootFolder) { '' } else { "$PackageRoot/" }
 $expectedZipFiles = @($sourceFiles | ForEach-Object { "$zipPrefix$_" })
 Compare-PackageFileSet -Expected $expectedZipFiles -Actual $zipFiles -Label 'Zip'
 
@@ -79,6 +110,9 @@ if ($ExpandedPath) {
         } |
         Sort-Object)
     Compare-PackageFileSet -Expected $sourceFiles -Actual $expandedFiles -Label 'Expanded'
+    Assert-SoulSearchBootstrapPayload -ScriptText (
+        Get-Content -LiteralPath (Join-Path $resolvedExpandedPath 'scripts_modinstalled/soulsearch.lua') -Raw
+    ) -Label 'Expanded'
 }
 
 $expandedLabel = if ($ExpandedPath) { ' and expanded folder' } else { '' }
