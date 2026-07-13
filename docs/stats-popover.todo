@@ -29,10 +29,13 @@ justify marking it complete.
 - [ ] The shared component owns its views, relative layout, rendered records,
       scrolling behavior, sort interaction, hit-testing, and stats tooltips.
 - [ ] The main window preserves its current Stats geometry and behavior.
-- [ ] A visible SoulSearch button appears only on the vanilla fortress-mode
-      unit card (`dwarfmode/ViewSheets/UNIT`).
+- [ ] A visible SoulSearch button appears only in the confirmed vanilla
+      fortress-mode unit-card focus context or context set (expected root:
+      `dwarfmode/ViewSheets/UNIT`).
 - [ ] Activating the button captures the unit currently displayed by the
       vanilla card and opens a compact modal Stats popover for that unit.
+- [ ] The popover is a centered, non-draggable, non-resizable, non-persisted
+      singleton. Repeated activation must not create stacked copies.
 - [ ] The popover does not open the results list, filter editor, presets, or any
       other part of the full SoulSearch window.
 - [ ] Closing the popover returns the player to the same vanilla unit card.
@@ -44,20 +47,28 @@ justify marking it complete.
 - [ ] Capture the selected `df.unit` before showing the new
       `gui.ZScreenModal`.
       Selection lookup must not depend on the popover already being on top.
-- [ ] Snapshot only the selected unit when opening the popover. Do not collect
-      or search every fortress candidate for a single-unit stats view.
+- [ ] Snapshot only the selected unit when opening the popover. Validate and
+      collect that unit before showing a screen; do not collect or search every
+      fortress candidate for a single-unit stats view.
 - [ ] Keep `stats_presenter.lua` responsible for presentation records and
       formatted content; do not duplicate attribute evaluation or formatting
       in the popover.
 - [ ] Define a narrow `SoulSearchStatsSubject` data contract for Stats hosts:
       `unit`, `row`, `name`, `profession`, and `filter_criteria`. Normal search
-      results must satisfy it structurally, while the popover constructs one
-      directly from its captured unit.
+      results must satisfy it structurally.
+- [ ] Keep unit collection and Stats-subject construction separate:
+  - [ ] `residents.collect_unit(unit)` returns one `SoulSearchResidentRow`;
+  - [ ] `stats_subject.from_row(row, filter_criteria)` returns one
+        `SoulSearchStatsSubject`; and
+  - [ ] the popover composes those operations with an empty criteria sequence.
+- [ ] Update `stats_presenter.lua` APIs and LuaDoc to consume
+      `SoulSearchStatsSubject`, not the wider search-result contract.
 - [ ] Keep reusable column dimensions and hitbox boundaries in a dependency-
       free `stats_layout.lua`. `ui_format.lua` and `stats_panel.lua` may both
       consume it; neither may import the other.
-- [ ] Keep sort validation, defaults, and next-state transitions in a pure
-      `stats_sort.lua` module shared by all hosts.
+- [ ] Keep Stats sort validation, defaults, and next-state transitions in a
+      pure `stats_sort.lua` module shared by all Stats hosts. Do not move or
+      change result-list sort behavior as part of this extraction.
 - [ ] Keep sort persistence outside the reusable component. The component may
       own active sort interaction state, but reports changes through a callback
       so each host decides whether and where to save them.
@@ -81,7 +92,7 @@ justify marking it complete.
       `onDismiss`, `onDestroy`, reload, and invalid-unit failure paths.
 - [ ] Do not let the overlay widget retain a stale local reference to a
       reloadable popover module. Resolve the popover entry point dynamically on
-      activation, or make `soulsearch reload` rescan/reconstruct the overlay
+      activation, and make `soulsearch reload` rescan/reconstruct the overlay
       widget before reuse.
 
 ## Phase 0 - Baseline and vanilla integration proof
@@ -93,10 +104,13 @@ justify marking it complete.
   - [ ] fixed `Stat` and `Delta` header with independently scrolling rows;
   - [ ] stat-name and delta sort cycles and their current default directions;
   - [ ] stat-name, sort-header, and delta tooltips;
-  - [ ] correct tooltip record after scrolling via `start_line_num`; and
+  - [ ] correct tooltip record after scrolling via `start_line_num`;
+  - [ ] whether subject changes and sort changes reset or retain scroll;
+  - [ ] keyboard focus/traversal order around the Stats views; and
   - [ ] empty/no-selection behavior.
 - [ ] In a current fortress, verify and record the vanilla unit-card focus
-      string with `dfhack.gui.getFocusStrings()`.
+      string or set of strings with `dfhack.gui.getFocusStrings()` for every
+      practical entry route.
 - [ ] Verify `dfhack.gui.getSelectedUnit(true)` returns the unit displayed on
       `dwarfmode/ViewSheets/UNIT` before any SoulSearch screen is shown.
 - [ ] Verify a module-loadable script under `scripts_modinstalled` can register
@@ -104,8 +118,11 @@ justify marking it complete.
 - [ ] Verify `gui.ZScreenModal` pauses and blocks input as expected when opened
       from both paused and unpaused unit cards, and record the intended pause
       restoration behavior after dismissal.
-- [ ] Record a safe default overlay-button position at the supported UI scales
-      and minimum practical game resolution.
+- [ ] Record a safe default overlay-button position at the supported UI scales.
+- [ ] Record an exact minimum supported game-window width and height derived
+      from the Stats columns, borders, close control, and at least one body row.
+      Below that size, the popover must refuse to open with a concise error
+      instead of claiming to provide a usable clipped layout.
 - [ ] Run the existing automated baseline before source changes:
   - [ ] `tools/Build.ps1`;
   - [ ] `tools/Test.ps1`; and
@@ -128,15 +145,17 @@ justify marking it complete.
   - [ ] the three-state sort cycle for both columns;
   - [ ] sort defaults and reverse-direction rules;
   - [ ] display-record retention, including section gaps;
-  - [ ] header, delta, and attribute tooltip selection; and
+  - [ ] header, delta, and attribute tooltip selection;
   - [ ] scrolled-row tooltip indexing;
-  - [ ] relayout after the host frame changes without requiring
-        `set_subject()`; and
-  - [ ] silent programmatic sort updates versus callback-producing user sort
-        actions.
-- [ ] Add a focused single-unit adapter API, such as
-      `residents.collect_unit(unit)`, that constructs a
-      `SoulSearchStatsSubject` without scanning a candidate scope.
+  - [ ] scroll reset/retention on subject and sort changes;
+  - [ ] current keyboard focus order and which inputs reach the Stats area;
+  - [ ] current layout refresh timing during main-window resize; and
+  - [ ] current persistence behavior: user sort clicks update settings while
+        initialization and ordinary Stats refresh do not.
+- [ ] Characterize the existing one-unit data path with
+      `residents.collect_units({unit})[1]` so the later
+      `residents.collect_unit(unit)` adapter preserves the same row semantics
+      without scanning a candidate scope.
 - [ ] Add tests for units with:
   - [ ] physical, mental, and personality data;
   - [ ] no current soul;
@@ -149,26 +168,35 @@ justify marking it complete.
       fallback strings, then decide whether shared Stats copy should use the
       generic term `unit` or accept host-supplied terminology. Record the choice
       before supporting visitors and animals in the popover.
-- [ ] Extract pure sort normalization and transition tests from
-      `window_config.lua` and `ui.lua` into the planned `stats_sort.lua` seam.
+- [ ] Enumerate the current Stats sort default, normalization, and transition
+      cases in characterization tests without moving their implementation yet.
+      Keep result-list sort cases separate.
 
 ### Phase 1 gate
 
 - [ ] Tests fail if the extraction changes existing sort, hitbox, tooltip,
       scrolling, formatting, or empty-state behavior.
-- [ ] Single-unit stats data can be constructed without running a full search.
+- [ ] A one-unit row and structurally valid Stats subject can be constructed in
+      tests without running a full search, while production ownership remains
+      unchanged until Phase 2.
 
 ## Phase 2 - Extract the reusable Stats component
 
 - [ ] Add a focused internal module, preferably `stats_panel.lua`, containing a
       `widgets.Panel`-derived reusable component.
+- [ ] Add `stats_subject.lua` with a pure `from_row()` constructor and the
+      canonical `SoulSearchStatsSubject` LuaDoc contract.
+- [ ] Add `residents.collect_unit(unit)` as a one-row collection adapter that
+      does not know about Stats subjects or presentation fields.
 - [ ] Add dependency-free `stats_layout.lua` before moving layout constants:
   - [ ] move reusable label width, value-column position, and hitbox boundaries
         into it;
   - [ ] update `ui_format.lua` to consume it; and
   - [ ] keep main-window placement coordinates in `ui_layout.lua`.
-- [ ] Add pure `stats_sort.lua` and make the component, window configuration,
-      and tests consume its default, normalization, and next-state helpers.
+- [ ] Add pure `stats_sort.lua` and make the component, Stats portion of window
+      configuration, and tests consume its default, normalization, and
+      next-state helpers. Leave result-list sort normalization in
+      `window_config.lua`.
 - [ ] Extract `SoulSearchTooltip` into `ui_tooltip.lua` without importing
       `ui.lua` or depending on `SoulSearchWindow`.
 - [ ] Give the component a small host-facing API:
@@ -178,6 +206,9 @@ justify marking it complete.
   - [ ] `get_sort()`;
   - [ ] `get_tooltip_text()`; and
   - [ ] `on_sort_change(sort)` callback.
+- [ ] Add component-contract tests proving `set_sort()` is silent, user sort
+      actions invoke `on_sort_change()`, and relayout after a frame change does
+      not require `set_subject()`.
 - [ ] Move Stats-owned view creation into the component:
   - [ ] title and underline;
   - [ ] unit header;
@@ -186,7 +217,10 @@ justify marking it complete.
 - [ ] Convert Stats layout from main-window absolute coordinates to
       component-relative coordinates.
 - [ ] Recompute component-relative frames and hitboxes when the component's
-      current `frame_body` changes, independently of data refresh.
+      current `frame_body` changes through its layout lifecycle, independently
+      of data refresh.
+- [ ] Export the component's minimum content dimensions from `stats_layout.lua`
+      and test them against the recorded minimum supported screen size.
 - [ ] Preserve the current text column geometry and click boundaries unless a
       separately recorded live incompatibility requires a deliberate change.
 - [ ] Move Stats-owned behavior into the component:
@@ -194,15 +228,26 @@ justify marking it complete.
   - [ ] sort-column hit-testing and sort cycling;
   - [ ] attribute-row and delta-cell hit-testing; and
   - [ ] header, attribute, and delta tooltip selection.
-- [ ] Continue using `stats_presenter.lua` as the sole producer of Stats text
-      and display records.
+- [ ] Continue using `stats_presenter.lua` as the sole component-facing facade
+      for Stats text and display records, with `ui_format.lua` remaining the
+      underlying text formatter.
 - [ ] Keep screen-sized tooltip positioning and painting outside the component.
 - [ ] Remove obsolete Stats construction/update helpers from
       `ui_components.lua` after both behavior and tests have moved.
 - [ ] Move component-internal constants and hit-testing out of the main-window
       `ui_layout.lua`; keep only the component's placement frame there and put
       shared formatting geometry in `stats_layout.lua`.
-- [ ] Register the module and update loader-contract tests.
+- [ ] Register every module introduced in this phase and update
+      `tests/run.lua`, loader stubs, focused suites, and loader-contract tests
+      in this phase rather than deferring them to Phase 6.
+- [ ] Assert dependency-safe registry order explicitly:
+  - [ ] `stats_layout` precedes `ui_format`;
+  - [ ] `ui_format` precedes `stats_presenter`;
+  - [ ] `stats_sort` precedes `window_config` and `stats_panel`;
+  - [ ] `stats_subject` precedes popover consumers;
+  - [ ] `ui_tooltip` precedes `ui` and the popover screen; and
+  - [ ] `stats_presenter`, `attribute_descriptions`, and `stats_layout` precede
+        `stats_panel`, which precedes `ui`.
 
 ### Phase 2 gate
 
@@ -234,6 +279,10 @@ justify marking it complete.
       header behavior, and scroll extent at the default window size.
 - [ ] Preserve live resizing behavior and refresh the component layout from its
       own current `frame_body`.
+- [ ] Preserve the main window's keyboard focus/traversal order and ensure the
+      nested Stats panel does not consume unrelated input.
+- [ ] Preserve the Phase 0 scroll reset/retention behavior when selection or
+      sort changes call `set_subject()` or `set_sort()`.
 
 ### Phase 3 gate
 
@@ -247,30 +296,49 @@ justify marking it complete.
 
 - [ ] Add a dedicated popover module and `gui.ZScreenModal` implementation
       rather than invoking `ui.open()` for the full SoulSearch window.
-- [ ] Construct the selected unit's `SoulSearchStatsSubject` through the Phase
-      1 single-unit adapter.
+- [ ] Implement `stats_popover.open(unit)` as a validate-before-show boundary:
+  - [ ] confirm the captured unit ID still resolves to the same live unit;
+  - [ ] collect exactly one row with `residents.collect_unit(unit)`;
+  - [ ] construct the subject with `stats_subject.from_row(row, {})`;
+  - [ ] construct and show the modal only after those steps succeed; and
+  - [ ] return `nil, error` without registry or viewscreen changes on failure.
 - [ ] Instantiate the reusable Stats component as the popover's content.
-- [ ] Give the popover a compact, clamped frame that remains usable at the
-      minimum supported game window size.
+- [ ] Implement the target window policy: centered, non-draggable,
+      non-resizable, non-persisted, and clamped within the screen.
+- [ ] Give the popover a compact frame that satisfies the component minimum at
+      the exact Phase 0 supported game-window size.
 - [ ] Add a dedicated `stats_popover_config.lua`, or a generic reusable frame-
       normalization helper, for popover defaults and screen-bound clamping. Do
       not reuse the main window's private 90x30 normalization contract.
+- [ ] Re-run screen-frame normalization and component layout from the screen's
+      `onResize(w, h)` path; dismiss with a concise error if a resize makes the
+      screen smaller than the supported minimum.
 - [ ] Add an explicit close control and normal `Esc`/right-click dismissal.
 - [ ] Rely on `gui.ZScreenModal` for modal input and pause behavior so clicks do
       not activate controls on the vanilla card underneath it.
 - [ ] Add a shared `ui_tooltip.lua` screen-level sibling driven by
       `stats_panel:get_tooltip_text()`.
 - [ ] Define popover sort state as independent from the main window:
-  - [ ] initialize it from documented popover defaults;
-  - [ ] retain it for the lifetime of the popover; and
+  - [ ] initialize every new popover as unsorted
+        (`{key=nil, reverse=false, phase=0}`);
+  - [ ] retain it for the lifetime of the popover;
+  - [ ] reset it, along with scroll position, on every new popover instance;
   - [ ] do not write it to the default SoulSearch window identity.
+- [ ] Enforce a singleton popover policy. Repeated programmatic activation while
+      one is open must return/raise the existing screen instead of stacking a
+      second modal.
 - [ ] Register and unregister the popover through `screen_registry.lua`.
 - [ ] Route explicit close, `onDismiss`, and `onDestroy` through one idempotent
       cleanup path that unregisters the screen exactly once.
-- [ ] Handle invalid or stale units gracefully without leaving a broken screen
-      on the viewscreen stack.
-- [ ] Add pure-Lua tests for result construction, default sort, callbacks,
-      close behavior, and teardown bookkeeping where the harness can model it.
+- [ ] Add pure-Lua tests for subject construction, stale-unit rejection,
+      unsupported screen size, singleton behavior, default/reset sort and
+      scroll state, callbacks, close behavior, resize, and teardown bookkeeping
+      where the harness can model them.
+- [ ] Update `tests/run.lua`, module-registry ordering/contracts, and test
+      support loaders for all Phase 4 modules before running this phase's gate.
+- [ ] Assert that `stats_popover_config`, `residents`, `stats_subject`,
+      `stats_panel`, `ui_tooltip`, and `screen_registry` all precede
+      `stats_popover` in the reload registry.
 
 ### Phase 4 gate
 
@@ -288,32 +356,47 @@ justify marking it complete.
 - [ ] Choose and document a stable `OVERLAY_WIDGETS` key/widget identity. Set
       its overlay configuration version deliberately, and increment it only
       when intentionally resetting saved placement/configuration is required.
+- [ ] Record the stable script path, widget key, and exact registered name shown
+      by `overlay list`; treat all three as compatibility-sensitive identity.
 - [ ] Restrict `viewscreens` to the confirmed fortress-mode unit-card focus
-      path instead of all of `dwarfmode`.
+      path or path set instead of all of `dwarfmode`.
 - [ ] Make the overlay enabled by default for first-time SoulSearch users while
       allowing normal disable/reposition control through DFHack.
 - [ ] Render a clearly branded, compact SoulSearch Stats button at the recorded
       safe default position.
-- [ ] On activation:
-  - [ ] call `dfhack.gui.getSelectedUnit(true)` before showing a new screen;
-  - [ ] do nothing unsafe and report a concise error if no unit is available;
-  - [ ] pass the captured unit to the popover API; and
-  - [ ] return or track the owned screen according to DFHack overlay lifecycle
-        requirements.
+- [ ] Implement one shared activation helper that calls
+      `dfhack.gui.getSelectedUnit(true)` before showing a screen, reports a
+      concise error if no unit is available, and returns the result of
+      `stats_popover.open(unit)`.
+- [ ] Define activation ownership explicitly:
+  - [ ] mouse `onInput()` calls the shared helper and returns `true` after
+        consuming the button click;
+  - [ ] `overlay_trigger()` calls the same helper and returns the shown screen
+        for DFHack CLI/keybinding ownership; and
+  - [ ] `screen_registry.lua` tracks both paths for SoulSearch reload teardown,
+        without becoming a second input owner.
 - [ ] Resolve the popover module with `reqscript()` at activation time, or use
       an equivalently reload-safe lookup, so `soulsearch reload` cannot leave
       the widget calling a stale module table.
 - [ ] Ensure the overlay widget itself is never attached as a popover subview.
-- [ ] Avoid per-tick unit scanning or Stats recomputation in overlay callbacks.
+- [ ] Keep the button static and omit `overlay_onupdate()` unless live evidence
+      proves it is necessary. Never perform per-tick unit scanning or Stats
+      recomputation.
 - [ ] Add registration, focus-path, default-state, activation, and missing-unit
       tests with overlay/GUI stubs.
+- [ ] Update `tests/run.lua` and overlay/GUI test support in Phase 5 before
+      running this phase's gate.
 - [ ] Document the development reload procedure:
       `:lua require('plugins.overlay').rescan()` after script changes.
 - [ ] Define the production `soulsearch reload` behavior explicitly:
   - [ ] dismiss all registered main and popover screens;
   - [ ] reload internal modules;
-  - [ ] rescan the overlay if the widget captures reloadable state; and
-  - [ ] prove the next button activation uses the current popover code.
+  - [ ] always call `require('plugins.overlay').rescan()` so overlay-class
+        changes are refreshed as well as dynamic popover dependencies;
+  - [ ] preserve the existing behavior of opening the main SoulSearch window
+        after reload; and
+  - [ ] prove that, after closing that window and returning to a unit card, the
+        next button activation uses the current overlay and popover code.
 
 ### Phase 5 gate
 
@@ -326,14 +409,19 @@ justify marking it complete.
 
 ## Phase 6 - Automated integration, packaging, and documentation
 
-- [ ] Update `tests/run.lua`, the module registry, and test support loaders for
-      every new suite and internal module.
+- [ ] Audit that each prior implementation phase updated `tests/run.lua`, the
+      module registry, dependency-order contracts, and test support loaders at
+      the time its new suites and modules were introduced. Fix any omissions
+      before packaging.
 - [ ] Update README/help text to describe:
   - [ ] the unit-card Stats button;
   - [ ] overlay enable/disable and reposition behavior; and
   - [ ] the relationship between the compact popover and full SoulSearch.
 - [ ] Ensure the source and packaged mod contain the overlay registration and
       every runtime dependency.
+- [ ] Add command-level coverage proving `soulsearch reload` dismisses all
+      registered screens, reloads internal modules, requests an overlay rescan,
+      and retains the existing main-window reopen behavior.
 - [ ] Run the automated closure sequence separately:
   - [ ] `tools/Build.ps1`;
   - [ ] `tools/Test.ps1`;
@@ -365,6 +453,8 @@ justify marking it complete.
       their hitboxes.
 - [ ] Resize, drag, close, and reopen the full window; verify Stats layout and
       saved sort behavior remain intact.
+- [ ] Verify subject and sort changes preserve the Phase 0 scroll policy and
+      that keyboard focus/traversal remains unchanged after nesting the panel.
 
 ### Overlay and popover acceptance
 
@@ -383,17 +473,27 @@ justify marking it complete.
   - [ ] a unit with few or no meaningful deviations.
 - [ ] Exercise sorting, scrolling, stat-name tooltips, header tooltips, and
       delta tooltips in the popover.
+- [ ] From a unit card, invoke `overlay trigger <registered-name>` and confirm
+      the CLI path opens the same popover through `overlay_trigger()`.
 - [ ] Close with the close control, `Esc`, and right click; confirm the same
       vanilla unit card is revealed and receives no accidental click-through.
 - [ ] Reopen for a different unit and confirm no stale unit data or scroll
-      position leaks into the new popover.
-- [ ] Verify the button and popover at minimum supported resolution and multiple
-      UI scales; confirm frames remain visible and controls remain clickable.
+      position leaks into the new popover and sort returns to the documented
+      unsorted default.
+- [ ] Call `stats_popover.open(captured_unit)` again while the popover is open;
+      confirm the existing singleton is returned or raised and no modal is
+      stacked behind it.
+- [ ] Verify the centered button-launched popover at the exact Phase 0 minimum
+      supported resolution and multiple UI scales; confirm its frame remains
+      visible and all controls remain clickable.
+- [ ] Verify a screen smaller than the supported minimum is rejected cleanly
+      without adding a screen or registry entry.
 - [ ] Reposition and disable the overlay, restart/reload as appropriate, and
       confirm DFHack preserves the user's overlay configuration.
 - [ ] Run `soulsearch reload` with the main window and popover open in separate
-      passes; confirm owned screens dismiss cleanly and the rescanned overlay
-      reopens the current implementation.
+      passes; confirm owned screens dismiss cleanly and the existing main
+      SoulSearch window opens after reload. Close it, return to a unit card,
+      and confirm the rescanned overlay opens the current popover implementation.
 - [ ] Repeat popover open/close from both paused and unpaused unit cards;
       confirm modal input never leaks and dismissal restores the intended pause
       state.
@@ -428,11 +528,11 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
-| 0 | | Baseline observations, focus path, selected-unit lookup, modal proof, button placement, build/test/diff commands | Pending |
-| 1 | | Characterization suites, subject contract, terminology decision, single-unit adapter, sort seam | Pending |
-| 2 | | Extracted modules, component tests, resize coverage, build/test/diff commands | Pending |
+| 0 | | Baseline observations, focus path set, selected-unit lookup, modal proof, exact minimum screen size, button placement, build/test/diff commands | Pending |
+| 1 | | Characterization suites, subject contract, terminology decision, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
+| 2 | | Extracted modules, dependency order, loader support, component tests, resize coverage, build/test/diff commands | Pending |
 | 3 | | Main-window automated and live regression, including geometry and resize | Pending |
-| 4 | | Popover tests, modal behavior, frame clamping, cleanup bookkeeping | Pending |
-| 5 | | Overlay discovery/focus/configuration, reload freshness, activation checks | Pending |
+| 4 | | Popover subject validation, modal/singleton behavior, minimum sizing, resize, state reset, cleanup bookkeeping | Pending |
+| 5 | | Overlay identity/discovery/focus/configuration, explicit activation ownership, rescan/reload freshness | Pending |
 | 6 | | Build, test, publish, package verification, diff check, counts and package path | Pending |
 | 7 | | Dated live fortress-mode acceptance and parent-project checklist update | Pending |
