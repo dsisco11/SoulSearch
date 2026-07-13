@@ -34,9 +34,11 @@ justify marking it complete.
 - [ ] A visible SoulSearch button appears only in the confirmed vanilla
       fortress-mode unit-card focus context or context set (expected root:
       `dwarfmode/ViewSheets/UNIT`).
-- [ ] In a clean packaged session with no saved overlay state, DFHack discovers
-      and enables the unit-card button before the user ever runs `soulsearch`.
-      Afterward, normal saved overlay enablement and placement take precedence.
+- [ ] In a clean packaged session with the DFHack overlay framework enabled and
+      no saved state for this widget, DFHack discovers and enables the unit-card
+      button before the user ever runs `soulsearch`. SoulSearch must not
+      force-enable a globally disabled overlay framework. Afterward, normal
+      saved widget enablement and placement take precedence.
 - [ ] Activating the button captures the unit currently displayed by the
       vanilla card and opens a compact modal Stats popover for that unit.
 - [ ] The popover is a centered, non-draggable, non-resizable, non-persisted
@@ -71,6 +73,11 @@ justify marking it complete.
 - [ ] Keep unit collection and Stats-subject construction separate:
   - [ ] `residents.collect_unit(unit)` returns
         `SoulSearchResidentRow|nil, error|nil`;
+  - [ ] it returns the existing unavailable-context error for an unloaded map or
+        non-fortress mode, rejects a nil or malformed unit without asserting,
+        and snapshots exactly one valid unit without printing;
+  - [ ] stale live-identity comparison remains the responsibility of
+        `stats_popover.open(unit)`, before collection;
   - [ ] `stats_subject.from_row(row, filter_criteria)` returns one
         `SoulSearchStatsSubject`; and
   - [ ] the popover composes those operations with an empty criteria sequence.
@@ -88,9 +95,11 @@ justify marking it complete.
       free `stats_layout.lua`. `ui_format.lua` and `stats_panel.lua` may both
       consume it; neither may import the other.
 - [ ] Make `stats_layout.lua` the single source for the Stats component's
-      minimum content dimensions. `stats_popover_config.lua` must derive the
-      popover screen minimum from that value and outer modal chrome instead of
-      duplicating a second minimum.
+      minimum content dimensions, including the title, underline, minimum unit
+      header, fixed column header, and at least one usable body row.
+      `stats_popover_config.lua` must derive the popover screen minimum by adding
+      only outer modal chrome instead of duplicating or augmenting the component
+      minimum with another body-row allowance.
 - [ ] Keep Stats sort validation, defaults, and next-state transitions in a
       pure `stats_sort.lua` module shared by all Stats hosts. Do not move or
       change result-list sort behavior as part of this extraction.
@@ -100,6 +109,10 @@ justify marking it complete.
 - [ ] Treat programmatic `set_sort(sort)` as silent. Invoke
       `on_sort_change(sort)` only for a user-initiated sort transition, avoiding
       persistence callbacks during initialization or host refresh.
+- [ ] Treat sort values as snapshots rather than shared mutable tables.
+      Normalize and copy incoming sorts, return a copy from `get_sort()`, and
+      pass a copy to `on_sort_change()` so component instances, hosts, and saved
+      settings cannot mutate one another through aliases.
 - [ ] Keep main-window settings and popover settings independent. Opening or
       sorting the popover must not silently mutate the default SoulSearch
       window's saved settings.
@@ -111,10 +124,20 @@ justify marking it complete.
       string, not `nil`, when no tooltip is active.
 - [ ] Register every new internal module in `module_registry.lua` and in the
       pure-Lua test harness where required.
+- [ ] Do not add the top-level overlay registration script to the internal
+      `module_registry.lua` sequence. The overlay framework owns discovery and
+      instantiation of that script; only its internal runtime dependencies
+      belong in the SoulSearch reload registry.
 - [ ] Register every SoulSearch-owned popover screen with `screen_registry.lua`
       so `soulsearch reload` and teardown dismiss it safely.
+- [ ] Keep registry teardown ownership separate from main-window placement
+      ownership. A registered popover must be excluded from the frame list used
+      by `screen_registry.place_frame()` and must never shift or cascade a main
+      SoulSearch window.
 - [ ] Make popover registration and dismissal idempotent across explicit close,
       `onDismiss`, `onDestroy`, reload, and invalid-unit failure paths.
+- [ ] Give the popover a stable, distinct focus path such as
+      `soulsearch/stats`.
 - [ ] Do not let the overlay widget retain a stale local reference to a
       reloadable popover module. Resolve the popover entry point dynamically on
       activation, and make `soulsearch reload` rescan/reconstruct the overlay
@@ -143,17 +166,22 @@ justify marking it complete.
       `dwarfmode/ViewSheets/UNIT` before any SoulSearch screen is shown.
 - [ ] Verify a module-loadable script under `scripts_modinstalled` can register
       an `OVERLAY_WIDGETS` entry and constrain it to the unit-card focus path.
+- [ ] Verify the global overlay framework is enabled separately from the
+      widget's `default_enabled` state. Record that disabling the framework
+      hides all widgets and is not a condition SoulSearch should override.
 - [ ] Verify `gui.ZScreenModal` pauses and blocks input as expected when opened
       from both paused and unpaused unit cards, and record the intended pause
       restoration behavior after dismissal.
 - [ ] Record a safe default overlay-button position at the supported UI scales.
 - [ ] Record an exact minimum supported width and height in DFHack tile-grid
       units returned by `dfhack.screen.getWindowSize()`, derived from the Stats
-      component minimum plus `gui.FRAME_BOLD` insets, title/close spacing, the
-      DFHack frame signature, force-pause badge clearance, and at least one body
-      row. Record pixel resolution and UI scale separately as evidence. Below
-      the tile-grid minimum, the popover must refuse to open with a concise
-      error instead of claiming to provide a usable clipped layout.
+      component minimum, which already includes at least one usable body row,
+      by adding `gui.FRAME_BOLD` insets and then raising the outer dimensions as
+      needed for close-control, DFHack-signature, and force-pause-badge
+      non-overlap constraints. Record pixel resolution and UI scale separately
+      as evidence. Below the tile-grid minimum, the popover must refuse to open
+      with a concise error instead of claiming to provide a usable clipped
+      layout.
 - [ ] Run the existing automated baseline before source changes:
   - [ ] `tools/Build.ps1`;
   - [ ] `tools/Test.ps1`; and
@@ -230,6 +258,11 @@ justify marking it complete.
 - [ ] Add `residents.collect_unit(unit)` as a one-row collection adapter that
       returns `row|nil, error|nil` and does not know about Stats subjects or
       presentation fields.
+  - [ ] reuse `get_unavailable_reason()` for unloaded-map/non-fortress errors;
+  - [ ] reject nil or malformed units without asserting or printing;
+  - [ ] snapshot exactly one valid unit with the same row semantics as
+        `collect_units({unit})[1]`; and
+  - [ ] leave stale ID-to-object validation to the popover API.
 - [ ] Add dependency-free `stats_layout.lua` before moving layout constants:
   - [ ] move reusable label width, value-column position, and hitbox boundaries
         into it;
@@ -254,6 +287,9 @@ justify marking it complete.
       actions invoke `on_sort_change()`, `reset_view_state()` resets sort and
       scroll without invoking the callback, and relayout after a frame change
       does not require `set_subject()`.
+- [ ] Add sort-ownership tests proving incoming tables, `get_sort()` results,
+      callback values, and two simultaneous Stats component instances cannot
+      mutate one another through shared references.
 - [ ] Move Stats-owned view creation into the component:
   - [ ] title and underline;
   - [ ] unit header;
@@ -274,7 +310,8 @@ justify marking it complete.
       evidence shows the target DFHack version cannot support `on_layout()`;
       record that evidence and preserve superclass-first, non-recursive layout.
 - [ ] Export the component's minimum content dimensions from `stats_layout.lua`
-      and test them against the recorded minimum supported tile-grid size.
+      with one usable body row already included, and test that structural
+      minimum independently from the popover's outer-chrome calculation.
 - [ ] Preserve the current text column geometry and click boundaries unless a
       separately recorded live incompatibility requires a deliberate change.
 - [ ] Move Stats-owned behavior into the component:
@@ -295,6 +332,8 @@ justify marking it complete.
       `tests/run.lua`, loader stubs, focused suites, and loader-contract tests
       in this phase rather than deferring them to Phase 6.
 - [ ] Assert dependency-safe registry order explicitly:
+  - [ ] `ui_layout` precedes `ui_format` for the result widths and filter-action
+        metadata that remain main-window-owned;
   - [ ] `stats_layout` precedes `ui_format`;
   - [ ] `ui_format` precedes `stats_presenter`;
   - [ ] `ui_format` precedes `ui_tooltip` because tooltip wrapping consumes
@@ -357,7 +396,8 @@ justify marking it complete.
 - [ ] Add a dedicated popover module and `gui.ZScreenModal` implementation
       rather than invoking `ui.open()` for the full SoulSearch window.
 - [ ] Define the popover view hierarchy explicitly:
-  - [ ] `SoulSearchStatsPopoverScreen` is the `gui.ZScreenModal` owner;
+  - [ ] `SoulSearchStatsPopoverScreen` is the `gui.ZScreenModal` owner with the
+        distinct `focus_path='soulsearch/stats'`;
   - [ ] its primary child is a centered `widgets.Window` with
         `draggable=false`, `resizable=false`, and `frame_style=gui.FRAME_BOLD`
         so the external modal frame carries the required DFHack signature;
@@ -383,9 +423,11 @@ justify marking it complete.
       tile-grid dimensions, centering, and screen-bound clamping. Do not reuse
       the main window's private 90x30 normalization contract.
 - [ ] Derive the popover minimum in `stats_popover_config.lua` from the
-      `stats_layout.lua` component minimum plus `gui.FRAME_BOLD` insets and the
-      required title, close-control, signature, and force-pause-badge clearance.
-      Do not restate the component minimum as independent numeric constants.
+      `stats_layout.lua` component minimum by adding `gui.FRAME_BOLD` insets,
+      then applying minimum outer-dimension constraints for non-overlapping
+      close-control, signature, and force-pause badge rendering. The component
+      minimum already includes its title and a usable body row; do not restate
+      it as independent numeric constants or add either item a second time.
 - [ ] Re-run screen-frame normalization and component layout from the screen's
       `onResize(w, h)` path; dismiss with a concise error if a resize makes the
       tile grid smaller than the supported minimum. Report that lifecycle error
@@ -419,23 +461,30 @@ justify marking it complete.
 - [ ] Enforce a unit-aware singleton popover policy after validating and
       constructing the requested subject:
   - [ ] if no popover exists, create and show one;
+  - [ ] treat a cleaned-up, dismissed, destroyed, or otherwise no-longer-shown
+        singleton reference as absent instead of attempting to raise it;
   - [ ] if the active popover already shows the same unit ID, raise and return
         it without resetting state;
   - [ ] if it shows a different unit, update the existing screen atomically,
         reset sort and scroll state, then raise and return it; and
   - [ ] if new-unit validation fails, leave the existing popover unchanged and
         return `nil, error`.
-- [ ] Register and unregister the popover through `screen_registry.lua`.
+- [ ] Register and unregister the popover through `screen_registry.lua` for
+      teardown, but mark or classify it as excluded from the main-window frame
+      list consumed by `place_frame()`.
 - [ ] Route explicit close, `onDismiss`, and `onDestroy` through one idempotent
-      cleanup path that unregisters the screen exactly once.
+      cleanup path that unregisters the screen exactly once and clears the
+      module-level singleton reference only if it still points to that screen.
+      A late callback from an older screen must not clear a newer singleton.
 - [ ] Add pure-Lua tests for subject construction, stale-unit rejection,
       unsupported screen size, same-unit and different-unit singleton behavior,
       failed singleton replacement, default/reset sort and scroll state,
       stable `unit_id` identity, modal window composition and signed frame,
       derived minimum-size/chrome calculation, inherited screen input ownership,
       `onGetSelectedUnit()`, callbacks, close behavior, one-time resize error
-      reporting, pause restoration, and teardown bookkeeping where the harness
-      can model them.
+      reporting, pause restoration, close-then-immediate-reopen behavior, late
+      old-screen teardown, exclusion from main-window cascade placement, and
+      teardown bookkeeping where the harness can model them.
 - [ ] Update `tests/run.lua`, module-registry ordering/contracts, and test
       support loaders for all Phase 4 modules before running this phase's gate.
 - [ ] Assert the complete Phase 4 dependency order in the reload registry:
@@ -460,6 +509,8 @@ justify marking it complete.
 - [ ] Add a module-loadable overlay registration script with `--@ module=true`.
       Module loading may define the widget class and global `OVERLAY_WIDGETS`,
       but must not look up units, print, register screens, or show UI.
+- [ ] Keep that registration script outside the internal module registry; load
+      and reload it only through overlay discovery/rescan ownership.
 - [ ] Define a global `OVERLAY_WIDGETS` entry backed by
       `overlay.OverlayWidget`.
 - [ ] Choose and document a stable `OVERLAY_WIDGETS` key/widget identity. Set
@@ -471,14 +522,17 @@ justify marking it complete.
       path or path set instead of all of `dwarfmode`.
 - [ ] Make the overlay enabled by default for first-time SoulSearch users while
       allowing normal disable/reposition control through DFHack.
+- [ ] Treat the overlay framework's global enabled state as a prerequisite, not
+      SoulSearch-owned configuration. Do not call `enable overlay` from module
+      loading or activation code.
 - [ ] Render a clearly branded, compact SoulSearch Stats button at the recorded
       safe default position.
 - [ ] Define the button label, width, and height once as shared constants. Give
       the overlay widget a matching fixed frame, and use those same constants
       for rendering and hit-testing so visible bounds and the click target
       cannot drift apart.
-- [ ] Implement one shared activation helper that calls
-      first validates the current focus against the confirmed unit-card focus
+- [ ] Implement one shared activation helper that first validates the current
+      focus against the confirmed unit-card focus
       path set, then calls `dfhack.gui.getSelectedUnit(true)` before showing a
       screen, calls `stats_popover.open(unit)`, reports any focus, selection, or
       popover error exactly once, and returns only the screen or `nil`. This
@@ -544,8 +598,8 @@ justify marking it complete.
 
 ### Phase 5 gate
 
-- [ ] `overlay list` discovers the widget and `gui/control-panel` can enable or
-      disable it.
+- [ ] With the overlay framework enabled, `overlay list` discovers the widget
+      and `gui/control-panel` can enable or disable its saved widget state.
 - [ ] The button appears on the vanilla unit card and nowhere outside its
       confirmed focus context.
 - [ ] Activating it always opens Stats for the unit that was visible at click
@@ -561,8 +615,13 @@ justify marking it complete.
       before packaging.
 - [ ] Update README/help text to describe:
   - [ ] the unit-card Stats button;
-  - [ ] overlay enable/disable and reposition behavior; and
+  - [ ] the distinction between global `enable overlay` state and the widget's
+        own enable/disable and reposition state;
   - [ ] the relationship between the compact popover and full SoulSearch.
+- [ ] Choose and record the release version before publishing. Update
+      `NUMERIC_VERSION` and `DISPLAYED_VERSION` in `src/info.txt` as appropriate,
+      and keep that mod-release version separate from the overlay widget's
+      configuration-reset `version` policy.
 - [ ] Ensure the source and packaged mod contain the overlay registration and
       every runtime dependency.
 - [ ] Verify the packaged overlay is discoverable through normal
@@ -576,9 +635,12 @@ justify marking it complete.
 - [ ] Run the automated closure sequence separately:
   - [ ] `tools/Build.ps1`;
   - [ ] `tools/Test.ps1`;
-  - [ ] `tools/Publish.ps1`;
-  - [ ] `tools/VerifyPackage.ps1`; and
+  - [ ] `tools/Publish.ps1`, which invokes `tools/VerifyPackage.ps1` with its
+        required `ZipPath`, `PackageRoot`, and expanded-folder arguments; and
   - [ ] `git diff --check`.
+- [ ] Record the nested package-verification result from `tools/Publish.ps1`.
+      Do not list or run bare `tools/VerifyPackage.ps1` without its mandatory
+      arguments.
 - [ ] Record production Lua count, test count, package path, and all command
       results in this document when the phase is executed.
 
@@ -611,10 +673,17 @@ justify marking it complete.
 ### Overlay and popover acceptance
 
 - [ ] In a packaged test install, use a clean test profile or temporarily
-      isolate and later restore the user's overlay configuration. Restart DFHack
-      with no saved state for this widget and, before invoking `soulsearch`,
-      `soulsearch reload`, or a manual overlay rescan, confirm `overlay list`
-      discovers it and a vanilla unit card shows the enabled button.
+      isolate and later restore the user's overlay configuration. Also disable
+      the repository's `+.../src/scripts_modinstalled` development path and
+      remove or isolate competing installed SoulSearch versions so the packaged
+      payload is the only copy that can resolve. Restart DFHack with the overlay
+      framework enabled and no saved state for this widget and, before invoking
+      `soulsearch`, `soulsearch reload`, or a manual overlay rescan, confirm
+      `overlay list` discovers the packaged widget and a vanilla unit card shows
+      the enabled button. Record the installed package path/version as evidence.
+- [ ] Disable the global overlay framework once and confirm the button is absent
+      without SoulSearch re-enabling it; restore it with `enable overlay` before
+      continuing widget-specific acceptance.
 - [ ] Confirm the overlay is configurable through `gui/control-panel` and
       `gui/overlay`; then change enablement or placement, restart, and confirm
       the saved user state takes precedence over `default_enabled` and
@@ -644,6 +713,9 @@ justify marking it complete.
       unrelated input continues to reach the vanilla unit card.
 - [ ] Close with the close control, `Esc`, and right click; confirm the same
       vanilla unit card is revealed and receives no accidental click-through.
+- [ ] Close and immediately reopen the popover, then exercise delayed teardown
+      of the prior screen if observable; confirm the new singleton remains
+      registered and active.
 - [ ] Reopen for a different unit and confirm no stale unit data or scroll
       position leaks into the new popover and sort returns to the documented
       unsorted default.
@@ -653,6 +725,9 @@ justify marking it complete.
 - [ ] While the singleton is open, call `stats_popover.open(other_unit)` and
       confirm the same modal atomically switches identity, resets sort/scroll,
       and remains the only popover screen.
+- [ ] With a popover registered for teardown, open a normal SoulSearch window
+      through the command path and confirm the popover frame does not affect the
+      main window's default/cascade placement calculation.
 - [ ] Attempt that replacement with a stale/invalid unit and confirm the error
       is returned without printing while the existing valid subject remains
       unchanged.
@@ -713,11 +788,11 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
-| 0 | | Baseline observations, focus path set, selected-unit lookup, modal proof, exact chrome-aware minimum tile grid, pixel/UI-scale evidence, button placement, build/test/diff commands | Pending |
+| 0 | | Baseline observations, focus path set, selected-unit lookup, global overlay/widget-state distinction, modal proof, exact chrome-aware minimum tile grid, pixel/UI-scale evidence, button placement, build/test/diff commands | Pending |
 | 1 | | Characterization suites, subject identity contract, generic-unit copy correction, historical row terminology, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
-| 2 | | Extracted modules, Stats formatter LuaDoc contract, complete dependency order, loader support, `on_layout` single-pass component/reset/layout tests, build/test/diff commands | Pending |
+| 2 | | Extracted modules, collection error contract, copied sort ownership, Stats formatter LuaDoc contract, complete dependency order, loader support, `on_layout` single-pass component/reset/layout tests, build/test/diff commands | Pending |
 | 3 | | Main-window automated and live regression, preserved refresh seam, geometry and resize, build/test/diff commands | Pending |
-| 4 | | Popover subject validation, stable identity, signed modal composition, selected-unit exposure, unit-aware singleton behavior, derived chrome-aware sizing, dependency order, resize handling, state reset, build/test/diff commands | Pending |
-| 5 | | Overlay identity/discovery/focus/configuration, shared fixed button geometry, guarded CLI/mouse activation, fresh registry reconstruction, clean environment rescan, build/test/diff commands | Pending |
-| 6 | | Build, test, publish, package verification, diff check, counts and package path | Pending |
-| 7 | | Dated live fortress-mode acceptance, clean packaged pre-command discovery, saved overlay-state precedence, enabled/disabled overlay timer evidence, and parent-project checklist update | Pending |
+| 4 | | Popover subject validation, stable identity and focus path, signed modal composition, selected-unit exposure, stale-safe singleton cleanup, teardown-only registry participation, derived chrome-aware sizing, dependency order, resize handling, state reset, build/test/diff commands | Pending |
+| 5 | | Overlay identity/discovery/focus/configuration, global framework prerequisite, shared fixed button geometry, guarded CLI/mouse activation, fresh registry reconstruction, clean environment rescan, build/test/diff commands | Pending |
+| 6 | | Release metadata, build, test, publish with nested package verification, diff check, counts and package path | Pending |
+| 7 | | Dated live fortress-mode acceptance, isolated packaged pre-command discovery and path/version evidence, global overlay behavior, saved widget-state precedence, placement isolation, enabled/disabled overlay timer evidence, and parent-project checklist update | Pending |
