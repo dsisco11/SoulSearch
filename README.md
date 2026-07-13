@@ -133,7 +133,7 @@ to persist your choice across DFHack restarts.
 
 The command opens the SoulSearch panel in fortress mode. By default, its
 unit scope is **Citizens** and its candidate race scope is **Humanoids**.
-Click **Search filters** to open the filter panel. Use its **Search** dropdown
+Click **Edit filters** to open the filter panel. Use its **Search** dropdown
 to choose between Citizens, Residents, Visitors, and All units. The active
 scope is marked in the dropdown list. Use **Add race filter** to
 include another race or creature type, or

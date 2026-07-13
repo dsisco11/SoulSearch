@@ -11,7 +11,7 @@ return function(test, repo_root)
 
     test.case('UI components: control tooltips explain non-obvious actions', function()
         test.assert_sequence({
-            'Open the search filters panel.',
+            'Edit the current filters.',
             'Close',
             'Choose which units are searched.',
             'Add an attribute or trait to the ranking criteria.',

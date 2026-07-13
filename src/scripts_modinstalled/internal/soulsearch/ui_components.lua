@@ -6,7 +6,7 @@ local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 CONTROL_TOOLTIPS = {
-    {id='filters_button', text='Open the search filters panel.'},
+    {id='filters_button', text='Edit the current filters.'},
     {id='close_filter_panel_button', text='Close'},
     {id='unit_scope', text='Choose which units are searched.'},
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
@@ -307,7 +307,7 @@ function create_filter_panel_button(on_activate)
     return widgets.HotkeyLabel{
         view_id='filters_button',
         frame=ui_layout.get_frame('filters_button'),
-        label='Search filters',
+        label='Edit filters',
         on_activate=on_activate,
     }
 end
