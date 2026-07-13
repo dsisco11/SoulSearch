@@ -42,10 +42,12 @@ justify marking it complete.
 - [ ] Activating the button captures the unit currently displayed by the
       vanilla card and opens a compact modal Stats popover for that unit.
 - [ ] The popover is a centered, non-draggable, non-resizable, non-persisted
-      singleton. Repeated activation must not create stacked copies, and a
-      valid activation for a different unit must update that singleton to the
-      newly captured unit and reset its sort and scroll state. Re-activation
-      for the same unit retains that state.
+      singleton. Repeated calls to `stats_popover.open(unit)` must not create
+      stacked copies. A valid call for a different unit updates that singleton
+      to the newly captured unit and resets its sort and scroll state; a call
+      for the same unit retains that state. Mouse and CLI overlay activation are
+      required only from unit-card focus and are not the re-entry mechanism
+      while the modal owns focus.
 - [ ] The popover does not open the results list, filter editor, presets, or any
       other part of the full SoulSearch window.
 - [ ] Closing the popover returns the player to the same vanilla unit card.
@@ -71,13 +73,20 @@ justify marking it complete.
       not add host-supplied terminology or display options to the subject or
       public popover API.
 - [ ] Keep unit collection and Stats-subject construction separate:
+  - [ ] `residents.validate_unit_reference(unit)` returns
+        `integer|nil, error|nil` and is the one non-throwing validation rule
+        shared by collection and the popover API. It returns a stable,
+        non-negative integer unit ID or an error before any other unit field is
+        read;
   - [ ] `residents.collect_unit(unit)` returns
         `SoulSearchResidentRow|nil, error|nil`;
-  - [ ] it returns the existing unavailable-context error for an unloaded map or
-        non-fortress mode, rejects a nil or malformed unit without asserting,
-        and snapshots exactly one valid unit without printing;
+  - [ ] it checks context first, returning the existing unavailable-context
+        error for an unloaded map or non-fortress mode, then rejects a nil or
+        malformed unit without asserting and snapshots exactly one valid unit
+        without printing;
   - [ ] stale live-identity comparison remains the responsibility of
-        `stats_popover.open(unit)`, before collection;
+        `stats_popover.open(unit)`, after safe reference validation and before
+        collection;
   - [ ] `stats_subject.from_row(row, filter_criteria)` returns one
         `SoulSearchStatsSubject`; and
   - [ ] the popover composes those operations with an empty criteria sequence.
@@ -258,11 +267,19 @@ justify marking it complete.
 - [ ] Add `residents.collect_unit(unit)` as a one-row collection adapter that
       returns `row|nil, error|nil` and does not know about Stats subjects or
       presentation fields.
-  - [ ] reuse `get_unavailable_reason()` for unloaded-map/non-fortress errors;
+  - [ ] add `validate_unit_reference(unit) -> integer|nil, error|nil` as the
+        shared non-throwing reference validator and use it before any other unit
+        field access;
+  - [ ] call `get_unavailable_reason()` before unit-reference validation so the
+        established unloaded-map/non-fortress error takes precedence;
   - [ ] reject nil or malformed units without asserting or printing;
   - [ ] snapshot exactly one valid unit with the same row semantics as
         `collect_units({unit})[1]`; and
   - [ ] leave stale ID-to-object validation to the popover API.
+- [ ] Add focused collection tests for valid and nil references, missing,
+      non-integer, and negative IDs, an ID access that raises, context-error
+      precedence, no printing, and one-row parity with
+      `collect_units({unit})[1]`.
 - [ ] Add dependency-free `stats_layout.lua` before moving layout constants:
   - [ ] move reusable label width, value-column position, and hitbox boundaries
         into it;
@@ -408,7 +425,11 @@ justify marking it complete.
 - [ ] Implement
       `stats_popover.open(unit) -> screen|nil, error|nil` as a
       validate-before-show boundary:
-  - [ ] confirm the captured unit ID still resolves to the same live unit;
+  - [ ] return `residents.get_unavailable_reason()` first when the map or game
+        mode is unsupported, preserving the collection API's established error;
+  - [ ] call `residents.validate_unit_reference(unit)` to safely obtain its
+        stable integer unit ID before reading any other unit field;
+  - [ ] confirm that unit ID still resolves to the same live unit;
   - [ ] collect exactly one row with `residents.collect_unit(unit)` and
         propagate, but do not print, any error;
   - [ ] construct the subject with `stats_subject.from_row(row, {})`;
@@ -431,7 +452,9 @@ justify marking it complete.
 - [ ] Re-run screen-frame normalization and component layout from the screen's
       `onResize(w, h)` path; dismiss with a concise error if a resize makes the
       tile grid smaller than the supported minimum. Report that lifecycle error
-      exactly once before dismissal and restore the pre-modal pause state.
+      exactly once, then use the normal modal dismissal path. Do not write pause
+      state directly; inherited `gui.ZScreenModal` teardown must restore the
+      pre-modal pause state.
 - [ ] Call the superclass `onResize(w, h)` implementation before applying
       popover-specific frame normalization and child layout.
 - [ ] Use the shared component's existing `Stats` heading as the popover's one
@@ -477,14 +500,16 @@ justify marking it complete.
       module-level singleton reference only if it still points to that screen.
       A late callback from an older screen must not clear a newer singleton.
 - [ ] Add pure-Lua tests for subject construction, stale-unit rejection,
-      unsupported screen size, same-unit and different-unit singleton behavior,
-      failed singleton replacement, default/reset sort and scroll state,
-      stable `unit_id` identity, modal window composition and signed frame,
-      derived minimum-size/chrome calculation, inherited screen input ownership,
-      `onGetSelectedUnit()`, callbacks, close behavior, one-time resize error
-      reporting, pause restoration, close-then-immediate-reopen behavior, late
-      old-screen teardown, exclusion from main-window cascade placement, and
-      teardown bookkeeping where the harness can model them.
+      nil/malformed-reference rejection before live lookup, unavailable-context
+      error precedence, unsupported screen size, same-unit and different-unit
+      singleton behavior, failed singleton replacement, default/reset sort and
+      scroll state, stable `unit_id` identity, modal window composition and
+      signed frame, derived minimum-size/chrome calculation, inherited screen
+      input ownership, `onGetSelectedUnit()`, callbacks, close behavior,
+      one-time resize error reporting, pause restoration,
+      close-then-immediate-reopen behavior, late old-screen teardown, exclusion
+      from main-window cascade placement, and teardown bookkeeping where the
+      harness can model them.
 - [ ] Update `tests/run.lua`, module-registry ordering/contracts, and test
       support loaders for all Phase 4 modules before running this phase's gate.
 - [ ] Assert the complete Phase 4 dependency order in the reload registry:
@@ -547,8 +572,14 @@ justify marking it complete.
         and delegates all other input to its superclass;
   - [ ] `overlay_trigger()` calls the same helper and returns the shown screen
         for DFHack CLI/keybinding ownership; and
-  - [ ] `screen_registry.lua` tracks both paths for SoulSearch reload teardown,
-        without becoming a second input owner.
+  - [ ] the resulting popover registers exactly once through its screen
+        lifecycle regardless of activation path. `screen_registry.lua` does not
+        distinguish mouse from CLI activation and does not become an input
+        owner.
+- [ ] Treat the modal's `soulsearch/stats` focus as outside the unit-card
+      activation guard. Same-unit and different-unit re-entry while the popover
+      is active belongs to direct `stats_popover.open(unit)` calls and tests,
+      not to a second overlay activation path.
 - [ ] Resolve the popover module with `reqscript()` at activation time, or use
       an equivalently reload-safe lookup, so `soulsearch reload` cannot leave
       the widget calling a stale module table.
@@ -725,9 +756,11 @@ justify marking it complete.
 - [ ] While the singleton is open, call `stats_popover.open(other_unit)` and
       confirm the same modal atomically switches identity, resets sort/scroll,
       and remains the only popover screen.
-- [ ] With a popover registered for teardown, open a normal SoulSearch window
-      through the command path and confirm the popover frame does not affect the
-      main window's default/cascade placement calculation.
+- [ ] With a popover registered for teardown, exercise the main-window
+      `place_frame()` calculation directly, or construct the main screen in the
+      test harness without showing it, and confirm the candidate frame ignores
+      the popover. Do not stack a normal SoulSearch screen above the modal only
+      to test placement exclusion.
 - [ ] Attempt that replacement with a stale/invalid unit and confirm the error
       is returned without printing while the existing valid subject remains
       unchanged.
@@ -736,8 +769,8 @@ justify marking it complete.
       confirm its frame remains visible and all controls remain clickable.
 - [ ] Verify a tile grid smaller than the supported minimum is rejected cleanly
       without adding a screen or registry entry. Resize an open popover below
-      the minimum and confirm exactly one error is reported and dismissal and
-      pause restoration are clean.
+      the minimum and confirm exactly one error is reported, normal modal
+      dismissal runs, and inherited pause restoration is clean.
 - [ ] Measure idle overlay cost over comparable unit-card intervals with the
       overlay enabled and disabled:
   - [ ] reset performance counters before each interval with
