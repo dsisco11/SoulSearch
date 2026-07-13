@@ -28,7 +28,9 @@ justify marking it complete.
       reusable Stats component.
 - [ ] The shared component owns its views, relative layout, rendered records,
       scrolling behavior, sort interaction, hit-testing, and stats tooltips.
-- [ ] The main window preserves its current Stats geometry and behavior.
+- [ ] The main window preserves its current Stats geometry and interaction
+      behavior. The only planned copy change is replacing resident-specific
+      empty/fallback Stats wording with the generic term `unit` for both hosts.
 - [ ] A visible SoulSearch button appears only in the confirmed vanilla
       fortress-mode unit-card focus context or context set (expected root:
       `dwarfmode/ViewSheets/UNIT`).
@@ -57,8 +59,12 @@ justify marking it complete.
       formatted content; do not duplicate attribute evaluation or formatting
       in the popover.
 - [ ] Define a narrow `SoulSearchStatsSubject` data contract for Stats hosts:
-      `unit`, `row`, `name`, `profession`, and `filter_criteria`. Normal search
-      results must satisfy it structurally.
+      `unit`, `unit_id`, `row`, `name`, `profession`, and `filter_criteria`.
+      Normal search results must satisfy it structurally, and singleton identity
+      comparisons must use the stable `unit_id` snapshot.
+- [ ] Use the generic term `unit` in shared Stats empty and fallback copy. Do
+      not add host-supplied terminology or display options to the subject or
+      public popover API.
 - [ ] Keep unit collection and Stats-subject construction separate:
   - [ ] `residents.collect_unit(unit)` returns
         `SoulSearchResidentRow|nil, error|nil`;
@@ -176,12 +182,14 @@ justify marking it complete.
   - [ ] no meaningful deviations; and
   - [ ] missing or fallback display names.
 - [ ] Define and document the `SoulSearchStatsSubject` contract, including an
-      empty `filter_criteria` sequence for unit-card subjects and structural
-      compatibility with normal SoulSearch results.
+      stable `unit_id` snapshot, an empty `filter_criteria` sequence for
+      unit-card subjects, and structural compatibility with normal SoulSearch
+      results.
 - [ ] Add characterization tests for the current resident-specific empty and
-      fallback strings, then decide whether shared Stats copy should use the
-      generic term `unit` or accept host-supplied terminology. Record the choice
-      before supporting visitors and animals in the popover.
+      fallback strings, then deliberately update the shared expectations from
+      `No resident selected.` and `Unknown resident` to `No unit selected.` and
+      `Unknown unit`. Record this as an intentional cross-host copy correction,
+      not an extraction regression.
 - [ ] Retain `SoulSearchResidentRow` as the historical internal row-type name
       and explicitly document that its structure supports any compatible
       `df.unit`. Do not introduce a cross-module row-type rename as part of this
@@ -193,7 +201,8 @@ justify marking it complete.
 ### Phase 1 gate
 
 - [ ] Tests fail if the extraction changes existing sort, hitbox, tooltip,
-      scrolling, formatting, or empty-state behavior.
+      scrolling, formatting, or empty-state behavior, except for the explicitly
+      documented generic-unit copy correction.
 - [ ] A one-unit row and structurally valid Stats subject can be constructed in
       tests without running a full search, while production ownership remains
       unchanged until Phase 2.
@@ -292,8 +301,10 @@ justify marking it complete.
 
 - [ ] Replace the existing five loose Stats views with one reusable Stats
       component positioned at the current Stats panel location.
-- [ ] Route `ui_refresh.lua` Stats refreshes to
-      `stats_panel:set_subject(result)`.
+- [ ] Keep the `ui_refresh.apply()` owner contract unchanged. Implement
+      `SoulSearchWindow:refresh_stats(result)` as the adapter that delegates to
+      `self.subviews.stats_panel:set_subject(result)`, preserving the existing
+      dispatcher and controlled result-selection callback suppression.
 - [ ] Initialize the component from the current window identity's saved
       `stats_sort` snapshot.
 - [ ] Persist sort changes through the component callback using the existing
@@ -319,6 +330,8 @@ justify marking it complete.
 - [ ] No main-window Stats rendering or interaction path bypasses the reusable
       component.
 - [ ] Existing tests pass with the full-window callers migrated.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
+      migrated main-window implementation.
 - [ ] Live fortress smoke confirms unchanged main-window geometry, sorting,
       scrolling, hover text, selection refresh, resizing, and saved sort state.
 
@@ -326,6 +339,15 @@ justify marking it complete.
 
 - [ ] Add a dedicated popover module and `gui.ZScreenModal` implementation
       rather than invoking `ui.open()` for the full SoulSearch window.
+- [ ] Define the popover view hierarchy explicitly:
+  - [ ] `SoulSearchStatsPopoverScreen` is the `gui.ZScreenModal` owner;
+  - [ ] its primary child is a centered `widgets.Window` with
+        `draggable=false`, `resizable=false`, and `frame_style=gui.FRAME_BOLD`
+        so the external modal frame carries the required DFHack signature;
+  - [ ] the reusable Stats component and explicit close control are children of
+        that window; and
+  - [ ] the shared tooltip is a direct screen-level sibling so it can escape
+        window and component clipping.
 - [ ] Implement
       `stats_popover.open(unit) -> screen|nil, error|nil` as a
       validate-before-show boundary:
@@ -335,7 +357,7 @@ justify marking it complete.
   - [ ] construct the subject with `stats_subject.from_row(row, {})`;
   - [ ] construct and show the modal only after those steps succeed; and
   - [ ] return `nil, error` without registry or viewscreen changes on failure.
-- [ ] Instantiate the reusable Stats component as the popover's content.
+- [ ] Instantiate the reusable Stats component as the popover window's content.
 - [ ] Implement the target window policy: centered, non-draggable,
       non-resizable, non-persisted, and clamped within the screen.
 - [ ] Give the popover a compact frame that satisfies the component minimum at
@@ -350,11 +372,16 @@ justify marking it complete.
 - [ ] Call the superclass `onResize(w, h)` implementation before applying
       popover-specific frame normalization and child layout.
 - [ ] Use the shared component's existing `Stats` heading as the popover's one
-      visible title; do not add a second modal-frame title. Add an explicit
-      close control that does not overlap the title or its hitbox at the minimum
-      supported size, plus normal `Esc`/right-click dismissal.
+      visible content title; leave the containing window's `frame_title` unset
+      so it does not add a second title. Add an explicit close control that does
+      not overlap the title or its hitbox at the minimum supported size, plus
+      normal `Esc`/right-click dismissal.
 - [ ] Rely on `gui.ZScreenModal` for modal input and pause behavior so clicks do
       not activate controls on the vanilla card underneath it.
+- [ ] Do not override `SoulSearchStatsPopoverScreen:onInput()`. Put any custom
+      input behavior in the window or its child views and rely on inherited
+      `gui.ZScreenModal` handling for `Esc`, right click, focus, and input
+      blocking.
 - [ ] Implement `onGetSelectedUnit()` on the popover screen and return the
       currently displayed subject's unit. A different-unit singleton update
       must change this result together with the visible subject.
@@ -383,9 +410,10 @@ justify marking it complete.
 - [ ] Add pure-Lua tests for subject construction, stale-unit rejection,
       unsupported screen size, same-unit and different-unit singleton behavior,
       failed singleton replacement, default/reset sort and scroll state,
-      `onGetSelectedUnit()`, callbacks, close behavior, one-time resize error
-      reporting, pause restoration, and teardown bookkeeping where the harness
-      can model them.
+      stable `unit_id` identity, modal window composition and signed frame,
+      inherited screen input ownership, `onGetSelectedUnit()`, callbacks, close
+      behavior, one-time resize error reporting, pause restoration, and teardown
+      bookkeeping where the harness can model them.
 - [ ] Update `tests/run.lua`, module-registry ordering/contracts, and test
       support loaders for all Phase 4 modules before running this phase's gate.
 - [ ] Assert that `stats_popover_config`, `residents`, `stats_subject`,
@@ -400,6 +428,8 @@ justify marking it complete.
 - [ ] The public popover API is `stats_popover.open(unit)`. It requires only the
       captured unit and does not depend on caller-supplied display options or a
       live `SoulSearchWindow`.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
+      popover implementation.
 
 ## Phase 5 - Add the vanilla unit-card overlay button
 
@@ -455,7 +485,16 @@ justify marking it complete.
       `devel/clear-script-env <overlay-script>` before the rescan.
 - [ ] Define the production `soulsearch reload` behavior explicitly:
   - [ ] dismiss all registered main and popover screens;
-  - [ ] reload internal modules;
+  - [ ] capture the old registry's complete script-name list before clearing
+        any environment;
+  - [ ] clear every module environment in that old list except the registry so
+        removed module entries cannot survive;
+  - [ ] clear and run `internal/soulsearch/module_registry`, reacquire and
+        validate the fresh registry table, and replace the command's cached
+        coordinator reference;
+  - [ ] clear every module named by the fresh registry's `MODULES` sequence,
+        including newly added entries but not the newly loaded registry itself,
+        then run that sequence in dependency order;
   - [ ] run `devel/clear-script-env` for the stable overlay registration script
         path without manually executing that script;
   - [ ] always call `require('plugins.overlay').rescan()` so overlay-class
@@ -464,6 +503,10 @@ justify marking it complete.
         after reload; and
   - [ ] prove that, after closing that window and returning to a unit card, the
         next button activation uses the current overlay and popover code.
+- [ ] Add command-level reload tests that model an added module, a removed
+      module, a reordered dependency, and a changed registry contract, proving
+      the fresh registry generation rather than the cached pre-reload table
+      controls reconstruction.
 
 ### Phase 5 gate
 
@@ -473,6 +516,8 @@ justify marking it complete.
       confirmed focus context.
 - [ ] Activating it always opens Stats for the unit that was visible at click
       time.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
+      overlay and reload implementation.
 
 ## Phase 6 - Automated integration, packaging, and documentation
 
@@ -487,7 +532,8 @@ justify marking it complete.
 - [ ] Ensure the source and packaged mod contain the overlay registration and
       every runtime dependency.
 - [ ] Add command-level coverage proving `soulsearch reload` dismisses all
-      registered screens, reloads internal modules, clears the overlay script
+      registered screens, replaces the cached registry coordinator, reconstructs
+      modules from the fresh registry generation, clears the overlay script
       environment, requests an overlay rescan without manually executing the
       overlay script, and retains the existing main-window reopen behavior.
 - [ ] Run the automated closure sequence separately:
@@ -513,7 +559,8 @@ justify marking it complete.
 - [ ] Open the full SoulSearch window and confirm results selection still
       refreshes the shared Stats component.
 - [ ] Confirm name, profession, selected-filter summary, colors, deviations,
-      separators, and empty states match the Phase 0 baseline.
+      separators, and empty states match the Phase 0 baseline except for the
+      documented generic-unit copy correction.
 - [ ] Exercise all three states of both Stats sort headers.
 - [ ] Scroll the Stats body and verify attribute tooltips continue to describe
       the row under the mouse, not the pre-scroll row.
@@ -571,6 +618,18 @@ justify marking it complete.
       pause restoration are clean.
 - [ ] Reposition and disable the overlay, restart/reload as appropriate, and
       confirm DFHack preserves the user's overlay configuration.
+- [ ] Measure idle overlay cost over comparable unit-card intervals with the
+      overlay enabled and disabled:
+  - [ ] reset performance counters before each interval with
+        `dfhack.internal.resetPerfCounters()` when the card can remain unpaused;
+  - [ ] if the unit card forces pause, use
+        `dfhack.internal.resetPerfCounters(true)` and label the result as
+        all-elapsed-time rather than unpaused-gameplay evidence;
+  - [ ] print each result with
+        `require('script-manager').print_timers()`; and
+  - [ ] record the registered overlay's timer contribution and confirm it is
+        well below one percent of elapsed time, investigating any material or
+        unstable result before claiming the button is inexpensive while idle.
 - [ ] Run `soulsearch reload` with the main window and popover open in separate
       passes; confirm owned screens dismiss cleanly and the existing main
       SoulSearch window opens after reload. Close it, return to a unit card,
@@ -586,8 +645,8 @@ justify marking it complete.
 - [ ] Main-window behavior is preserved and the same Stats component is visibly
       operating in both hosts.
 - [ ] Unit-card focus, selected-unit capture, overlay lifecycle, modal input,
-      screen teardown, tooltip accuracy, and constrained-window layout all pass
-      live validation.
+      screen teardown, tooltip accuracy, constrained-window layout, and measured
+      idle overlay cost all pass live validation.
 - [ ] Mark the corresponding `docs/project.todo` item complete with the live
       validation date and update this checklist with the recorded evidence.
 
@@ -596,7 +655,7 @@ justify marking it complete.
 - [ ] One reusable Stats component owns all shared Stats UI behavior.
 - [ ] Both the full SoulSearch window and unit-card popover use it directly.
 - [ ] The vanilla unit-card button is discoverable, focused to the correct
-      context, configurable, and inexpensive while idle.
+      context, configurable, and measured to be inexpensive while idle.
 - [ ] Automated build, tests, package verification, and diff checks pass.
 - [ ] The full live fortress-mode acceptance checklist passes.
 - [ ] Documentation and `docs/project.todo` reflect the completed behavior.
@@ -610,10 +669,10 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
 | 0 | | Baseline observations, focus path set, selected-unit lookup, modal proof, exact minimum tile grid, pixel/UI-scale evidence, button placement, build/test/diff commands | Pending |
-| 1 | | Characterization suites, subject contract, historical row terminology, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
+| 1 | | Characterization suites, subject identity contract, generic-unit copy correction, historical row terminology, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
 | 2 | | Extracted modules, complete dependency order, loader support, component/reset/child-layout tests, build/test/diff commands | Pending |
-| 3 | | Main-window automated and live regression, including geometry and resize | Pending |
-| 4 | | Popover subject validation, selected-unit exposure, unit-aware singleton behavior, tile-grid sizing, one-time resize handling, state reset, cleanup bookkeeping | Pending |
-| 5 | | Overlay identity/discovery/focus/configuration, explicit frame hitbox/input ownership, clean environment rescan/reload freshness | Pending |
+| 3 | | Main-window automated and live regression, preserved refresh seam, geometry and resize, build/test/diff commands | Pending |
+| 4 | | Popover subject validation, stable identity, signed modal composition, selected-unit exposure, unit-aware singleton behavior, sizing, resize handling, state reset, build/test/diff commands | Pending |
+| 5 | | Overlay identity/discovery/focus/configuration, explicit frame hitbox/input ownership, fresh registry reconstruction, clean environment rescan, build/test/diff commands | Pending |
 | 6 | | Build, test, publish, package verification, diff check, counts and package path | Pending |
-| 7 | | Dated live fortress-mode acceptance and parent-project checklist update | Pending |
+| 7 | | Dated live fortress-mode acceptance, enabled/disabled overlay timer evidence, and parent-project checklist update | Pending |
