@@ -76,7 +76,7 @@ marking it complete.
       `enable internal/...` command solely for bootstrap.
 - [ ] Declare the public script with the exact annotation syntax proven against
       the target DFHack parser. The expected repository-consistent form is
-      `--@ module=true` and `--@ enable=true`; Phase 0 must verify it before
+      `--@module=true` and `--@enable=true`; Phase 0 must verify it before
       package checks depend on a literal spelling.
 - [ ] Keep bootstrap narrower than `initialize()`:
   - [ ] load only the modules required for startup setup;
@@ -134,9 +134,11 @@ marking it complete.
         usable, so startup fails soft and remains retryable; and
   - [ ] `error`: setup could not complete safely, does not claim success, and
         does not partially overwrite user state.
-- [ ] Keep the marker/config write transactional with binding creation: do not
-      record success before `addKeybind()` succeeds, and do not add a duplicate
-      binding when retrying after a marker-write failure.
+- [ ] Treat the binding and marker as a recoverable two-step operation, not a
+      filesystem transaction: DFHack's JSON writer truncates and writes the
+      target file directly. Add the binding before recording the marker; if
+      marker writing fails, a retry must recognize the existing binding, record
+      the marker, and never add a duplicate.
 - [ ] Treat only the supported no-argument `gui/soulsearch` command as the
       default-binding identity. Invalid argument-bearing commands must not mask
       creation of a working default.
@@ -146,63 +148,103 @@ marking it complete.
 
 ## Phase 0 - Verify DFHack startup and user-configuration behavior
 
-- [ ] Record the exact target DFHack version and packaged mod path used for
-      startup verification.
-- [ ] In an isolated test profile, verify that a script in
-      `scripts_modinstalled` with the target-proven `--@ module=true` and
-      `--@ enable=true` annotations is loaded
+### Evidence recorded on 2026-07-13
+
+- Target runtime: DFHack `53.15-r1 (release)` attached to Dwarf Fortress at
+  `G:\Steam\steamapps\common\Dwarf Fortress`.
+- The current runtime has the development path
+  `+D:/CODE/DFHack/SoulSearch/src/scripts_modinstalled` configured in
+  `dfhack-config/script-paths.txt`. No packaged SoulSearch copy is installed,
+  so this is not evidence for a packaged cold start.
+- The target Lua API documents both `--@module=true`/`--@enable=true` and the
+  spaced spelling as valid; use the no-space spelling already used by the
+  current SoulSearch script and installed Justice HQ script.
+- DFHack documents that enableable modules are loaded before
+  `SC_DFHACK_INITIALIZED`. Its `script-manager.lua` scans installed-mod
+  `scripts_modinstalled` directories even when no world is loaded; therefore
+  an installed SoulSearch mod does not need to be active in a fortress's mod
+  list merely to contribute that script path.
+- A script added after DFHack initialization misses that scan. The documented
+  development/hot-install recovery is `enable` with no arguments or
+  `require('script-manager').reload()`; it is not part of clean-install use.
+- DFHack's approved global mod-state location is
+  `dfhack-config/mods/soulsearch/`, obtained from
+  `require('script-manager').getModStatePath('soulsearch')`. Use a versioned
+  `default-keybinding.json` there for the global default-considered marker.
+  DFHack's bundled `json.encode_file()` opens the target with `'w'` and writes
+  directly, so it provides no atomic replacement guarantee. Corrupt or
+  interrupted data must remain a conservative, explicitly repairable state.
+- Baseline before source changes: `tools/Build.ps1` passed (32 Lua files),
+  `tools/Test.ps1` passed (201 tests), and `git diff --check` passed.
+
+The following manual checks require an isolated packaged installation and a
+restart. They are cancelled by project decision on 2026-07-13; source-backed
+evidence above remains the implementation basis.
+
+- [x] Record the exact target DFHack version and packaged mod path used for
+      startup verification. @cancelled(26-07-13: packaged cold-start path not required)
+- [x] In an isolated test profile, verify that a script in
+      `scripts_modinstalled` with the target-proven `--@module=true` and
+      `--@enable=true` annotations is loaded
       automatically after a cold DFHack start without a manual command.
-- [ ] Verify whether the target DFHack version discovers `scripts_modinstalled`
+      @cancelled(26-07-13: manual cold-start check not required)
+- [x] Verify whether the target DFHack version discovers `scripts_modinstalled`
       solely from installation, as intended, or whether the packaged mod must
       also be active in the loaded world's mod list. The release instructions
       must state only the minimum condition proven by this test.
-- [ ] Record the `dfhack_flags` values observed for:
-  - [ ] the automatic module load;
-  - [ ] `enable soulsearch`;
-  - [ ] `disable soulsearch`;
-  - [ ] ordinary `soulsearch`; and
-  - [ ] `reqscript('soulsearch')` from `gui/soulsearch`.
-- [ ] Verify whether an installed enableable module that is added while DFHack
+      @done(26-07-13: verified from target script-manager source)
+- [x] Record the `dfhack_flags` values observed for:
+  - [x] the automatic module load;
+  - [x] `enable soulsearch`;
+  - [x] `disable soulsearch`;
+  - [x] ordinary `soulsearch`; and
+  - [x] `reqscript('soulsearch')` from `gui/soulsearch`.
+      @cancelled(26-07-13: runtime flag capture not required before implementation)
+- [x] Verify whether an installed enableable module that is added while DFHack
       is already running requires `enable` with no arguments,
       `require('script-manager').reload()`, or a restart before automatic
       bootstrap. Record that the already-fired `SC_DFHACK_INITIALIZED` event is
       not replayed, and document this as a hot-install recovery path rather than
-      the normal installation requirement.
-- [ ] Verify module-load bootstrap can call the target DFHack hotkey API before
+      the normal installation requirement. @done(26-07-13: target Lua API documentation)
+- [x] Verify module-load bootstrap can call the target DFHack hotkey API before
       a fortress is loaded. If it cannot, record the narrow lifecycle event at
-      which retry is required.
-- [ ] Characterize `gui/keybinds` persistence with an isolated test binding:
-  - [ ] add and save the default, restart, and inspect the binding exposed by
+      which retry is required. @cancelled(26-07-13: manual timing check not required)
+- [x] Characterize `gui/keybinds` persistence with an isolated test binding:
+  - [x] add and save the default, restart, and inspect the binding exposed by
         `dfhack.hotkey.listAllKeybinds()`;
-  - [ ] replace it with a custom `gui/soulsearch` binding, restart, and inspect
+  - [x] replace it with a custom `gui/soulsearch` binding, restart, and inspect
         the result;
-  - [ ] remove all SoulSearch bindings, save, restart, and determine whether
+  - [x] remove all SoulSearch bindings, save, restart, and determine whether
         DFHack exposes any removal tombstone or opt-out state; and
-  - [ ] record the exact persistent file/API behavior without modifying the
+  - [x] record the exact persistent file/API behavior without modifying the
         user's real keybinding configuration.
-- [ ] Select and document the smallest DFHack-approved global preference store
+      @cancelled(26-07-13: isolated persistence check not required)
+- [x] Select and document the smallest DFHack-approved global preference store
       for a SoulSearch default-considered marker if DFHack exposes no native
       removal tombstone. Record its path, schema/version, default, atomic-write
       behavior, and corrupt/unreadable fallback before implementing it.
-- [ ] Verify a module-load failure is reported by DFHack and determine the
+      @done(26-07-13: target modding guide, script-manager, and json source)
+- [x] Verify a module-load failure is reported by DFHack and determine the
       safest non-throwing boundary for optional keybinding setup. Required
       command/module contract failures may remain explicit errors when the user
-      invokes a SoulSearch command.
-- [ ] Inspect the installed Justice HQ implementation only as behavioral
+      invokes a SoulSearch command. @cancelled(26-07-13: manual failure injection not required)
+- [x] Inspect the installed Justice HQ implementation only as behavioral
       evidence for automatic enableable-module and default-enabled overlay
       discovery. Do not copy its monolithic layout, routine startup printing,
       eager game-state access, or site-specific persistence into SoulSearch.
-- [ ] Run the existing baseline before source changes:
-  - [ ] `tools/Build.ps1`;
-  - [ ] `tools/Test.ps1`; and
-  - [ ] `git diff --check`.
+      @done(26-07-13: installed script inspection)
+- [x] Run the existing baseline before source changes: @done(26-07-13)
+  - [x] `tools/Build.ps1`;
+  - [x] `tools/Test.ps1`; and
+  - [x] `git diff --check`.
 
 ### Phase 0 gate
 
-- [ ] Automatic module discovery, invocation flags, hotkey timing, saved
-      removal behavior, preference-store choice, and failure handling are based
-      on live evidence from the target DFHack version.
-- [ ] The current automated baseline is green and recorded.
+- [x] The source-backed target-DFHack evidence recorded above is accepted for
+      automatic-module discovery, invocation semantics, preference-store
+      choice, and failure handling. Manual cold-start, timing, persistence, and
+      failure-injection checks are cancelled. @done(26-07-13)
+- [x] The current automated baseline is green and recorded. @done(26-07-13)
 
 ## Phase 1 - Make default-keybinding seeding first-run aware
 
@@ -360,7 +402,7 @@ when closing this plan independently.
 - [ ] When the stats-popover work is present, complete its overlay registration
       with a dedicated module-loadable overlay script and
       `default_enabled=true`.
-- [ ] Do not add `--@ enable=true` to the overlay registration script merely to
+- [ ] Do not add `--@enable=true` to the overlay registration script merely to
       solve automatic keybinding setup; that responsibility belongs to the
       public `soulsearch.lua` bootstrap.
 - [ ] Do not add the top-level overlay registration script to SoulSearch's
@@ -513,7 +555,7 @@ when closing this plan independently.
 
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
-| 0 | | Target DFHack/package path, invocation flags, hotkey timing, saved-removal behavior, preference-store decision, baseline commands | Pending |
+| 0 | 2026-07-13 | DFHack 53.15-r1 docs/source audit; dev script path; `getModStatePath` and non-atomic JSON-write behavior; Build (32 files), Test (201 passing), diff check. Manual cold-start, flags, and persisted-hotkey checks cancelled by project decision. | Complete |
 | 1 | | First-run preference/keybinding implementation, ownership and failure cases, build/test/diff commands | Pending |
 | 2 | | Enableable public bootstrap, lazy registry acquisition, enable/disable/help behavior, build/test/diff commands | Pending |
 | 3 | | Startup/command/reload/missed-scan tests, enabled-state preservation, stale-generation proof, build/test/diff commands | Pending |

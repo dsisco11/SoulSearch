@@ -147,7 +147,7 @@ justify marking it complete.
       belong in the SoulSearch reload registry.
 - [ ] Keep the overlay registration script separate from the enableable
       `soulsearch.lua` bootstrap owned by `docs/zero-touch-startup.todo`. Do not
-      add `--@ enable=true` to the overlay script merely to seed the default
+      add `--@enable=true` to the overlay script merely to seed the default
       keybinding or initialize the full SoulSearch runtime.
 - [ ] Register every SoulSearch-owned popover screen with `screen_registry.lua`
       so `soulsearch reload` and teardown dismiss it safely.
@@ -544,7 +544,7 @@ justify marking it complete.
 ## Phase 5 - Add the vanilla unit-card overlay button
 
 - [ ] Add a module-loadable overlay registration script with the target-proven
-      repository syntax `--@ module=true`.
+      repository syntax `--@module=true`.
       Module loading may define the widget class and global `OVERLAY_WIDGETS`,
       but must not look up units, print, register screens, or show UI.
 - [ ] Keep that registration script outside the internal module registry; load
