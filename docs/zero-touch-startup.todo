@@ -305,52 +305,61 @@ evidence above remains the implementation basis.
 
 ## Phase 2 - Add the automatic public bootstrap lifecycle
 
-- [ ] Add the target-verified module and enable annotations to `soulsearch.lua`.
-- [ ] Make module-registry acquisition lazy so automatic bootstrap does not
+- [x] Add the target-verified module and enable annotations to `soulsearch.lua`.
+      @done(26-07-13)
+- [x] Make module-registry acquisition lazy so automatic bootstrap does not
       load or validate the complete SoulSearch runtime graph.
-- [ ] Add an exported `isEnabled()` that reports automatic-bootstrap state.
-- [ ] Initialize that state nil-sensitively so an existing disabled value is
-      preserved across script re-execution.
-- [ ] Implement an idempotent bootstrap-enable path that:
-  - [ ] marks the service active;
-  - [ ] performs first-run-aware keybinding setup;
-  - [ ] registers no world callback unless Phase 0 proved one necessary; and
-  - [ ] returns structured status for tests and explicit callers without
+      @done(26-07-13)
+- [x] Add an exported `isEnabled()` that reports automatic-bootstrap state.
+      @done(26-07-13)
+- [x] Initialize that state nil-sensitively so an existing disabled value is
+      preserved across script re-execution. @done(26-07-13)
+- [x] Implement an idempotent bootstrap-enable path that:
+  - [x] marks the service active;
+  - [x] performs first-run-aware keybinding setup;
+  - [x] registers no world callback unless Phase 0 proved one necessary; and
+  - [x] returns structured status for tests and explicit callers without
         opening UI.
-- [ ] Implement an idempotent bootstrap-disable path that:
-  - [ ] marks the service inactive;
-  - [ ] unregisters only a SoulSearch callback if this plan added one;
-  - [ ] leaves keybindings, screens, modules, and overlay state untouched; and
-  - [ ] leaves explicit command entry points usable.
-- [ ] Dispatch `dfhack_flags.enable` before module or ordinary-command handling.
-- [ ] On automatic `dfhack_flags.module` loading, enable bootstrap by default
+      @done(26-07-13)
+- [x] Implement an idempotent bootstrap-disable path that:
+  - [x] marks the service inactive;
+  - [x] unregisters only a SoulSearch callback if this plan added one;
+  - [x] leaves keybindings, screens, modules, and overlay state untouched; and
+  - [x] leaves explicit command entry points usable.
+      @done(26-07-13: no callback was introduced)
+- [x] Dispatch `dfhack_flags.enable` before module or ordinary-command handling.
+      @done(26-07-13)
+- [x] On automatic `dfhack_flags.module` loading, enable bootstrap by default
       only when the script environment has no prior enabled/disabled value,
       then return without invoking the ordinary command parser. A later
       `reqscript('soulsearch')`, GUI open, or reload must not overwrite an
-      explicit in-session `false`.
-- [ ] Keep `initialize()` as the full defensive runtime path. It must still
+      explicit in-session `false`. @done(26-07-13)
+- [x] Keep `initialize()` as the full defensive runtime path. It must still
       validate the registry, prepare world-dependent caches, and return the
-      module table expected by `gui/soulsearch`.
-- [ ] Keep ordinary `soulsearch` with no arguments idempotent and non-visual.
-- [ ] Keep `soulsearch reload` explicit and non-visual.
-- [ ] Ensure an optional keybinding-setup failure cannot abort automatic
+      module table expected by `gui/soulsearch`. @done(26-07-13)
+- [x] Keep ordinary `soulsearch` with no arguments idempotent and non-visual.
+      @done(26-07-13)
+- [x] Keep `soulsearch reload` explicit and non-visual. @done(26-07-13)
+- [x] Ensure an optional keybinding-setup failure cannot abort automatic
       module loading. Preserve actionable errors for explicit manual setup when
-      the underlying required runtime is invalid.
-- [ ] Update help text in `soulsearch.lua` to document:
-  - [ ] automatic setup after installation;
-  - [ ] manual runtime setup/validation and incomplete-first-run retry behavior,
+      the underlying required runtime is invalid. @done(26-07-13)
+- [x] Update help text in `soulsearch.lua` to document:
+  - [x] automatic setup after installation;
+  - [x] manual runtime setup/validation and incomplete-first-run retry behavior,
         explicitly excluding reset of an established binding opt-out;
-  - [ ] `reload`;
-  - [ ] `enable soulsearch` and `disable soulsearch`; and
-  - [ ] `gui/soulsearch` as the UI-opening command.
+  - [x] `reload`;
+  - [x] `enable soulsearch` and `disable soulsearch`; and
+  - [x] `gui/soulsearch` as the UI-opening command.
+      @done(26-07-13)
 
 ### Phase 2 gate
 
-- [ ] Automatic module invocation prepares only startup state and never opens
-      UI or eagerly loads the full runtime graph.
-- [ ] Native enable/disable status is coherent, idempotent, and independent of
-      explicit command availability.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] Automatic module invocation prepares only startup state and never opens
+      UI or eagerly loads the full runtime graph. @done(26-07-13)
+- [x] Native enable/disable status is coherent, idempotent, and independent of
+      explicit command availability. @done(26-07-13)
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+      @done(26-07-13: 33 Lua files, 212 tests)
 
 ## Phase 3 - Harden command, reload, and missed-startup behavior
 
@@ -563,7 +572,7 @@ when closing this plan independently.
 | --- | --- | --- | --- |
 | 0 | 2026-07-13 | DFHack 53.15-r1 docs/source audit; dev script path; `getModStatePath` and non-atomic JSON-write behavior; Build (32 files), Test (201 passing), diff check. Manual cold-start, flags, and persisted-hotkey checks cancelled by project decision. | Complete |
 | 1 | 2026-07-13 | Added versioned global marker adapter and structured keybinding outcomes; preserved customization/removal; added corruption, failure, retry, and idempotence tests. Build: 33 files. Test: 209 passing. | Complete |
-| 2 | | Enableable public bootstrap, lazy registry acquisition, enable/disable/help behavior, build/test/diff commands | Pending |
+| 2 | 2026-07-13 | Added public enableable bootstrap; deferred full registry acquisition; preserved explicit initialization/reload; added automatic-load and enable/disable command tests. Build: 33 files. Test: 212 passing. | Complete |
 | 3 | | Startup/command/reload/missed-scan tests, enabled-state preservation, stale-generation proof, build/test/diff commands | Pending |
 | 4 | | Optional independent overlay discovery/activation, Ctrl-F ownership, coordinated reload, or recorded N/A if the popover is not yet present | Pending |
 | 5 | | README/help/version, build/test/publish/package/diff commands, test counts and package paths | Pending |

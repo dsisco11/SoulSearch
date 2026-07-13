@@ -1,24 +1,62 @@
---@ module=true
+--@module=true
+--@enable=true
 
--- SoulSearch initialization and reload command.
+-- SoulSearch bootstrap, initialization, and reload command.
 --[====[
 soulsearch
 ===========
 
 Tags: fort | units | inspection
 
-Initialize SoulSearch runtime state without opening its UI.
+Automatically seed first-run setup after installation. Running the command
+manually performs full runtime setup without opening the UI.
 
 Usage
 -----
 
     soulsearch
     soulsearch reload
+    enable soulsearch
+    disable soulsearch
 
-Use `gui/soulsearch` to open the SoulSearch units search panel.
+Use `gui/soulsearch` to open the SoulSearch units search panel. Manual setup
+retries incomplete first-run setup, but does not recreate a binding that the
+player has intentionally removed.
 ]====]
 
 local MODULE_REGISTRY_SCRIPT = 'internal/soulsearch/module_registry'
+local KEYBINDINGS_SCRIPT = 'internal/soulsearch/keybindings'
+
+---@return boolean
+function isEnabled()
+    return bootstrap_enabled == true
+end
+
+---@return table
+local function bootstrap()
+    local ok, keybindings = pcall(reqscript, KEYBINDINGS_SCRIPT)
+    if not ok or type(keybindings) ~= 'table' or
+            type(keybindings.ensure_default) ~= 'function' then
+        return {status='error'}
+    end
+    local result
+    ok, result = pcall(keybindings.ensure_default)
+    if not ok then return {status='error'} end
+    if type(result) ~= 'table' then return {status='error'} end
+    return result
+end
+
+---@return table
+function enable_bootstrap()
+    bootstrap_enabled = true
+    return bootstrap()
+end
+
+---@return table
+function disable_bootstrap()
+    bootstrap_enabled = false
+    return {status='disabled'}
+end
 
 ---@param registry any
 ---@return boolean
@@ -43,17 +81,16 @@ local function load_module_registry()
     return registry
 end
 
-local module_registry = load_module_registry()
-
 ---@return table<string, table>
 local function validate_modules()
-    return module_registry.load_all(reqscript)
+    return load_module_registry().load_all(reqscript)
 end
 
 ---Explicit development reload. Keep the registry environment alive as the
 ---coordinator while its dependency/consumer modules are cleared and rebuilt.
 ---@return table<string, table>
 local function reload_modules()
+    local module_registry = load_module_registry()
     local old_ui = reqscript('internal/soulsearch/ui')
     assert(type(old_ui.dismiss_all) == 'function',
         'SoulSearch UI module cannot safely dismiss windows for reload.')
@@ -106,7 +143,18 @@ function main(...)
     end
 end
 
+if dfhack_flags.enable then
+    if dfhack_flags.enable_state then
+        enable_bootstrap()
+    else
+        disable_bootstrap()
+    end
+    return
+end
+
 if dfhack_flags.module then
+    if bootstrap_enabled == nil then bootstrap_enabled = true end
+    if bootstrap_enabled then bootstrap() end
     return
 end
 

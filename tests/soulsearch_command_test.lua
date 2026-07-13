@@ -44,7 +44,73 @@ return function(test, repo_root)
         test.assert_equal(0, ui.open_count)
     end)
 
-    test.case('soulsearch module API: initializes only when requested', function()
+    test.case('soulsearch module load: bootstraps keybindings without loading the full runtime', function()
+        local lifecycle = {}
+        function lifecycle.prepare_for_world() lifecycle.prepared = true end
+        local keybindings = {}
+        function keybindings.ensure_default()
+            keybindings.ensured = true
+            return {status='added'}
+        end
+        local environment = {
+            dfhack_flags={module=true},
+            dfhack={},
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/keybindings')
+                return keybindings
+            end,
+        }
+        local chunk = load_script(command_path, environment)
+        chunk()
+
+        test.assert_equal('function', type(environment.initialize))
+        test.assert_false(lifecycle.prepared)
+        test.assert_true(keybindings.ensured)
+        test.assert_true(environment.isEnabled())
+    end)
+
+    test.case('soulsearch module load: preserves an explicit disabled state', function()
+        local requested = 0
+        local environment = {
+            bootstrap_enabled=false,
+            dfhack_flags={module=true},
+            dfhack={},
+            reqscript=function()
+                requested = requested + 1
+                error('disabled bootstrap must not load dependencies')
+            end,
+        }
+        load_script(command_path, environment)()
+
+        test.assert_false(environment.isEnabled())
+        test.assert_equal(0, requested)
+    end)
+
+    test.case('soulsearch enable and disable flags only control bootstrap state', function()
+        local keybindings = {calls=0}
+        function keybindings.ensure_default()
+            keybindings.calls = keybindings.calls + 1
+            return {status='added'}
+        end
+        local environment = {
+            dfhack_flags={enable=true, enable_state=true},
+            dfhack={},
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/keybindings')
+                return keybindings
+            end,
+        }
+        load_script(command_path, environment)()
+        test.assert_true(environment.isEnabled())
+        test.assert_equal(1, keybindings.calls)
+
+        environment.dfhack_flags = {enable=true, enable_state=false}
+        load_script(command_path, environment)()
+        test.assert_false(environment.isEnabled())
+        test.assert_equal(1, keybindings.calls)
+    end)
+
+    test.case('soulsearch command: explicit initialization remains usable while bootstrap is disabled', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {}
@@ -59,22 +125,19 @@ return function(test, repo_root)
             get_script_names=function() return {} end,
         }
         local environment = {
-            dfhack_flags={module=true},
+            bootstrap_enabled=false,
+            dfhack_flags={},
             dfhack={},
             reqscript=function(name)
                 assert(name == 'internal/soulsearch/module_registry')
                 return registry
             end,
         }
-        local chunk = load_script(command_path, environment)
-        chunk()
+        load_script(command_path, environment)()
 
-        test.assert_equal('function', type(environment.initialize))
-        test.assert_false(lifecycle.prepared)
-        test.assert_false(keybindings.ensured)
-        environment.initialize()
-        test.assert_true(lifecycle.prepared)
+        test.assert_false(environment.isEnabled())
         test.assert_true(keybindings.ensured)
+        test.assert_true(lifecycle.prepared)
     end)
 
     test.case('gui/soulsearch: initializes then opens without arguments', function()
