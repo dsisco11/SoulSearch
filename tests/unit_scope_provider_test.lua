@@ -14,12 +14,17 @@ local function make_environment(overrides)
     local inactive = make_unit(6)
     local units = {citizen, pet, resident, visitor, wildlife, inactive, citizen}
     local active = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true}
+    local citizen_calls = {}
     local resident_calls = {}
     local dfhack = {
         isMapLoaded=overrides.is_map_loaded or function() return true end,
         world={isFortressMode=overrides.is_fortress_mode or function() return true end},
         units={
             isActive=function(unit) return active[unit.id] or false end,
+            isCitizen=function(unit, include_insane)
+                table.insert(citizen_calls, {id=unit.id, include_insane=include_insane})
+                return unit == citizen
+            end,
             isResident=function(unit, include_insane)
                 table.insert(resident_calls, {id=unit.id, include_insane=include_insane})
                 return unit == citizen or unit == resident
@@ -37,6 +42,7 @@ local function make_environment(overrides)
         dfhack=dfhack,
         units=units,
         resident_calls=resident_calls,
+        citizen_calls=citizen_calls,
     }
 end
 
@@ -67,15 +73,26 @@ return function(test, repo_root)
         end
     end)
 
-    test.case('unit scopes: default is fortress residents', function()
+    test.case('unit scopes: citizens include insane citizens and exclude residents', function()
+        local env = make_environment()
+        local provider = soulsearch_env.load_unit_scope_provider(
+            repo_root, env.df, env.dfhack).new('citizens')
+        local units = provider.get_units()
+        test.assert_sequence({1}, unit_ids(units))
+        for _, call in ipairs(env.citizen_calls) do
+            test.assert_true(call.include_insane)
+        end
+    end)
+
+    test.case('unit scopes: default is citizens', function()
         local env = make_environment()
         local provider = soulsearch_env.load_unit_scope_provider(
             repo_root, env.df, env.dfhack).new()
-        test.assert_equal('fort_residents',
+        test.assert_equal('citizens',
             soulsearch_env.load_unit_scope_provider(repo_root, env.df, env.dfhack)
                 .get_default_scope())
         local units = provider.get_units()
-        test.assert_sequence({1, 3}, unit_ids(units))
+        test.assert_sequence({1}, unit_ids(units))
     end)
 
     test.case('unit scopes: visitors include regular visitors', function()
@@ -90,10 +107,10 @@ return function(test, repo_root)
         local scopes = soulsearch_env.load_unit_scope_provider(
             repo_root, env.df, env.dfhack)
         local options = scopes.get_options()
-        test.assert_sequence({'Residents', 'Visitors', 'All units'},
-            {options[1].label, options[2].label, options[3].label})
+        test.assert_sequence({'Citizens', 'Residents', 'Visitors', 'All units'},
+            {options[1].label, options[2].label, options[3].label, options[4].label})
         options[1].label = 'Changed'
-        test.assert_equal('Residents', scopes.get_options()[1].label)
+        test.assert_equal('Citizens', scopes.get_options()[1].label)
     end)
 
     test.case('unit scopes: unavailable contexts return no partial candidates', function()

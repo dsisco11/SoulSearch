@@ -24,12 +24,13 @@ FILTER_CONSTANTS.kind = {
 ---@enum SoulSearchUnitScope
 FILTER_CONSTANTS.unit_scope = {
     ALL_ACTIVE='all_active',
+    CITIZENS='citizens',
     FORT_RESIDENTS='fort_residents',
     CITIZENS_AND_PETS='citizens_and_pets',
     VISITORS='visitors',
 }
 FILTER_CONSTANTS.default_unit_scope =
-    FILTER_CONSTANTS.unit_scope.FORT_RESIDENTS
+    FILTER_CONSTANTS.unit_scope.CITIZENS
 
 FILTER_CONSTANTS.race = {
     group_id_prefix='race:group:',
