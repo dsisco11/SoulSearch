@@ -31,6 +31,7 @@ local saved_stats_sort_phase = 0
 local saved_result_sort_key
 local saved_result_sort_reverse = false
 local saved_result_sort_phase = 0
+local saved_window_frame
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
@@ -248,6 +249,9 @@ SoulSearchWindow.ATTRS {
 
 ---Creates controls and loads the initial resident/filter data.
 function SoulSearchWindow:init()
+    if saved_window_frame then
+        self.frame = ui_layout.copy_dimensions(saved_window_frame)
+    end
     self.rows = {}
     self.results = {}
     self.query = ''
@@ -1277,8 +1281,9 @@ function SoulSearchScreen:init()
     }
 end
 
----Clears the cached screen reference when the screen closes.
+---Saves window geometry and clears the cached screen reference when it closes.
 function SoulSearchScreen:onDismiss()
+    saved_window_frame = ui_layout.copy_dimensions(self.window.frame)
     view = nil
 end
 

@@ -143,6 +143,8 @@ high/low directions and priorities with the controls beside each selected
 filter. Click a result-list column header (Name, Unit ID, or Profession) to
 sort it ascending, click again for descending, and click a third time to
 restore relevance ranking. Arrows indicate the active column and direction.
+SoulSearch restores its last window position and size when reopened during the
+same DFHack session.
 The search field filters result names only. Press `z` or Enter on a selected
 result to center and highlight that unit on the fortress map.
 

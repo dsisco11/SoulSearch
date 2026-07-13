@@ -59,7 +59,7 @@
 ✔ Setup configurable keybind for opening soul search window (default Ctrl + F). @done(26-07-12)
 ✔ Add dropdown field to the search filters panel to allow users to specify whether they want to search for residents, visitors, or all units. (Default should be residents.) @done(26-07-12)
 ✔ Make results list column headers clickable to sort by that column, complete with the same indicators and cycles as the stats panel. (e.g. click once to sort ascending, click again to sort descending, click a 3rd time to remove sorting by that column.) @done(26-07-12)
-☐ Make soul search window remember its last position and size when closed and reopened.
+✔ Make soul search window remember its last position and size when closed and reopened. @done(26-07-12)
 ☐ Make soul search window panels resizeable.
 ☐ Make soul search panels size to fit available window space, so that the user can resize the window and the panels will automatically resize to fit the new window size.
 ☐ Make search-filters panel a modal window that only appears when the user clicks a button in the main soul-search window. This will allow the user to have more space for the results and stats panels, since the search-filters panel is not always needed.
