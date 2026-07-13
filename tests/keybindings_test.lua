@@ -19,14 +19,14 @@ return function(test, repo_root)
         test.assert_true(keybindings.ensure_default())
         test.assert_equal(1, #added)
         test.assert_equal('Ctrl-F@dwarfmode/Default', added[1].spec)
-        test.assert_equal('soulsearch', added[1].command)
+        test.assert_equal('gui/soulsearch', added[1].command)
     end)
 
-    test.case('keybindings: preserves an existing SoulSearch binding', function()
+    test.case('keybindings: preserves an existing SoulSearch GUI binding', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function()
-                return {{spec='Alt-S@dwarfmode', command='soulsearch'}}
+                return {{spec='Alt-S@dwarfmode', command='gui/soulsearch'}}
             end,
             addKeybind=function(spec, command)
                 table.insert(added, {spec=spec, command=command})
@@ -36,7 +36,22 @@ return function(test, repo_root)
         test.assert_equal(0, #added)
     end)
 
-    test.case('keybindings: treats SoulSearch command arguments as bound', function()
+    test.case('keybindings: unsupported GUI command arguments do not suppress the default', function()
+        local added = {}
+        local keybindings = load_keybindings(repo_root, {
+            listAllKeybinds=function()
+                return {{spec='Alt-R', command='gui/soulsearch scoped'}}
+            end,
+            addKeybind=function(spec, command)
+                table.insert(added, {spec=spec, command=command})
+            end,
+        })
+        test.assert_true(keybindings.ensure_default())
+        test.assert_equal(1, #added)
+        test.assert_equal('gui/soulsearch', added[1].command)
+    end)
+
+    test.case('keybindings: initialization commands do not suppress the GUI default', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function()
@@ -46,8 +61,9 @@ return function(test, repo_root)
                 table.insert(added, {spec=spec, command=command})
             end,
         })
-        test.assert_false(keybindings.ensure_default())
-        test.assert_equal(0, #added)
+        test.assert_true(keybindings.ensure_default())
+        test.assert_equal(1, #added)
+        test.assert_equal('gui/soulsearch', added[1].command)
     end)
 
     test.case('keybindings: tolerates a DFHack without the hotkey API', function()

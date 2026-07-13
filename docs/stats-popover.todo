@@ -618,10 +618,11 @@ justify marking it complete.
         path without manually executing that script;
   - [ ] always call `require('plugins.overlay').rescan()` so overlay-class
         changes are refreshed as well as dynamic popover dependencies;
-  - [ ] preserve the existing behavior of opening the main SoulSearch window
-        after reload; and
-  - [ ] prove that, after closing that window and returning to a unit card, the
-        next button activation uses the current overlay and popover code.
+  - [ ] leave all SoulSearch UI closed after reload; `gui/soulsearch` remains
+        the separate command for opening a fresh main window; and
+  - [ ] prove that, after invoking `gui/soulsearch` when needed and returning to
+        a unit card, the next button activation uses the current overlay and
+        popover code.
 - [ ] Add command-level reload tests that model an added module, a removed
       module, a reordered dependency, and a changed registry contract, proving
       the fresh registry generation rather than the cached pre-reload table
@@ -662,7 +663,7 @@ justify marking it complete.
       registered screens, replaces the cached registry coordinator, reconstructs
       modules from the fresh registry generation, clears the overlay script
       environment, requests an overlay rescan without manually executing the
-      overlay script, and retains the existing main-window reopen behavior.
+      overlay script, and leaves UI opening to `gui/soulsearch`.
 - [ ] Run the automated closure sequence separately:
   - [ ] `tools/Build.ps1`;
   - [ ] `tools/Test.ps1`;
@@ -784,9 +785,10 @@ justify marking it complete.
         well below one percent of elapsed time, investigating any material or
         unstable result before claiming the button is inexpensive while idle.
 - [ ] Run `soulsearch reload` with the main window and popover open in separate
-      passes; confirm owned screens dismiss cleanly and the existing main
-      SoulSearch window opens after reload. Close it, return to a unit card,
-      and confirm the rescanned overlay opens the current popover implementation.
+      passes; confirm owned screens dismiss cleanly and no window reopens. Run
+      `gui/soulsearch` to confirm the rebuilt main UI, then close it, return to
+      a unit card, and confirm the rescanned overlay opens the current popover
+      implementation.
 - [ ] Repeat popover open/close from both paused and unpaused unit cards;
       confirm modal input never leaks and dismissal restores the intended pause
       state.

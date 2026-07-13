@@ -5,16 +5,17 @@ traits, attributes, and skills. Race filters define the candidate set; the
 other filters are ordered relevance criteria, so partial matches remain visible
 while units matching more and higher-priority criteria rank first.
 
-SoulSearch is implemented as the Lua-only DFHack command `soulsearch`. Native
-C++ plugin code remains out of scope unless profiling later identifies a real
-performance requirement.
+SoulSearch is implemented as Lua-only DFHack commands: `soulsearch` initializes
+runtime state and `gui/soulsearch` opens the UI. Native C++ plugin code remains
+out of scope unless profiling later identifies a real performance requirement.
 
 ## Status
 
 The current implementation includes:
 
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
-- `scripts_modinstalled/soulsearch.lua` defines the public DFHack command.
+- `scripts_modinstalled/soulsearch.lua` defines the initialization and reload
+  command; `scripts_modinstalled/gui/soulsearch.lua` defines the GUI command.
 - `scripts_modinstalled/internal/soulsearch/` contains private support modules.
 - Resident collection reads stable DFHack APIs into compact snapshots of names,
   professions, traits, attributes, and skills. Position is intentionally read
@@ -26,11 +27,12 @@ The current implementation includes:
   results.
 - `ui.lua` composes the window and coordinates events; formatting, layout,
   components, refresh dispatch, and Stats presentation have dedicated modules.
-- `soulsearch` opens the panel with name search, race Include/Exclude scope
+- `gui/soulsearch` opens the panel with name search, race Include/Exclude scope
   filters, ordered high/low ranking filters, JSON-backed filter presets,
   ranked results, Stats, refresh, zoom, and close controls.
 
-The command currently validates fortress mode and opens the resident search
+`soulsearch` initializes keybindings and world-scoped caches without opening a
+window. `gui/soulsearch` validates fortress mode and opens the resident search
 panel.
 
 ## Installation
@@ -45,6 +47,7 @@ installed path must look like this:
 ```text
 mods/SoulSearch/info.txt
 mods/SoulSearch/scripts_modinstalled/soulsearch.lua
+mods/SoulSearch/scripts_modinstalled/gui/soulsearch.lua
 ```
 
 If you extract the release zip, make sure the extraction tool does not add an
@@ -113,28 +116,43 @@ For development reloads, use:
 soulsearch reload
 ```
 
-Normal `soulsearch` execution validates the retained internal-module contracts.
+Normal `soulsearch` execution validates the retained internal-module contracts,
+seeds the default GUI keybinding when needed, and prepares world-scoped caches
+without opening a window.
 `soulsearch reload` clears runtime modules in reverse dependency order, runs
 them again in dependency order, then validates the rebuilt set so a UI does not
 retain mixed module generations. It dismisses every open SoulSearch window
-before reloading, so you do not need to close them manually.
+before reloading, so you do not need to close them manually; run
+`gui/soulsearch` afterward to open a fresh window.
 
 ## Usage
 
-After DFHack can see the script path, run:
+| Command | Arguments | Purpose |
+| --- | --- | --- |
+| `soulsearch` | none | Initialize runtime state, world-scoped caches, and the default GUI keybinding. |
+| `soulsearch reload` | none | Dismiss SoulSearch screens and rebuild the runtime module generation. |
+| `gui/soulsearch` | none | Initialize if needed, then open a SoulSearch window. |
+
+After DFHack can see the script path, initialize SoulSearch with:
 
 ```text
 soulsearch
 ```
 
-The first manual SoulSearch launch in a DFHack session adds the default
-`Ctrl-F@dwarfmode/Default` binding when no existing binding runs a SoulSearch
-command. Use `gui/keybinds` to change or remove it, then save from that screen
-to persist your choice across DFHack restarts.
+Then open the window with:
 
-The command opens a new SoulSearch panel in fortress mode. Repeated command or
-`Ctrl-F` invocations create additional windows; only one DFHack `ZScreen` has
-keyboard focus at a time. By default, each new panel's unit scope is
+```text
+gui/soulsearch
+```
+
+Either command initializes the default `Ctrl-F@dwarfmode/Default` binding when
+no existing SoulSearch GUI binding exists. The binding runs `gui/soulsearch`.
+Use `gui/keybinds` to change or remove it, then save from that screen to persist
+your choice across DFHack restarts.
+
+`gui/soulsearch` opens a new SoulSearch panel in fortress mode. Repeated GUI
+command or `Ctrl-F` invocations create additional windows; only one DFHack
+`ZScreen` has keyboard focus at a time. By default, each new panel's unit scope is
 **Citizens** and its candidate race scope is **Humanoids**.
 Click **Edit filters** to open the filter panel. Use its **Search** dropdown
 to choose between Citizens, Residents, Visitors, and All units. The active
@@ -170,8 +188,9 @@ types and implementation notes on candidate scope.
 
 ## Troubleshooting
 
-If DFHack says `soulsearch` is not a recognized command, DFHack has not added
-the mod's `scripts_modinstalled/` directory to its script paths yet.
+If DFHack says `soulsearch` or `gui/soulsearch` is not a recognized command,
+DFHack has not added the mod's `scripts_modinstalled/` directory to its script
+paths yet.
 
 For development, the most reliable fix is to add this line to
 `dfhack-config/script-paths.txt` and restart DFHack:

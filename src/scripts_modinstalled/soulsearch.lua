@@ -1,16 +1,21 @@
--- SoulSearch public DFHack command.
+--@ module=true
+
+-- SoulSearch initialization and reload command.
 --[====[
 soulsearch
 ===========
 
 Tags: fort | units | inspection
 
-Open the SoulSearch resident search panel.
+Initialize SoulSearch runtime state without opening its UI.
 
 Usage
 -----
 
     soulsearch
+    soulsearch reload
+
+Use `gui/soulsearch` to open the SoulSearch units search panel.
 ]====]
 
 local MODULE_REGISTRY_SCRIPT = 'internal/soulsearch/module_registry'
@@ -68,18 +73,36 @@ local function reload_modules()
     return validate_modules()
 end
 
----DFHack command entry point.
----@param ... any
-function main(...)
-    local args = {...}
-    local is_reload = args[1] == 'reload'
-    local modules = is_reload and reload_modules() or validate_modules()
+---@param modules table<string, table>
+---@return table<string, table>
+local function prepare_modules(modules)
     modules['internal/soulsearch/keybindings'].ensure_default()
     modules['internal/soulsearch/lifecycle'].prepare_for_world()
-    if is_reload then
-        modules['internal/soulsearch/ui'].open()
+    return modules
+end
+
+---Initializes the current SoulSearch runtime generation without opening a UI.
+---@return table<string, table>
+function initialize()
+    return prepare_modules(validate_modules())
+end
+
+---Reloads SoulSearch runtime modules without opening a UI.
+---@return table<string, table>
+function reload()
+    return prepare_modules(reload_modules())
+end
+
+---DFHack command entry point.
+---@param ... string
+function main(...)
+    local args = {...}
+    if #args == 0 then
+        initialize()
+    elseif #args == 1 and args[1] == 'reload' then
+        reload()
     else
-        modules['internal/soulsearch/ui'].open(table.unpack(args))
+        qerror('Usage: soulsearch [reload]')
     end
 end
 

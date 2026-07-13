@@ -1,14 +1,24 @@
+local function script_path(repo_root, relative_path)
+    local separator = package.config:sub(1, 1)
+    return repo_root .. separator .. relative_path:gsub('[/\\]', separator)
+end
+
+local function load_script(path, environment)
+    setmetatable(environment, {__index=_G})
+    return assert(loadfile(path, 't', environment))
+end
+
 return function(test, repo_root)
-    test.case('soulsearch command: normal invocation prepares and opens without arguments', function()
-        local separator = package.config:sub(1, 1)
-        local path = repo_root .. separator ..
-            'src/scripts_modinstalled/soulsearch.lua'
+    local command_path = script_path(repo_root, 'src/scripts_modinstalled/soulsearch.lua')
+    local gui_path = script_path(repo_root, 'src/scripts_modinstalled/gui/soulsearch.lua')
+
+    test.case('soulsearch command: normal invocation prepares without opening UI', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {}
         function keybindings.ensure_default() keybindings.ensured = true end
-        local ui = {}
-        function ui.open(...) ui.opened_with = {...} end
+        local ui = {open_count=0}
+        function ui.open() ui.open_count = ui.open_count + 1 end
         local registry = {
             load_all=function()
                 return {
@@ -19,27 +29,80 @@ return function(test, repo_root)
             end,
             get_script_names=function() return {} end,
         }
-        local environment = {
+        local chunk = load_script(command_path, {
             dfhack_flags={},
             dfhack={},
             reqscript=function(name)
                 assert(name == 'internal/soulsearch/module_registry')
                 return registry
             end,
-        }
-        setmetatable(environment, {__index=_G})
-        local chunk = assert(loadfile(path, 't', environment))
+        })
         chunk()
 
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)
+        test.assert_equal(0, ui.open_count)
+    end)
+
+    test.case('soulsearch module API: initializes only when requested', function()
+        local lifecycle = {}
+        function lifecycle.prepare_for_world() lifecycle.prepared = true end
+        local keybindings = {}
+        function keybindings.ensure_default() keybindings.ensured = true end
+        local registry = {
+            load_all=function()
+                return {
+                    ['internal/soulsearch/keybindings']=keybindings,
+                    ['internal/soulsearch/lifecycle']=lifecycle,
+                }
+            end,
+            get_script_names=function() return {} end,
+        }
+        local environment = {
+            dfhack_flags={module=true},
+            dfhack={},
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/module_registry')
+                return registry
+            end,
+        }
+        local chunk = load_script(command_path, environment)
+        chunk()
+
+        test.assert_equal('function', type(environment.initialize))
+        test.assert_false(lifecycle.prepared)
+        test.assert_false(keybindings.ensured)
+        environment.initialize()
+        test.assert_true(lifecycle.prepared)
+        test.assert_true(keybindings.ensured)
+    end)
+
+    test.case('gui/soulsearch: initializes then opens without arguments', function()
+        local initialized = 0
+        local ui = {open_count=0}
+        function ui.open(...)
+            ui.open_count = ui.open_count + 1
+            ui.opened_with = {...}
+        end
+        local chunk = load_script(gui_path, {
+            reqscript=function(name)
+                assert(name == 'soulsearch')
+                return {
+                    initialize=function()
+                        initialized = initialized + 1
+                        return {['internal/soulsearch/ui']=ui}
+                    end,
+                }
+            end,
+        })
+        chunk()
+
+        test.assert_equal(1, initialized)
+        test.assert_equal(1, ui.open_count)
         test.assert_equal(0, #ui.opened_with)
     end)
 
-    test.case('soulsearch command: reload repairs an incomplete registry environment', function()
-        local separator = package.config:sub(1, 1)
-        local path = repo_root .. separator ..
-            'src/scripts_modinstalled/soulsearch.lua'
+    test.case('soulsearch command: reload repairs an incomplete registry environment without opening UI', function()
         local registry_state = 'incomplete'
         local events = {}
         local lifecycle = {}
@@ -83,7 +146,7 @@ return function(test, repo_root)
                 }
             end,
         }
-        local environment = {
+        local chunk = load_script(command_path, {
             dfhack_flags={},
             dfhack={
                 run_command=function(command, ...)
@@ -102,9 +165,7 @@ return function(test, repo_root)
                 if name == 'internal/soulsearch/ui' then return old_ui end
                 error('unexpected reqscript: ' .. tostring(name))
             end,
-        }
-        setmetatable(environment, {__index=_G})
-        local chunk = assert(loadfile(path, 't', environment))
+        })
         chunk('reload')
 
         test.assert_sequence({
@@ -131,11 +192,9 @@ return function(test, repo_root)
         }, events[6])
         test.assert_sequence({'keybindings'}, events[7])
         test.assert_sequence({'prepare'}, events[8])
-        test.assert_sequence({'open'}, events[9])
         test.assert_equal(1, old_ui.dismiss_count)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)
-        test.assert_equal(1, new_ui.open_count)
-        test.assert_equal(0, #new_ui.opened_with)
+        test.assert_equal(0, new_ui.open_count)
     end)
 end
