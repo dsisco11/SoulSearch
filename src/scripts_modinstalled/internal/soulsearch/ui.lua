@@ -186,6 +186,19 @@ local function append_views(target, views)
     end
 end
 
+---Makes nested modal descendants addressable from the root window, matching
+---the direct-subview access used by the refresh and tooltip paths.
+---@param parent table
+---@param root_subviews table
+local function expose_descendant_subviews(parent, root_subviews)
+    for _, child in ipairs(parent.subviews or {}) do
+        if child.view_id then
+            root_subviews[child.view_id] = child
+        end
+        expose_descendant_subviews(child, root_subviews)
+    end
+end
+
 ---@param result SoulSearchResult|nil
 ---@return SoulSearchPosition|nil
 local function get_live_position(result)
@@ -229,6 +242,7 @@ end
 ---@field result_sort_reverse boolean
 ---@field result_sort_phase integer
 ---@field suppress_result_select_refresh boolean
+---@field filter_panel_open boolean
 ---@field add_filter_open boolean
 ---@field add_skill_open boolean
 ---@field add_race_open boolean
@@ -265,6 +279,7 @@ function SoulSearchWindow:init()
     self.result_sort_reverse = saved_result_sort_reverse
     self.result_sort_phase = saved_result_sort_phase
     self.suppress_result_select_refresh = false
+    self.filter_panel_open = false
     self.add_filter_open = false
     self.add_skill_open = false
     self.add_race_open = false
@@ -290,7 +305,24 @@ function SoulSearchWindow:init()
         self.query = text
         self:refresh_views{results=true}
     end))
-    append_views(views, ui_components.create_filter_panel{
+    table.insert(views, ui_components.create_filter_panel_button(function()
+        self:toggle_filter_panel()
+    end))
+    append_views(views, ui_components.create_results_panel{
+        on_select=function(result)
+            if not self.suppress_result_select_refresh then
+                self:refresh_views{stats=true, result=result}
+            end
+        end,
+        on_submit=function(result) self:zoom_to_result(result) end,
+    })
+    append_views(views, ui_components.create_stats_panel())
+    table.insert(views, ui_components.create_close_button(function()
+        self.parent_view:dismiss()
+    end))
+    table.insert(views, ui_components.create_filter_panel{
+        is_filter_panel_open=function() return self.filter_panel_open end,
+        on_close_filter_panel=function() self:close_filter_panel() end,
         is_attribute_picker_open=function() return self.add_filter_open end,
         is_skill_picker_open=function() return self.add_skill_open end,
         is_race_picker_open=function() return self.add_race_open end,
@@ -333,19 +365,8 @@ function SoulSearchWindow:init()
         end,
         on_add=function(filter_id) self:add_filter(filter_id) end,
     })
-    append_views(views, ui_components.create_results_panel{
-        on_select=function(result)
-            if not self.suppress_result_select_refresh then
-                self:refresh_views{stats=true, result=result}
-            end
-        end,
-        on_submit=function(result) self:zoom_to_result(result) end,
-    })
-    append_views(views, ui_components.create_stats_panel())
-    table.insert(views, ui_components.create_close_button(function()
-        self.parent_view:dismiss()
-    end))
     self:addviews(views)
+    expose_descendant_subviews(self, self.subviews)
 
     self:update_unit_scope_picker()
     self:refresh_residents()
@@ -371,7 +392,8 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_filter_action_tooltip()
-    if self.add_filter_open or self.add_skill_open or self.add_race_open or
+    if not self.filter_panel_open or self.add_filter_open or
+            self.add_skill_open or self.add_race_open or
             self.preset_picker_open then
         return nil
     end
@@ -444,7 +466,7 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_filter_descriptor_tooltip()
-    if self.preset_picker_open then return nil end
+    if not self.filter_panel_open or self.preset_picker_open then return nil end
     if self.add_filter_open then
         return get_descriptor_tooltip(
             self.subviews.available_filter_list,
@@ -976,6 +998,29 @@ function SoulSearchWindow:toggle_preset_picker()
     self:refresh_views{pickers=true, presets=true}
 end
 
+---Opens or closes the filter-panel overlay.
+function SoulSearchWindow:toggle_filter_panel()
+    if self.filter_panel_open then
+        self:close_filter_panel()
+        return
+    end
+    self.filter_panel_open = true
+    self:refresh_views{pickers=true, presets=true}
+end
+
+---@return boolean
+function SoulSearchWindow:close_filter_panel()
+    if not self.filter_panel_open then return false end
+    self.filter_panel_open = false
+    self.add_filter_open = false
+    self.add_skill_open = false
+    self.add_race_open = false
+    self.unit_scope_picker_open = false
+    self.preset_picker_open = false
+    self:refresh_views{pickers=true, presets=true}
+    return true
+end
+
 ---@return boolean
 function SoulSearchWindow:close_preset_picker()
     if not self.preset_picker_open then return false end
@@ -1074,7 +1119,8 @@ end
 
 ---@return boolean
 function SoulSearchWindow:handle_filter_action_click()
-    if self.add_filter_open or self.add_skill_open or self.add_race_open or
+    if not self.filter_panel_open or self.add_filter_open or
+            self.add_skill_open or self.add_race_open or
             self.unit_scope_picker_open or self.preset_picker_open then
         return false
     end
@@ -1221,6 +1267,9 @@ end
 ---@return boolean
 function SoulSearchWindow:onInput(keys)
     if is_backspace_key(keys) and self:close_add_filter_dropdown() then
+        return true
+    end
+    if is_backspace_key(keys) and self:close_filter_panel() then
         return true
     end
     if keys._MOUSE_L and self:handle_filter_action_click() then

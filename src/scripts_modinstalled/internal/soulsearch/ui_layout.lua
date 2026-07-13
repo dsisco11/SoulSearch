@@ -5,15 +5,14 @@ local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 WINDOW_FRAME = {w=150, h=45, xalign=0.5, yalign=0.5}
 WINDOW_RESIZE_MIN = {w=120, h=30}
 
-FILTER_LEFT = 1
 FILTER_WIDTH = 38
-RESULTS_LEFT = 41
-RESULTS_WIDTH = 64
-STATS_LEFT = 107
-DIVIDER_XS = {RESULTS_LEFT - 2, STATS_LEFT - 2}
-RESULT_NAME_WIDTH = 35
+RESULTS_LEFT = 1
+RESULTS_WIDTH = 94
+STATS_LEFT = 97
+DIVIDER_XS = {STATS_LEFT - 2}
+RESULT_NAME_WIDTH = 50
 RESULT_UNIT_ID_WIDTH = 9
-RESULT_PROFESSION_WIDTH = 18
+RESULT_PROFESSION_WIDTH = 33
 RESULT_NAME_COLUMN_X = 0
 RESULT_PROFESSION_COLUMN_X = RESULT_NAME_COLUMN_X + RESULT_NAME_WIDTH + 1
 RESULT_UNIT_ID_COLUMN_X = RESULT_PROFESSION_COLUMN_X + RESULT_PROFESSION_WIDTH + 1
@@ -75,22 +74,23 @@ FILTER_ACTION_ZONE_WIDTH = FILTER_ACTION_WIDTH * #FILTER_ACTIONS
 
 FRAMES = {
     search_field={l=RESULTS_LEFT, t=4, w=RESULTS_WIDTH, h=1},
-    filter_title={l=FILTER_LEFT, t=HEADER_ROW, w=FILTER_WIDTH, h=1},
-    filter_underline={l=FILTER_LEFT, t=UNDERLINE_ROW, w=FILTER_WIDTH, h=1},
-    unit_scope={l=FILTER_LEFT, t=4, w=25, h=1},
-    unit_scope_picker={l=FILTER_LEFT, t=5, w=25},
+    filter_panel={l=1, t=2, w=FILTER_WIDTH + 2, b=2},
+    filter_panel_close={r=0, t=0, w=3, h=1},
+    filters_button={l=1, t=0, w=16, h=1},
+    unit_scope={l=0, t=0, w=25, h=1},
+    unit_scope_picker={l=0, t=1, w=25},
     unit_scope_picker_list={l=0, t=0, r=0, b=0},
-    add_filter={l=FILTER_LEFT, t=5, w=25, h=1},
-    add_skill={l=FILTER_LEFT, t=6, w=25, h=1},
-    add_race={l=FILTER_LEFT, t=7, w=25, h=1},
-    clear_filters={l=FILTER_LEFT, t=8, w=20, h=1},
-    presets={l=FILTER_LEFT, t=9, w=25, h=1},
-    filter_list={l=FILTER_LEFT, t=11, w=FILTER_WIDTH, b=0},
-    picker={l=FILTER_LEFT, t=PICKER_TOP, w=FILTER_WIDTH, b=0},
+    add_filter={l=0, t=1, w=25, h=1},
+    add_skill={l=0, t=2, w=25, h=1},
+    add_race={l=0, t=3, w=25, h=1},
+    clear_filters={l=0, t=4, w=20, h=1},
+    presets={l=0, t=5, w=25, h=1},
+    filter_list={l=0, t=7, r=0, b=0},
+    picker={l=0, t=0, r=0, b=0},
     picker_close={r=0, t=0, w=3, h=1},
     picker_search={l=0, t=0, r=4, h=1},
     picker_list={l=0, t=2, r=0, b=0},
-    preset_picker={l=FILTER_LEFT, t=4, w=FILTER_WIDTH, b=0},
+    preset_picker={l=0, t=0, r=0, b=0},
     preset_save={l=0, t=0, w=20, h=1},
     preset_search={l=0, t=1, r=4, h=1},
     preset_list={l=0, t=3, r=0, b=0},

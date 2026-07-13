@@ -6,6 +6,8 @@ local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 CONTROL_TOOLTIPS = {
+    {id='filters_button', text='Open the search filters panel.'},
+    {id='close_filter_panel_button', text='Close'},
     {id='unit_scope', text='Choose which units are searched.'},
     {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
     {id='add_skill_button', text='Add a skill to the ranking criteria.'},
@@ -32,6 +34,8 @@ RESULT_HEADER_TOOLTIPS = {
 STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 
 ---@class SoulSearchFilterPanelInputs
+---@field is_filter_panel_open fun(): boolean
+---@field on_close_filter_panel fun()
 ---@field is_attribute_picker_open fun(): boolean
 ---@field is_skill_picker_open fun(): boolean
 ---@field is_race_picker_open fun(): boolean
@@ -59,7 +63,7 @@ STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 ---@field on_add fun(filter_id: string)
 
 ---@param inputs SoulSearchFilterPanelInputs
----@return table[]
+---@return table
 function create_filter_panel(inputs)
     local unit_scope_label
     for _, option in ipairs(inputs.unit_scope_options) do
@@ -68,16 +72,12 @@ function create_filter_panel(inputs)
             break
         end
     end
-    return {
-        widgets.Label{
-            frame=ui_layout.get_frame('filter_title'),
-            text='Search filters',
-            text_pen=COLOR_WHITE,
-        },
-        widgets.Label{
-            frame=ui_layout.get_frame('filter_underline'),
-            text=ui_format.get_title_underline('Search filters'),
-            text_pen=COLOR_GREY,
+    local subviews = {
+        widgets.HotkeyLabel{
+            view_id='close_filter_panel_button',
+            frame=ui_layout.get_frame('filter_panel_close'),
+            label='[X]',
+            on_activate=inputs.on_close_filter_panel,
         },
         widgets.HotkeyLabel{
             view_id='unit_scope',
@@ -290,6 +290,25 @@ function create_filter_panel(inputs)
                 },
             },
         },
+    }
+    return widgets.Window{
+        view_id='filter_panel_window',
+        frame=ui_layout.get_frame('filter_panel'),
+        frame_title='Search filters',
+        draggable=false,
+        visible=inputs.is_filter_panel_open,
+        subviews=subviews,
+    }
+end
+
+---@param on_activate fun()
+---@return table
+function create_filter_panel_button(on_activate)
+    return widgets.HotkeyLabel{
+        view_id='filters_button',
+        frame=ui_layout.get_frame('filters_button'),
+        label='Search filters',
+        on_activate=on_activate,
     }
 end
 

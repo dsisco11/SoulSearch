@@ -3,9 +3,16 @@ local soulsearch_env = require('support.soulsearch_env')
 return function(test, repo_root)
     local components = soulsearch_env.load_ui_components(repo_root)
     local noop = function() end
+    local function by_id(views, id)
+        for _, view in ipairs(views) do
+            if view.view_id == id then return view end
+        end
+    end
 
     test.case('UI components: control tooltips explain non-obvious actions', function()
         test.assert_sequence({
+            'Open the search filters panel.',
+            'Close',
             'Choose which units are searched.',
             'Add an attribute or trait to the ranking criteria.',
             'Add a skill to the ranking criteria.',
@@ -35,6 +42,8 @@ return function(test, repo_root)
 
     test.case('UI components: filter panel preserves child and picker order', function()
         local views = components.create_filter_panel{
+            is_filter_panel_open=function() return false end,
+            on_close_filter_panel=noop,
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return false end,
@@ -61,32 +70,27 @@ return function(test, repo_root)
             on_race_query=noop,
             on_add=noop,
         }
-        test.assert_equal(14, #views)
-        test.assert_equal('unit_scope', views[3].view_id)
-        test.assert_equal('HotkeyLabel', views[3].widget_kind)
-        test.assert_equal('Search: Residents', views[3].label)
-        test.assert_equal('add_filter_button', views[4].view_id)
-        test.assert_equal('add_skill_button', views[5].view_id)
-        test.assert_equal('add_race_button', views[6].view_id)
-        test.assert_equal('clear_filters_button', views[7].view_id)
-        test.assert_equal('preset_button', views[8].view_id)
-        test.assert_equal('filter_list', views[9].view_id)
-        test.assert_equal('available_filter_window', views[10].view_id)
-        test.assert_equal('close_filter_picker_button', views[10].subviews[1].view_id)
-        test.assert_equal('attribute_search_field', views[10].subviews[2].view_id)
-        test.assert_equal('available_filter_list', views[10].subviews[3].view_id)
-        test.assert_equal('available_race_window', views[11].view_id)
-        test.assert_equal('close_race_picker_button', views[11].subviews[1].view_id)
-        test.assert_equal('race_search_field', views[11].subviews[2].view_id)
-        test.assert_equal('available_race_list', views[11].subviews[3].view_id)
-        test.assert_equal('available_skill_window', views[12].view_id)
-        test.assert_equal('preset_picker_window', views[13].view_id)
-        test.assert_equal('unit_scope_picker_window', views[14].view_id)
-        test.assert_equal('unit_scope_picker_list', views[14].subviews[1].view_id)
+        test.assert_equal('filter_panel_window', views.view_id)
+        test.assert_equal('Window', views.widget_kind)
+        test.assert_false(views.visible())
+        local subviews = views.subviews
+        test.assert_equal(13, #subviews)
+        test.assert_equal('close_filter_panel_button', subviews[1].view_id)
+        test.assert_equal('HotkeyLabel', by_id(subviews, 'unit_scope').widget_kind)
+        test.assert_equal('Search: Residents', by_id(subviews, 'unit_scope').label)
+        test.assert_equal('add_filter_button', by_id(subviews, 'add_filter_button').view_id)
+        test.assert_equal('available_filter_list',
+            by_id(subviews, 'available_filter_window').subviews[3].view_id)
+        test.assert_equal('unit_scope_picker_list',
+            by_id(subviews, 'unit_scope_picker_window').subviews[1].view_id)
+        test.assert_equal('filters_button',
+            components.create_filter_panel_button(noop).view_id)
     end)
 
     test.case('UI components: race picker hides the active filter list', function()
         local views = components.create_filter_panel{
+            is_filter_panel_open=function() return true end,
+            on_close_filter_panel=noop,
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return true end,
@@ -113,16 +117,20 @@ return function(test, repo_root)
             on_race_query=noop,
             on_add=noop,
         }
-        test.assert_false(views[9].visible())
-        test.assert_true(views[11].visible())
-        test.assert_false(views[10].visible())
-        test.assert_false(views[12].visible())
-        test.assert_false(views[13].visible())
-        test.assert_false(views[14].visible())
+        local subviews = views.subviews
+        test.assert_true(views.visible())
+        test.assert_false(by_id(subviews, 'filter_list').visible())
+        test.assert_true(by_id(subviews, 'available_race_window').visible())
+        test.assert_false(by_id(subviews, 'available_filter_window').visible())
+        test.assert_false(by_id(subviews, 'available_skill_window').visible())
+        test.assert_false(by_id(subviews, 'preset_picker_window').visible())
+        test.assert_false(by_id(subviews, 'unit_scope_picker_window').visible())
     end)
 
     test.case('UI components: unit-scope picker is a modal below the control', function()
         local views = components.create_filter_panel{
+            is_filter_panel_open=function() return true end,
+            on_close_filter_panel=noop,
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
             is_race_picker_open=function() return false end,
@@ -149,8 +157,10 @@ return function(test, repo_root)
             on_race_query=noop,
             on_add=noop,
         }
-        test.assert_true(views[14].visible())
-        test.assert_false(views[9].visible())
+        local subviews = views.subviews
+        test.assert_true(views.visible())
+        test.assert_true(by_id(subviews, 'unit_scope_picker_window').visible())
+        test.assert_false(by_id(subviews, 'filter_list').visible())
     end)
 
     test.case('UI components: results and stats expose explicit panel views', function()

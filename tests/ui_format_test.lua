@@ -17,16 +17,16 @@ return function(test, repo_root)
             unit_id=12345,
             profession='Stoneworker',
         }
-        test.assert_equal(('A'):rep(32) .. '... Stoneworker' ..
-            (' '):rep(7) .. ' #12345' .. (' '):rep(3), text)
-        test.assert_equal(64, #text)
-        test.assert_equal('Name' .. (' '):rep(31) .. ' Profession' ..
-            (' '):rep(8) .. ' Unit ID' .. (' '):rep(2),
+        test.assert_equal(('A'):rep(50) .. ' Stoneworker' ..
+            (' '):rep(22) .. ' #12345' .. (' '):rep(3), text)
+        test.assert_equal(94, #text)
+        test.assert_equal('Name' .. (' '):rep(46) .. ' Profession' ..
+            (' '):rep(23) .. ' Unit ID' .. (' '):rep(2),
             format.format_result_columns())
         test.assert_equal('Name ' .. string.char(24),
             format.format_result_columns('name', false):sub(1, 6))
         test.assert_equal('Unit ID ' .. string.char(25),
-            format.format_result_columns('unit_id', true):sub(56, 64))
+            format.format_result_columns('unit_id', true):sub(86, 94))
         test.assert_equal('Search: Visitors',
             format.format_unit_scope_control('Visitors'))
         test.assert_equal(string.char(16) .. ' Residents',
