@@ -155,31 +155,6 @@ return function(test, repo_root)
         test.assert_equal('high', reread[2].direction)
     end)
 
-    test.case('filter state persistence does not alias live or loaded state', function()
-        local state = filter_state.new{{id='skill:MINING', direction='high'}}
-        filter_state.save(state)
-        test.assert_true(filter_state.set_direction(state, 'skill:MINING', 'low'))
-        local loaded = filter_state.load()
-        test.assert_equal('high', filter_state.get_direction(loaded, 'skill:MINING'))
-        test.assert_true(filter_state.add(loaded, 'skill:SWORD', 'low'))
-        local reloaded = filter_state.load()
-        test.assert_equal(2, filter_state.count(reloaded))
-        test.assert_equal('skill:MINING', filter_state.get_filters(reloaded)[2].id)
-    end)
-
-    test.case('filter state load revalidates stale persisted IDs', function()
-        local state = filter_state.new{{id='skill:MINING', direction='high'}}
-        filter_state.save(state)
-        local catalog = descriptors.get_catalog()
-        local mining_descriptor = catalog.by_id['skill:MINING']
-        catalog.by_id['skill:MINING'] = nil
-        local loaded = filter_state.load()
-        catalog.by_id['skill:MINING'] = mining_descriptor
-        test.assert_equal(1, filter_state.count(loaded))
-        test.assert_equal('race:group:HUMANOIDS',
-            filter_state.get_filters(loaded)[1].id)
-    end)
-
     test.case('filter state search serialization preserves priority order', function()
         local state = filter_state.new{
             {id='trait:PATIENCE', direction='low'},

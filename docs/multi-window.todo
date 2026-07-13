@@ -25,31 +25,33 @@ Phase gate:
 
 ## Phase 1 - Introduce session settings identities
 
-☐ Add a dedicated in-memory window-settings repository keyed by `settings_id`.
-☐ Define the session settings snapshot: ordered filters, unit scope, result
+✔ Add a dedicated in-memory window-settings repository keyed by `settings_id`. @done(26-07-12)
+✔ Define the session settings snapshot: ordered filters, unit scope, result
   sort key/reverse/phase, stats sort key/reverse/phase, and window frame.
-☐ Normalize `settings_id`: accept non-empty strings and map missing or empty
-  identities to the stable `default` identity; reject other value types.
-☐ Make repository `load()` and field-level `update()` operations defensively
+  @done(26-07-12)
+✔ Normalize `settings_id`: accept non-empty strings and map missing or empty
+  identities to the stable `default` identity; reject other value types. @done(26-07-12)
+✔ Make repository `load()` and field-level `update()` operations defensively
   copy nested filters, sort records, and frame data so callers cannot alias saved
-  or live window state.
-☐ Make updates merge only the named fields into the latest identity snapshot;
-  never replace unrelated fields from a window's potentially stale local copy.
-☐ Add `clear()` for lifecycle handling and isolated tests.
-☐ Keep the repository module-local and session-only; do not use JSON,
+  or live window state. @done(26-07-12)
+✔ Make updates merge only the named fields into the latest identity snapshot;
+  never replace unrelated fields from a window's potentially stale local copy. @done(26-07-12)
+✔ Add `clear()` for lifecycle handling and isolated tests. @done(26-07-12)
+✔ Keep the repository module-local and session-only; do not use JSON,
   `script-manager.getModStatePath()`, or any other filesystem persistence.
-☐ Remove the single saved-filter snapshot from `filter_state.lua`; retain only
-  construction, validation, projections, and mutation of supplied filter state.
-☐ Add repository tests for identity normalization, missing identities,
+  @done(26-07-12)
+✔ Remove the single saved-filter snapshot from `filter_state.lua`; retain only
+  construction, validation, projections, and mutation of supplied filter state. @done(26-07-12)
+✔ Add repository tests for identity normalization, missing identities,
   same-identity reopen, distinct identities, defensive copying, field-level
-  merging, stale-window updates, overwrites, and clearing.
-☐ Add the settings repository to `module_registry.lua` in dependency order and
+  merging, stale-window updates, overwrites, and clearing. @done(26-07-12)
+✔ Add the settings repository to `module_registry.lua` in dependency order and
   update `module_registry_test.lua`, `tests/run.lua`, and
-  `support/soulsearch_env.lua` for the new runtime module and suite.
+  `support/soulsearch_env.lua` for the new runtime module and suite. @done(26-07-12)
 
 Phase gate:
-☐ Multiple settings identities can coexist without sharing mutable state.
-☐ `filter_state` tests remain green after persistence ownership is removed.
+✔ Multiple settings identities can coexist without sharing mutable state. @done(26-07-12)
+✔ `filter_state` tests remain green after persistence ownership is removed. @done(26-07-12)
 
 ## Phase 2 - Make window construction instance-driven
 

@@ -20,6 +20,7 @@ MODULES = {
         contract='FILTER_CONSTANTS',
         contract_type='table',
     },
+    {name='internal/soulsearch/window_settings', contract='load'},
     {name='internal/soulsearch/attributes', contract='evaluate'},
     {name='internal/soulsearch/race_catalog', contract='get_descriptors'},
     {name='internal/soulsearch/descriptors', contract='get_catalog'},

@@ -464,6 +464,12 @@ function M.load_module_registry(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/module_registry.lua')
 end
 
+function M.load_window_settings(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/window_settings.lua')
+end
+
 ---Loads ui.lua with only the interfaces needed to characterize open() rejecting
 ---an unavailable context. The screen constructor deliberately fails if it is
 ---reached, proving the guard runs before any DFHack UI construction.

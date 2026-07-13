@@ -18,6 +18,7 @@ local suites = {
     (require('race_catalog_test')),
     (require('race_filter_provider_test')),
     (require('filter_state_test')),
+    (require('window_settings_test')),
     (require('filter_defaults_test')),
     (require('role_presets_test')),
     (require('filter_presets_test')),

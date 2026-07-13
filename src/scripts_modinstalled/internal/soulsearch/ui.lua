@@ -10,6 +10,7 @@ local race_filter_provider = reqscript('internal/soulsearch/race_filter_provider
 local search = reqscript('internal/soulsearch/search')
 local descriptors = reqscript('internal/soulsearch/descriptors')
 local filter_state = reqscript('internal/soulsearch/filter_state')
+local window_settings = reqscript('internal/soulsearch/window_settings')
 local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 local role_presets = reqscript('internal/soulsearch/role_presets')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
@@ -296,7 +297,8 @@ function SoulSearchWindow:init()
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
     self.race_filter_descriptors = filter_descriptor_groups.races or {}
-    self.filter_state = filter_state.load()
+    local saved_settings = window_settings.load()
+    self.filter_state = filter_state.new(saved_settings and saved_settings.filters)
 
     local views = {}
     -- Preserve the original child order: the modal results query remains first
@@ -667,7 +669,9 @@ end
 ---Persists filter state and refreshes every view derived from it once.
 ---@param selected integer|nil
 function SoulSearchWindow:on_filter_state_changed(selected)
-    filter_state.save(self.filter_state)
+    window_settings.update(nil, {
+        filters=filter_state.get_filters(self.filter_state),
+    })
     self:refresh_views{
         active_filters=true,
         pickers=true,
@@ -985,7 +989,9 @@ end
 function SoulSearchWindow:apply_loaded_filter_preset(filters)
     filter_state.replace(self.filter_state, filters)
     self.preset_picker_open = false
-    filter_state.save(self.filter_state)
+    window_settings.update(nil, {
+        filters=filter_state.get_filters(self.filter_state),
+    })
     self:on_filter_state_changed(1)
 end
 

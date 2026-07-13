@@ -18,11 +18,13 @@ return function(test, repo_root)
         test.assert_equal(#registry.MODULES, #calls)
         test.assert_equal('internal/soulsearch/df_enums', calls[1])
         test.assert_equal('internal/soulsearch/ui', calls[#calls])
-        local constants_index, race_catalog_index, descriptor_index
+        local constants_index, settings_index, race_catalog_index, descriptor_index
         local candidate_index, scope_index, state_index, race_filter_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/filter_constants' then
                 constants_index = index
+            elseif name == 'internal/soulsearch/window_settings' then
+                settings_index = index
             elseif name == 'internal/soulsearch/race_catalog' then
                 race_catalog_index = index
             elseif name == 'internal/soulsearch/descriptors' then
@@ -38,6 +40,8 @@ return function(test, repo_root)
             end
         end
         test.assert_true(constants_index < race_catalog_index)
+        test.assert_true(constants_index < settings_index)
+        test.assert_true(settings_index < #calls)
         test.assert_true(race_catalog_index < descriptor_index)
         test.assert_true(candidate_index < scope_index)
         test.assert_true(scope_index < state_index)

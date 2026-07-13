@@ -16,9 +16,6 @@ local DEFAULT_RACE_FILTER_ID = filter_constants.default_race_filter_id
 ---@type table<SoulSearchFilterState, SoulSearchSelectedFilter[]>
 local filters_by_state = setmetatable({}, {__mode='k'})
 
----@type SoulSearchSelectedFilter[]
-local saved_filters = {}
-
 ---@param direction any
 ---@return boolean
 local function is_valid_direction(direction)
@@ -295,18 +292,4 @@ function move(state, filter_id, delta)
     local new_priority = priorities[new_ranking_priority]
     table.insert(filters, new_priority, filter)
     return true, new_priority
-end
-
----Loads a copy of the persisted filter state, validating it against the active
----descriptor catalog. Persistence belongs to this module and lasts for this
----loaded script environment; world/script lifecycle policy does not clear it.
----@return SoulSearchFilterState
-function load()
-    return new(saved_filters)
-end
-
----Persists an isolated ordered copy for the next window in this script session.
----@param state SoulSearchFilterState
-function save(state)
-    saved_filters = copy_filters(get_internal_filters(state))
 end
