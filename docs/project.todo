@@ -66,7 +66,7 @@
 ✔ Make Edit filters button look more like a button, and less like a text label. (e.g. add a border around it, or make it a different color, etc.). @done(26-07-12)
 ✔ Update filters modal to replace unit scope control with a more clear control like: "Include: <selection> [Edit]". The "Edit" button would open the options dropdown menu. Also, move the included-units control down to right above the active filters list. @done(26-07-12)
 ✔ Add an "Active filters" counter to the main window, right beside the "Edit filters" button. @done(26-07-12)
-☐ Refactor code so that we can spawn multiple SoulSearch windows. this will allow the system to persist settings for "scoped" windows.
+✔ Refactor code so that we can spawn multiple SoulSearch windows. this will allow the system to persist settings for "scoped" windows. @done(26-07-12 21:21)
 ☐ Add soul-search "stats view" modal window popover to the base games "unit card" window, so that users can quickly see the stats of a unit without having to open the full SoulSearch window.
 ☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)
 ☐ Make soul search window panels resizeable.
