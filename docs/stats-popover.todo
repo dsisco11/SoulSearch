@@ -17,6 +17,12 @@ The work has two inseparable parts:
 Do not mark the parent `docs/project.todo` item complete until every automated
 gate and the final live fortress-mode gate in this document has passed.
 
+Automatic startup and default-keybinding setup are owned by
+`docs/zero-touch-startup.todo`. This plan owns independent overlay discovery,
+widget configuration, and popover activation. Its overlay must remain usable
+when automatic SoulSearch bootstrap was missed or disabled, and it must not
+become the mechanism that installs the full-window `Ctrl-F` binding.
+
 Record phase results in the `Execution evidence` table at the end of this
 document. Every completed phase gate must have a dated entry that identifies
 the commands, tests, screenshots/observations, or live fortress checks that
@@ -36,7 +42,9 @@ justify marking it complete.
       `dwarfmode/ViewSheets/UNIT`).
 - [ ] In a clean packaged session with the DFHack overlay framework enabled and
       no saved state for this widget, DFHack discovers and enables the unit-card
-      button before the user ever runs `soulsearch`. SoulSearch must not
+      button before the user manually runs any SoulSearch command. Automatic
+      DFHack module loading is expected and is not a manual invocation of
+      `soulsearch`. SoulSearch must not
       force-enable a globally disabled overlay framework. Afterward, normal
       saved widget enablement and placement take precedence.
 - [ ] Activating the button captures the unit currently displayed by the
@@ -137,6 +145,10 @@ justify marking it complete.
       `module_registry.lua` sequence. The overlay framework owns discovery and
       instantiation of that script; only its internal runtime dependencies
       belong in the SoulSearch reload registry.
+- [ ] Keep the overlay registration script separate from the enableable
+      `soulsearch.lua` bootstrap owned by `docs/zero-touch-startup.todo`. Do not
+      add `--@ enable=true` to the overlay script merely to seed the default
+      keybinding or initialize the full SoulSearch runtime.
 - [ ] Register every SoulSearch-owned popover screen with `screen_registry.lua`
       so `soulsearch reload` and teardown dismiss it safely.
 - [ ] Keep registry teardown ownership separate from main-window placement
@@ -531,11 +543,15 @@ justify marking it complete.
 
 ## Phase 5 - Add the vanilla unit-card overlay button
 
-- [ ] Add a module-loadable overlay registration script with `--@ module=true`.
+- [ ] Add a module-loadable overlay registration script with the target-proven
+      repository syntax `--@ module=true`.
       Module loading may define the widget class and global `OVERLAY_WIDGETS`,
       but must not look up units, print, register screens, or show UI.
 - [ ] Keep that registration script outside the internal module registry; load
       and reload it only through overlay discovery/rescan ownership.
+- [ ] Keep this discovery-owned overlay script distinct from the public
+      enableable bootstrap in `docs/zero-touch-startup.todo`; do not add an
+      enable annotation to the overlay script solely for automatic setup.
 - [ ] Define a global `OVERLAY_WIDGETS` entry backed by
       `overlay.OverlayWidget`.
 - [ ] Choose and document a stable `OVERLAY_WIDGETS` key/widget identity. Set
@@ -562,7 +578,9 @@ justify marking it complete.
       screen, calls `stats_popover.open(unit)`, reports any focus, selection, or
       popover error exactly once, and returns only the screen or `nil`. This
       guard applies equally to mouse activation and independently callable
-      `overlay_trigger()` CLI/keybinding activation.
+      `overlay_trigger()` CLI activation or an optional user-created binding.
+      It must not repurpose or duplicate SoulSearch's default `Ctrl-F` binding,
+      which opens `gui/soulsearch`.
 - [ ] Define activation ownership explicitly:
   - [ ] render the button through static, non-input child content and perform an
         explicit widget-frame hit-test for `_MOUSE_L` in the overlay widget;
@@ -571,7 +589,7 @@ justify marking it complete.
   - [ ] mouse `onInput()` returns `true` only after consuming that button click
         and delegates all other input to its superclass;
   - [ ] `overlay_trigger()` calls the same helper and returns the shown screen
-        for DFHack CLI/keybinding ownership; and
+        for DFHack CLI or optional user-created-keybinding ownership; and
   - [ ] the resulting popover registers exactly once through its screen
         lifecycle regardless of activation path. `screen_registry.lua` does not
         distinguish mouse from CLI activation and does not become an input
@@ -603,6 +621,14 @@ justify marking it complete.
       development additionally requires
       `devel/clear-script-env <overlay-script>` before the rescan.
 - [ ] Define the production `soulsearch reload` behavior explicitly:
+  - [ ] preserve the automatic bootstrap enabled/disabled state and the
+        first-run keybinding decision defined by
+        `docs/zero-touch-startup.todo`;
+  - [ ] leave exactly one SoulSearch-owned lifecycle callback if the startup
+        implementation requires one, without retaining a stale internal module
+        table;
+  - [ ] do not clear or execute the active top-level `soulsearch.lua`
+        environment as an entry in its own internal registry sequence;
   - [ ] dismiss all registered main and popover screens;
   - [ ] capture the old registry's complete script-name list before clearing
         any environment;
@@ -647,6 +673,12 @@ justify marking it complete.
       before packaging.
 - [ ] Update README/help text to describe:
   - [ ] the unit-card Stats button;
+  - [ ] the zero-touch installation behavior and command ownership specified by
+        `docs/zero-touch-startup.todo`;
+  - [ ] `soulsearch` manual setup/reload behavior versus `gui/soulsearch` UI
+        opening behavior;
+  - [ ] automatic bootstrap and native SoulSearch enable/disable state versus
+        overlay state and default-keybinding ownership;
   - [ ] the distinction between global `enable overlay` state and the widget's
         own enable/disable and reposition state;
   - [ ] the relationship between the compact popover and full SoulSearch.
@@ -659,6 +691,9 @@ justify marking it complete.
 - [ ] Verify the packaged overlay is discoverable through normal
       `scripts_modinstalled` scanning and does not depend on the `soulsearch`
       command having initialized module state first.
+- [ ] Cross-check the packaged cold-start and default-keybinding prerequisites
+      against the completed gates in `docs/zero-touch-startup.todo`; do not
+      duplicate bootstrap implementation inside the overlay registration.
 - [ ] Add command-level coverage proving `soulsearch reload` dismisses all
       registered screens, replaces the cached registry coordinator, reconstructs
       modules from the fresh registry generation, clears the overlay script
@@ -709,10 +744,15 @@ justify marking it complete.
       the repository's `+.../src/scripts_modinstalled` development path and
       remove or isolate competing installed SoulSearch versions so the packaged
       payload is the only copy that can resolve. Restart DFHack with the overlay
-      framework enabled and no saved state for this widget and, before invoking
-      `soulsearch`, `soulsearch reload`, or a manual overlay rescan, confirm
+      framework enabled and no saved state for this widget and, before manually
+      invoking `soulsearch`, `soulsearch reload`, or an overlay rescan, confirm
       `overlay list` discovers the packaged widget and a vanilla unit card shows
       the enabled button. Record the installed package path/version as evidence.
+- [ ] Confirm the zero-touch startup prerequisite from
+      `docs/zero-touch-startup.todo`: before any manual SoulSearch command, the
+      default or user-customized `gui/soulsearch` binding is already available.
+      The popover must nevertheless remain independent of that binding and
+      automatic bootstrap state.
 - [ ] Disable the global overlay framework once and confirm the button is absent
       without SoulSearch re-enabling it; restore it with `enable overlay` before
       continuing widget-specific acceptance.

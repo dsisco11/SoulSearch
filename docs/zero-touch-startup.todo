@@ -1,0 +1,522 @@
+# Zero-touch startup and automatic bootstrap plan
+
+This checklist is the implementation source of truth for making SoulSearch
+work immediately after installation without requiring the player to run
+`soulsearch`, `enable soulsearch`, or any other initialization command first.
+
+The normal first-use path must be:
+
+1. install the packaged SoulSearch mod;
+2. start or restart DFHack and load a fortress; and
+3. press the default `Ctrl-F` binding. Once the separately planned Stats
+   popover is present, its unit-card overlay button is also discovered without
+   manual initialization.
+
+The public command split remains unchanged:
+
+- `gui/soulsearch` opens the full SoulSearch window;
+- `soulsearch` performs idempotent runtime setup/validation, retries an
+  incomplete first-run setup, and supports `reload`; and
+- DFHack's automatic enableable-module scan performs minimal safe bootstrap
+  before either command is manually invoked.
+
+The unit-card Stats overlay itself remains owned by
+`docs/stats-popover.todo`. This plan owns automatic bootstrap, default-keybind
+first-run behavior, native `enable`/`disable` semantics, and their reload and
+packaging contracts. Complete this plan before treating the Stats-popover
+package and clean-install acceptance gates as release-ready; Stats component
+and popover work that does not depend on startup may proceed independently.
+
+Record completed phase results in the `Execution evidence` table at the end of
+this document. Every completed phase gate must have a dated entry identifying
+the commands, tests, package paths, or live DFHack observations that justify
+marking it complete.
+
+## Target behavior
+
+- [ ] A clean packaged installation automatically makes the default
+      `Ctrl-F@dwarfmode/Default -> gui/soulsearch` binding available without a
+      manual SoulSearch command.
+- [ ] Automatic bootstrap never opens a SoulSearch screen, collects units,
+      runs a search, constructs the UI, or prints routine startup output.
+- [ ] `gui/soulsearch` remains a defensive entry point: it performs any
+      required idempotent runtime initialization and then opens the full UI even
+      when automatic bootstrap was missed, disabled, or installed mid-session.
+- [ ] `soulsearch` remains a safe manual runtime setup/validation command that
+      retries incomplete first-run setup without resetting an established
+      keybinding opt-out. It does not open UI; `soulsearch reload` remains
+      explicit development reconstruction and also does not reopen UI.
+- [ ] Existing valid `gui/soulsearch` bindings are treated as user-owned and
+      are never replaced, duplicated, or removed by bootstrap.
+- [ ] A player who intentionally removes the seeded default through
+      `gui/keybinds` does not have it silently recreated on later startups.
+- [ ] A missing or incomplete DFHack hotkey API cannot abort DFHack startup;
+      setup remains retryable through a later automatic or explicit path.
+- [ ] `enable soulsearch` idempotently enables or refreshes SoulSearch's
+      automatic bootstrap service for the current DFHack session.
+- [ ] `disable soulsearch` stops future automatic bootstrap work for the
+      current session without closing screens, deleting user bindings, changing
+      overlay configuration, or preventing explicit `soulsearch` and
+      `gui/soulsearch` commands.
+- [ ] `isEnabled()` reports whether the automatic bootstrap service is active,
+      not whether a SoulSearch window or overlay widget is visible.
+- [ ] The unit-card Stats widget remains independently controlled by the global
+      overlay framework and its own saved widget state. SoulSearch bootstrap
+      must not call `enable overlay`, overwrite widget placement, or repurpose
+      the full-window `Ctrl-F` binding for the popover.
+- [ ] Normal automatic startup is supported from the packaged
+      `scripts_modinstalled` tree. A development-only script path, manual
+      `require()`, manual overlay rescan, or user init-file entry is not a
+      release dependency.
+
+## Architectural constraints
+
+- [ ] Keep the public enableable entry point at
+      `src/scripts_modinstalled/soulsearch.lua`. Do not expose a second
+      `enable internal/...` command solely for bootstrap.
+- [ ] Declare the public script with the exact annotation syntax proven against
+      the target DFHack parser. The expected repository-consistent form is
+      `--@ module=true` and `--@ enable=true`; Phase 0 must verify it before
+      package checks depend on a literal spelling.
+- [ ] Keep bootstrap narrower than `initialize()`:
+  - [ ] load only the modules required for startup setup;
+  - [ ] do not validate or eagerly load the complete `module_registry.lua`
+        graph;
+  - [ ] do not load `ui.lua` merely to seed a keybinding; and
+  - [ ] retain full registry validation for explicit initialization, GUI open,
+        and reload paths.
+- [ ] Prefer no world-state callback for the first implementation. The current
+      `lifecycle.prepare_for_world()` only invalidates caches and remains safe
+      to call lazily when a GUI or popover actually needs runtime data.
+- [ ] Add an `onStateChange` hook only if Phase 0 proves a concrete startup
+      requirement that cannot be handled by module-load bootstrap and defensive
+      entry-point initialization. If added, it must:
+  - [ ] use a stable SoulSearch-owned key;
+  - [ ] be attached at top level before the module-mode return so it can receive
+        `SC_DFHACK_INITIALIZED` during the cold-start scan;
+  - [ ] register and unregister idempotently;
+  - [ ] resolve reloadable modules dynamically instead of retaining stale
+        `reqscript()` tables; and
+  - [ ] do no unit collection or UI construction from the callback.
+- [ ] Branch invocation modes explicitly so enable/disable flags cannot fall
+      through to ordinary command parsing:
+  - [ ] `dfhack_flags.enable` handles `enable_state`;
+  - [ ] `dfhack_flags.module` defaults bootstrap to enabled only when the
+        script environment has no prior explicit state, performs idempotent
+        setup when enabled, and returns; and
+  - [ ] ordinary invocation dispatches `soulsearch` arguments.
+- [ ] Initialize automatic-bootstrap state with an explicit nil check so a
+      prior `false` survives script re-execution/reload; do not use an `or true`
+      expression that silently re-enables a disabled session.
+- [ ] Preserve one exported, idempotent setup seam used by automatic module
+      loading, `enable soulsearch`, and manual `soulsearch` initialization.
+- [ ] Do not cache reloadable internal module tables in automatic callbacks or
+      long-lived bootstrap closures. `soulsearch reload` must not leave a prior
+      generation callable.
+- [ ] Define automatic enablement as session runtime state. Do not introduce
+      save-specific enablement merely to imitate another mod. Any persistence
+      added for keybinding first-run ownership must remain a separate global
+      preference with a single narrow purpose.
+- [ ] Keep first-run keybinding state global rather than fortress-specific: the
+      default command and `gui/keybinds` configuration are global DFHack user
+      preferences.
+- [ ] Do not record the first-run/default-considered marker until the hotkey API
+      has been queried successfully and either an existing valid binding was
+      observed or the default was added successfully.
+- [ ] Treat the following keybinding outcomes as distinct and testable:
+  - [ ] `added`: no valid binding or prior decision existed, so the default was
+        added and the first-run decision can be recorded;
+  - [ ] `existing`: a valid user or previously seeded binding already exists,
+        so it is retained and the first-run decision can be recorded;
+  - [ ] `opted_out`: the first-run decision exists but no valid binding remains,
+        so bootstrap respects the removal;
+  - [ ] `unavailable`: the required DFHack API or preference store is not
+        usable, so startup fails soft and remains retryable; and
+  - [ ] `error`: setup could not complete safely, does not claim success, and
+        does not partially overwrite user state.
+- [ ] Keep the marker/config write transactional with binding creation: do not
+      record success before `addKeybind()` succeeds, and do not add a duplicate
+      binding when retrying after a marker-write failure.
+- [ ] Treat only the supported no-argument `gui/soulsearch` command as the
+      default-binding identity. Invalid argument-bearing commands must not mask
+      creation of a working default.
+- [ ] `disable soulsearch` must not remove any binding in the initial release.
+      Binding removal ownership cannot be inferred safely from command text
+      alone after the user has edited configuration.
+
+## Phase 0 - Verify DFHack startup and user-configuration behavior
+
+- [ ] Record the exact target DFHack version and packaged mod path used for
+      startup verification.
+- [ ] In an isolated test profile, verify that a script in
+      `scripts_modinstalled` with the target-proven `--@ module=true` and
+      `--@ enable=true` annotations is loaded
+      automatically after a cold DFHack start without a manual command.
+- [ ] Verify whether the target DFHack version discovers `scripts_modinstalled`
+      solely from installation, as intended, or whether the packaged mod must
+      also be active in the loaded world's mod list. The release instructions
+      must state only the minimum condition proven by this test.
+- [ ] Record the `dfhack_flags` values observed for:
+  - [ ] the automatic module load;
+  - [ ] `enable soulsearch`;
+  - [ ] `disable soulsearch`;
+  - [ ] ordinary `soulsearch`; and
+  - [ ] `reqscript('soulsearch')` from `gui/soulsearch`.
+- [ ] Verify whether an installed enableable module that is added while DFHack
+      is already running requires `enable` with no arguments,
+      `require('script-manager').reload()`, or a restart before automatic
+      bootstrap. Record that the already-fired `SC_DFHACK_INITIALIZED` event is
+      not replayed, and document this as a hot-install recovery path rather than
+      the normal installation requirement.
+- [ ] Verify module-load bootstrap can call the target DFHack hotkey API before
+      a fortress is loaded. If it cannot, record the narrow lifecycle event at
+      which retry is required.
+- [ ] Characterize `gui/keybinds` persistence with an isolated test binding:
+  - [ ] add and save the default, restart, and inspect the binding exposed by
+        `dfhack.hotkey.listAllKeybinds()`;
+  - [ ] replace it with a custom `gui/soulsearch` binding, restart, and inspect
+        the result;
+  - [ ] remove all SoulSearch bindings, save, restart, and determine whether
+        DFHack exposes any removal tombstone or opt-out state; and
+  - [ ] record the exact persistent file/API behavior without modifying the
+        user's real keybinding configuration.
+- [ ] Select and document the smallest DFHack-approved global preference store
+      for a SoulSearch default-considered marker if DFHack exposes no native
+      removal tombstone. Record its path, schema/version, default, atomic-write
+      behavior, and corrupt/unreadable fallback before implementing it.
+- [ ] Verify a module-load failure is reported by DFHack and determine the
+      safest non-throwing boundary for optional keybinding setup. Required
+      command/module contract failures may remain explicit errors when the user
+      invokes a SoulSearch command.
+- [ ] Inspect the installed Justice HQ implementation only as behavioral
+      evidence for automatic enableable-module and default-enabled overlay
+      discovery. Do not copy its monolithic layout, routine startup printing,
+      eager game-state access, or site-specific persistence into SoulSearch.
+- [ ] Run the existing baseline before source changes:
+  - [ ] `tools/Build.ps1`;
+  - [ ] `tools/Test.ps1`; and
+  - [ ] `git diff --check`.
+
+### Phase 0 gate
+
+- [ ] Automatic module discovery, invocation flags, hotkey timing, saved
+      removal behavior, preference-store choice, and failure handling are based
+      on live evidence from the target DFHack version.
+- [ ] The current automated baseline is green and recorded.
+
+## Phase 1 - Make default-keybinding seeding first-run aware
+
+- [ ] Introduce a narrow preference adapter for the default-considered marker
+      selected in Phase 0. Keep file/API access out of keybinding policy tests
+      by injecting or wrapping the adapter.
+- [ ] Version the minimal preference schema so corrupt or future data is
+      detected instead of silently misinterpreted.
+- [ ] Treat unreadable, corrupt, or future-version marker data conservatively.
+      If no valid binding exists, return a structured retryable error and do
+      not seed a default that might recreate a user's opt-out. Require an
+      explicit documented repair/reset path before replacing that state.
+- [ ] Refactor `keybindings.ensure_default()` or replace it with a clearly named
+      first-run API that returns the documented outcome instead of a bare
+      boolean.
+- [ ] Preserve existing behavior for a true first setup: add exactly
+      `Ctrl-F@dwarfmode/Default -> gui/soulsearch` when no supported binding or
+      prior decision exists.
+- [ ] Record the default-considered marker after observing an existing valid
+      binding, including a user's custom key combination for
+      `gui/soulsearch`.
+- [ ] After a successful first-run decision, treat a later absence of all valid
+      SoulSearch bindings as an intentional opt-out and do not recreate the
+      default.
+- [ ] Do not write the marker when hotkey enumeration is unavailable, returns
+      an unusable value, or binding creation fails.
+- [ ] Make repeated calls in one session and across simulated restarts
+      idempotent.
+- [ ] Keep unsupported `gui/soulsearch` arguments from suppressing a valid
+      default, matching the public command's no-argument usage contract.
+- [ ] Add keybinding-policy and preference-adapter tests for:
+  - [ ] pristine first install;
+  - [ ] existing seeded default;
+  - [ ] existing custom valid binding;
+  - [ ] explicit post-seed removal/opt-out;
+  - [ ] invalid argument-bearing command;
+  - [ ] duplicate rows returned by a malformed/stub API;
+  - [ ] missing or partial hotkey API;
+  - [ ] add failure;
+  - [ ] marker read, write, corruption, and version failures;
+  - [ ] retry after a transient failure; and
+  - [ ] prevention of duplicate binding after a marker-write failure.
+- [ ] Register any new internal module in `module_registry.lua`, the pure-Lua
+      loader, and `tests/run.lua` at the same time it is introduced.
+
+### Phase 1 gate
+
+- [ ] The default is added once for a new user, existing customization is
+      preserved, explicit removal remains removed, and transient failures stay
+      retryable under automated tests.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 2 - Add the automatic public bootstrap lifecycle
+
+- [ ] Add the target-verified module and enable annotations to `soulsearch.lua`.
+- [ ] Make module-registry acquisition lazy so automatic bootstrap does not
+      load or validate the complete SoulSearch runtime graph.
+- [ ] Add an exported `isEnabled()` that reports automatic-bootstrap state.
+- [ ] Initialize that state nil-sensitively so an existing disabled value is
+      preserved across script re-execution.
+- [ ] Implement an idempotent bootstrap-enable path that:
+  - [ ] marks the service active;
+  - [ ] performs first-run-aware keybinding setup;
+  - [ ] registers no world callback unless Phase 0 proved one necessary; and
+  - [ ] returns structured status for tests and explicit callers without
+        opening UI.
+- [ ] Implement an idempotent bootstrap-disable path that:
+  - [ ] marks the service inactive;
+  - [ ] unregisters only a SoulSearch callback if this plan added one;
+  - [ ] leaves keybindings, screens, modules, and overlay state untouched; and
+  - [ ] leaves explicit command entry points usable.
+- [ ] Dispatch `dfhack_flags.enable` before module or ordinary-command handling.
+- [ ] On automatic `dfhack_flags.module` loading, enable bootstrap by default
+      only when the script environment has no prior enabled/disabled value,
+      then return without invoking the ordinary command parser. A later
+      `reqscript('soulsearch')`, GUI open, or reload must not overwrite an
+      explicit in-session `false`.
+- [ ] Keep `initialize()` as the full defensive runtime path. It must still
+      validate the registry, prepare world-dependent caches, and return the
+      module table expected by `gui/soulsearch`.
+- [ ] Keep ordinary `soulsearch` with no arguments idempotent and non-visual.
+- [ ] Keep `soulsearch reload` explicit and non-visual.
+- [ ] Ensure an optional keybinding-setup failure cannot abort automatic
+      module loading. Preserve actionable errors for explicit manual setup when
+      the underlying required runtime is invalid.
+- [ ] Update help text in `soulsearch.lua` to document:
+  - [ ] automatic setup after installation;
+  - [ ] manual runtime setup/validation and incomplete-first-run retry behavior,
+        explicitly excluding reset of an established binding opt-out;
+  - [ ] `reload`;
+  - [ ] `enable soulsearch` and `disable soulsearch`; and
+  - [ ] `gui/soulsearch` as the UI-opening command.
+
+### Phase 2 gate
+
+- [ ] Automatic module invocation prepares only startup state and never opens
+      UI or eagerly loads the full runtime graph.
+- [ ] Native enable/disable status is coherent, idempotent, and independent of
+      explicit command availability.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 3 - Harden command, reload, and missed-startup behavior
+
+- [ ] Add or expand command/startup tests proving:
+  - [ ] automatic module loading seeds first-run setup without opening UI;
+  - [ ] automatic bootstrap does not call full registry validation;
+  - [ ] repeated module loads do not duplicate setup;
+  - [ ] enable and disable flags do not reach ordinary argument parsing;
+  - [ ] `isEnabled()` follows module, enable, and disable transitions;
+  - [ ] module re-entry through `reqscript()`, GUI opening, or reload preserves
+        an explicit disabled state;
+  - [ ] explicit `soulsearch` remains usable while automatic bootstrap is
+        disabled;
+  - [ ] `gui/soulsearch` initializes and opens while automatic bootstrap is
+        disabled or was missed;
+  - [ ] missing hotkey/config APIs do not open UI or throw from automatic
+        startup;
+  - [ ] an initial `unavailable` result remains retryable: after the API becomes
+        available, a later `soulsearch` or `gui/soulsearch` attempt completes
+        the first-run decision exactly once without duplicating a binding;
+  - [ ] invalid ordinary arguments still report the exact usage contract; and
+  - [ ] no callback or reloadable module reference is duplicated or stale.
+- [ ] Narrow the existing test named “module API initializes only when
+      requested”: module loading may perform minimal bootstrap, but must not
+      perform full runtime/world/UI initialization.
+- [ ] Make `soulsearch reload` preserve the current automatic enabled/disabled
+      state unless explicitly documented otherwise.
+- [ ] Ensure reload reconstructs internal modules without clearing or executing
+      the active top-level `soulsearch.lua` environment as part of its own
+      internal registry sequence.
+- [ ] After reload, rerun only idempotent startup setup required to bind the
+      fresh generation. Do not recreate an opted-out binding or reopen UI.
+- [ ] If a state-change callback exists, prove reload leaves exactly one
+      callback and that its next invocation dynamically resolves the current
+      module generation.
+- [ ] Preserve `gui/soulsearch` as the hot-install and missed-scan fallback.
+- [ ] Document the developer recovery commands for scripts added after DFHack's
+      initial scan, based on Phase 0 evidence.
+
+### Phase 3 gate
+
+- [ ] Startup, native enable/disable, manual setup, GUI opening, reload, and
+      missed-scan recovery have independent tested contracts with no stale
+      runtime generation or UI side effect.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 4 - Coordinate optional overlay integration
+
+This phase is an integration follow-up when the separate Stats-popover work is
+present. It does not block completion of the zero-touch startup parent item,
+which is proven by the clean-install full-window binding and command paths.
+Record `Not applicable - Stats popover not implemented` in the evidence table
+when closing this plan independently.
+
+- [ ] When the stats-popover work is present, complete its overlay registration
+      with a dedicated module-loadable overlay script and
+      `default_enabled=true`.
+- [ ] Do not add `--@ enable=true` to the overlay registration script merely to
+      solve automatic keybinding setup; that responsibility belongs to the
+      public `soulsearch.lua` bootstrap.
+- [ ] Do not add the top-level overlay registration script to SoulSearch's
+      internal module registry.
+- [ ] Ensure overlay activation resolves and initializes only the runtime needed
+      for the popover and remains functional if automatic bootstrap was missed
+      or disabled.
+- [ ] Keep the global overlay framework's enabled state and the widget's saved
+      enabled/position state authoritative.
+- [ ] Keep `Ctrl-F` bound only to the full `gui/soulsearch` command. The
+      popover's `overlay_trigger()` may be used in a user-created binding but
+      receives no competing default binding from SoulSearch.
+- [ ] Coordinate `soulsearch reload` with overlay environment clearing and
+      rescan exactly as specified by `docs/stats-popover.todo`, while preserving
+      the automatic bootstrap state and first-run keybinding decision.
+
+### Phase 4 gate
+
+- [ ] When the Stats-popover feature is present, a clean package exposes both
+      access paths without a manual command:
+      `Ctrl-F` opens the full UI and the default-enabled unit-card button opens
+      the Stats popover when the overlay framework and saved widget state allow
+      it.
+- [ ] When the Stats-popover feature is present, disabling automatic SoulSearch
+      bootstrap does not mutate overlay state,
+      and disabling the overlay framework does not mutate bootstrap state.
+- [ ] When the Stats-popover feature is present, its Phase 5 automated gate
+      passes; otherwise this integration phase is recorded as not applicable.
+
+## Phase 5 - Documentation, package verification, and release gates
+
+- [ ] Update README installation and usage text so the primary path is
+      `install -> restart/load DFHack -> Ctrl-F`, with no manual initialization
+      step. Add the unit-card button as a second zero-touch path when the
+      separate Stats-popover feature is present.
+- [ ] Document the exceptional hot-install/missed-scan recovery path separately
+      from normal installation.
+- [ ] Document command ownership and arguments:
+  - [ ] `gui/soulsearch` opens the full UI;
+  - [ ] `soulsearch` performs runtime setup/validation and retries only an
+        incomplete first-run decision;
+  - [ ] `soulsearch reload` reconstructs development runtime state;
+  - [ ] `enable soulsearch` activates automatic bootstrap for the session; and
+  - [ ] `disable soulsearch` deactivates only automatic bootstrap work.
+- [ ] Document keybinding ownership:
+  - [ ] the default is seeded once;
+  - [ ] existing custom bindings win;
+  - [ ] saved removal is respected;
+  - [ ] `gui/keybinds` is the supported edit surface; and
+  - [ ] disabling bootstrap does not delete bindings.
+- [ ] Document the independent overlay layers: global `enable overlay`, saved
+      widget enablement/placement, and SoulSearch bootstrap state.
+- [ ] Update the Stats-popover README/help work to cross-reference this startup
+      contract without duplicating it.
+- [ ] Add package verification that the shipped
+      `scripts_modinstalled/soulsearch.lua` contains target-verified semantic
+      module and enable annotations and that every new preference/bootstrap
+      dependency is included. Do not hard-code an unverified alternate
+      whitespace spelling.
+- [ ] Choose and record the release version before publishing. Update
+      `NUMERIC_VERSION` and `DISPLAYED_VERSION` in `src/info.txt` as required.
+- [ ] Run the automated closure sequence separately:
+  - [ ] `tools/Build.ps1`;
+  - [ ] `tools/Test.ps1`;
+  - [ ] `tools/Publish.ps1`;
+  - [ ] `tools/VerifyPackage.ps1` through the publish workflow; and
+  - [ ] `git diff --check`.
+- [ ] Record total tests, failures, produced archive path, expanded package
+      path, and exact packaged script path in the execution evidence.
+
+### Phase 5 gate
+
+- [ ] Help, README, source, expanded package, and archive describe and contain
+      the same zero-touch startup behavior.
+- [ ] Automated build, tests, publish, package verification, and whitespace
+      checks are green.
+
+## Phase 6 - Clean-install live acceptance
+
+- [ ] Use a clean test profile or isolate and later restore the user's real
+      keybinding, SoulSearch preference, and overlay configuration.
+- [ ] Disable the repository development script path and remove or isolate
+      competing installed SoulSearch versions so the packaged payload is the
+      only resolvable copy.
+- [ ] Install the packaged mod and cold-start DFHack without invoking
+      `soulsearch`, `gui/soulsearch`, `enable soulsearch`, `enable` with no
+      arguments, `script-manager.reload()`, or an overlay rescan.
+- [ ] Before any manual SoulSearch command:
+  - [ ] confirm `enable` lists SoulSearch with the automatic bootstrap active;
+  - [ ] confirm exactly one valid `gui/soulsearch` binding exists;
+  - [ ] press `Ctrl-F` in fortress mode and confirm the full window opens; and
+  - [ ] confirm no SoulSearch window opened during startup itself.
+- [ ] Restart again and confirm the binding remains singular and functional.
+- [ ] Replace the default with a custom `gui/soulsearch` binding through
+      `gui/keybinds`, save, restart, and confirm the custom binding remains and
+      the default is not recreated.
+- [ ] Remove all SoulSearch bindings through `gui/keybinds`, save, restart, and
+      confirm bootstrap respects the persisted opt-out.
+- [ ] Invoke manual `soulsearch` after opt-out and confirm it does not recreate
+      the binding unless a separately documented explicit reset operation was
+      intentionally added.
+- [ ] Exercise `disable soulsearch` and confirm:
+  - [ ] `isEnabled()`/the `enable` listing reports disabled;
+  - [ ] existing screens and bindings remain untouched;
+  - [ ] `gui/soulsearch` still opens normally; and
+  - [ ] overlay visibility/configuration is unchanged.
+- [ ] Cold-restart after `disable soulsearch` and confirm the documented
+      session-only behavior: automatic bootstrap is active again by default,
+      while existing, custom, or opted-out binding state remains unchanged.
+- [ ] Exercise `enable soulsearch` repeatedly and confirm it is idempotent and
+      does not defeat the binding opt-out.
+- [ ] Run `soulsearch reload` while bootstrap is enabled and disabled in
+      separate passes; confirm enabled state is preserved, no UI reopens, no
+      binding duplicates appear, and the next `gui/soulsearch` uses rebuilt
+      modules.
+- [ ] With the Stats popover package work present, confirm the unit-card widget
+      is discovered before any manual SoulSearch command, honors saved widget
+      state, and opens the popover independently of the full-window keybind.
+- [ ] When the Stats popover package work is present, disable the global overlay
+      framework once and confirm SoulSearch does not re-enable it; restore the
+      user's prior setting afterward.
+- [ ] Confirm startup produces no routine SoulSearch console noise and no error
+      in `stderr.log`.
+- [ ] Restore all isolated user configuration after acceptance.
+
+### Phase 6 gate
+
+- [ ] A new user can install the packaged mod and use both normal SoulSearch
+      entry paths without knowing or running an initialization command.
+- [ ] Existing user binding and overlay choices remain authoritative across
+      restart, enable/disable, explicit setup, and reload.
+- [ ] Live evidence is dated and records the package version/path and target
+      DFHack version.
+
+## Completion criteria
+
+- [ ] Automatic bootstrap is minimal, non-visual, idempotent, and fail-soft for
+      optional startup setup.
+- [ ] Full initialization stays lazy and defensive at explicit UI/data entry
+      points.
+- [ ] The default keybinding is seeded once without overriding customization or
+      recreating a saved removal.
+- [ ] Native enable/disable state has a narrow documented meaning and does not
+      conflict with explicit commands or overlay configuration.
+- [ ] Clean packaged installation requires no manual SoulSearch command.
+- [ ] Automated and live gates pass, and the parent item in
+      `docs/project.todo` is marked complete with the validation date.
+
+## Execution evidence
+
+| Phase | Date | Evidence recorded | Result |
+| --- | --- | --- | --- |
+| 0 | | Target DFHack/package path, invocation flags, hotkey timing, saved-removal behavior, preference-store decision, baseline commands | Pending |
+| 1 | | First-run preference/keybinding implementation, ownership and failure cases, build/test/diff commands | Pending |
+| 2 | | Enableable public bootstrap, lazy registry acquisition, enable/disable/help behavior, build/test/diff commands | Pending |
+| 3 | | Startup/command/reload/missed-scan tests, enabled-state preservation, stale-generation proof, build/test/diff commands | Pending |
+| 4 | | Optional independent overlay discovery/activation, Ctrl-F ownership, coordinated reload, or recorded N/A if the popover is not yet present | Pending |
+| 5 | | README/help/version, build/test/publish/package/diff commands, test counts and package paths | Pending |
+| 6 | | Dated isolated clean-install, binding customization/removal, enable/disable/reload, overlay independence, restored configuration | Pending |
