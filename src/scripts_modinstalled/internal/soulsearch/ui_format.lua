@@ -50,11 +50,11 @@ end
 ---@param result SoulSearchResult
 ---@return string
 function format_result_choice(result)
-    return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_UNIT_ID_WIDTH ..
-        's %-' .. RESULT_PROFESSION_WIDTH .. 's'):format(
+    return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_PROFESSION_WIDTH ..
+        's %-' .. RESULT_UNIT_ID_WIDTH .. 's'):format(
         truncate_text(result.name, RESULT_NAME_WIDTH),
-        truncate_text('#' .. tostring(result.unit_id), RESULT_UNIT_ID_WIDTH),
-        truncate_text(result.profession or '', RESULT_PROFESSION_WIDTH))
+        truncate_text(result.profession or '', RESULT_PROFESSION_WIDTH),
+        truncate_text('#' .. tostring(result.unit_id), RESULT_UNIT_ID_WIDTH))
 end
 
 ---@param sort_key string|nil
@@ -66,11 +66,11 @@ function format_result_columns(sort_key, sort_reverse)
         return ' ' .. (sort_reverse and glyphs.CP437_ARROW_DOWN or
             glyphs.CP437_ARROW_UP)
     end
-    return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_UNIT_ID_WIDTH ..
-        's %-' .. RESULT_PROFESSION_WIDTH .. 's'):format(
+    return ('%-' .. RESULT_NAME_WIDTH .. 's %-' .. RESULT_PROFESSION_WIDTH ..
+        's %-' .. RESULT_UNIT_ID_WIDTH .. 's'):format(
         'Name' .. marker('name'),
-        'Unit ID' .. marker('unit_id'),
-        'Profession' .. marker('profession'))
+        'Profession' .. marker('profession'),
+        'Unit ID' .. marker('unit_id'))
 end
 
 ---@param label string
