@@ -37,7 +37,8 @@ justify marking it complete.
 - [ ] The popover is a centered, non-draggable, non-resizable, non-persisted
       singleton. Repeated activation must not create stacked copies, and a
       valid activation for a different unit must update that singleton to the
-      newly captured unit.
+      newly captured unit and reset its sort and scroll state. Re-activation
+      for the same unit retains that state.
 - [ ] The popover does not open the results list, filter editor, presets, or any
       other part of the full SoulSearch window.
 - [ ] Closing the popover returns the player to the same vanilla unit card.
@@ -66,7 +67,9 @@ justify marking it complete.
   - [ ] the popover composes those operations with an empty criteria sequence.
 - [ ] Keep error reporting at the outer activation boundary. Collection and
       popover APIs return errors without printing; mouse/CLI activation reports
-      the final error exactly once.
+      the final error exactly once. After a screen has been shown, its
+      `onResize()` lifecycle path is the sole exception: it may report one
+      unsupported-size error immediately before dismissing itself.
 - [ ] Update `stats_presenter.lua` APIs and LuaDoc to consume
       `SoulSearchStatsSubject`, not the wider search-result contract.
 - [ ] Keep reusable column dimensions and hitbox boundaries in a dependency-
@@ -179,10 +182,10 @@ justify marking it complete.
       fallback strings, then decide whether shared Stats copy should use the
       generic term `unit` or accept host-supplied terminology. Record the choice
       before supporting visitors and animals in the popover.
-- [ ] Decide and document the internal row-type terminology for non-residents:
-  - [ ] either rename `SoulSearchResidentRow` to a generic unit-row type; or
-  - [ ] retain it as a historical internal name and explicitly document that
-        its structure supports any compatible `df.unit`.
+- [ ] Retain `SoulSearchResidentRow` as the historical internal row-type name
+      and explicitly document that its structure supports any compatible
+      `df.unit`. Do not introduce a cross-module row-type rename as part of this
+      extraction.
 - [ ] Enumerate the current Stats sort default, normalization, and transition
       cases in characterization tests without moving their implementation yet.
       Keep result-list sort cases separate.
@@ -219,12 +222,15 @@ justify marking it complete.
   - [ ] initial `subject` and `sort` attributes;
   - [ ] `set_subject(subject)`;
   - [ ] `set_sort(sort)`;
+  - [ ] `reset_view_state(sort)`, which silently applies the supplied normalized
+        sort and resets the scrollable body to its first row;
   - [ ] `get_sort()`;
   - [ ] `get_tooltip_text()`; and
   - [ ] `on_sort_change(sort)` callback.
 - [ ] Add component-contract tests proving `set_sort()` is silent, user sort
-      actions invoke `on_sort_change()`, and relayout after a frame change does
-      not require `set_subject()`.
+      actions invoke `on_sort_change()`, `reset_view_state()` resets sort and
+      scroll without invoking the callback, and relayout after a frame change
+      does not require `set_subject()`.
 - [ ] Move Stats-owned view creation into the component:
   - [ ] title and underline;
   - [ ] unit header;
@@ -237,6 +243,10 @@ justify marking it complete.
       of data refresh.
 - [ ] If the component overrides `updateLayout()`, call the superclass layout
       implementation before applying component-relative dynamic frames.
+- [ ] After changing the header, columns, or body frame, call each affected
+      child's `updateLayout(frame_body)` with the component's current body
+      rectangle, following the existing Stats relayout convention. Do not
+      recursively re-enter the component's own `updateLayout()`.
 - [ ] Export the component's minimum content dimensions from `stats_layout.lua`
       and test them against the recorded minimum supported tile-grid size.
 - [ ] Preserve the current text column geometry and click boundaries unless a
@@ -335,19 +345,28 @@ justify marking it complete.
       the main window's private 90x30 normalization contract.
 - [ ] Re-run screen-frame normalization and component layout from the screen's
       `onResize(w, h)` path; dismiss with a concise error if a resize makes the
-      tile grid smaller than the supported minimum.
+      tile grid smaller than the supported minimum. Report that lifecycle error
+      exactly once before dismissal and restore the pre-modal pause state.
 - [ ] Call the superclass `onResize(w, h)` implementation before applying
       popover-specific frame normalization and child layout.
-- [ ] Add an explicit close control and normal `Esc`/right-click dismissal.
+- [ ] Use the shared component's existing `Stats` heading as the popover's one
+      visible title; do not add a second modal-frame title. Add an explicit
+      close control that does not overlap the title or its hitbox at the minimum
+      supported size, plus normal `Esc`/right-click dismissal.
 - [ ] Rely on `gui.ZScreenModal` for modal input and pause behavior so clicks do
       not activate controls on the vanilla card underneath it.
+- [ ] Implement `onGetSelectedUnit()` on the popover screen and return the
+      currently displayed subject's unit. A different-unit singleton update
+      must change this result together with the visible subject.
 - [ ] Add a shared `ui_tooltip.lua` screen-level sibling driven by
       `stats_panel:get_tooltip_text()`.
 - [ ] Define popover sort state as independent from the main window:
   - [ ] initialize every new popover as unsorted
         (`{key=nil, reverse=false, phase=0}`);
-  - [ ] retain it for the lifetime of the popover;
-  - [ ] reset it, along with scroll position, on every new popover instance;
+  - [ ] retain it while the same unit ID remains displayed;
+  - [ ] reset it, along with scroll position, on every new popover instance and
+        every valid different-unit singleton replacement through the
+        component's `reset_view_state()` API;
   - [ ] do not write it to the default SoulSearch window identity.
 - [ ] Enforce a unit-aware singleton popover policy after validating and
       constructing the requested subject:
@@ -364,8 +383,9 @@ justify marking it complete.
 - [ ] Add pure-Lua tests for subject construction, stale-unit rejection,
       unsupported screen size, same-unit and different-unit singleton behavior,
       failed singleton replacement, default/reset sort and scroll state,
-      callbacks, close behavior, resize, and teardown bookkeeping where the
-      harness can model them.
+      `onGetSelectedUnit()`, callbacks, close behavior, one-time resize error
+      reporting, pause restoration, and teardown bookkeeping where the harness
+      can model them.
 - [ ] Update `tests/run.lua`, module-registry ordering/contracts, and test
       support loaders for all Phase 4 modules before running this phase's gate.
 - [ ] Assert that `stats_popover_config`, `residents`, `stats_subject`,
@@ -404,8 +424,10 @@ justify marking it complete.
       `stats_popover.open(unit)`, reports any selection or popover error exactly
       once, and returns only the screen or `nil`.
 - [ ] Define activation ownership explicitly:
-  - [ ] a dedicated clickable child view, or an explicit frame hit-test, calls
-        the shared helper only for left clicks inside the rendered button;
+  - [ ] render the button through static, non-input child content and perform an
+        explicit widget-frame hit-test for `_MOUSE_L` in the overlay widget;
+  - [ ] call the shared helper only when that hit-test is inside the rendered
+        button rectangle;
   - [ ] mouse `onInput()` returns `true` only after consuming that button click
         and delegates all other input to its superclass;
   - [ ] `overlay_trigger()` calls the same helper and returns the shown screen
@@ -512,6 +534,8 @@ justify marking it complete.
       the main map, or unrelated information tabs.
 - [ ] Open the popover for several units and verify each captured identity,
       profession, attributes, traits, deviations, and colors are current.
+- [ ] While each popover is active, verify DFHack selected-unit lookup returns
+      the same unit through the popover's `onGetSelectedUnit()` implementation.
 - [ ] Include at least:
   - [ ] a normal citizen with a current soul;
   - [ ] a non-citizen or visitor accessible from a unit card;
@@ -543,7 +567,8 @@ justify marking it complete.
       confirm its frame remains visible and all controls remain clickable.
 - [ ] Verify a tile grid smaller than the supported minimum is rejected cleanly
       without adding a screen or registry entry. Resize an open popover below
-      the minimum and confirm dismissal and pause restoration are clean.
+      the minimum and confirm exactly one error is reported and dismissal and
+      pause restoration are clean.
 - [ ] Reposition and disable the overlay, restart/reload as appropriate, and
       confirm DFHack preserves the user's overlay configuration.
 - [ ] Run `soulsearch reload` with the main window and popover open in separate
@@ -585,10 +610,10 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
 | 0 | | Baseline observations, focus path set, selected-unit lookup, modal proof, exact minimum tile grid, pixel/UI-scale evidence, button placement, build/test/diff commands | Pending |
-| 1 | | Characterization suites, subject and row terminology contracts, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
-| 2 | | Extracted modules, complete dependency order, loader support, component/super-layout tests, build/test/diff commands | Pending |
+| 1 | | Characterization suites, subject contract, historical row terminology, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
+| 2 | | Extracted modules, complete dependency order, loader support, component/reset/child-layout tests, build/test/diff commands | Pending |
 | 3 | | Main-window automated and live regression, including geometry and resize | Pending |
-| 4 | | Popover subject validation, unit-aware singleton behavior, tile-grid sizing, resize, state reset, cleanup bookkeeping | Pending |
-| 5 | | Overlay identity/discovery/focus/configuration, hitbox/input ownership, clean environment rescan/reload freshness | Pending |
+| 4 | | Popover subject validation, selected-unit exposure, unit-aware singleton behavior, tile-grid sizing, one-time resize handling, state reset, cleanup bookkeeping | Pending |
+| 5 | | Overlay identity/discovery/focus/configuration, explicit frame hitbox/input ownership, clean environment rescan/reload freshness | Pending |
 | 6 | | Build, test, publish, package verification, diff check, counts and package path | Pending |
 | 7 | | Dated live fortress-mode acceptance and parent-project checklist update | Pending |
