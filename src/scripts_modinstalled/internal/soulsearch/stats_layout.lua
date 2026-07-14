@@ -6,6 +6,7 @@ LABEL_WIDTH = 24
 VALUE_COLUMN_X = 27
 VALUE_HEADER_WIDTH = 7
 CONTENT_TOP = 2
+MIN_CONTENT_WIDTH = VALUE_COLUMN_X + VALUE_HEADER_WIDTH
 MIN_CONTENT_HEIGHT = 4 -- header, two column-header rows, and one body row
 
 ---@param source table

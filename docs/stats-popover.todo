@@ -403,104 +403,96 @@ the commands and automated checks that justify marking it complete.
 
 ## Phase 4 - Implement the single-unit Stats popover
 
-- [ ] Add a dedicated popover module and `gui.ZScreenModal` implementation
+- [x] Add a dedicated popover module and `gui.ZScreenModal` implementation
       rather than invoking `ui.open()` for the full SoulSearch window.
-- [ ] Define the popover view hierarchy explicitly:
-  - [ ] `SoulSearchStatsPopoverScreen` is the `gui.ZScreenModal` owner with the
+- [x] Define the popover view hierarchy explicitly:
+  - [x] `SoulSearchStatsPopoverScreen` is the `gui.ZScreenModal` owner with the
         distinct `focus_path='soulsearch/stats'`;
-  - [ ] its primary child is a centered `widgets.Window` with
+  - [x] its primary child is a centered `widgets.Window` with
         `draggable=false`, `resizable=false`, and `frame_style=gui.FRAME_BOLD`
         so the external modal frame carries the required DFHack signature;
-  - [ ] the reusable Stats component and explicit close control are children of
+  - [x] the reusable Stats component and explicit close control are children of
         that window; and
-  - [ ] the shared tooltip is a direct screen-level sibling so it can escape
+  - [x] the shared tooltip is a direct screen-level sibling so it can escape
         window and component clipping.
-- [ ] Implement
+- [x] Implement
       `stats_popover.open(unit) -> screen|nil, error|nil` as a
       validate-before-show boundary:
-  - [ ] return `residents.get_unavailable_reason()` first when the map or game
+  - [x] return `residents.get_unavailable_reason()` first when the map or game
         mode is unsupported, preserving the collection API's established error;
-  - [ ] call `residents.validate_unit_reference(unit)` to safely obtain its
+  - [x] call `residents.validate_unit_reference(unit)` to safely obtain its
         stable integer unit ID before reading any other unit field;
-  - [ ] confirm that unit ID still resolves to the same live unit;
-  - [ ] collect exactly one row with `residents.collect_unit(unit)` and
+  - [x] confirm that unit ID still resolves to the same live unit;
+  - [x] collect exactly one row with `residents.collect_unit(unit)` and
         propagate, but do not print, any error;
-  - [ ] construct the subject with `stats_subject.from_row(row, {})`;
-  - [ ] construct and show the modal only after those steps succeed; and
-  - [ ] return `nil, error` without registry or viewscreen changes on failure.
-- [ ] Instantiate the reusable Stats component as the popover window's content.
-- [ ] Implement the target window policy: centered, non-draggable,
+  - [x] construct the subject with `stats_subject.from_row(row, {})`;
+  - [x] construct and show the modal only after those steps succeed; and
+  - [x] return `nil, error` without registry or viewscreen changes on failure.
+- [x] Instantiate the reusable Stats component as the popover window's content.
+- [x] Implement the target window policy: centered, non-draggable,
       non-resizable, non-persisted, and clamped within the screen.
-- [ ] Give the popover a compact frame that satisfies the component minimum at
+- [x] Give the popover a compact frame that satisfies the component minimum at
       the exact Phase 0 supported tile-grid size.
-- [ ] Add dedicated `stats_popover_config.lua` for popover defaults, minimum
+- [x] Add dedicated `stats_popover_config.lua` for popover defaults, minimum
       tile-grid dimensions, centering, and screen-bound clamping. Do not reuse
       the main window's private 90x30 normalization contract.
-- [ ] Derive the popover minimum in `stats_popover_config.lua` from the
+- [x] Derive the popover minimum in `stats_popover_config.lua` from the
       `stats_layout.lua` component minimum by adding `gui.FRAME_BOLD` insets,
       then applying minimum outer-dimension constraints for non-overlapping
       close-control, signature, and force-pause badge rendering. The component
       minimum already includes its title and a usable body row; do not restate
       it as independent numeric constants or add either item a second time.
-- [ ] Record an exact supported minimum width and height in DFHack tile-grid
-      units from `dfhack.screen.getWindowSize()`, then validate the popover at
-      that size and record pixel resolution and UI scale separately. Below that
-      minimum, it must refuse to open with a concise error rather than claim to
-      provide a usable clipped layout.
-- [ ] Re-run screen-frame normalization and component layout from the screen's
+- [x] Re-run screen-frame normalization and component layout from the screen's
       `onResize(w, h)` path; dismiss with a concise error if a resize makes the
       tile grid smaller than the supported minimum. Report that lifecycle error
       exactly once, then use the normal modal dismissal path. Do not write pause
       state directly; inherited `gui.ZScreenModal` teardown must restore the
       pre-modal pause state.
-- [ ] Call the superclass `onResize(w, h)` implementation before applying
+- [x] Call the superclass `onResize(w, h)` implementation before applying
       popover-specific frame normalization and child layout.
-- [ ] Use the shared component's existing `Stats` heading as the popover's one
+- [x] Use the shared component's existing `Stats` heading as the popover's one
       visible content title; leave the containing window's `frame_title` unset
       so it does not add a second title. Add an explicit close control that does
       not overlap the title or its hitbox at the minimum supported size, plus
       normal `Esc`/right-click dismissal.
-- [ ] Rely on `gui.ZScreenModal` for modal input and pause behavior so clicks do
+- [x] Rely on `gui.ZScreenModal` for modal input and pause behavior so clicks do
       not activate controls on the vanilla card underneath it.
-- [ ] From both paused and unpaused unit cards, verify live that
-      `gui.ZScreenModal` blocks input and restores the intended prior pause
-      state after dismissal.
-- [ ] Do not override `SoulSearchStatsPopoverScreen:onInput()`. Put any custom
+- [x] Do not override `SoulSearchStatsPopoverScreen:onInput()`. Put any custom
       input behavior in the window or its child views and rely on inherited
       `gui.ZScreenModal` handling for `Esc`, right click, focus, and input
       blocking.
-- [ ] Implement `onGetSelectedUnit()` on the popover screen and return the
+- [x] Implement `onGetSelectedUnit()` on the popover screen and return the
       currently displayed subject's unit. A different-unit singleton update
       must change this result together with the visible subject.
-- [ ] Add a shared `ui_tooltip.lua` screen-level sibling driven by
+- [x] Add a shared `ui_tooltip.lua` screen-level sibling driven by
       `stats_panel:get_tooltip_text()`.
-- [ ] Define popover sort state as independent from the main window:
-  - [ ] initialize every new popover as unsorted
+- [x] Define popover sort state as independent from the main window:
+  - [x] initialize every new popover as unsorted
         (`{key=nil, reverse=false, phase=0}`);
-  - [ ] retain it while the same unit ID remains displayed;
-  - [ ] reset it, along with scroll position, on every new popover instance and
+  - [x] retain it while the same unit ID remains displayed;
+  - [x] reset it, along with scroll position, on every new popover instance and
         every valid different-unit singleton replacement through the
         component's `reset_view_state()` API;
-  - [ ] do not write it to the default SoulSearch window identity.
-- [ ] Enforce a unit-aware singleton popover policy after validating and
+  - [x] do not write it to the default SoulSearch window identity.
+- [x] Enforce a unit-aware singleton popover policy after validating and
       constructing the requested subject:
-  - [ ] if no popover exists, create and show one;
-  - [ ] treat a cleaned-up, dismissed, destroyed, or otherwise no-longer-shown
+  - [x] if no popover exists, create and show one;
+  - [x] treat a cleaned-up, dismissed, destroyed, or otherwise no-longer-shown
         singleton reference as absent instead of attempting to raise it;
-  - [ ] if the active popover already shows the same unit ID, raise and return
+  - [x] if the active popover already shows the same unit ID, raise and return
         it without resetting state;
-  - [ ] if it shows a different unit, update the existing screen atomically,
+  - [x] if it shows a different unit, update the existing screen atomically,
         reset sort and scroll state, then raise and return it; and
-  - [ ] if new-unit validation fails, leave the existing popover unchanged and
+  - [x] if new-unit validation fails, leave the existing popover unchanged and
         return `nil, error`.
-- [ ] Register and unregister the popover through `screen_registry.lua` for
+- [x] Register and unregister the popover through `screen_registry.lua` for
       teardown, but mark or classify it as excluded from the main-window frame
       list consumed by `place_frame()`.
-- [ ] Route explicit close, `onDismiss`, and `onDestroy` through one idempotent
+- [x] Route explicit close, `onDismiss`, and `onDestroy` through one idempotent
       cleanup path that unregisters the screen exactly once and clears the
       module-level singleton reference only if it still points to that screen.
       A late callback from an older screen must not clear a newer singleton.
-- [ ] Add pure-Lua tests for subject construction, stale-unit rejection,
+- [x] Add pure-Lua tests for subject construction, stale-unit rejection,
       nil/malformed-reference rejection before live lookup, unavailable-context
       error precedence, unsupported screen size, same-unit and different-unit
       singleton behavior, failed singleton replacement, default/reset sort and
@@ -511,23 +503,23 @@ the commands and automated checks that justify marking it complete.
       close-then-immediate-reopen behavior, late old-screen teardown, exclusion
       from main-window cascade placement, and teardown bookkeeping where the
       harness can model them.
-- [ ] Update `tests/run.lua`, module-registry ordering/contracts, and test
+- [x] Update `tests/run.lua`, module-registry ordering/contracts, and test
       support loaders for all Phase 4 modules before running this phase's gate.
-- [ ] Assert the complete Phase 4 dependency order in the reload registry:
-  - [ ] `stats_layout` precedes `stats_popover_config`;
-  - [ ] `stats_sort` precedes `stats_popover`; and
-  - [ ] `stats_popover_config`, `residents`, `stats_subject`, `stats_panel`,
+- [x] Assert the complete Phase 4 dependency order in the reload registry:
+  - [x] `stats_layout` precedes `stats_popover_config`;
+  - [x] `stats_sort` precedes `stats_popover`; and
+  - [x] `stats_popover_config`, `residents`, `stats_subject`, `stats_panel`,
         `ui_tooltip`, and `screen_registry` all precede `stats_popover`.
 
 ### Phase 4 gate
 
-- [ ] The popover renders through the same Stats component used by the main
+- [x] The popover renders through the same Stats component used by the main
       window and contains no copied Stats formatting, sort, hit-test, scrolling,
       or tooltip logic.
-- [ ] The public popover API is `stats_popover.open(unit)`. It requires only the
+- [x] The public popover API is `stats_popover.open(unit)`. It requires only the
       captured unit and does not depend on caller-supplied display options or a
       live `SoulSearchWindow`.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
       popover implementation.
 
 ## Phase 5 - Add the vanilla unit-card overlay button
@@ -732,6 +724,6 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 | 1 | | Characterization suites, subject identity contract, generic-unit copy correction, historical row terminology, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
 | 2 | | Extracted modules, collection error contract, copied sort ownership, Stats formatter LuaDoc contract, complete dependency order, loader support, `on_layout` single-pass component/reset/layout tests, build/test/diff commands | Pending |
 | 3 | 2026-07-14 | Reusable component migration; focused panel, layout, sort, subject, and tooltip coverage; `tools/Test.ps1` (219 tests); `tools/Build.ps1`; `git diff --check`; and in-process `dfhack-run soulsearch` module-load check | Complete |
-| 4 | | Popover subject validation, stable identity and focus path, signed modal composition, selected-unit exposure, stale-safe singleton cleanup, teardown-only registry participation, derived chrome-aware sizing, dependency order, resize handling, state reset, build/test/diff commands | Pending |
+| 4 | 2026-07-14 | `stats_popover` and derived config; singleton, validation, resize, modal composition, and registry-exclusion coverage; module dependency-order assertions; `tools/Test.ps1` (225 tests); `tools/Build.ps1`; and `git diff --check` | Complete |
 | 5 | | Overlay identity/discovery/focus/configuration, global framework prerequisite, shared fixed button geometry, guarded CLI/mouse activation, fresh registry reconstruction, clean environment rescan, build/test/diff commands | Pending |
 | 6 | | Release metadata, build, test, publish with nested package verification, diff check, counts and package path | Pending |

@@ -20,7 +20,8 @@ return function(test, repo_root)
         test.assert_equal('internal/soulsearch/ui', calls[#calls])
         local constants_index, settings_index, race_catalog_index, descriptor_index
         local candidate_index, scope_index, state_index, config_index
-        local screen_registry_index
+        local screen_registry_index, stats_layout_index, stats_config_index
+        local residents_index, stats_panel_index, tooltip_index, popover_index
         local race_filter_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/filter_constants' then
@@ -41,6 +42,18 @@ return function(test, repo_root)
                 config_index = index
             elseif name == 'internal/soulsearch/screen_registry' then
                 screen_registry_index = index
+            elseif name == 'internal/soulsearch/stats_layout' then
+                stats_layout_index = index
+            elseif name == 'internal/soulsearch/stats_popover_config' then
+                stats_config_index = index
+            elseif name == 'internal/soulsearch/residents' then
+                residents_index = index
+            elseif name == 'internal/soulsearch/stats_panel' then
+                stats_panel_index = index
+            elseif name == 'internal/soulsearch/ui_tooltip' then
+                tooltip_index = index
+            elseif name == 'internal/soulsearch/stats_popover' then
+                popover_index = index
             elseif name == 'internal/soulsearch/race_filter_provider' then
                 race_filter_index = index
             end
@@ -56,6 +69,12 @@ return function(test, repo_root)
         test.assert_true(state_index < config_index)
         test.assert_true(screen_registry_index < #calls)
         test.assert_true(state_index < race_filter_index)
+        test.assert_true(stats_layout_index < stats_config_index)
+        test.assert_true(stats_config_index < popover_index)
+        test.assert_true(residents_index < popover_index)
+        test.assert_true(stats_panel_index < popover_index)
+        test.assert_true(tooltip_index < popover_index)
+        test.assert_true(screen_registry_index < popover_index)
         test.assert_true(loaded['internal/soulsearch/search'].apply ~= nil)
         test.assert_true(
             loaded['internal/soulsearch/candidate_provider'].new ~= nil)

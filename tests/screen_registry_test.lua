@@ -97,4 +97,14 @@ return function(test, repo_root)
         test.assert_true(placed.l + placed.w <= 100)
         test.assert_true(placed.t + placed.h <= 50)
     end)
+
+    test.case('screen registry: teardown-only screens do not affect placement', function()
+        registry.clear()
+        local popover = screen(10, 10, 60, 30)
+        popover.exclude_from_placement = true
+        registry.add(popover)
+        local placed = registry.place_frame({l=10, t=10, w=60, h=30}, 100, 50)
+        test.assert_equal(10, placed.l)
+        test.assert_equal(10, placed.t)
+    end)
 end

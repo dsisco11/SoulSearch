@@ -15,6 +15,7 @@ MODULES = {
     {name='internal/soulsearch/attribute_descriptions', contract='get_tooltip'},
     {name='internal/soulsearch/ui_glyphs', contract='get_glyph'},
     {name='internal/soulsearch/stats_layout', contract='get_content_frames'},
+    {name='internal/soulsearch/stats_popover_config', contract='resolve'},
     {name='internal/soulsearch/stats_sort', contract='normalize'},
     {name='internal/soulsearch/stats_subject', contract='from_row'},
     {name='internal/soulsearch/ui_layout', contract='get_frame'},
@@ -50,6 +51,10 @@ MODULES = {
     {name='internal/soulsearch/ui_components', contract='create_filter_panel'},
     {name='internal/soulsearch/ui_refresh', contract='apply'},
     {name='internal/soulsearch/residents', contract='collect_from_provider'},
+    {
+        name='internal/soulsearch/stats_popover',
+        contract='open',
+    },
     {name='internal/soulsearch/keybindings', contract='ensure_default'},
     {name='internal/soulsearch/lifecycle', contract='prepare_for_world'},
     {name='internal/soulsearch/ui', contract='open'},

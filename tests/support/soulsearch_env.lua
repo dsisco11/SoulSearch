@@ -675,4 +675,107 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
     return environment, screen_registry, ui_state
 end
 
+function M.load_stats_popover(repo_root, options)
+    options = options or {}
+    local registry = M.load_screen_registry(repo_root)
+    local layout = M.load_stats_layout(repo_root)
+    local config = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_popover_config.lua', {
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/stats_layout')
+                return layout
+            end,
+        })
+    local units = options.units or {}
+    local state = {collects=0, resets=0, raises=0, printed={}}
+    local base = {
+        addviews=function(self, views) self.subviews=views end,
+        onShow=function() end,
+        onResize=function() end,
+        show=function(self) self.shown=true; self:onShow(); return self end,
+        dismiss=function(self) self.dismissed=true; self:onDismiss() end,
+        isActive=function(self) return self.shown and not self.dismissed end,
+        raise=function(self) state.raises=state.raises+1 end,
+    }
+    local function class(parent)
+        local result = {super=parent or base}
+        function result.ATTRS() end
+        return setmetatable(result, {
+            __index=parent or base,
+            __call=function(cls, info)
+                local instance=info or {}
+                setmetatable(instance, {__index=cls})
+                if cls.init then cls.init(instance, info or {}) end
+                return instance
+            end,
+        })
+    end
+    local function window(info)
+        local subviews={}
+        for _, view in ipairs(info.subviews or {}) do subviews[view.view_id]=view end
+        info.subviews=subviews
+        function info.updateLayout() end
+        return info
+    end
+    local panel = function(info)
+        local body={start_line_num=1}
+        local result={view_id=info.view_id, subject=info.subject, sort=info.sort,
+            subviews={body=body}}
+        function result:set_subject(subject) self.subject=subject end
+        function result:reset_view_state(sort)
+            self.sort=sort; self.subviews.body.start_line_num=1
+            state.resets=state.resets+1
+        end
+        function result:get_tooltip_text() return nil end
+        return result
+    end
+    local residents = {
+        get_unavailable_reason=function() return options.unavailable_reason end,
+        validate_unit_reference=function(unit)
+            if type(unit) ~= 'table' or type(unit.id) ~= 'number' then
+                return nil, 'SoulSearch requires a valid unit.'
+            end
+            return unit.id
+        end,
+        collect_unit=function(unit)
+            state.collects=state.collects+1
+            if options.collect_error then return nil, options.collect_error end
+            return {unit=unit, unit_id=unit.id}, nil
+        end,
+    }
+    local modules={
+        ['internal/soulsearch/residents']=residents,
+        ['internal/soulsearch/stats_subject']={
+            from_row=function(row) return {unit=row.unit, unit_id=row.unit_id, row=row} end,
+        },
+        ['internal/soulsearch/stats_popover_config']=config,
+        ['internal/soulsearch/stats_panel']={SoulSearchStatsPanel=panel},
+        ['internal/soulsearch/ui_tooltip']={SoulSearchTooltip=function(info) return info end},
+        ['internal/soulsearch/screen_registry']=registry,
+    }
+    local globals={
+        DEFAULT_NIL=nil,
+        defclass=function(_, parent) return class(parent) end,
+        print=function(text) table.insert(state.printed, text) end,
+        df={unit={find=function(id) return units[id] end}},
+        dfhack={screen={getWindowSize=function()
+            return options.width or 80, options.height or 25
+        end}},
+        require=function(name)
+            if name == 'gui' then return {ZScreenModal=base, FRAME_BOLD='bold'} end
+            if name == 'gui.widgets' then return {
+                Window=setmetatable({}, {__call=function(_, info) return window(info) end}),
+                TextButton=setmetatable({}, {__call=function(_, info) return info end}),
+            } end
+            error('unexpected require: ' .. name)
+        end,
+        reqscript=function(name)
+            return assert(modules[name], 'unexpected reqscript: ' .. name)
+        end,
+    }
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_popover.lua', globals),
+        config, registry, state
+end
+
 return M
