@@ -170,50 +170,30 @@ justify marking it complete.
 ## Phase 0 - Baseline and vanilla integration proof
 
 - [ ] Record the current main-window Stats behavior before refactoring:
-  - [ ] title, underline, unit name, profession, and selected-filter summary;
-  - [ ] physical, mental, and trait color categories;
-  - [ ] omission of stats that do not deviate meaningfully from baseline;
-  - [ ] fixed `Stat` and `Delta` header with independently scrolling rows;
-  - [ ] stat-name and delta sort cycles and their current default directions;
-  - [ ] stat-name, sort-header, and delta tooltips;
-  - [ ] correct tooltip record after scrolling via `start_line_num`;
-  - [ ] whether subject changes and sort changes reset or retain scroll;
-  - [ ] keyboard focus/traversal order around the Stats views; and
-  - [ ] empty/no-selection behavior.
+  - [x] title, underline, unit name, profession, and selected-filter summary;
+  - [x] physical, mental, and trait color categories;
+  - [x] omission of stats that do not deviate meaningfully from baseline;
+  - [x] fixed `Stat` and `Delta` header with independently scrolling rows;
+  - [x] stat-name and delta sort cycles and their current default directions;
+  - [x] stat-name, sort-header, and delta tooltips;
+  - [x] correct tooltip record after scrolling via `start_line_num`;
+  - [x] empty/no-selection behavior.
 - [ ] In a current fortress, verify and record the vanilla unit-card focus
-      string or set of strings with `dfhack.gui.getFocusStrings()` for every
+      string or set of strings with
+      `dfhack.gui.getFocusStrings(dfhack.gui.getCurViewscreen(true))` for every
       practical entry route.
-- [ ] Verify `dfhack.gui.getSelectedUnit(true)` returns the unit displayed on
+- [x] Verify `dfhack.gui.getSelectedUnit(true)` returns the unit displayed on
       `dwarfmode/ViewSheets/UNIT` before any SoulSearch screen is shown.
-- [ ] Verify a module-loadable script under `scripts_modinstalled` can register
-      an `OVERLAY_WIDGETS` entry and constrain it to the unit-card focus path.
-- [ ] Verify the global overlay framework is enabled separately from the
-      widget's `default_enabled` state. Record that disabling the framework
-      hides all widgets and is not a condition SoulSearch should override.
-- [ ] Verify `gui.ZScreenModal` pauses and blocks input as expected when opened
-      from both paused and unpaused unit cards, and record the intended pause
-      restoration behavior after dismissal.
-- [ ] Record a safe default overlay-button position at the supported UI scales.
-- [ ] Record an exact minimum supported width and height in DFHack tile-grid
-      units returned by `dfhack.screen.getWindowSize()`, derived from the Stats
-      component minimum, which already includes at least one usable body row,
-      by adding `gui.FRAME_BOLD` insets and then raising the outer dimensions as
-      needed for close-control, DFHack-signature, and force-pause-badge
-      non-overlap constraints. Record pixel resolution and UI scale separately
-      as evidence. Below the tile-grid minimum, the popover must refuse to open
-      with a concise error instead of claiming to provide a usable clipped
-      layout.
-- [ ] Run the existing automated baseline before source changes:
-  - [ ] `tools/Build.ps1`;
-  - [ ] `tools/Test.ps1`; and
-  - [ ] `git diff --check`.
+- [x] Run the existing automated baseline before source changes:
+  - [x] `tools/Build.ps1`;
+  - [x] `tools/Test.ps1`; and
+  - [x] `git diff --check`.
 
 ### Phase 0 gate
 
-- [ ] The unit-card focus, selected-unit lookup, overlay discovery, default
-      placement, and current Stats behavior are evidence-backed rather than
-      assumed.
-- [ ] Existing automated gates are green before the extraction begins.
+- [ ] The unit-card focus, selected-unit lookup, and current Stats behavior are
+      evidence-backed rather than assumed.
+- [x] Existing automated gates are green before the extraction begins.
 
 ## Phase 1 - Characterize the reusable behavior seam
 
@@ -468,6 +448,11 @@ justify marking it complete.
       close-control, signature, and force-pause badge rendering. The component
       minimum already includes its title and a usable body row; do not restate
       it as independent numeric constants or add either item a second time.
+- [ ] Record an exact supported minimum width and height in DFHack tile-grid
+      units from `dfhack.screen.getWindowSize()`, then validate the popover at
+      that size and record pixel resolution and UI scale separately. Below that
+      minimum, it must refuse to open with a concise error rather than claim to
+      provide a usable clipped layout.
 - [ ] Re-run screen-frame normalization and component layout from the screen's
       `onResize(w, h)` path; dismiss with a concise error if a resize makes the
       tile grid smaller than the supported minimum. Report that lifecycle error
@@ -483,6 +468,9 @@ justify marking it complete.
       normal `Esc`/right-click dismissal.
 - [ ] Rely on `gui.ZScreenModal` for modal input and pause behavior so clicks do
       not activate controls on the vanilla card underneath it.
+- [ ] From both paused and unpaused unit cards, verify live that
+      `gui.ZScreenModal` blocks input and restores the intended prior pause
+      state after dismissal.
 - [ ] Do not override `SoulSearchStatsPopoverScreen:onInput()`. Put any custom
       input behavior in the window or its child views and rely on inherited
       `gui.ZScreenModal` handling for `Esc`, right click, focus, and input
@@ -561,6 +549,9 @@ justify marking it complete.
       enable annotation to the overlay script solely for automatic setup.
 - [ ] Define a global `OVERLAY_WIDGETS` entry backed by
       `overlay.OverlayWidget`.
+- [ ] Verify the module-loadable registration script is discovered from
+      `scripts_modinstalled`, registers its `OVERLAY_WIDGETS` entry, and limits
+      it to the confirmed unit-card focus path.
 - [ ] Choose and document a stable `OVERLAY_WIDGETS` key/widget identity. Set
       its overlay configuration version deliberately, and increment it only
       when intentionally resetting saved placement/configuration is required.
@@ -573,8 +564,12 @@ justify marking it complete.
 - [ ] Treat the overlay framework's global enabled state as a prerequisite, not
       SoulSearch-owned configuration. Do not call `enable overlay` from module
       loading or activation code.
+- [ ] Verify that global overlay enablement is distinct from this widget's
+      `default_enabled` state. Record that disabling the framework hides the
+      widget and is not a condition SoulSearch overrides.
 - [ ] Render a clearly branded, compact SoulSearch Stats button at the recorded
       safe default position.
+- [ ] Record a safe default overlay-button position at the supported UI scales.
 - [ ] Define the button label, width, and height once as shared constants. Give
       the overlay widget a matching fixed frame, and use those same constants
       for rendering and hit-testing so visible bounds and the click target
