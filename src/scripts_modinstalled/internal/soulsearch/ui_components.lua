@@ -91,35 +91,35 @@ function create_filter_panel(inputs)
             label='Edit',
             on_activate=inputs.on_toggle_unit_scope_picker,
         },
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='add_filter_button',
             frame=ui_layout.get_frame('add_filter'),
             key='CUSTOM_A',
             label='Add attribute filter',
             on_activate=inputs.on_toggle_attribute_picker,
         },
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='add_skill_button',
             frame=ui_layout.get_frame('add_skill'),
             key='CUSTOM_S',
             label='Add skill filter',
             on_activate=inputs.on_toggle_skill_picker,
         },
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='add_race_button',
             frame=ui_layout.get_frame('add_race'),
             key='CUSTOM_G',
             label='Add race filter',
             on_activate=inputs.on_toggle_race_picker,
         },
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='clear_filters_button',
             frame=ui_layout.get_frame('clear_filters'),
             key='CUSTOM_C',
             label='Clear filters',
             on_activate=inputs.on_clear,
         },
-        widgets.HotkeyLabel{
+        widgets.TextButton{
             view_id='preset_button',
             frame=ui_layout.get_frame('presets'),
             key='CUSTOM_P',
@@ -243,7 +243,7 @@ function create_filter_panel(inputs)
                     label='X',
                     on_activate=inputs.on_close_preset_picker,
                 },
-                widgets.HotkeyLabel{
+                widgets.TextButton{
                     view_id='save_preset_button',
                     frame=ui_layout.get_frame('preset_save'),
                     key='CUSTOM_W',

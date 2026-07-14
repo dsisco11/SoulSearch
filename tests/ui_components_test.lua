@@ -83,7 +83,18 @@ return function(test, repo_root)
         test.assert_equal('TextButton',
             by_id(subviews, 'unit_scope_edit').widget_kind)
         test.assert_equal('Edit', by_id(subviews, 'unit_scope_edit').label)
-        test.assert_equal('add_filter_button', by_id(subviews, 'add_filter_button').view_id)
+        for _, button in ipairs({
+            {id='add_filter_button', key='CUSTOM_A', label='Add attribute filter'},
+            {id='add_skill_button', key='CUSTOM_S', label='Add skill filter'},
+            {id='add_race_button', key='CUSTOM_G', label='Add race filter'},
+            {id='clear_filters_button', key='CUSTOM_C', label='Clear filters'},
+            {id='preset_button', key='CUSTOM_P', label='Filter presets'},
+        }) do
+            local view = by_id(subviews, button.id)
+            test.assert_equal('TextButton', view.widget_kind)
+            test.assert_equal(button.key, view.key)
+            test.assert_equal(button.label, view.label)
+        end
         test.assert_equal('available_filter_list',
             by_id(subviews, 'available_filter_window').subviews[3].view_id)
         for _, picker_id in ipairs({
@@ -96,6 +107,11 @@ return function(test, repo_root)
             test.assert_equal('TextButton', close_button.widget_kind)
             test.assert_equal('X', close_button.label)
         end
+        local save_preset_button =
+            by_id(subviews, 'preset_picker_window').subviews[2]
+        test.assert_equal('TextButton', save_preset_button.widget_kind)
+        test.assert_equal('CUSTOM_W', save_preset_button.key)
+        test.assert_equal('Save preset', save_preset_button.label)
         test.assert_equal('unit_scope_picker_list',
             by_id(subviews, 'unit_scope_picker_window').subviews[1].view_id)
         test.assert_equal('filters_button',
