@@ -229,6 +229,9 @@ justify marking it complete.
   - [ ] scrolled-row tooltip indexing;
   - [ ] scroll reset/retention on subject and sort changes;
   - [ ] current keyboard focus order and which inputs reach the Stats area;
+  - [ ] the Stats column headers' child-view input ownership: `SortableHeader`
+        handles its click locally, while `SoulSearchWindow:onInput()` delegates
+        to its superclass before only unhandled global fallback handling;
   - [ ] current layout refresh timing during main-window resize; and
   - [ ] current persistence behavior: user sort clicks update settings while
         initialization and ordinary Stats refresh do not.
@@ -394,6 +397,10 @@ justify marking it complete.
       `stats_sort` snapshot.
 - [ ] Persist sort changes through the component callback using the existing
       window-settings path.
+- [ ] Keep Stats sort-header click handling inside the reusable component. The
+      main window supplies the sort-change callback and remains the owner of
+      settings persistence; do not restore root-window hit testing or manual
+      post-superclass header dispatch.
 - [ ] Make the main tooltip aggregator ask the Stats component for Stats-owned
       tooltip text while preserving the priority of unrelated control,
       results, filter, and picker tooltips.
