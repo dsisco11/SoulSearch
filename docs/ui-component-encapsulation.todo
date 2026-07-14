@@ -16,9 +16,9 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 ## Target architecture
 
 - [ ] Add an `internal/soulsearch/ui/` module namespace containing:
-  - [ ] `modal_panel.lua` for reusable modal open, close, focus, and input
+  - [x] `modal_panel.lua` for reusable modal open, close, focus, and input
         capture behavior;
-  - [ ] `filter_action_list.lua` for filter-row action hit-testing and
+  - [x] `filter_action_list.lua` for filter-row action hit-testing and
         dispatch;
   - [ ] `searchable_picker.lua` for the shared attribute, skill, and race
         picker structure;
@@ -136,30 +136,30 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Phase 1 - Establish the component namespace and leaf widgets
 
-- [ ] Add the `internal/soulsearch/ui/` namespace without changing the public
+- [x] Add the `internal/soulsearch/ui/` namespace without changing the public
       `internal/soulsearch/ui` facade path.
-- [ ] Extract `ModalPanelWindow` into `ui/modal_panel.lua`:
-  - [ ] export one documented class contract;
-  - [ ] retain `is_open`, `on_open`, and `on_close` callback ownership;
-  - [ ] preserve focus transitions and input consumption exactly; and
-  - [ ] add focused tests for idempotent open/close and mouse behavior.
-- [ ] Extract `FilterActionList` into `ui/filter_action_list.lua`:
-  - [ ] retain action-choice snapshots and selected-row behavior;
-  - [ ] retain scrolled-list index fallback;
-  - [ ] preserve `FILTER_ACTION_WIDTH`-based hit-testing through
+- [x] Extract `ModalPanelWindow` into `ui/modal_panel.lua`:
+  - [x] export one documented class contract;
+  - [x] retain `is_open`, `on_open`, and `on_close` callback ownership;
+  - [x] preserve focus transitions and input consumption exactly; and
+  - [x] add focused tests for idempotent open/close and mouse behavior.
+- [x] Extract `FilterActionList` into `ui/filter_action_list.lua`:
+  - [x] retain action-choice snapshots and selected-row behavior;
+  - [x] retain scrolled-list index fallback;
+  - [x] preserve `FILTER_ACTION_WIDTH`-based hit-testing through
         `ui_layout.lua`; and
-  - [ ] add focused click-boundary and callback tests.
-- [ ] Add each module to `module_registry.lua` and the pure-Lua loader before
+  - [x] add focused click-boundary and callback tests.
+- [x] Add each module to `module_registry.lua` and the pure-Lua loader before
       migrating consumers.
-- [ ] Keep compatibility imports in `ui_components.lua` only during this
+- [x] Keep compatibility imports in `ui_components.lua` only during this
       phase; do not duplicate class implementations.
 
 ### Phase 1 gate
 
-- [ ] Leaf-widget tests pass through their new module paths.
-- [ ] Existing `ui_components_test.lua` coverage remains green while consumers
+- [x] Leaf-widget tests pass through their new module paths.
+- [x] Existing `ui_components_test.lua` coverage remains green while consumers
       still use the temporary compatibility imports.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 2 - Extract picker and Filter Panel components
 
@@ -336,3 +336,4 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 | Date | Phase/gate | Evidence | Result | Notes |
 | --- | --- | --- | --- | --- |
 | 2026-07-14 | Phase 0 | Clean pre-edit worktree; dependency baseline above; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 40 Lua files compile; 238 tests, 0 failures; whitespace check clean apart from Git line-ending notices. No production module moved. |
+| 2026-07-14 | Phase 1 | New leaf-module suites; compatibility characterization; registry-order assertions; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 42 Lua files compile; 245 tests, 0 failures; one implementation owner per extracted class; public `internal/soulsearch/ui.lua` facade unchanged. |

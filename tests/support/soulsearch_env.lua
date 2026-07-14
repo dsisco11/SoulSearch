@@ -452,6 +452,56 @@ function M.load_stats_presenter(repo_root, attributes)
         globals)
 end
 
+local function load_ui_leaf_module(repo_root, relative_path)
+    local layout = M.load_ui_layout(repo_root)
+    local function parent(kind)
+        return {
+            widget_kind=kind,
+            onInput=function(self)
+                self.super_input_calls = (self.super_input_calls or 0) + 1
+                return self.super_input_result or false
+            end,
+            setChoices=function(self, choices, selected)
+                self.base_choices = choices
+                self.base_selected = selected
+                return self.base_set_choices_result
+            end,
+        }
+    end
+    local widgets = {Window=parent('Window'), List=parent('List')}
+    local globals = make_presentation_globals()
+    globals.defclass=function(_, base)
+        local class = {super=base}
+        return setmetatable(class, {__call=function(_, config)
+            config.widget_kind = base.widget_kind
+            local instance = setmetatable(config, {__index=class})
+            if class.init then class.init(instance, config) end
+            return instance
+        end})
+    end
+    globals.require=function(name)
+        assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
+        return widgets
+    end
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/ui_layout' then return layout end
+        error('unexpected reqscript: ' .. tostring(name))
+    end
+    return module_loader.load(repo_root, relative_path, globals)
+end
+
+function M.load_modal_panel(repo_root)
+    return load_ui_leaf_module(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/modal_panel.lua')
+end
+
+function M.load_filter_action_list(repo_root)
+    return load_ui_leaf_module(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua')
+end
+
 function M.load_ui_components(repo_root)
     local layout = M.load_ui_layout(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
@@ -502,6 +552,12 @@ function M.load_ui_components(repo_root)
         if name == 'internal/soulsearch/ui_format' then return ui_format end
         if name == 'internal/soulsearch/ui_layout' then return layout end
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
+        if name == 'internal/soulsearch/ui/modal_panel' then
+            return M.load_modal_panel(repo_root)
+        end
+        if name == 'internal/soulsearch/ui/filter_action_list' then
+            return M.load_filter_action_list(repo_root)
+        end
         error('unexpected reqscript: ' .. tostring(name))
     end
     return module_loader.load(
