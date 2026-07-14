@@ -22,9 +22,9 @@ local ui_components = reqscript('internal/soulsearch/ui_components')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
-local SoulSearchTooltip = reqscript('internal/soulsearch/ui_tooltip')
+local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
+local SoulSearchTooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
-local attribute_descriptions = reqscript('internal/soulsearch/attribute_descriptions')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
@@ -33,8 +33,6 @@ local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
 local FILTER_KIND_RACE = filter_constants.kind.RACE
 local RACE_GROUP_ID_PREFIX = filter_constants.race.group_id_prefix
-local STATS_SORT_LABEL = 'label'
-local STATS_SORT_VALUE = 'value'
 
 ---@class SoulSearchPosition
 ---@field x integer
@@ -152,9 +150,6 @@ end
 ---@field query string
 ---@field attribute_query string
 ---@field skill_query string
----@field stats_sort_key string|nil
----@field stats_sort_reverse boolean
----@field stats_sort_phase integer
 ---@field result_sort_key 'name'|'unit_id'|'profession'|nil
 ---@field result_sort_reverse boolean
 ---@field result_sort_phase integer
@@ -198,9 +193,6 @@ function SoulSearchWindow:init()
     self.attribute_query = ''
     self.skill_query = ''
     self.race_query = ''
-    self.stats_sort_key = settings.stats_sort.key
-    self.stats_sort_reverse = settings.stats_sort.reverse
-    self.stats_sort_phase = settings.stats_sort.phase
     self.result_sort_key = settings.result_sort.key
     self.result_sort_reverse = settings.result_sort.reverse
     self.result_sort_phase = settings.result_sort.phase
@@ -244,9 +236,15 @@ function SoulSearchWindow:init()
         on_submit=function(result) self:zoom_to_result(result) end,
         on_sort=function(column) self:cycle_result_sort(column) end,
     })
-    append_views(views, ui_components.create_stats_panel(function(column)
-        self:cycle_stats_sort(column)
-    end))
+    table.insert(views, StatsPanel{
+        view_id='stats_panel',
+        frame={l=ui_layout.STATS_LEFT, t=ui_layout.HEADER_ROW, r=1, b=0},
+        subject=nil,
+        sort=settings.stats_sort,
+        on_sort_change=function(sort)
+            self:update_session_settings{stats_sort=sort}
+        end,
+    })
     table.insert(views, ui_components.create_close_button(function()
         self.parent_view:dismiss()
     end))
@@ -372,22 +370,6 @@ function SoulSearchWindow:get_filter_action_tooltip()
     return action and action.tooltip or nil
 end
 
----@return string|nil
-function SoulSearchWindow:get_stats_header_column()
-    local columns = self.subviews.stats_columns
-    if not columns then
-        return nil
-    end
-
-    local x, y = columns:getMousePos()
-    return ui_layout.get_stats_header_column(x, y)
-end
-
----@return string|nil
-function SoulSearchWindow:get_stats_header_tooltip()
-    local column = self:get_stats_header_column()
-    return column and ui_components.STATS_HEADER_TOOLTIPS[column] or nil
-end
 
 ---@return string|nil
 function SoulSearchWindow:get_result_header_column()
@@ -439,35 +421,6 @@ function SoulSearchWindow:get_filter_descriptor_tooltip()
         filter_list, self.active_filter_choices)
 end
 
----@return string|nil
-function SoulSearchWindow:get_stats_value_tooltip()
-    local stats = self.subviews.stats
-    if not stats then
-        return nil
-    end
-
-    local x, y = stats:getMousePos()
-    if ui_layout.is_stats_value_cell(x, y) then
-        return ui_components.STATS_VALUE_TOOLTIP
-    end
-    return nil
-end
-
----@return string|nil
-function SoulSearchWindow:get_stats_attribute_tooltip()
-    local stats = self.subviews.stats
-    if not stats then return nil end
-    local x, y = stats:getMousePos()
-    -- Label mouse coordinates are relative to the visible viewport. Its
-    -- records, however, retain every line, including section gaps, so apply
-    -- the one-based first visible line when it has been scrolled.
-    local record_index = (stats.start_line_num or 1) + y
-    local record = self.stats_records and self.stats_records[record_index]
-    if record and ui_layout.is_stats_label_cell(x, y) then
-        return attribute_descriptions.get_tooltip(record.kind, record.key)
-    end
-    return nil
-end
 
 ---@return string
 function SoulSearchWindow:get_tooltip_text()
@@ -477,10 +430,10 @@ function SoulSearchWindow:get_tooltip_text()
         end
     end
 
+    local stats_tooltip = self.subviews.stats_panel and
+        self.subviews.stats_panel:get_tooltip_text() or nil
     return self:get_filter_action_tooltip() or self:get_result_header_tooltip() or
-        self:get_stats_header_tooltip() or
-        self:get_stats_value_tooltip() or self:get_filter_descriptor_tooltip() or
-        self:get_stats_attribute_tooltip() or ''
+        stats_tooltip or self:get_filter_descriptor_tooltip() or ''
 end
 
 ---@return SoulSearchFilterDescriptor[]
@@ -744,14 +697,7 @@ end
 
 ---@param result SoulSearchResult|nil
 function SoulSearchWindow:refresh_stats(result)
-    self.stats_records = ui_components.update_stats_panel(
-        self.subviews.stats_header,
-        self.subviews.stats_columns,
-        self.subviews.stats,
-        result,
-        self.stats_sort_key,
-        self.stats_sort_reverse,
-        self.frame_body)
+    self.subviews.stats_panel:set_subject(result)
 end
 
 ---@param column string
@@ -780,31 +726,6 @@ function SoulSearchWindow:cycle_result_sort(column)
 end
 
 ---@param column string
-function SoulSearchWindow:cycle_stats_sort(column)
-    if self.stats_sort_key == column then
-        self.stats_sort_phase = self.stats_sort_phase + 1
-    else
-        self.stats_sort_key = column
-        self.stats_sort_phase = 1
-    end
-
-    if self.stats_sort_phase >= 3 then
-        self.stats_sort_key = nil
-        self.stats_sort_reverse = false
-        self.stats_sort_phase = 0
-    elseif self.stats_sort_phase == 1 then
-        self.stats_sort_reverse = column == STATS_SORT_VALUE
-    else
-        self.stats_sort_reverse = column ~= STATS_SORT_VALUE
-    end
-
-    self:update_session_settings{stats_sort={
-        key=self.stats_sort_key,
-        reverse=self.stats_sort_reverse,
-        phase=self.stats_sort_phase,
-    }}
-    self:refresh_views{stats=true}
-end
 
 ---@return SoulSearchResult|nil
 function SoulSearchWindow:get_selected_result()

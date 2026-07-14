@@ -1,7 +1,6 @@
 --@ module=true
 
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
-local stats_layout = reqscript('internal/soulsearch/stats_layout')
 
 WINDOW_FRAME = {w=110, h=45, xalign=0.5, yalign=0.5}
 WINDOW_RESIZE_MIN = {w=90, h=30}
@@ -20,15 +19,11 @@ RESULT_UNIT_ID_COLUMN_X = RESULT_PROFESSION_COLUMN_X + RESULT_PROFESSION_WIDTH +
 HEADER_ROW = 2
 UNDERLINE_ROW = 3
 PICKER_TOP = 7
-STATS_CONTENT_TOP = 4
 WINDOW_FRAME_BORDER = 1
 WINDOW_CONTENT_INSET = 1
 UNIT_SCOPE_PICKER_VERTICAL_PADDING = 2 *
     (WINDOW_FRAME_BORDER + WINDOW_CONTENT_INSET)
 
-STATS_LABEL_WIDTH = stats_layout.LABEL_WIDTH
-STATS_VALUE_COLUMN_X = stats_layout.VALUE_COLUMN_X
-STATS_VALUE_HEADER_WIDTH = stats_layout.VALUE_HEADER_WIDTH
 
 ACTIVE_FILTER_BUTTON_START_X = 21
 FILTER_ACTION_WIDTH = 3
@@ -101,11 +96,6 @@ FRAMES = {
     result_underline={l=RESULTS_LEFT, t=UNDERLINE_ROW, w=RESULTS_WIDTH, h=1},
     result_columns={l=RESULTS_LEFT, t=5, w=RESULTS_WIDTH, h=1},
     result_list={l=RESULTS_LEFT, t=6, w=RESULTS_WIDTH, b=0},
-    stats_title={l=STATS_LEFT, t=HEADER_ROW, r=1, h=1},
-    stats_underline={l=STATS_LEFT, t=UNDERLINE_ROW, r=1, h=1},
-    stats_header={l=STATS_LEFT, t=STATS_CONTENT_TOP, r=1, b=0},
-    stats_columns={l=STATS_LEFT, t=STATS_CONTENT_TOP + 1, r=1, h=2},
-    stats_body={l=STATS_LEFT, t=STATS_CONTENT_TOP + 3, r=1, b=0},
     close={r=1, t=0, w=16, h=1},
 }
 
@@ -141,7 +131,6 @@ function get_filter_action_at_x(x)
     end
     return nil
 end
-
 ---@param option_count integer
 ---@return table
 function get_unit_scope_picker_frame(option_count)
@@ -151,7 +140,6 @@ function get_unit_scope_picker_frame(option_count)
     frame.h = option_count + UNIT_SCOPE_PICKER_VERTICAL_PADDING
     return frame
 end
-
 ---@param option_count integer
 ---@return table
 function get_unit_scope_picker_list_frame(option_count)
@@ -161,6 +149,7 @@ function get_unit_scope_picker_list_frame(option_count)
     return frame
 end
 
+-- End of main-window layout metadata.
 ---@param x integer|nil
 ---@param y integer|nil
 ---@return string|nil
@@ -180,23 +169,4 @@ function get_result_header_column(x, y)
     return nil
 end
 
----@param x integer|nil
----@param y integer|nil
----@return string|nil
-function get_stats_header_column(x, y)
-    return stats_layout.get_header_column(x, y)
-end
-
----@param x integer|nil
----@param y integer|nil
----@return boolean
-function is_stats_value_cell(x, y)
-    return stats_layout.is_value_cell(x, y)
-end
-
----@param x integer|nil
----@param y integer|nil
----@return boolean
-function is_stats_label_cell(x, y)
-    return stats_layout.is_label_cell(x, y)
-end
+-- Stats component geometry is defined in stats_layout.lua.

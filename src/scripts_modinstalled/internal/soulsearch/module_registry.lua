@@ -38,9 +38,15 @@ MODULES = {
     {name='internal/soulsearch/filter_presets', contract='list'},
     {name='internal/soulsearch/search', contract='apply'},
     {name='internal/soulsearch/ui_format', contract='format_result_choice'},
-    {name='internal/soulsearch/ui_tooltip', contract='render'},
+    {
+        name='internal/soulsearch/ui_tooltip',
+        contract='SoulSearchTooltip', contract_type='table',
+    },
     {name='internal/soulsearch/stats_presenter', contract='build_records'},
-    {name='internal/soulsearch/stats_panel', contract='get_tooltip_text'},
+    {
+        name='internal/soulsearch/stats_panel',
+        contract='SoulSearchStatsPanel', contract_type='table',
+    },
     {name='internal/soulsearch/ui_components', contract='create_filter_panel'},
     {name='internal/soulsearch/ui_refresh', contract='apply'},
     {name='internal/soulsearch/residents', contract='collect_from_provider'},

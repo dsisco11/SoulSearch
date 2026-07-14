@@ -29,6 +29,12 @@ function SoulSearchStatsPanel:init(info)
     self.sort = sort_state.normalize(info.sort)
     self.on_sort_change = info.on_sort_change
     self.stats_records = {}
+    -- widgets.Panel initializes its on_layout attribute to nil, so a class
+    -- method of that name would be shadowed before postComputeFrame() runs.
+    -- Register the callback on this instance instead.
+    self.on_layout = function(frame_body)
+        self:layout_contents(frame_body)
+    end
     self:addviews{
         widgets.Label{view_id='title', frame={l=0,t=0,h=1}, text='Stats', text_pen=COLOR_WHITE},
         widgets.Label{view_id='underline', frame={l=0,t=1,h=1}, text='-----', text_pen=COLOR_GREY},
@@ -59,8 +65,12 @@ function SoulSearchStatsPanel:refresh()
     self.subviews.columns:setText(presenter.column_header(sort.key, sort.reverse))
     self.subviews.body:setText(presenter.body(self.subject, sort.key, sort.reverse))
     self.stats_records = presenter.get_display_records(self.subject, sort.key, sort.reverse)
+    -- A changed subject can change the header height. Once the panel has been
+    -- attached, refresh its own layout so the body begins below that header.
+    -- Initial construction is laid out by the owning view.
+    if self.frame_parent_rect then self:updateLayout() end
 end
-function SoulSearchStatsPanel:on_layout(frame_body)
+function SoulSearchStatsPanel:layout_contents(frame_body)
     local frames = layout.get_content_frames(frame_body.height,
         self.subviews.header:getTextHeight(), self.subviews.columns:getTextHeight())
     self.subviews.header.frame = frames.header

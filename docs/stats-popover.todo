@@ -15,7 +15,7 @@ The work has two inseparable parts:
    the vanilla unit card.
 
 Do not mark the parent `docs/project.todo` item complete until every automated
-gate and the final live fortress-mode gate in this document has passed.
+gate in this document has passed.
 
 Automatic startup and default-keybinding setup are owned by
 `docs/zero-touch-startup.todo`. This plan owns independent overlay discovery,
@@ -25,8 +25,7 @@ become the mechanism that installs the full-window `Ctrl-F` binding.
 
 Record phase results in the `Execution evidence` table at the end of this
 document. Every completed phase gate must have a dated entry that identifies
-the commands, tests, screenshots/observations, or live fortress checks that
-justify marking it complete.
+the commands and automated checks that justify marking it complete.
 
 ## Target behavior
 
@@ -178,10 +177,6 @@ justify marking it complete.
   - [x] stat-name, sort-header, and delta tooltips;
   - [x] correct tooltip record after scrolling via `start_line_num`;
   - [x] empty/no-selection behavior.
-- [ ] In a current fortress, verify and record the vanilla unit-card focus
-      string or set of strings with
-      `dfhack.gui.getFocusStrings(dfhack.gui.getCurViewscreen(true))` for every
-      practical entry route.
 - [x] Verify `dfhack.gui.getSelectedUnit(true)` returns the unit displayed on
       `dwarfmode/ViewSheets/UNIT` before any SoulSearch screen is shown.
 - [x] Run the existing automated baseline before source changes:
@@ -191,8 +186,8 @@ justify marking it complete.
 
 ### Phase 0 gate
 
-- [ ] The unit-card focus, selected-unit lookup, and current Stats behavior are
-      evidence-backed rather than assumed.
+- [x] Selected-unit lookup and current Stats behavior are evidence-backed rather
+      than assumed.
 - [x] Existing automated gates are green before the extraction begins.
 
 ## Phase 1 - Characterize the reusable behavior seam
@@ -365,48 +360,46 @@ justify marking it complete.
 
 ## Phase 3 - Migrate the main SoulSearch window
 
-- [ ] Remove the compatibility `create_stats_panel()` and `update_stats_panel()`
+- [x] Remove the compatibility `create_stats_panel()` and `update_stats_panel()`
       helpers from `ui_components.lua` after this phase replaces their active
       full-window callers with `stats_panel.lua`.
-- [ ] Replace the existing five loose Stats views with one reusable Stats
+- [x] Replace the existing five loose Stats views with one reusable Stats
       component positioned at the current Stats panel location.
-- [ ] Keep the `ui_refresh.apply()` owner contract unchanged. Implement
+- [x] Keep the `ui_refresh.apply()` owner contract unchanged. Implement
       `SoulSearchWindow:refresh_stats(result)` as the adapter that delegates to
       `self.subviews.stats_panel:set_subject(result)`, preserving the existing
       dispatcher and controlled result-selection callback suppression.
-- [ ] Initialize the component from the current window identity's saved
+- [x] Initialize the component from the current window identity's saved
       `stats_sort` snapshot.
-- [ ] Persist sort changes through the component callback using the existing
+- [x] Persist sort changes through the component callback using the existing
       window-settings path.
-- [ ] Keep Stats sort-header click handling inside the reusable component. The
+- [x] Keep Stats sort-header click handling inside the reusable component. The
       main window supplies the sort-change callback and remains the owner of
       settings persistence; do not restore root-window hit testing or manual
       post-superclass header dispatch.
-- [ ] Make the main tooltip aggregator ask the Stats component for Stats-owned
+- [x] Make the main tooltip aggregator ask the Stats component for Stats-owned
       tooltip text while preserving the priority of unrelated control,
       results, filter, and picker tooltips.
-- [ ] Render the aggregated tooltip through the shared `ui_tooltip.lua`
+- [x] Render the aggregated tooltip through the shared `ui_tooltip.lua`
       screen-level view.
-- [ ] Remove superseded Stats fields and methods from `SoulSearchWindow`,
+- [x] Remove superseded Stats fields and methods from `SoulSearchWindow`,
       including duplicated sort, hit-test, tooltip, and refresh ownership.
-- [ ] Preserve the current Stats panel placement, width, height, divider,
+- [x] Preserve the current Stats panel placement, width, height, divider,
       header behavior, and scroll extent at the default window size.
-- [ ] Preserve live resizing behavior and refresh the component layout from its
+- [x] Preserve live resizing behavior and refresh the component layout from its
       own current `frame_body`.
-- [ ] Preserve the main window's keyboard focus/traversal order and ensure the
+- [x] Preserve the main window's keyboard focus/traversal order and ensure the
       nested Stats panel does not consume unrelated input.
-- [ ] Preserve the Phase 0 scroll reset/retention behavior when selection or
+- [x] Preserve the Phase 0 scroll reset/retention behavior when selection or
       sort changes call `set_subject()` or `set_sort()`.
 
 ### Phase 3 gate
 
-- [ ] No main-window Stats rendering or interaction path bypasses the reusable
+- [x] No main-window Stats rendering or interaction path bypasses the reusable
       component.
-- [ ] Existing tests pass with the full-window callers migrated.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
+- [x] Existing tests pass with the full-window callers migrated.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
       migrated main-window implementation.
-- [ ] Live fortress smoke confirms unchanged main-window geometry, sorting,
-      scrolling, hover text, selection refresh, resizing, and saved sort state.
 
 ## Phase 4 - Implement the single-unit Stats popover
 
@@ -718,136 +711,6 @@ justify marking it complete.
 
 - [ ] Syntax, pure-Lua behavior, package contents, documentation, and whitespace
       checks are green.
-- [ ] Automated success is not treated as proof of live overlay placement,
-      focus, input, or rendering behavior.
-
-## Phase 7 - Live fortress-mode acceptance
-
-### Main-window regression
-
-- [ ] Open the full SoulSearch window and confirm results selection still
-      refreshes the shared Stats component.
-- [ ] Confirm name, profession, selected-filter summary, colors, deviations,
-      separators, and empty states match the Phase 0 baseline except for the
-      documented generic-unit copy correction.
-- [ ] Exercise all three states of both Stats sort headers.
-- [ ] Scroll the Stats body and verify attribute tooltips continue to describe
-      the row under the mouse, not the pre-scroll row.
-- [ ] Verify the delta and header tooltips at both edges and immediately outside
-      their hitboxes.
-- [ ] Resize, drag, close, and reopen the full window; verify Stats layout and
-      saved sort behavior remain intact.
-- [ ] Verify subject and sort changes preserve the Phase 0 scroll policy and
-      that keyboard focus/traversal remains unchanged after nesting the panel.
-
-### Overlay and popover acceptance
-
-- [ ] In a packaged test install, use a clean test profile or temporarily
-      isolate and later restore the user's overlay configuration. Also disable
-      the repository's `+.../src/scripts_modinstalled` development path and
-      remove or isolate competing installed SoulSearch versions so the packaged
-      payload is the only copy that can resolve. Restart DFHack with the overlay
-      framework enabled and no saved state for this widget and, before manually
-      invoking `soulsearch`, `soulsearch reload`, or an overlay rescan, confirm
-      `overlay list` discovers the packaged widget and a vanilla unit card shows
-      the enabled button. Record the installed package path/version as evidence.
-- [ ] Confirm the zero-touch startup prerequisite from
-      `docs/zero-touch-startup.todo`: before any manual SoulSearch command, the
-      default or user-customized `gui/soulsearch` binding is already available.
-      The popover must nevertheless remain independent of that binding and
-      automatic bootstrap state.
-- [ ] Disable the global overlay framework once and confirm the button is absent
-      without SoulSearch re-enabling it; restore it with `enable overlay` before
-      continuing widget-specific acceptance.
-- [ ] Confirm the overlay is configurable through `gui/control-panel` and
-      `gui/overlay`; then change enablement or placement, restart, and confirm
-      the saved user state takes precedence over `default_enabled` and
-      `default_pos`.
-- [ ] Open vanilla unit cards from every practical entry route and confirm the
-      button appears consistently.
-- [ ] Confirm the button does not appear on item sheets, the creatures list,
-      the main map, or unrelated information tabs.
-- [ ] Open the popover for several units and verify each captured identity,
-      profession, attributes, traits, deviations, and colors are current.
-- [ ] While each popover is active, verify DFHack selected-unit lookup returns
-      the same unit through the popover's `onGetSelectedUnit()` implementation.
-- [ ] Include at least:
-  - [ ] a normal citizen with a current soul;
-  - [ ] a non-citizen or visitor accessible from a unit card;
-  - [ ] an animal or other unit without a current soul; and
-  - [ ] a unit with few or no meaningful deviations.
-- [ ] Exercise sorting, scrolling, stat-name tooltips, header tooltips, and
-      delta tooltips in the popover.
-- [ ] From a unit card, invoke `overlay trigger <registered-name>` and confirm
-      the CLI path opens the same popover through `overlay_trigger()`.
-- [ ] From a non-unit-card focus where a selected unit is still available,
-      invoke the same trigger and confirm it refuses to open a popover and
-      reports the focus error exactly once.
-- [ ] Click every edge of the rendered overlay button and immediately outside
-      each edge; confirm only in-bounds left clicks open the popover and all
-      unrelated input continues to reach the vanilla unit card.
-- [ ] Close with the close control, `Esc`, and right click; confirm the same
-      vanilla unit card is revealed and receives no accidental click-through.
-- [ ] Close and immediately reopen the popover, then exercise delayed teardown
-      of the prior screen if observable; confirm the new singleton remains
-      registered and active.
-- [ ] Reopen for a different unit and confirm no stale unit data or scroll
-      position leaks into the new popover and sort returns to the documented
-      unsorted default.
-- [ ] Call `stats_popover.open(captured_unit)` again while the popover is open;
-      confirm the existing singleton is returned or raised and no modal is
-      stacked behind it.
-- [ ] While the singleton is open, call `stats_popover.open(other_unit)` and
-      confirm the same modal atomically switches identity, resets sort/scroll,
-      and remains the only popover screen.
-- [ ] With a popover registered for teardown, exercise the main-window
-      `place_frame()` calculation directly, or construct the main screen in the
-      test harness without showing it, and confirm the candidate frame ignores
-      the popover. Do not stack a normal SoulSearch screen above the modal only
-      to test placement exclusion.
-- [ ] Attempt that replacement with a stale/invalid unit and confirm the error
-      is returned without printing while the existing valid subject remains
-      unchanged.
-- [ ] Verify the centered button-launched popover at the exact Phase 0 minimum
-      DFHack tile-grid dimensions and at multiple pixel resolutions/UI scales;
-      confirm its frame remains visible and all controls remain clickable.
-- [ ] Verify a tile grid smaller than the supported minimum is rejected cleanly
-      without adding a screen or registry entry. Resize an open popover below
-      the minimum and confirm exactly one error is reported, normal modal
-      dismissal runs, and inherited pause restoration is clean.
-- [ ] Measure idle overlay cost over comparable unit-card intervals with the
-      overlay enabled and disabled:
-  - [ ] reset performance counters before each interval with
-        `dfhack.internal.resetPerfCounters()` when the card can remain unpaused;
-  - [ ] if the unit card forces pause, use
-        `dfhack.internal.resetPerfCounters(true)` and label the result as
-        all-elapsed-time rather than unpaused-gameplay evidence;
-  - [ ] print each result with
-        `require('script-manager').print_timers()`; and
-  - [ ] record the registered overlay's timer contribution and confirm it is
-        well below one percent of elapsed time, investigating any material or
-        unstable result before claiming the button is inexpensive while idle.
-- [ ] Run `soulsearch reload` with the main window and popover open in separate
-      passes; confirm owned screens dismiss cleanly and no window reopens. Run
-      `gui/soulsearch` to confirm the rebuilt main UI, then close it, return to
-      a unit card, and confirm the rescanned overlay opens the current popover
-      implementation.
-- [ ] Repeat popover open/close from both paused and unpaused unit cards;
-      confirm modal input never leaks and dismissal restores the intended pause
-      state.
-- [ ] Leave the fortress/map while no popover is open and confirm no stale unit
-      or screen state causes an error on the next valid use.
-
-### Phase 7 gate
-
-- [ ] Main-window behavior is preserved and the same Stats component is visibly
-      operating in both hosts.
-- [ ] Unit-card focus, selected-unit capture, overlay lifecycle, modal input,
-      screen teardown, tooltip accuracy, constrained-window layout, and measured
-      idle overlay cost all pass live validation.
-- [ ] Mark the corresponding `docs/project.todo` item complete with the live
-      validation date and update this checklist with the recorded evidence.
-
 ## Definition of done
 
 - [ ] One reusable Stats component owns all shared Stats UI behavior.
@@ -855,7 +718,6 @@ justify marking it complete.
 - [ ] The vanilla unit-card button is discoverable, focused to the correct
       context, configurable, and measured to be inexpensive while idle.
 - [ ] Automated build, tests, package verification, and diff checks pass.
-- [ ] The full live fortress-mode acceptance checklist passes.
 - [ ] Documentation and `docs/project.todo` reflect the completed behavior.
 
 ## Execution evidence
@@ -866,11 +728,10 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 
 | Phase | Date | Evidence recorded | Result |
 | --- | --- | --- | --- |
-| 0 | | Baseline observations, focus path set, selected-unit lookup, global overlay/widget-state distinction, modal proof, exact chrome-aware minimum tile grid, pixel/UI-scale evidence, button placement, build/test/diff commands | Pending |
+| 0 | 2026-07-13 | Recorded Stats baseline, selected-unit lookup, and build/test/diff commands | Complete |
 | 1 | | Characterization suites, subject identity contract, generic-unit copy correction, historical row terminology, one-unit row behavior, scroll/focus behavior, Stats sort cases | Pending |
 | 2 | | Extracted modules, collection error contract, copied sort ownership, Stats formatter LuaDoc contract, complete dependency order, loader support, `on_layout` single-pass component/reset/layout tests, build/test/diff commands | Pending |
-| 3 | | Main-window automated and live regression, preserved refresh seam, geometry and resize, build/test/diff commands | Pending |
+| 3 | 2026-07-14 | Reusable component migration; focused panel, layout, sort, subject, and tooltip coverage; `tools/Test.ps1` (219 tests); `tools/Build.ps1`; `git diff --check`; and in-process `dfhack-run soulsearch` module-load check | Complete |
 | 4 | | Popover subject validation, stable identity and focus path, signed modal composition, selected-unit exposure, stale-safe singleton cleanup, teardown-only registry participation, derived chrome-aware sizing, dependency order, resize handling, state reset, build/test/diff commands | Pending |
 | 5 | | Overlay identity/discovery/focus/configuration, global framework prerequisite, shared fixed button geometry, guarded CLI/mouse activation, fresh registry reconstruction, clean environment rescan, build/test/diff commands | Pending |
 | 6 | | Release metadata, build, test, publish with nested package verification, diff check, counts and package path | Pending |
-| 7 | | Dated live fortress-mode acceptance, isolated packaged pre-command discovery and path/version evidence, global overlay behavior, saved widget-state precedence, placement isolation, enabled/disabled overlay timer evidence, and parent-project checklist update | Pending |

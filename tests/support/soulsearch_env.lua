@@ -631,7 +631,9 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
         ['internal/soulsearch/residents']=residents,
         ['internal/soulsearch/filter_constants']=filter_constants,
         ['internal/soulsearch/ui_layout']=layout,
-        ['internal/soulsearch/ui_tooltip']=function(info) return info end,
+        ['internal/soulsearch/ui_tooltip']={
+            SoulSearchTooltip=function(info) return info end,
+        },
         ['internal/soulsearch/screen_registry']=screen_registry,
         ['internal/soulsearch/window_config']=window_config,
         ['internal/soulsearch/window_settings']=window_settings,

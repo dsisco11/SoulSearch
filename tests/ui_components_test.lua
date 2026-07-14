@@ -33,10 +33,7 @@ return function(test, repo_root)
         end)())
     end)
 
-    test.case('UI components: stats delta tooltip explains its baseline', function()
-        test.assert_equal(
-            'Difference from the attribute average.',
-            components.STATS_VALUE_TOOLTIP)
+    test.case('UI components: result header tooltip explains its sort', function()
         test.assert_equal('Sort by unit ID.',
             components.RESULT_HEADER_TOOLTIPS.unit_id)
     end)
@@ -259,20 +256,10 @@ return function(test, repo_root)
         test.assert_true(results[3]:onInput{_MOUSE_L=true})
         test.assert_equal('name', result_sort)
 
-        local stats_sort
-        local stats = components.create_stats_panel(function(column)
-            stats_sort = column
-        end)
-        test.assert_equal('stats_header', stats[3].view_id)
-        test.assert_equal('stats_columns', stats[4].view_id)
-        test.assert_equal('stats', stats[5].view_id)
-        stats[4].getMousePos=function() return 0, 0 end
-        test.assert_true(stats[4]:onInput{_MOUSE_L=true})
-        test.assert_equal('label', stats_sort)
         test.assert_equal('close_button', components.create_close_button(noop).view_id)
     end)
 
-    test.case('UI components: result navigation and stats updates are explicit', function()
+    test.case('UI components: result navigation is explicit', function()
         local list = {
             setChoices=function(self, choices, selected)
                 self.choices = choices
@@ -286,44 +273,5 @@ return function(test, repo_root)
         test.assert_equal(1, list.selected)
         test.assert_equal(-10, list.delta)
 
-        local function label(height, start_line_num)
-            return {
-                start_line_num=start_line_num,
-                setText=function(self, text)
-                    -- DFHack widgets.Label:setText() resets its scroll position.
-                    self.start_line_num = 1
-                    self.text = text
-                end,
-                getTextHeight=function() return height end,
-                updateLayout=function(self, frame) self.updated_with = frame end,
-            }
-        end
-        local header, columns, body = label(3), label(2), label(1, 7)
-        local frame = {height=30}
-        components.update_stats_panel(
-            header, columns, body, {unit_id=7}, 'value', true, frame)
-        test.assert_equal('header', header.text[1])
-        test.assert_equal('columns', columns.text[1])
-        test.assert_equal('body', body.text[1])
-        test.assert_equal('value', body.text[3])
-        test.assert_true(body.text[4])
-        test.assert_equal(1, body.start_line_num)
-        test.assert_equal(4, header.frame.t)
-        test.assert_equal(7, columns.frame.t)
-        test.assert_equal(9, body.frame.t)
-        test.assert_equal(frame, header.updated_with)
-        test.assert_equal(frame, columns.updated_with)
-
-        local constrained_header = label(10)
-        local constrained_columns = label(3)
-        local constrained_body = label(1)
-        components.update_stats_panel(
-            constrained_header, constrained_columns, constrained_body,
-            {unit_id=7}, nil, false, {height=12})
-        test.assert_equal(4, constrained_header.frame.t)
-        test.assert_equal(5, constrained_header.frame.h)
-        test.assert_equal(9, constrained_columns.frame.t)
-        test.assert_equal(2, constrained_columns.frame.h)
-        test.assert_equal(11, constrained_body.frame.t)
     end)
 end

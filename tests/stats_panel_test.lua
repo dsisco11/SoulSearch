@@ -12,6 +12,11 @@ return function(test, root)
         test.assert_equal('label', panel:get_sort().key)
         panel:set_sort({key='value', phase=1})
         test.assert_equal(0, #changes)
+        local layouts = 0
+        panel.frame_parent_rect = {}
+        panel.updateLayout = function() layouts = layouts + 1 end
+        panel:set_subject({row={}, unit={}})
+        test.assert_equal(1, layouts)
         panel.subviews.body.start_line_num=9
         panel:reset_view_state({key='label', phase=1})
         test.assert_equal(1, panel.subviews.body.start_line_num)
@@ -20,7 +25,9 @@ return function(test, root)
         test.assert_equal(1, #changes)
         changes[1].key='label'
         test.assert_equal('value', panel:get_sort().key)
-        panel:on_layout({height=12})
+        -- widgets.Panel invokes its on_layout attribute with dot syntax after
+        -- it computes the panel body frame.
+        panel.on_layout({height=12})
         test.assert_equal(2, panel.subviews.header.frame.t)
         panel.subviews.columns.mouse_x, panel.subviews.columns.mouse_y=0,0
         test.assert_equal('Sort by stat name.', panel:get_tooltip_text())

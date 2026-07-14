@@ -74,38 +74,6 @@ return function(test, repo_root)
         test.assert_equal('creatures:miners', constructed.settings.settings_id)
     end)
 
-    test.case('UI Stats sort: transitions and persistence match the current window', function()
-        local ui = soulsearch_env.load_ui_open_guard(repo_root, nil)
-        local changes, refreshes = {}, {}
-        local window = {
-            stats_sort_key=nil,
-            stats_sort_reverse=false,
-            stats_sort_phase=0,
-            update_session_settings=function(_, change)
-                table.insert(changes, change.stats_sort)
-            end,
-            refresh_views=function(_, request) table.insert(refreshes, request) end,
-        }
-        local function cycle(column, key, reverse, phase)
-            ui.SoulSearchWindow.cycle_stats_sort(window, column)
-            test.assert_equal(key, window.stats_sort_key)
-            test.assert_equal(reverse, window.stats_sort_reverse)
-            test.assert_equal(phase, window.stats_sort_phase)
-        end
-
-        cycle('label', 'label', false, 1)
-        cycle('label', 'label', true, 2)
-        cycle('label', nil, false, 0)
-        cycle('value', 'value', true, 1)
-        cycle('value', 'value', false, 2)
-        cycle('value', nil, false, 0)
-        test.assert_equal(6, #changes)
-        test.assert_equal(6, #refreshes)
-        for _, request in ipairs(refreshes) do
-            test.assert_true(request.stats)
-        end
-    end)
-
     test.case('UI input: child handling precedes global fallback handling', function()
         local ui = soulsearch_env.load_ui_open_guard(repo_root, nil)
         local super_calls, refreshes = 0, 0

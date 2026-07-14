@@ -1,7 +1,6 @@
 --@ module=true
 
 local widgets = require('gui.widgets')
-local stats_presenter = reqscript('internal/soulsearch/stats_presenter')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
@@ -112,18 +111,12 @@ CONTROL_TOOLTIPS = {
     {id='close_race_picker_button', text='Close'},
 }
 
-STATS_HEADER_TOOLTIPS = {
-    label='Sort by stat name.',
-    value='Sort by baseline difference.',
-}
-
 RESULT_HEADER_TOOLTIPS = {
     name='Sort by name.',
     unit_id='Sort by unit ID.',
     profession='Sort by profession.',
 }
 
-STATS_VALUE_TOOLTIP = 'Difference from the attribute average.'
 
 ---@class SoulSearchFilterPanelInputs
 ---@field is_filter_panel_open fun(): boolean
@@ -492,93 +485,6 @@ end
 ---@param delta integer
 function move_result_cursor(list, delta)
     list:moveCursor(delta)
-end
-
----@param on_sort fun(column: string)
----@return table[]
-function create_stats_panel(on_sort)
-    return {
-        widgets.Label{
-            frame=ui_layout.get_frame('stats_title'),
-            text='Stats',
-            text_pen=COLOR_WHITE,
-        },
-        widgets.Label{
-            frame=ui_layout.get_frame('stats_underline'),
-            text=ui_format.get_title_underline('Stats'),
-            text_pen=COLOR_GREY,
-        },
-        widgets.Label{
-            view_id='stats_header',
-            frame=ui_layout.get_frame('stats_header'),
-            auto_height=false,
-            text='No unit selected.',
-        },
-        SortableHeader{
-            view_id='stats_columns',
-            frame=ui_layout.get_frame('stats_columns'),
-            auto_height=false,
-            text='',
-            get_column=ui_layout.get_stats_header_column,
-            on_sort=on_sort,
-        },
-        widgets.Label{
-            view_id='stats',
-            frame=ui_layout.get_frame('stats_body'),
-            auto_height=false,
-            text='',
-        },
-    }
-end
-
----@param header widgets.Label
----@param columns widgets.Label
----@param body widgets.Label
----@param result SoulSearchResult|nil
----@param sort_key string|nil
----@param sort_reverse boolean
----@param frame_body table|nil
-function update_stats_panel(
-        header, columns, body, result, sort_key, sort_reverse, frame_body)
-    header:setText(stats_presenter.header(result))
-    columns:setText(stats_presenter.column_header(sort_key, sort_reverse))
-    body:setText(stats_presenter.body(result, sort_key, sort_reverse))
-    local records = stats_presenter.get_display_records(
-        result, sort_key, sort_reverse)
-
-    local header_top = ui_layout.STATS_CONTENT_TOP
-    local available_height = math.max(
-        1,
-        (frame_body and frame_body.height or ui_layout.WINDOW_FRAME.h) -
-            header_top)
-    local header_height = math.min(
-        header:getTextHeight(),
-        math.max(1, available_height - 3))
-    local columns_top = header_top + header_height
-    local columns_height = math.min(
-        columns:getTextHeight(),
-        math.max(1, available_height - header_height - 1))
-    local body_top = columns_top + columns_height
-
-    header.frame = {
-        l=ui_layout.STATS_LEFT,
-        t=header_top,
-        r=1,
-        h=header_height,
-    }
-    columns.frame = {
-        l=ui_layout.STATS_LEFT,
-        t=columns_top,
-        r=1,
-        h=columns_height,
-    }
-    body.frame = {l=ui_layout.STATS_LEFT, t=body_top, r=1, b=0}
-    if frame_body then
-        header:updateLayout(frame_body)
-        columns:updateLayout(frame_body)
-        body:updateLayout(frame_body)
-    end
-    return records
 end
 
 ---@param on_close fun()
