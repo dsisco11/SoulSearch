@@ -2,6 +2,7 @@ local soulsearch_env = require('support.soulsearch_env')
 
 return function(test, repo_root)
     local components = soulsearch_env.load_ui_components(repo_root)
+    local layout = soulsearch_env.load_ui_layout(repo_root)
     local noop = function() end
     local function by_id(views, id)
         for _, view in ipairs(views) do
@@ -41,8 +42,12 @@ return function(test, repo_root)
     end)
 
     test.case('UI components: filter panel preserves child and picker order', function()
+        local filter_panel_open = false
+        local focused
         local views = components.create_filter_panel{
-            is_filter_panel_open=function() return false end,
+            is_filter_panel_open=function() return filter_panel_open end,
+            on_open_filter_panel=function() filter_panel_open = true end,
+            on_close_filter_panel_state=function() filter_panel_open = false end,
             on_close_filter_panel=noop,
             is_attribute_picker_open=function() return false end,
             is_skill_picker_open=function() return false end,
@@ -69,15 +74,42 @@ return function(test, repo_root)
             on_skill_query=noop,
             on_race_query=noop,
             on_add=noop,
+            on_filter_action=noop,
         }
         test.assert_equal('filter_panel_window', views.view_id)
         test.assert_equal('Window', views.widget_kind)
         test.assert_true(views.onInput ~= nil)
+        views.setFocus=function(_, value) focused = value end
         views.getMouseFramePos=function() return 1, 1 end
+        test.assert_false(views:onInput{_MOUSE_L=true})
+        test.assert_true(views:open())
+        test.assert_true(focused)
         test.assert_true(views:onInput{_MOUSE_L=true})
+        test.assert_true(views:onInput{_MOUSE_R=true})
+        test.assert_false(focused)
+        test.assert_false(filter_panel_open)
+        test.assert_true(views:open())
+        test.assert_true(views:close())
+        views.getMouseFramePos=function() return nil end
         test.assert_false(views:onInput{})
         test.assert_false(views.visible())
         local subviews = views.subviews
+        local filter_list = by_id(subviews, 'filter_list')
+        local action
+        filter_list.getIdxUnderMouse=function() return nil end
+        filter_list.start_line_num=1
+        filter_list.action_choices={{descriptor={id='attribute:strength'}}}
+        filter_list.setSelected=function(_, index) filter_list.selected=index end
+        filter_list.getMousePos=function()
+            return layout.ACTIVE_FILTER_BUTTON_START_X +
+                layout.FILTER_ACTION_ZONE_WIDTH - 1, 0
+        end
+        filter_list.on_filter_action=function(filter_id, callback)
+            action={filter_id, callback}
+        end
+        test.assert_true(filter_list:onInput{_MOUSE_L=true})
+        test.assert_equal(1, filter_list.selected)
+        test.assert_sequence({'attribute:strength', 'remove'}, action)
         test.assert_equal(14, #subviews)
         test.assert_equal('close_filter_panel_button', subviews[1].view_id)
         test.assert_equal('TextButton', subviews[1].widget_kind)
@@ -213,19 +245,30 @@ return function(test, repo_root)
         test.assert_equal('search_field', query.view_id)
         test.assert_equal('EditField', query.widget_kind)
 
+        local result_sort
         local results = components.create_results_panel{
             on_select=noop,
             on_submit=noop,
+            on_sort=function(column) result_sort = column end,
         }
         test.assert_equal('result_header', results[1].view_id)
         test.assert_equal('result_header_underline', results[2].view_id)
         test.assert_equal('result_columns', results[3].view_id)
         test.assert_equal('result_list', results[4].view_id)
+        results[3].getMousePos=function() return 0, 0 end
+        test.assert_true(results[3]:onInput{_MOUSE_L=true})
+        test.assert_equal('name', result_sort)
 
-        local stats = components.create_stats_panel()
+        local stats_sort
+        local stats = components.create_stats_panel(function(column)
+            stats_sort = column
+        end)
         test.assert_equal('stats_header', stats[3].view_id)
         test.assert_equal('stats_columns', stats[4].view_id)
         test.assert_equal('stats', stats[5].view_id)
+        stats[4].getMousePos=function() return 0, 0 end
+        test.assert_true(stats[4]:onInput{_MOUSE_L=true})
+        test.assert_equal('label', stats_sort)
         test.assert_equal('close_button', components.create_close_button(noop).view_id)
     end)
 

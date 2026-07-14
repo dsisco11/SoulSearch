@@ -320,13 +320,20 @@ function SoulSearchWindow:init()
             end
         end,
         on_submit=function(result) self:zoom_to_result(result) end,
+        on_sort=function(column) self:cycle_result_sort(column) end,
     })
-    append_views(views, ui_components.create_stats_panel())
+    append_views(views, ui_components.create_stats_panel(function(column)
+        self:cycle_stats_sort(column)
+    end))
     table.insert(views, ui_components.create_close_button(function()
         self.parent_view:dismiss()
     end))
     table.insert(views, ui_components.create_filter_panel{
         is_filter_panel_open=function() return self.filter_panel_open end,
+        on_open_filter_panel=function() self:open_filter_panel() end,
+        on_close_filter_panel_state=function()
+            self:close_filter_panel_state()
+        end,
         on_close_filter_panel=function() self:close_filter_panel() end,
         is_attribute_picker_open=function() return self.add_filter_open end,
         is_skill_picker_open=function() return self.add_skill_open end,
@@ -369,6 +376,9 @@ function SoulSearchWindow:init()
             self:refresh_views{pickers=true}
         end,
         on_add=function(filter_id) self:add_filter(filter_id) end,
+        on_filter_action=function(filter_id, action)
+            self:handle_filter_action(filter_id, action)
+        end,
     })
     self:addviews(views)
     expose_descendant_subviews(self, self.subviews)
@@ -422,14 +432,11 @@ function SoulSearchWindow:get_filter_action_tooltip()
     end
 
     local filter_list = self.subviews.filter_list
-    local index = filter_list and filter_list:getIdxUnderMouse()
-    if not index then
-        return nil
-    end
-
-    local x = filter_list:getMousePos()
-    local action = ui_layout.get_filter_action_at_x(x)
-    local choice = self.active_filter_choices and self.active_filter_choices[index]
+    if not filter_list then return nil end
+    local index, _, action = filter_list:getActionUnderMouse()
+    local choice = index and self.active_filter_choices and
+        self.active_filter_choices[index]
+    if not choice then return nil end
     local descriptor = choice and choice.descriptor
     if descriptor and descriptor.kind == FILTER_KIND_RACE and action then
         if action.callback == 'set_high' then
@@ -503,9 +510,11 @@ function SoulSearchWindow:get_filter_descriptor_tooltip()
             self.subviews.available_race_list,
             self.available_race_choices)
     end
+    local filter_list = self.subviews.filter_list
+    local x = filter_list and filter_list:getMousePos()
+    if ui_layout.get_filter_action_at_x(x) then return nil end
     return get_descriptor_tooltip(
-        self.subviews.filter_list,
-        self.active_filter_choices)
+        filter_list, self.active_filter_choices)
 end
 
 ---@return string|nil
@@ -823,11 +832,8 @@ function SoulSearchWindow:refresh_stats(result)
         self.frame_body)
 end
 
----@return boolean
-function SoulSearchWindow:handle_result_header_click()
-    local column = self:get_result_header_column()
-    if not column then return false end
-
+---@param column string
+function SoulSearchWindow:cycle_result_sort(column)
     if self.result_sort_key == column then
         self.result_sort_phase = self.result_sort_phase + 1
     else
@@ -849,16 +855,10 @@ function SoulSearchWindow:handle_result_header_click()
         phase=self.result_sort_phase,
     }}
     self:refresh_views{results=true}
-    return true
 end
 
----@return boolean
-function SoulSearchWindow:handle_stats_header_click()
-    local column = self:get_stats_header_column()
-    if not column then
-        return false
-    end
-
+---@param column string
+function SoulSearchWindow:cycle_stats_sort(column)
     if self.stats_sort_key == column then
         self.stats_sort_phase = self.stats_sort_phase + 1
     else
@@ -882,7 +882,6 @@ function SoulSearchWindow:handle_stats_header_click()
         phase=self.stats_sort_phase,
     }}
     self:refresh_views{stats=true}
-    return true
 end
 
 ---@return SoulSearchResult|nil
@@ -1033,16 +1032,23 @@ end
 
 ---Opens or closes the filter-panel overlay.
 function SoulSearchWindow:toggle_filter_panel()
-    if self.filter_panel_open then
-        self:close_filter_panel()
-        return
-    end
+    local panel = self.subviews.filter_panel_window
+    if panel:is_open() then panel:close() else panel:open() end
+end
+
+---Updates state after ModalPanelWindow has opened.
+function SoulSearchWindow:open_filter_panel()
     self.filter_panel_open = true
     self:refresh_views{pickers=true, presets=true}
 end
 
 ---@return boolean
 function SoulSearchWindow:close_filter_panel()
+    return self.subviews.filter_panel_window:close()
+end
+
+---Updates state after ModalPanelWindow has closed.
+function SoulSearchWindow:close_filter_panel_state()
     if not self.filter_panel_open then return false end
     self.filter_panel_open = false
     self.add_filter_open = false
@@ -1141,6 +1147,13 @@ function SoulSearchWindow:move_selected_filter_priority(delta)
         return false
     end
 
+    return self:move_filter_priority(filter_id, delta)
+end
+
+---@param filter_id string
+---@param delta integer
+---@return boolean
+function SoulSearchWindow:move_filter_priority(filter_id, delta)
     local changed, new_index = filter_state.move(self.filter_state, filter_id, delta)
     if not changed then
         return false
@@ -1150,41 +1163,20 @@ function SoulSearchWindow:move_selected_filter_priority(delta)
     return true
 end
 
----@return boolean
-function SoulSearchWindow:handle_filter_action_click()
-    if not self.filter_panel_open or self.add_filter_open or
-            self.add_skill_open or self.add_race_open or
-            self.unit_scope_picker_open or self.preset_picker_open then
-        return false
-    end
-
-    local filter_list = self.subviews.filter_list
-    local index = filter_list:getIdxUnderMouse()
-    if not index then
-        return false
-    end
-
-    filter_list:setSelected(index)
-    local x = filter_list:getMousePos()
-    local _, choice = filter_list:getSelected()
-    local filter_id = choice and choice.descriptor and choice.descriptor.id
-    local action = ui_layout.get_filter_action_at_x(x)
-    if not filter_id or not action then
-        return false
-    end
-
-    if action.callback == 'set_high' then
+---@param filter_id string
+---@param action string
+function SoulSearchWindow:handle_filter_action(filter_id, action)
+    if action == 'set_high' then
         self:set_filter_direction(filter_id, FILTER_HIGH)
-    elseif action.callback == 'set_low' then
+    elseif action == 'set_low' then
         self:set_filter_direction(filter_id, FILTER_LOW)
-    elseif action.callback == 'remove' then
+    elseif action == 'remove' then
         self:remove_filter(filter_id)
-    elseif action.callback == 'move_up' then
-        self:move_selected_filter_priority(-1)
-    elseif action.callback == 'move_down' then
-        self:move_selected_filter_priority(1)
+    elseif action == 'move_up' then
+        self:move_filter_priority(filter_id, -1)
+    elseif action == 'move_down' then
+        self:move_filter_priority(filter_id, 1)
     end
-    return true
 end
 
 ---Rebuilds rows from the active unit scope and race candidate filters.
@@ -1300,19 +1292,13 @@ end
 ---@param keys table
 ---@return boolean
 function SoulSearchWindow:onInput(keys)
+    if SoulSearchWindow.super.onInput(self, keys) then
+        return true
+    end
     if is_backspace_key(keys) and self:close_add_filter_dropdown() then
         return true
     end
     if is_backspace_key(keys) and self:close_filter_panel() then
-        return true
-    end
-    if keys._MOUSE_L and self:handle_filter_action_click() then
-        return true
-    end
-    if keys._MOUSE_L and self:handle_result_header_click() then
-        return true
-    end
-    if keys._MOUSE_L and self:handle_stats_header_click() then
         return true
     end
     if keys.CUSTOM_R then
@@ -1345,7 +1331,7 @@ function SoulSearchWindow:onInput(keys)
         self:move_result_cursor(10)
         return true
     end
-    return SoulSearchWindow.super.onInput(self, keys)
+    return false
 end
 
 ---@class SoulSearchScreen: gui.ZScreen

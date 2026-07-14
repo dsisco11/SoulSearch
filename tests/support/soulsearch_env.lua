@@ -386,10 +386,10 @@ function M.load_ui_components(repo_root)
     local layout = M.load_ui_layout(repo_root)
     local ui_format = M.load_ui_format(repo_root)
     local function constructor(kind)
-        return function(config)
-            config.widget_kind = kind
+        return setmetatable({widget_kind=kind}, {__call=function(self, config)
+            config.widget_kind = self.widget_kind
             return config
-        end
+        end})
     end
     local widgets = {
         Label=constructor('Label'),
@@ -405,8 +405,10 @@ function M.load_ui_components(repo_root)
         local class = {}
         class.super={onInput=function() return false end}
         return setmetatable(class, {__call=function(_, config)
-            config.widget_kind = 'Window'
-            return setmetatable(config, {__index=class})
+            config.widget_kind = parent.widget_kind
+            local instance = setmetatable(config, {__index=class})
+            if class.init then class.init(instance, config) end
+            return instance
         end})
     end
     globals.require=function(name)
