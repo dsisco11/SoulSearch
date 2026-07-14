@@ -5,34 +5,28 @@ return function(test, root)
         local overlay, state = env.load_stats_overlay(root)
         test.assert_equal(0, state.lookups)
         test.assert_true(overlay.OVERLAY_WIDGETS.soulsearch_stats ~= nil)
-        test.assert_equal('Stats', overlay.BUTTON_LABEL)
-        test.assert_equal(5, overlay.BUTTON_WIDTH)
         local attrs = overlay.SoulSearchStatsOverlay.attrs
         test.assert_equal('dwarfmode/ViewSheets/UNIT', attrs.viewscreens)
         test.assert_true(attrs.default_enabled)
-        test.assert_equal(-2, attrs.default_pos.x)
-        test.assert_equal(-2, attrs.default_pos.y)
-        test.assert_equal(1, attrs.version)
+        test.assert_false(attrs.visible)
+        test.assert_true(attrs.hotspot)
+        test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
+        test.assert_equal(2, attrs.version)
     end)
 
-    test.case('stats overlay: accepts only exact left-click bounds', function()
+    test.case('stats overlay: automatically triggers for a unit card selection', function()
         local unit={id=4}
         local overlay, state = env.load_stats_overlay(root,
-            {focuses={'dwarfmode/ViewSheets/UNIT'}, unit=unit})
+            {focuses={'dwarfmode/ViewSheets/UNIT/Overview'}, unit=unit})
         local widget = overlay.SoulSearchStatsOverlay{}
-        function widget:getMousePos() return self.mouse_x, self.mouse_y end
-        for x=0, overlay.BUTTON_WIDTH - 1 do
-            widget.mouse_x, widget.mouse_y=x, 0
-            test.assert_true(widget:onInput({_MOUSE_L=true}))
-        end
-        test.assert_equal(overlay.BUTTON_WIDTH, state.opens)
-        for _, point in ipairs({{-1,0},{overlay.BUTTON_WIDTH,0},{0,-1},{0,1}}) do
-            widget.mouse_x, widget.mouse_y=point[1], point[2]
-            test.assert_false(widget:onInput({_MOUSE_L=true}))
-        end
-        test.assert_false(widget:onInput({_MOUSE_R=true}))
-        test.assert_false(widget:onInput({_MOUSE_SCROLL_DOWN=true}))
-        test.assert_equal(overlay.BUTTON_WIDTH, state.opens)
+        test.assert_true(widget:overlay_onupdate())
+        local screen = widget:overlay_trigger()
+        test.assert_equal('shown', screen.id)
+        test.assert_equal(unit, state.last_unit)
+        test.assert_equal(1, state.opens)
+        overlay, state = env.load_stats_overlay(root, {unit=unit})
+        test.assert_false(overlay.SoulSearchStatsOverlay{}:overlay_onupdate())
+        test.assert_equal(0, state.opens)
     end)
 
     test.case('stats overlay: focus, unit, and popover failures report once', function()
@@ -50,7 +44,7 @@ return function(test, root)
         test.assert_equal(1, state.lookups)
     end)
 
-    test.case('stats overlay: CLI trigger shares the activation boundary', function()
+    test.case('stats overlay: trigger shares the activation boundary', function()
         local unit={id=8}
         local overlay, state = env.load_stats_overlay(root,
             {focuses={'dwarfmode/ViewSheets/UNIT'}, unit=unit})

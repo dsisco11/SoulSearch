@@ -90,8 +90,15 @@ end
 
 ---@param script_names string[]
 local function clear_script_environments(script_names)
-    if #script_names > 0 then
-        dfhack.run_command('devel/clear-script-env', table.unpack(script_names))
+    local loaded_names = {}
+    for _, name in ipairs(script_names) do
+        local path = dfhack.findScript(name)
+        if path and dfhack.internal.scripts[path] then
+            table.insert(loaded_names, name)
+        end
+    end
+    if #loaded_names > 0 then
+        dfhack.run_command('devel/clear-script-env', table.unpack(loaded_names))
     end
 end
 

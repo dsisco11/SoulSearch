@@ -817,6 +817,8 @@ function M.load_stats_overlay(repo_root, options)
         })
     end
     local shown_screen = options.shown_screen or {id='shown'}
+    local active_unit_id = options.active_unit_id or
+        (options.unit and options.unit.id) or -1
     local popover = {open=function(unit)
         state.opens=state.opens+1
         state.last_unit=unit
@@ -826,11 +828,17 @@ function M.load_stats_overlay(repo_root, options)
     local globals = {
         DEFAULT_NIL=nil,
         defclass=function(_, parent) return class(parent) end,
+        df={
+            global={game={main_interface={view_sheets={active_id=active_unit_id}}}},
+            unit={find=function(id)
+                if options.unit and id == options.unit.id then return options.unit end
+                return nil
+            end},
+        },
         dfhack={
             gui={
                 getCurViewscreen=function() return options.screen or {} end,
                 getFocusStrings=function() return options.focuses or {} end,
-                getSelectedUnit=function() return options.unit end,
             },
             printerr=function(error) table.insert(state.errors, error) end,
         },

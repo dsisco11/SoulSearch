@@ -348,10 +348,13 @@ return function(test, repo_root)
                     end
                 end,
                 findScript=function(name)
-                    assert(name == 'soulsearch-stats-overlay')
                     return '/scripts/' .. name .. '.lua'
                 end,
                 internal={scripts={
+                    ['/scripts/internal/soulsearch/module_registry.lua']={stale=true},
+                    ['/scripts/internal/soulsearch/ui.lua']={stale=true},
+                    ['/scripts/internal/soulsearch/lifecycle.lua']={stale=true},
+                    ['/scripts/internal/soulsearch/new_module.lua']={stale=true},
                     ['/scripts/soulsearch-stats-overlay.lua']={stale=true},
                 }},
             },
@@ -387,7 +390,6 @@ return function(test, repo_root)
             'devel/clear-script-env',
             'internal/soulsearch/ui',
             'internal/soulsearch/lifecycle',
-            'internal/soulsearch/removed_module',
         }, events[4])
         test.assert_sequence({
             'devel/clear-script-env',
