@@ -29,6 +29,28 @@ local function raise(screen)
     return screen
 end
 
+---Returns the native unit-sheet tab container rectangle when DF exposes it.
+---The overlay never retains this widget; every layout pass resolves it again.
+---@return any|nil
+local function get_unit_card_rect()
+    local gui_api = dfhack.gui
+    local sheets = df.global and df.global.game and df.global.game.main_interface and
+        df.global.game.main_interface.view_sheets
+    if not gui_api or not gui_api.getWidget or not sheets then return nil end
+    local ok, widget = pcall(gui_api.getWidget, sheets, 'Tabs')
+    if not ok or not widget then return nil end
+    local ok_rect, rect = pcall(function() return widget.rect end)
+    return ok_rect and rect or nil
+end
+
+---@param width integer
+---@param height integer
+---@return table|nil
+---@return string|nil
+local function resolve_frame(width, height)
+    return config.resolve(width, height, get_unit_card_rect())
+end
+
 SoulSearchStatsPopoverScreen = defclass(SoulSearchStatsPopoverScreen, gui.ZScreenModal)
 SoulSearchStatsPopoverScreen.ATTRS{
     focus_path='soulsearch/stats',
@@ -93,7 +115,7 @@ end
 
 function SoulSearchStatsPopoverScreen:onResize(w, h)
     SoulSearchStatsPopoverScreen.super.onResize(self, w, h)
-    local frame, err = config.resolve(w, h)
+    local frame, err = resolve_frame(w, h)
     if not frame then
         if not self.resize_error_reported then
             self.resize_error_reported = true
@@ -131,7 +153,7 @@ function open(unit)
     if not subject then return nil, err end
     local width, height = dfhack.screen.getWindowSize()
     local frame
-    frame, err = config.resolve(width, height)
+    frame, err = resolve_frame(width, height)
     if not frame then return nil, err end
     if not is_active(singleton) then singleton = nil end
     if singleton then

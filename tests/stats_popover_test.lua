@@ -1,7 +1,7 @@
 local env = require('support.soulsearch_env')
 
 return function(test, root)
-    test.case('stats popover: config derives a centered usable frame', function()
+    test.case('stats popover: config derives native and screen-relative usable frames', function()
         local _, config = env.load_stats_popover(root)
         local minimum = config.get_minimum()
         local frame = assert(config.resolve(minimum.w, minimum.h))
@@ -10,6 +10,27 @@ return function(test, root)
         local missing, err = config.resolve(minimum.w - 1, minimum.h)
         test.assert_equal(nil, missing)
         test.assert_true(err:find('at least', 1, true) ~= nil)
+        local native = assert(config.resolve(120, 40, {x1=10, x2=70, y1=5, y2=35}))
+        test.assert_equal(71, native.l)
+        test.assert_equal(14, native.t)
+        local fallback = assert(config.resolve(120, 40, {x1=10, x2=115, y1=5, y2=35}))
+        test.assert_equal(78, fallback.l)
+        test.assert_equal(14, fallback.t)
+    end)
+
+    test.case('stats popover: uses the native unit-card bounds before fallback', function()
+        local unit={id=10}
+        local popover, config, _, state = env.load_stats_popover(root, {
+            units={[10]=unit}, width=120, height=40,
+            unit_card_rect={x1=10, x2=70, y1=5, y2=35},
+        })
+        local screen = assert(popover.open(unit))
+        test.assert_equal(71, screen.window.frame.l)
+        test.assert_equal(14, screen.window.frame.t)
+        test.assert_true(state.widget_lookups > 0)
+        screen:onResize(120, 40)
+        test.assert_equal(71, screen.window.frame.l)
+        test.assert_equal(config.DEFAULT_HEIGHT, screen.window.frame.h)
     end)
 
     test.case('stats popover: validates before collecting or changing singleton', function()

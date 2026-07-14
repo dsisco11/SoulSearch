@@ -429,12 +429,17 @@ the commands and automated checks that justify marking it complete.
   - [x] construct and show the modal only after those steps succeed; and
   - [x] return `nil, error` without registry or viewscreen changes on failure.
 - [x] Instantiate the reusable Stats component as the popover window's content.
-- [x] Implement the target window policy: centered, non-draggable,
-      non-resizable, non-persisted, and clamped within the screen.
+- [x] Implement the target window policy: non-draggable, non-resizable, and
+      non-persisted. Position it immediately to the right of the native unit-
+      card tab container when that rectangle is available, vertically centered
+      on that card and clamped within the screen. Otherwise, place it at the
+      screen's vertical midpoint and immediately right of the unit-card
+      boundary implied by DFHack's `skills-progress` `x=-43` convention.
 - [x] Give the popover a compact frame that satisfies the component minimum at
       the exact Phase 0 supported tile-grid size.
 - [x] Add dedicated `stats_popover_config.lua` for popover defaults, minimum
-      tile-grid dimensions, centering, and screen-bound clamping. Do not reuse
+      tile-grid dimensions, native-card/fallback placement, and screen-bound
+      clamping. Do not reuse
       the main window's private 90x30 normalization contract.
 - [x] Derive the popover minimum in `stats_popover_config.lua` from the
       `stats_layout.lua` component minimum by adding `gui.FRAME_BOLD` insets,

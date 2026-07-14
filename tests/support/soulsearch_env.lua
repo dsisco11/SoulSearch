@@ -687,7 +687,7 @@ function M.load_stats_popover(repo_root, options)
             end,
         })
     local units = options.units or {}
-    local state = {collects=0, resets=0, raises=0, printed={}}
+    local state = {collects=0, resets=0, raises=0, printed={}, widget_lookups=0}
     local base = {
         addviews=function(self, views) self.subviews=views end,
         onShow=function() end,
@@ -757,10 +757,20 @@ function M.load_stats_popover(repo_root, options)
         DEFAULT_NIL=nil,
         defclass=function(_, parent) return class(parent) end,
         print=function(text) table.insert(state.printed, text) end,
-        df={unit={find=function(id) return units[id] end}},
-        dfhack={screen={getWindowSize=function()
-            return options.width or 80, options.height or 25
-        end}},
+        df={
+            unit={find=function(id) return units[id] end},
+            global={game={main_interface={view_sheets={}}}},
+        },
+        dfhack={
+            screen={getWindowSize=function() return options.width or 80, options.height or 25 end},
+            gui={getWidget=function(_, name)
+                state.widget_lookups=state.widget_lookups+1
+                if name == 'Tabs' and options.unit_card_rect then
+                    return {rect=options.unit_card_rect}
+                end
+                return nil
+            end},
+        },
         require=function(name)
             if name == 'gui' then return {ZScreenModal=base, FRAME_BOLD='bold'} end
             if name == 'gui.widgets' then return {
