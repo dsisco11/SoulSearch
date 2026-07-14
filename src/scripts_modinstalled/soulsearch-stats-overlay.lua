@@ -43,13 +43,6 @@ local function frame_key(frame, source)
         frame.l, frame.t, frame.w, frame.h)
 end
 
-local function log_position(frame, source)
-    if config.LOG_POSITIONING then
-        dfhack.println(('SoulSearch Stats placement: %s; frame=(%d,%d %dx%d)'):
-            format(source or 'unknown', frame.l, frame.t, frame.w, frame.h))
-    end
-end
-
 SoulSearchStatsOverlay = defclass(SoulSearchStatsOverlay, overlay.OverlayWidget)
 SoulSearchStatsOverlay.ATTRS{
     desc='Display SoulSearch Stats beside the selected unit card.',
@@ -87,7 +80,6 @@ function SoulSearchStatsOverlay:resolve_frame(width, height)
     self.frame = frame
     if key ~= self.frame_key then
         self.frame_key = key
-        log_position(frame, source)
     end
     return frame
 end
