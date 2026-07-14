@@ -797,9 +797,12 @@ function M.load_stats_overlay(repo_root, options)
     local base = {
         addviews=function(self, views)
             self.subviews={}
-            for _, view in ipairs(views) do self.subviews[view.view_id]=view end
+            for _, view in ipairs(views) do
+                if view.view_id then self.subviews[view.view_id]=view end
+            end
         end,
         onInput=function() return false end,
+        updateLayout=function() end,
     }
     local function class(parent)
         local result = {super=parent or base, attrs={}}
@@ -816,15 +819,34 @@ function M.load_stats_overlay(repo_root, options)
             end,
         })
     end
-    local shown_screen = options.shown_screen or {id='shown'}
     local active_unit_id = options.active_unit_id or
         (options.unit and options.unit.id) or -1
-    local popover = {open=function(unit)
-        state.opens=state.opens+1
-        state.last_unit=unit
-        if options.popover_error then return nil, options.popover_error end
-        return shown_screen, nil
+    local config = {
+        DEFAULT_SORT={key=nil, reverse=false, phase=0},
+        LOG_POSITIONING=false,
+        resolve=function(width, height)
+            return options.frame or {l=40, t=6, w=32, h=12}
+        end,
+    }
+    local popover = {get_subject=function(unit)
+        state.lookups=state.lookups+1
+        if options.subject_error then return nil, options.subject_error end
+        return {unit=unit, unit_id=unit.id}, nil
     end}
+    local function window(info)
+        local subviews={}
+        for _, view in ipairs(info.subviews or {}) do subviews[view.view_id]=view end
+        info.subviews=subviews
+        return info
+    end
+    local function stats_panel(info)
+        function info:set_subject(subject)
+            self.subject=subject
+            state.subjects=(state.subjects or 0)+1
+        end
+        function info:get_tooltip_text() return nil end
+        return info
+    end
     local globals = {
         DEFAULT_NIL=nil,
         defclass=function(_, parent) return class(parent) end,
@@ -839,20 +861,34 @@ function M.load_stats_overlay(repo_root, options)
             gui={
                 getCurViewscreen=function() return options.screen or {} end,
                 getFocusStrings=function() return options.focuses or {} end,
+                getWidget=function(_, name)
+                    if name == 'Tabs' and options.unit_card_rect then
+                        return {rect=options.unit_card_rect}
+                    end
+                end,
             },
+            screen={getWindowSize=function() return options.width or 120, options.height or 40 end},
             printerr=function(error) table.insert(state.errors, error) end,
+            println=function(text) table.insert(state.position_logs or {}, text) end,
         },
         require=function(name)
             if name == 'plugins.overlay' then return {OverlayWidget=base} end
+            if name == 'gui' then return {FRAME_BOLD='bold'} end
             if name == 'gui.widgets' then return {
-                Label=setmetatable({}, {__call=function(_, info) return info end}),
+                Window=setmetatable({}, {__call=function(_, info) return window(info) end}),
             } end
             error('unexpected require: ' .. name)
         end,
         reqscript=function(name)
-            assert(name == 'internal/soulsearch/stats_popover')
-            state.lookups=state.lookups+1
-            return popover
+            if name == 'internal/soulsearch/stats_popover_config' then return config end
+            if name == 'internal/soulsearch/stats_popover' then return popover end
+            if name == 'internal/soulsearch/stats_panel' then
+                return {SoulSearchStatsPanel=stats_panel}
+            end
+            if name == 'internal/soulsearch/ui_tooltip' then
+                return {SoulSearchTooltip=function(info) return info end}
+            end
+            error('unexpected reqscript: ' .. name)
         end,
     }
     return module_loader.load(repo_root,

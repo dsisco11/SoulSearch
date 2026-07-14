@@ -158,6 +158,12 @@ local function build_subject(unit)
     return subject_factory.from_row(row, {}), nil
 end
 
+---Builds a stats subject for callers that render the reusable panel without a
+---modal screen (for example, the attached unit-card overlay).
+function get_subject(unit)
+    return build_subject(unit)
+end
+
 ---@param unit any
 ---@return SoulSearchStatsPopoverScreen|nil
 ---@return string|nil

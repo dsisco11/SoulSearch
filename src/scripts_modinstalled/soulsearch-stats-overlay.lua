@@ -1,6 +1,12 @@
 --@ module=true
 
+local gui = require('gui')
+local widgets = require('gui.widgets')
 local overlay = require('plugins.overlay')
+local config = reqscript('internal/soulsearch/stats_popover_config')
+local popover = reqscript('internal/soulsearch/stats_popover')
+local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
+local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 
 UNIT_CARD_FOCUS = 'dwarfmode/ViewSheets/UNIT'
 WIDGET_KEY = 'soulsearch_stats'
@@ -8,16 +14,9 @@ WIDGET_KEY = 'soulsearch_stats'
 local function has_unit_card_focus()
     local screen = dfhack.gui.getCurViewscreen(true)
     for _, focus in ipairs(dfhack.gui.getFocusStrings(screen) or {}) do
-        -- Unit-card tabs report a more specific focus such as
-        -- dwarfmode/ViewSheets/UNIT/Overview. Match the same prefix rule the
-        -- overlay framework uses for its viewscreens declaration.
         if focus:sub(1, #UNIT_CARD_FOCUS) == UNIT_CARD_FOCUS then return true end
     end
     return false
-end
-
-local function report(error)
-    if error then dfhack.printerr(error) end
 end
 
 ---@return df.unit|nil
@@ -29,50 +28,101 @@ local function get_unit_card_unit()
     return df.unit.find(view_sheets.active_id)
 end
 
----@return SoulSearchStatsPopoverScreen|nil
-function activate()
-    if not has_unit_card_focus() then
-        report('SoulSearch Stats is only available from a unit card.')
-        return nil
+local function get_unit_card_rect()
+    local sheets = df.global and df.global.game and df.global.game.main_interface and
+        df.global.game.main_interface.view_sheets
+    if not sheets or not dfhack.gui.getWidget then return nil end
+    local ok, widget = pcall(dfhack.gui.getWidget, sheets, 'Tabs')
+    if not ok or not widget then return nil end
+    local ok_rect, rect = pcall(function() return widget.rect end)
+    return ok_rect and rect or nil
+end
+
+local function frame_key(frame, source)
+    return ('%s:%d,%d,%d,%d'):format(source or 'unknown',
+        frame.l, frame.t, frame.w, frame.h)
+end
+
+local function log_position(frame, source)
+    if config.LOG_POSITIONING then
+        dfhack.println(('SoulSearch Stats placement: %s; frame=(%d,%d %dx%d)'):
+            format(source or 'unknown', frame.l, frame.t, frame.w, frame.h))
     end
-    -- The native unit card owns its subject in view_sheets.active_id. It is
-    -- not exposed consistently through dfhack.gui.getSelectedUnit().
-    local unit = get_unit_card_unit()
-    if not unit then
-        report('SoulSearch Stats requires a selected unit.')
-        return nil
-    end
-    -- Resolve this at activation time so an overlay surviving a development
-    -- rescan cannot retain a stale popover module table.
-    local screen, error = reqscript('internal/soulsearch/stats_popover').open(unit)
-    if not screen then report(error) end
-    return screen
 end
 
 SoulSearchStatsOverlay = defclass(SoulSearchStatsOverlay, overlay.OverlayWidget)
 SoulSearchStatsOverlay.ATTRS{
-    desc='Automatically open SoulSearch Stats for the unit on this card.',
-    version=2,
+    desc='Display SoulSearch Stats beside the selected unit card.',
+    version=3,
     default_enabled=true,
-    visible=false,
-    -- Unit-card overlays are rendered on the native viewscreen, but that
-    -- render path does not guarantee a scheduled overlay_onupdate() call.
-    -- A hotspot receives that callback independently; the focus guard below
-    -- keeps activation scoped to the unit card.
+    default_pos={x=1, y=1}, -- replaced by resolve_frame() during layout
     hotspot=true,
     viewscreens=UNIT_CARD_FOCUS,
     frame={w=1, h=1},
     overlay_onupdate_max_freq_seconds=0,
 }
 
----The overlay framework calls this while rendering a matching unit card. A
----true result invokes overlay_trigger(), which opens the singleton popover.
-function SoulSearchStatsOverlay:overlay_onupdate()
-    return has_unit_card_focus() and get_unit_card_unit() ~= nil
+function SoulSearchStatsOverlay:init()
+    self:addviews{
+        widgets.Window{
+            view_id='window', frame={l=0, t=0, r=0, b=0},
+            frame_style=gui.FRAME_BOLD, draggable=false, resizable=false,
+            subviews={
+                StatsPanel{
+                    view_id='stats_panel', frame={l=0, t=0, r=0, b=0},
+                    subject=nil, sort=config.DEFAULT_SORT,
+                },
+            },
+        },
+        Tooltip{get_text=function()
+            return self.subviews.window.subviews.stats_panel:get_tooltip_text() or ''
+        end},
+    }
 end
 
-function SoulSearchStatsOverlay:overlay_trigger()
-    return activate()
+function SoulSearchStatsOverlay:resolve_frame(width, height)
+    local frame, err, source = config.resolve(width, height, get_unit_card_rect())
+    if not frame then return nil, err end
+    local key = frame_key(frame, source)
+    self.frame = frame
+    if key ~= self.frame_key then
+        self.frame_key = key
+        log_position(frame, source)
+    end
+    return frame
+end
+
+function SoulSearchStatsOverlay:preUpdateLayout(parent_rect)
+    self:resolve_frame(parent_rect.width, parent_rect.height)
+end
+
+function SoulSearchStatsOverlay:update_subject(unit)
+    if self.unit_id == unit.id then return end
+    local subject, err = popover.get_subject(unit)
+    if not subject then
+        if self.subject_error ~= err then
+            self.subject_error = err
+            dfhack.printerr(err)
+        end
+        return
+    end
+    self.subject_error = nil
+    self.unit_id = unit.id
+    self.subviews.window.subviews.stats_panel:set_subject(subject)
+end
+
+---Synchronizes the attached panel; returning false prevents overlay_trigger.
+function SoulSearchStatsOverlay:overlay_onupdate()
+    if not has_unit_card_focus() then return false end
+    local width, height = dfhack.screen.getWindowSize()
+    local previous_key = self.frame_key
+    local frame = self:resolve_frame(width, height)
+    if frame and self.frame_key ~= previous_key and self.frame_parent_rect then
+        self:updateLayout()
+    end
+    local unit = get_unit_card_unit()
+    if unit then self:update_subject(unit) end
+    return false
 end
 
 OVERLAY_WIDGETS = {[WIDGET_KEY]=SoulSearchStatsOverlay}
