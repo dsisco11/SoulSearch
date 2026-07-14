@@ -687,7 +687,9 @@ function M.load_stats_popover(repo_root, options)
             end,
         })
     local units = options.units or {}
-    local state = {collects=0, resets=0, raises=0, printed={}, widget_lookups=0}
+    local state = {
+        collects=0, resets=0, raises=0, printed={}, position_logs={}, widget_lookups=0,
+    }
     local base = {
         addviews=function(self, views) self.subviews=views end,
         onShow=function() end,
@@ -770,6 +772,7 @@ function M.load_stats_popover(repo_root, options)
                 end
                 return nil
             end},
+            println=function(text) table.insert(state.position_logs, text) end,
         },
         require=function(name)
             if name == 'gui' then return {ZScreenModal=base, FRAME_BOLD='bold'} end

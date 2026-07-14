@@ -347,6 +347,13 @@ return function(test, repo_root)
                         registry_state = registry_runs == 1 and 'old' or 'fresh'
                     end
                 end,
+                findScript=function(name)
+                    assert(name == 'soulsearch-stats-overlay')
+                    return '/scripts/' .. name .. '.lua'
+                end,
+                internal={scripts={
+                    ['/scripts/soulsearch-stats-overlay.lua']={stale=true},
+                }},
             },
             reqscript=function(name)
                 if name == 'internal/soulsearch/module_registry' then
@@ -399,13 +406,11 @@ return function(test, repo_root)
         test.assert_sequence({'run_script', 'internal/soulsearch/new_module'}, events[8])
         test.assert_sequence({'run_script', 'internal/soulsearch/lifecycle'}, events[9])
         test.assert_sequence({'run_script', 'internal/soulsearch/ui'}, events[10])
-        test.assert_sequence({
-            'devel/clear-script-env',
-            'soulsearch-stats-overlay',
-        }, events[11])
-        test.assert_sequence({'overlay_rescan'}, events[12])
-        test.assert_sequence({'keybindings'}, events[13])
-        test.assert_sequence({'prepare'}, events[14])
+        test.assert_sequence({'overlay_rescan'}, events[11])
+        test.assert_nil(environment.dfhack.internal.scripts[
+            '/scripts/soulsearch-stats-overlay.lua'])
+        test.assert_sequence({'keybindings'}, events[12])
+        test.assert_sequence({'prepare'}, events[13])
         test.assert_equal(1, old_ui.dismiss_count)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)

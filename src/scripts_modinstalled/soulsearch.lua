@@ -127,7 +127,12 @@ local function reload_modules()
         dfhack.run_script(spec.name)
     end
 
-    dfhack.run_command('devel/clear-script-env', OVERLAY_SCRIPT)
+    -- clear-script-env only empties the cached module table. Remove the
+    -- cache entry instead, so overlay.rescan() re-executes the script and can
+    -- discover its fresh OVERLAY_WIDGETS table.
+    local overlay_path = assert(dfhack.findScript(OVERLAY_SCRIPT),
+        'SoulSearch stats overlay script could not be found.')
+    dfhack.internal.scripts[overlay_path] = nil
     require('plugins.overlay').rescan()
     return fresh_registry.load_all(reqscript)
 end

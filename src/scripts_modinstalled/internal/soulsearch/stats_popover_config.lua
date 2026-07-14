@@ -13,6 +13,7 @@ DEFAULT_SORT = {key=nil, reverse=false, phase=0}
 -- right edge 42 tiles from the screen's right edge. Use that established unit
 -- card boundary when the native widget tree cannot provide a live rectangle.
 FALLBACK_UNIT_CARD_RIGHT_INSET = 42
+LOG_POSITIONING = true
 
 ---@return table
 function get_minimum()
@@ -65,12 +66,12 @@ function resolve(screen_width, screen_height, unit_card_rect)
     local height = math.min(DEFAULT_HEIGHT, screen_height)
     local native_frame = resolve_from_unit_card(
         unit_card_rect, screen_width, screen_height, width, height)
-    if native_frame then return native_frame, nil end
+    if native_frame then return native_frame, nil, 'native unit-card bounds' end
     return {
         l=math.max(0, math.min(screen_width - width,
             screen_width - FALLBACK_UNIT_CARD_RIGHT_INSET)),
         t=math.floor((screen_height - height) / 2),
         w=width,
         h=height,
-    }, nil
+    }, nil, 'screen-relative fallback'
 end

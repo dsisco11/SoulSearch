@@ -43,12 +43,23 @@ local function get_unit_card_rect()
     return ok_rect and rect or nil
 end
 
----@param width integer
----@param height integer
----@return table|nil
----@return string|nil
-local function resolve_frame(width, height)
-    return config.resolve(width, height, get_unit_card_rect())
+---@param rect any|nil
+---@return string
+local function format_rect(rect)
+    if not rect then return 'unavailable' end
+    local ok, text = pcall(function()
+        return ('(%d,%d)-(%d,%d)'):format(rect.x1, rect.y1, rect.x2, rect.y2)
+    end)
+    return ok and text or 'unavailable'
+end
+
+---@param frame table
+---@param source string|nil
+---@param rect any|nil
+local function log_position(frame, source, rect)
+    if not config.LOG_POSITIONING then return end
+    dfhack.println(('SoulSearch Stats placement: %s; unit-card rect=%s; frame=(%d,%d %dx%d)'):
+        format(source or 'unknown', format_rect(rect), frame.l, frame.t, frame.w, frame.h))
 end
 
 SoulSearchStatsPopoverScreen = defclass(SoulSearchStatsPopoverScreen, gui.ZScreenModal)
@@ -115,7 +126,8 @@ end
 
 function SoulSearchStatsPopoverScreen:onResize(w, h)
     SoulSearchStatsPopoverScreen.super.onResize(self, w, h)
-    local frame, err = resolve_frame(w, h)
+    local rect = get_unit_card_rect()
+    local frame, err, source = config.resolve(w, h, rect)
     if not frame then
         if not self.resize_error_reported then
             self.resize_error_reported = true
@@ -126,6 +138,7 @@ function SoulSearchStatsPopoverScreen:onResize(w, h)
     end
     self.window.frame = frame
     self.window:updateLayout()
+    log_position(frame, source, rect)
 end
 
 ---@param unit any
@@ -153,7 +166,8 @@ function open(unit)
     if not subject then return nil, err end
     local width, height = dfhack.screen.getWindowSize()
     local frame
-    frame, err = resolve_frame(width, height)
+    local rect = get_unit_card_rect()
+    frame, err, source = config.resolve(width, height, rect)
     if not frame then return nil, err end
     if not is_active(singleton) then singleton = nil end
     if singleton then
@@ -162,6 +176,7 @@ function open(unit)
         return raise(singleton), nil
     end
     local screen = SoulSearchStatsPopoverScreen{subject=subject, frame=frame}:show()
+    log_position(frame, source, rect)
     singleton = screen
     return screen, nil
 end
