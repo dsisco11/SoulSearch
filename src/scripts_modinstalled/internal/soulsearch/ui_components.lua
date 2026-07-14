@@ -5,6 +5,18 @@ local stats_presenter = reqscript('internal/soulsearch/stats_presenter')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
+local ModalPanelWindow = defclass(FilterPanelWindow, widgets.Window)
+
+function ModalPanelWindow:onInput(keys)
+    if ModalPanelWindow.super.onInput(self, keys) then return true end
+
+    if self:getMouseFramePos() and
+            (keys._MOUSE_L or keys._MOUSE_R or keys._MOUSE_M or
+             keys._MOUSE_WHEEL_UP or keys._MOUSE_WHEEL_DOWN) then
+        return true
+    end
+end
+
 CONTROL_TOOLTIPS = {
     {id='filters_button', text='Edit the current filters.'},
     {id='close_filter_panel_button', text='Close'},
@@ -295,7 +307,7 @@ function create_filter_panel(inputs)
             },
         },
     }
-    return widgets.Window{
+    return ModalPanelWindow{
         view_id='filter_panel_window',
         frame=ui_layout.get_frame('filter_panel'),
         frame_title='Search filters',

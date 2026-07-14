@@ -72,6 +72,10 @@ return function(test, repo_root)
         }
         test.assert_equal('filter_panel_window', views.view_id)
         test.assert_equal('Window', views.widget_kind)
+        test.assert_true(views.onInput ~= nil)
+        views.getMouseFramePos=function() return 1, 1 end
+        test.assert_true(views:onInput{_MOUSE_L=true})
+        test.assert_false(views:onInput{})
         test.assert_false(views.visible())
         local subviews = views.subviews
         test.assert_equal(14, #subviews)

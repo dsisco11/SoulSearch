@@ -401,6 +401,14 @@ function M.load_ui_components(repo_root)
         Window=constructor('Window'),
     }
     local globals = make_presentation_globals()
+    globals.defclass=function(_, parent)
+        local class = {}
+        class.super={onInput=function() return false end}
+        return setmetatable(class, {__call=function(_, config)
+            config.widget_kind = 'Window'
+            return setmetatable(config, {__index=class})
+        end})
+    end
     globals.require=function(name)
         assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
         return widgets
