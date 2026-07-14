@@ -1,0 +1,317 @@
+# UI component encapsulation plan
+
+This checklist is the implementation source of truth for splitting SoulSearch's
+current UI composition into cohesive, independently testable component modules.
+The refactor is architectural and behavior-preserving: it must not redesign the
+UI, change domain behavior, or complete unrelated items in `docs/project.todo`.
+
+The selected granularity is one file per reusable or stateful widget/composite.
+Trivial labels and one-purpose buttons remain inside the component that owns
+them. Existing focused modules such as `stats_panel.lua`, `ui_tooltip.lua`, and
+`stats_popover.lua` remain in place except for necessary import changes.
+
+Record phase results in the `Execution evidence` table at the end of this
+document. Do not mark a phase gate complete until its stated checks have passed.
+
+## Target architecture
+
+- [ ] Add an `internal/soulsearch/ui/` module namespace containing:
+  - [ ] `modal_panel.lua` for reusable modal open, close, focus, and input
+        capture behavior;
+  - [ ] `filter_action_list.lua` for filter-row action hit-testing and
+        dispatch;
+  - [ ] `searchable_picker.lua` for the shared attribute, skill, and race
+        picker structure;
+  - [ ] `preset_picker.lua` for preset search, save, and selection UI;
+  - [ ] `unit_scope_picker.lua` for the unit-scope popup;
+  - [ ] `filter_panel.lua` for filter controls, active filters, picker
+        composition, and filter-owned tooltip resolution;
+  - [ ] `results_panel.lua` for query, result headings, result list, sorting,
+        navigation, and result-owned tooltip resolution;
+  - [ ] `main_window.lua` for state orchestration and component composition;
+        and
+  - [ ] `main_screen.lua` for screen lifecycle, registry participation,
+        tooltip rendering, and frame persistence.
+- [ ] Reduce `ui.lua` to the stable UI facade that exposes `open()` and
+      `dismiss_all()`.
+- [ ] Remove `ui_components.lua` after every consumer and test has migrated;
+      do not leave a compatibility aggregator.
+- [ ] Keep filtering, candidate collection, ranking, refresh ordering, and
+      session persistence outside leaf UI components.
+- [ ] Give Filter and Results components narrow host-facing APIs for updating
+      choices/state, navigating results, and resolving component-owned
+      tooltips.
+
+## Behavior-preservation constraints
+
+- [ ] Preserve the public `ui.open()` and `ui.dismiss_all()` contracts and all
+      command/bootstrap behavior that calls them.
+- [ ] Preserve existing view IDs and descendant exposure so refresh logic,
+      tooltip lookup, tests, and current integrations continue to resolve the
+      same controls.
+- [ ] Preserve child creation and traversal order, including the Results query
+      field's place in keyboard focus traversal and the result list's arrow-key
+      behavior.
+- [ ] Preserve every frame and boundary supplied by `ui_layout.lua`, including:
+  - [ ] section dividers and panel placement;
+  - [ ] filter action width and x-coordinate hitboxes;
+  - [ ] Results header column hitboxes;
+  - [ ] picker dimensions, overlap, and paint order; and
+  - [ ] modal mouse capture and dismissal boundaries.
+- [ ] Preserve all labels, colors, CP437 glyphs, shortcuts, tooltip text, and
+      tooltip precedence.
+- [ ] Preserve filter/picker open-state transitions, preset workflows, unit
+      scope behavior, result selection retention, sort cycles, zoom behavior,
+      and refresh cascades.
+- [ ] Preserve window drag/resize handling, per-window session settings,
+      frame persistence, multiple-window behavior, screen registration, and
+      idempotent teardown.
+- [ ] Keep `ui_refresh.apply()` and `SoulSearchRefreshOwner` unchanged. Main
+      window refresh methods may delegate view updates to components, but the
+      dispatcher contract and dependency order must not change.
+- [ ] Register new modules before their consumers in `module_registry.lua` and
+      keep reverse-order clearing safe for edited-module reloads.
+
+## Explicit exclusions
+
+- [ ] Do not implement the reusable columned list with sortable headers.
+- [ ] Do not replace result or Stats headers with `CycleHotkeyLabel`; retain
+      their existing separate sortable-header implementations.
+- [ ] Do not evaluate or replace controls with alternative built-in DFHack
+      widgets.
+- [ ] Do not modify or close any remaining work in `docs/stats-popover.todo`.
+- [ ] Do not add creatures-menu integration, scoped-window launch affordances,
+      panel resizing, or automatic panel layout.
+- [ ] Do not mark any unrelated `docs/project.todo` item complete.
+
+## Phase 0 - Baseline and characterization
+
+- [ ] Confirm the worktree state and record any pre-existing changes before
+      source edits.
+- [ ] Record the current module dependency order for `ui_components.lua`,
+      `ui.lua`, `stats_panel.lua`, `ui_tooltip.lua`, and their consumers.
+- [ ] Expand characterization tests before moving implementation:
+  - [ ] exact top-level and recursive child order;
+  - [ ] stable view IDs and descendant lookup;
+  - [ ] keyboard focus/traversal and result-list cursor shortcuts;
+  - [ ] modal open, close, right-click dismissal, and mouse capture;
+  - [ ] picker visibility and overlap order;
+  - [ ] filter action and Results header hit-testing;
+  - [ ] tooltip source precedence and exact copy;
+  - [ ] result selection, submission, sorting, and selection retention;
+  - [ ] refresh delegation into Results, Stats, filters, and pickers;
+  - [ ] drag/resize persistence and multiple-window settings isolation; and
+  - [ ] screen registration and idempotent cleanup.
+- [ ] Run the pre-refactor automated baseline:
+  - [ ] `tools/Build.ps1`;
+  - [ ] `tools/Test.ps1`; and
+  - [ ] `git diff --check`.
+
+### Phase 0 gate
+
+- [ ] Tests fail if extraction changes composition, focus, geometry, input,
+      tooltips, state transitions, refresh behavior, or lifecycle behavior.
+- [ ] The automated baseline is green and recorded before modules move.
+
+## Phase 1 - Establish the component namespace and leaf widgets
+
+- [ ] Add the `internal/soulsearch/ui/` namespace without changing the public
+      `internal/soulsearch/ui` facade path.
+- [ ] Extract `ModalPanelWindow` into `ui/modal_panel.lua`:
+  - [ ] export one documented class contract;
+  - [ ] retain `is_open`, `on_open`, and `on_close` callback ownership;
+  - [ ] preserve focus transitions and input consumption exactly; and
+  - [ ] add focused tests for idempotent open/close and mouse behavior.
+- [ ] Extract `FilterActionList` into `ui/filter_action_list.lua`:
+  - [ ] retain action-choice snapshots and selected-row behavior;
+  - [ ] retain scrolled-list index fallback;
+  - [ ] preserve `FILTER_ACTION_WIDTH`-based hit-testing through
+        `ui_layout.lua`; and
+  - [ ] add focused click-boundary and callback tests.
+- [ ] Add each module to `module_registry.lua` and the pure-Lua loader before
+      migrating consumers.
+- [ ] Keep compatibility imports in `ui_components.lua` only during this
+      phase; do not duplicate class implementations.
+
+### Phase 1 gate
+
+- [ ] Leaf-widget tests pass through their new module paths.
+- [ ] Existing `ui_components_test.lua` coverage remains green while consumers
+      still use the temporary compatibility imports.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 2 - Extract picker and Filter Panel components
+
+- [ ] Add `ui/searchable_picker.lua` as one configurable component used for
+      attribute, skill, and race pickers:
+  - [ ] accept stable IDs, title, visibility, key, query, close, and submit
+        callbacks;
+  - [ ] preserve each existing picker-specific view ID and keybinding;
+  - [ ] preserve choice payloads and descriptor submission behavior; and
+  - [ ] avoid moving filtering/query semantics into the component.
+- [ ] Add `ui/preset_picker.lua` with the current save, query, custom preset,
+      default preset, and role preset callback paths.
+- [ ] Add `ui/unit_scope_picker.lua` with option-count-derived frames and the
+      current scope-selection payload.
+- [ ] Add `ui/filter_panel.lua` as a `ModalPanelWindow`-derived composite:
+  - [ ] own creation of filter controls, `FilterActionList`, and all picker
+        components;
+  - [ ] retain the current host callback contract for state-changing actions;
+  - [ ] expose narrow methods for active-filter and picker choice updates;
+  - [ ] own filter-control, filter-action, and descriptor tooltip lookup; and
+  - [ ] preserve the unit-scope picker as the last-painted overlapping child.
+- [ ] Change `main_window.lua`'s future-facing contract only through delegation
+      methods; leave domain filter state and refresh sequencing in the current
+      main window until Phase 4.
+- [ ] Split filter/picker characterization assertions into focused module tests
+      and remove migrated assertions from `ui_components_test.lua`.
+
+### Phase 2 gate
+
+- [ ] Attribute, skill, race, preset, and unit-scope workflows behave exactly
+      as before through the extracted Filter Panel.
+- [ ] Filter action hitboxes, modal capture, focus, child order, and tooltips
+      match the Phase 0 characterization.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 3 - Extract the Results Panel
+
+- [ ] Add `ui/results_panel.lua` containing the Results-owned views:
+  - [ ] query edit field;
+  - [ ] title and underline;
+  - [ ] existing sortable header implementation; and
+  - [ ] result list.
+- [ ] Define a narrow component API:
+  - [ ] set query text without changing query semantics;
+  - [ ] set choices and selected index;
+  - [ ] return the selected result;
+  - [ ] move the cursor by the requested delta; and
+  - [ ] return the active Results header tooltip.
+- [ ] Preserve host callbacks for query change, selection, submission/zoom,
+      and sort transitions.
+- [ ] Keep result formatting in `ui_format.lua`, column geometry in
+      `ui_layout.lua`, and result-sort state/transition behavior in the main
+      window.
+- [ ] Preserve the query field's effective focus order when the flat view list
+      becomes a component subtree.
+- [ ] Migrate Results-owned tests from `ui_components_test.lua` and update
+      main-window tests to assert delegation through the component API.
+
+### Phase 3 gate
+
+- [ ] Querying, selection refresh, zoom submission, cursor movement, sorting,
+      row formatting, and header tooltips match the Phase 0 baseline.
+- [ ] Results and Stats continue using their existing independent header
+      implementations.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 4 - Extract the main Window and Screen
+
+- [ ] Move `SoulSearchWindow` into `ui/main_window.lua`:
+  - [ ] compose Results, Stats, Filter, tooltip-source, and window controls;
+  - [ ] keep domain state, candidate/ranking orchestration, filter/preset
+        operations, result-sort state, and session-setting writes here;
+  - [ ] delegate component-owned view updates and tooltip queries through the
+        new narrow APIs;
+  - [ ] retain descendant view exposure where existing code/tests depend on
+        stable IDs; and
+  - [ ] preserve global input fallback order after superclass/component input.
+- [ ] Move `SoulSearchScreen` into `ui/main_screen.lua`:
+  - [ ] construct the main window and existing `SoulSearchTooltip` sibling;
+  - [ ] preserve `focus_path='soulsearch'`;
+  - [ ] retain screen-registry add/remove behavior; and
+  - [ ] retain idempotent frame persistence and cleanup across dismissal,
+        destruction, and reload.
+- [ ] Keep screen placement policy and multiple-window creation behavior
+      unchanged.
+- [ ] Update `ui.lua` to import the extracted screen and expose only the stable
+      facade/lifecycle functions.
+
+### Phase 4 gate
+
+- [ ] `gui/soulsearch`, scoped `ui.open(options)`, multiple windows, and
+      `soulsearch reload` retain their existing contracts.
+- [ ] Main-window keyboard, mouse, drag, resize, persistence, tooltip, refresh,
+      and teardown tests match the baseline.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 5 - Remove the aggregate and harden module boundaries
+
+- [ ] Migrate every remaining `ui_components` import to its owning module.
+- [ ] Delete `ui_components.lua` and remove its old registry contract.
+- [ ] Replace `tests/ui_components_test.lua` with focused per-component suites
+      and register each suite explicitly in `tests/run.lua`.
+- [ ] Update `tests/support/soulsearch_env.lua` with the minimum widget stubs
+      and loaders required by the new modules; do not add
+      `CycleHotkeyLabel` support in this refactor.
+- [ ] Update `module_registry_test.lua` to assert complete dependency order:
+  - [ ] dependency-free layout/format/state modules precede UI components;
+  - [ ] leaf widgets precede picker/panel composites;
+  - [ ] Filter, Results, Stats, and tooltip modules precede Main Window;
+  - [ ] Main Window precedes Main Screen; and
+  - [ ] Main Screen precedes the `ui.lua` facade.
+- [ ] Search source, tests, and documentation for stale `ui_components`
+      references and remove only references owned by this refactor.
+- [ ] Confirm no behavior or implementation was copied into parallel modules
+      during migration.
+
+### Phase 5 gate
+
+- [ ] Each reusable or stateful UI component has one implementation owner and
+      one focused test boundary.
+- [ ] No production or test code imports `ui_components.lua`.
+- [ ] Reload order reconstructs all extracted classes without stale consumers.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 6 - Automated, packaged, and live validation
+
+- [ ] Run the automated closure sequence separately and record every result:
+  - [ ] `tools/Build.ps1`;
+  - [ ] `tools/Test.ps1`;
+  - [ ] `tools/Publish.ps1`;
+  - [ ] `tools/VerifyPackage.ps1` against the produced archive; and
+  - [ ] `git diff --check`.
+- [ ] Verify the packaged mod contains every new component module, contains no
+      deleted `ui_components.lua`, and has no stale duplicate implementation.
+- [ ] Run an edited-module reload check that exercises the new registry order
+      without reopening dismissed windows unexpectedly.
+- [ ] Run a fortress-mode smoke pass:
+  - [ ] open, close, and reopen the default SoulSearch window;
+  - [ ] open multiple windows and verify independent state/frame persistence;
+  - [ ] query and navigate Results with keyboard and mouse;
+  - [ ] click each Results sort column boundary;
+  - [ ] open/close the Filter Panel and every picker;
+  - [ ] exercise filter action label edges and just outside each hitbox;
+  - [ ] verify preset and unit-scope workflows;
+  - [ ] verify filter, result-header, and Stats tooltips;
+  - [ ] drag and resize the window; and
+  - [ ] reload with windows open and confirm safe dismissal/reopening behavior.
+- [ ] Review `git diff -- docs/project.todo docs/stats-popover.todo` and confirm
+      neither unrelated checklist changed.
+
+### Phase 6 gate
+
+- [ ] Source, tests, reload registry, package contents, and live DFHack behavior
+      all validate the component split.
+- [ ] Automated results and live observations are recorded separately rather
+      than treating packaging/tests as proof of interactive behavior.
+
+## Definition of done
+
+- [ ] `ui_components.lua` no longer exists or has consumers.
+- [ ] Every reusable or stateful UI component has a cohesive module, documented
+      host contract, and focused tests.
+- [ ] `ui.lua` is a small stable facade; Main Window and Main Screen have
+      separate implementation owners.
+- [ ] Existing UI behavior, geometry, focus, hitboxes, state, persistence,
+      refresh ordering, and lifecycle contracts are preserved.
+- [ ] The sortable-column-list, built-in-widget evaluation, stats-popover,
+      creatures-menu, and responsive-panel TODOs remain untouched.
+- [ ] Build, tests, package verification, whitespace checks, and the live smoke
+      pass are green with recorded evidence.
+
+## Execution evidence
+
+| Date | Phase/gate | Evidence | Result | Notes |
+| --- | --- | --- | --- | --- |
+| | | | | |
