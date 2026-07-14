@@ -278,8 +278,9 @@ return function(test, repo_root)
         test.assert_equal('Usage: soulsearch [reload]', usage)
     end)
 
-    test.case('soulsearch command: reload repairs an incomplete registry environment without opening UI', function()
+    test.case('soulsearch command: reload reconstructs from a fresh registry without opening UI', function()
         local registry_state = 'incomplete'
+        local registry_runs = 0
         local events = {}
         local lifecycle = {}
         function lifecycle.prepare_for_world()
@@ -302,7 +303,7 @@ return function(test, repo_root)
             new_ui.opened_with = {...}
             table.insert(events, {'open'})
         end
-        local registry = {
+        local old_registry = {
             MODULES={
                 {name='internal/soulsearch/lifecycle'},
                 {name='internal/soulsearch/ui'},
@@ -312,8 +313,18 @@ return function(test, repo_root)
                     'internal/soulsearch/module_registry',
                     'internal/soulsearch/ui',
                     'internal/soulsearch/lifecycle',
+                    'internal/soulsearch/removed_module',
                 }
             end,
+            load_all=function() error('stale registry must not reconstruct modules') end,
+        }
+        local fresh_registry = {
+            MODULES={
+                {name='internal/soulsearch/new_module'},
+                {name='internal/soulsearch/lifecycle'},
+                {name='internal/soulsearch/ui'},
+            },
+            get_script_names=function() return {} end,
             load_all=function()
                 return {
                     ['internal/soulsearch/keybindings']=keybindings,
@@ -328,19 +339,29 @@ return function(test, repo_root)
             dfhack={
                 run_command=function(command, ...)
                     table.insert(events, {command, ...})
-                    registry_state = 'ready'
                 end,
                 run_script=function(name)
                     table.insert(events, {'run_script', name})
-                    registry_state = 'ready'
+                    if name == 'internal/soulsearch/module_registry' then
+                        registry_runs = registry_runs + 1
+                        registry_state = registry_runs == 1 and 'old' or 'fresh'
+                    end
                 end,
             },
             reqscript=function(name)
                 if name == 'internal/soulsearch/module_registry' then
-                    return registry_state == 'ready' and registry or {}
+                    if registry_state == 'old' then return old_registry end
+                    if registry_state == 'fresh' then return fresh_registry end
+                    return {}
                 end
                 if name == 'internal/soulsearch/ui' then return old_ui end
                 error('unexpected reqscript: ' .. tostring(name))
+            end,
+            require=function(name)
+                assert(name == 'plugins.overlay')
+                return {
+                    rescan=function() table.insert(events, {'overlay_rescan'}) end,
+                }
             end,
         }
         local chunk = load_script(command_path, environment)
@@ -359,17 +380,32 @@ return function(test, repo_root)
             'devel/clear-script-env',
             'internal/soulsearch/ui',
             'internal/soulsearch/lifecycle',
+            'internal/soulsearch/removed_module',
         }, events[4])
         test.assert_sequence({
-            'run_script',
-            'internal/soulsearch/lifecycle',
+            'devel/clear-script-env',
+            'internal/soulsearch/module_registry',
         }, events[5])
         test.assert_sequence({
             'run_script',
-            'internal/soulsearch/ui',
+            'internal/soulsearch/module_registry',
         }, events[6])
-        test.assert_sequence({'keybindings'}, events[7])
-        test.assert_sequence({'prepare'}, events[8])
+        test.assert_sequence({
+            'devel/clear-script-env',
+            'internal/soulsearch/new_module',
+            'internal/soulsearch/lifecycle',
+            'internal/soulsearch/ui',
+        }, events[7])
+        test.assert_sequence({'run_script', 'internal/soulsearch/new_module'}, events[8])
+        test.assert_sequence({'run_script', 'internal/soulsearch/lifecycle'}, events[9])
+        test.assert_sequence({'run_script', 'internal/soulsearch/ui'}, events[10])
+        test.assert_sequence({
+            'devel/clear-script-env',
+            'soulsearch-stats-overlay',
+        }, events[11])
+        test.assert_sequence({'overlay_rescan'}, events[12])
+        test.assert_sequence({'keybindings'}, events[13])
+        test.assert_sequence({'prepare'}, events[14])
         test.assert_equal(1, old_ui.dismiss_count)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)

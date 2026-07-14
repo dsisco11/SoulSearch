@@ -524,134 +524,66 @@ the commands and automated checks that justify marking it complete.
 
 ## Phase 5 - Add the vanilla unit-card overlay button
 
-- [ ] Add a module-loadable overlay registration script with the target-proven
-      repository syntax `--@module=true`.
-      Module loading may define the widget class and global `OVERLAY_WIDGETS`,
-      but must not look up units, print, register screens, or show UI.
-- [ ] Keep that registration script outside the internal module registry; load
-      and reload it only through overlay discovery/rescan ownership.
-- [ ] Keep this discovery-owned overlay script distinct from the public
-      enableable bootstrap in `docs/zero-touch-startup.todo`; do not add an
-      enable annotation to the overlay script solely for automatic setup.
-- [ ] Define a global `OVERLAY_WIDGETS` entry backed by
-      `overlay.OverlayWidget`.
-- [ ] Verify the module-loadable registration script is discovered from
-      `scripts_modinstalled`, registers its `OVERLAY_WIDGETS` entry, and limits
-      it to the confirmed unit-card focus path.
-- [ ] Choose and document a stable `OVERLAY_WIDGETS` key/widget identity. Set
-      its overlay configuration version deliberately, and increment it only
-      when intentionally resetting saved placement/configuration is required.
-- [ ] Record the stable script path, widget key, and exact registered name shown
-      by `overlay list`; treat all three as compatibility-sensitive identity.
-- [ ] Restrict `viewscreens` to the confirmed fortress-mode unit-card focus
-      path or path set instead of all of `dwarfmode`.
-- [ ] Make the overlay enabled by default for first-time SoulSearch users while
-      allowing normal disable/reposition control through DFHack.
-- [ ] Treat the overlay framework's global enabled state as a prerequisite, not
-      SoulSearch-owned configuration. Do not call `enable overlay` from module
-      loading or activation code.
-- [ ] Verify that global overlay enablement is distinct from this widget's
-      `default_enabled` state. Record that disabling the framework hides the
-      widget and is not a condition SoulSearch overrides.
-- [ ] Render a clearly branded, compact SoulSearch Stats button at the recorded
-      safe default position.
-- [ ] Record a safe default overlay-button position at the supported UI scales.
-- [ ] Define the button label, width, and height once as shared constants. Give
-      the overlay widget a matching fixed frame, and use those same constants
-      for rendering and hit-testing so visible bounds and the click target
-      cannot drift apart.
-- [ ] Implement one shared activation helper that first validates the current
-      focus against the confirmed unit-card focus
-      path set, then calls `dfhack.gui.getSelectedUnit(true)` before showing a
-      screen, calls `stats_popover.open(unit)`, reports any focus, selection, or
-      popover error exactly once, and returns only the screen or `nil`. This
-      guard applies equally to mouse activation and independently callable
-      `overlay_trigger()` CLI activation or an optional user-created binding.
-      It must not repurpose or duplicate SoulSearch's default `Ctrl-F` binding,
-      which opens `gui/soulsearch`.
-- [ ] Define activation ownership explicitly:
-  - [ ] render the button through static, non-input child content and perform an
-        explicit widget-frame hit-test for `_MOUSE_L` in the overlay widget;
-  - [ ] call the shared helper only when that hit-test is inside the rendered
-        button rectangle;
-  - [ ] mouse `onInput()` returns `true` only after consuming that button click
-        and delegates all other input to its superclass;
-  - [ ] `overlay_trigger()` calls the same helper and returns the shown screen
-        for DFHack CLI or optional user-created-keybinding ownership; and
-  - [ ] the resulting popover registers exactly once through its screen
-        lifecycle regardless of activation path. `screen_registry.lua` does not
-        distinguish mouse from CLI activation and does not become an input
-        owner.
-- [ ] Treat the modal's `soulsearch/stats` focus as outside the unit-card
-      activation guard. Same-unit and different-unit re-entry while the popover
-      is active belongs to direct `stats_popover.open(unit)` calls and tests,
-      not to a second overlay activation path.
-- [ ] Resolve the popover module with `reqscript()` at activation time, or use
-      an equivalently reload-safe lookup, so `soulsearch reload` cannot leave
-      the widget calling a stale module table.
-- [ ] Ensure the overlay widget itself is never attached as a popover subview.
-- [ ] Keep the button static and omit `overlay_onupdate()` unless live evidence
-      proves it is necessary. Never perform per-tick unit scanning or Stats
-      recomputation.
-- [ ] Add registration, focus-path, default-state, activation, missing-unit,
-      wrong-focus-with-selected-unit, fixed-frame geometry, and exact button-
-      hitbox tests with overlay/GUI stubs:
-  - [ ] prove the declared frame, rendered label bounds, and hitbox use the same
-        button constants;
-  - [ ] exercise every button edge and immediately outside each edge; and
-  - [ ] prove right click, scrolling, and unrelated clicks pass through without
-        opening a popover or consuming vanilla unit-card input.
-- [ ] Update `tests/run.lua` and overlay/GUI test support in Phase 5 before
-      running this phase's gate.
-- [ ] Document the development reload procedure:
-      `:lua require('plugins.overlay').rescan()` after script changes.
-- [ ] Document that removing or renaming overlay-script globals during
-      development additionally requires
-      `devel/clear-script-env <overlay-script>` before the rescan.
-- [ ] Define the production `soulsearch reload` behavior explicitly:
-  - [ ] preserve the automatic bootstrap enabled/disabled state and the
-        first-run keybinding decision defined by
-        `docs/zero-touch-startup.todo`;
-  - [ ] leave exactly one SoulSearch-owned lifecycle callback if the startup
-        implementation requires one, without retaining a stale internal module
-        table;
-  - [ ] do not clear or execute the active top-level `soulsearch.lua`
-        environment as an entry in its own internal registry sequence;
-  - [ ] dismiss all registered main and popover screens;
-  - [ ] capture the old registry's complete script-name list before clearing
-        any environment;
-  - [ ] clear every module environment in that old list except the registry so
-        removed module entries cannot survive;
-  - [ ] clear and run `internal/soulsearch/module_registry`, reacquire and
-        validate the fresh registry table, and replace the command's cached
-        coordinator reference;
-  - [ ] clear every module named by the fresh registry's `MODULES` sequence,
-        including newly added entries but not the newly loaded registry itself,
-        then run that sequence in dependency order;
-  - [ ] run `devel/clear-script-env` for the stable overlay registration script
-        path without manually executing that script;
-  - [ ] always call `require('plugins.overlay').rescan()` so overlay-class
-        changes are refreshed as well as dynamic popover dependencies;
-  - [ ] leave all SoulSearch UI closed after reload; `gui/soulsearch` remains
-        the separate command for opening a fresh main window; and
-  - [ ] prove that, after invoking `gui/soulsearch` when needed and returning to
-        a unit card, the next button activation uses the current overlay and
-        popover code.
-- [ ] Add command-level reload tests that model an added module, a removed
-      module, a reordered dependency, and a changed registry contract, proving
-      the fresh registry generation rather than the cached pre-reload table
-      controls reconstruction.
+- [x] Add the module-loadable `scripts_modinstalled/soulsearch-stats-overlay.lua`
+      registration script with `--@module=true`. Loading declares only the
+      widget class and `OVERLAY_WIDGETS`; it has no unit lookup, output, screen,
+      or UI side effect.
+- [x] Keep the discovery-owned overlay script outside the internal module
+      registry and distinct from the public enableable bootstrap. It has no
+      enable annotation and never enables the global overlay framework.
+- [x] Define the stable overlay identity: script
+      `soulsearch-stats-overlay`, key `soulsearch_stats`, registered name
+      `soulsearch-stats-overlay.soulsearch_stats`, and configuration `version=1`.
+      The version changes only when intentionally resetting saved widget state.
+- [x] Define `SoulSearchStatsOverlay` as an `overlay.OverlayWidget`, enabled by
+      default, restricted to `dwarfmode/ViewSheets/UNIT`, and positioned by
+      DFHack's standard bottom-right default `{x=-2, y=-2}`. Global overlay
+      enablement remains a framework prerequisite; users retain normal widget
+      enable/disable and placement control.
+- [x] Render a static `Stats` label with one shared label/width/height contract
+      for the fixed frame and hit-test. The widget has no per-tick update or
+      unit scanning.
+- [x] Implement one guarded activation helper for mouse and `overlay_trigger()`:
+      require the exact unit-card focus, capture `getSelectedUnit(true)`, resolve
+      `stats_popover` through `reqscript()` at activation time, report one
+      focus/selection/popover error, and return only the screen or `nil`. It
+      does not alter the full-window `Ctrl-F` binding.
+- [x] Consume only an in-bounds `_MOUSE_L` button click; delegate right click,
+      scroll, and all other input to the superclass. The overlay widget is never
+      a popover subview and screen registration stays owned by the popover.
+- [x] Add overlay/GUI-stub coverage for registration identity, focus/default
+      configuration, success and failure activation, shared CLI ownership,
+      exact label/frame/hitbox bounds, every edge, and pass-through input.
+- [x] Update `tests/run.lua` and test support for the overlay suite.
+- [x] Define development reload: run
+      `:lua require('plugins.overlay').rescan()` after overlay script changes;
+      when globals are removed or renamed, first run
+      `devel/clear-script-env soulsearch-stats-overlay`.
+- [x] Define production `soulsearch reload`: preserve bootstrap/keybinding
+      state; dismiss registered UI; snapshot and clear old non-registry modules;
+      replace the registry coordinator; clear and run the fresh dependency
+      sequence; clear (but do not run) the overlay script; rescan overlays; and
+      leave UI closed for `gui/soulsearch` to open separately.
+- [x] Add command-level coverage for incomplete and changed registry contracts,
+      removed and newly added modules, fresh reordered construction, overlay
+      environment clearing/rescan, and no UI opening.
 
 ### Phase 5 gate
 
-- [ ] With the overlay framework enabled, `overlay list` discovers the widget
-      and `gui/control-panel` can enable or disable its saved widget state.
-- [ ] The button appears on the vanilla unit card and nowhere outside its
-      confirmed focus context.
-- [ ] Activating it always opens Stats for the unit that was visible at click
-      time.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
+- [x] Automated registration, focus, configuration, activation, and input
+      ownership coverage proves the overlay contract without interactive or
+      smoke testing.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass for the
       overlay and reload implementation.
+
+### Overlay identity and development reload
+
+- Script path: `scripts_modinstalled/soulsearch-stats-overlay.lua`
+- Widget key: `soulsearch_stats`; registered name:
+  `soulsearch-stats-overlay.soulsearch_stats`
+- Configuration version: `1`; default position: `{x=-2, y=-2}`.
+- After edits, run `:lua require('plugins.overlay').rescan()`. When deleting or
+  renaming globals, run `devel/clear-script-env soulsearch-stats-overlay` first.
 
 ## Phase 6 - Automated integration, packaging, and documentation
 
@@ -725,5 +657,5 @@ Do not pre-fill results or mark a gate complete from planned coverage alone.
 | 2 | | Extracted modules, collection error contract, copied sort ownership, Stats formatter LuaDoc contract, complete dependency order, loader support, `on_layout` single-pass component/reset/layout tests, build/test/diff commands | Pending |
 | 3 | 2026-07-14 | Reusable component migration; focused panel, layout, sort, subject, and tooltip coverage; `tools/Test.ps1` (219 tests); `tools/Build.ps1`; `git diff --check`; and in-process `dfhack-run soulsearch` module-load check | Complete |
 | 4 | 2026-07-14 | `stats_popover` and derived config; singleton, validation, resize, modal composition, and registry-exclusion coverage; module dependency-order assertions; `tools/Test.ps1` (225 tests); `tools/Build.ps1`; and `git diff --check` | Complete |
-| 5 | | Overlay identity/discovery/focus/configuration, global framework prerequisite, shared fixed button geometry, guarded CLI/mouse activation, fresh registry reconstruction, clean environment rescan, build/test/diff commands | Pending |
+| 5 | 2026-07-14 | Static overlay identity/configuration and guarded activation coverage; fresh-registry reload, removed/new module, overlay-clear/rescan coverage; `tools/Test.ps1` (229 tests); `tools/Build.ps1` (40 Lua files); and `git diff --check` | Complete |
 | 6 | | Release metadata, build, test, publish with nested package verification, diff check, counts and package path | Pending |

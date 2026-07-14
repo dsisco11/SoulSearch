@@ -778,4 +778,64 @@ function M.load_stats_popover(repo_root, options)
         config, registry, state
 end
 
+function M.load_stats_overlay(repo_root, options)
+    options = options or {}
+    local state = {opens=0, lookups=0, errors={}}
+    local base = {
+        addviews=function(self, views)
+            self.subviews={}
+            for _, view in ipairs(views) do self.subviews[view.view_id]=view end
+        end,
+        onInput=function() return false end,
+    }
+    local function class(parent)
+        local result = {super=parent or base, attrs={}}
+        function result.ATTRS(attrs)
+            for key, value in pairs(attrs) do result.attrs[key]=value end
+        end
+        return setmetatable(result, {
+            __index=parent or base,
+            __call=function(cls, info)
+                local instance=info or {}
+                setmetatable(instance, {__index=cls})
+                if cls.init then cls.init(instance, info or {}) end
+                return instance
+            end,
+        })
+    end
+    local shown_screen = options.shown_screen or {id='shown'}
+    local popover = {open=function(unit)
+        state.opens=state.opens+1
+        state.last_unit=unit
+        if options.popover_error then return nil, options.popover_error end
+        return shown_screen, nil
+    end}
+    local globals = {
+        DEFAULT_NIL=nil,
+        defclass=function(_, parent) return class(parent) end,
+        dfhack={
+            gui={
+                getCurViewscreen=function() return options.screen or {} end,
+                getFocusStrings=function() return options.focuses or {} end,
+                getSelectedUnit=function() return options.unit end,
+            },
+            printerr=function(error) table.insert(state.errors, error) end,
+        },
+        require=function(name)
+            if name == 'plugins.overlay' then return {OverlayWidget=base} end
+            if name == 'gui.widgets' then return {
+                Label=setmetatable({}, {__call=function(_, info) return info end}),
+            } end
+            error('unexpected require: ' .. name)
+        end,
+        reqscript=function(name)
+            assert(name == 'internal/soulsearch/stats_popover')
+            state.lookups=state.lookups+1
+            return popover
+        end,
+    }
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/soulsearch-stats-overlay.lua', globals), state
+end
+
 return M

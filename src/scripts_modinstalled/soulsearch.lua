@@ -27,6 +27,7 @@ also attempts default-keybinding setup, but never replaces another command's
 
 local MODULE_REGISTRY_SCRIPT = 'internal/soulsearch/module_registry'
 local KEYBINDINGS_SCRIPT = 'internal/soulsearch/keybindings'
+local OVERLAY_SCRIPT = 'soulsearch-stats-overlay'
 
 ---@return boolean
 function isEnabled()
@@ -87,28 +88,48 @@ local function validate_modules()
     return load_module_registry().load_all(reqscript)
 end
 
----Explicit development reload. Keep the registry environment alive as the
----coordinator while its dependency/consumer modules are cleared and rebuilt.
+---@param script_names string[]
+local function clear_script_environments(script_names)
+    if #script_names > 0 then
+        dfhack.run_command('devel/clear-script-env', table.unpack(script_names))
+    end
+end
+
+---Explicit development reload. Rebuild the registry itself between clearing
+---the old generation and constructing the fresh dependency sequence.
 ---@return table<string, table>
 local function reload_modules()
-    local module_registry = load_module_registry()
+    local old_registry = load_module_registry()
     local old_ui = reqscript('internal/soulsearch/ui')
     assert(type(old_ui.dismiss_all) == 'function',
         'SoulSearch UI module cannot safely dismiss windows for reload.')
     old_ui.dismiss_all()
 
-    local script_names = module_registry.get_script_names()
-    -- The registry is the current command's coordinator. Clearing it here can
-    -- leave reqscript() with a partially rebuilt environment before load_all()
-    -- runs. Every listed runtime module follows it in dependency-safe order.
-    table.remove(script_names, 1)
-    dfhack.run_command(
-        'devel/clear-script-env',
-        table.unpack(script_names))
-    for _, spec in ipairs(module_registry.MODULES) do
+    local old_script_names = old_registry.get_script_names()
+    local old_modules = {}
+    for _, name in ipairs(old_script_names) do
+        if name ~= MODULE_REGISTRY_SCRIPT then
+            table.insert(old_modules, name)
+        end
+    end
+    clear_script_environments(old_modules)
+
+    dfhack.run_command('devel/clear-script-env', MODULE_REGISTRY_SCRIPT)
+    dfhack.run_script(MODULE_REGISTRY_SCRIPT)
+    local fresh_registry = load_module_registry()
+
+    local fresh_modules = {}
+    for _, spec in ipairs(fresh_registry.MODULES) do
+        table.insert(fresh_modules, spec.name)
+    end
+    clear_script_environments(fresh_modules)
+    for _, spec in ipairs(fresh_registry.MODULES) do
         dfhack.run_script(spec.name)
     end
-    return validate_modules()
+
+    dfhack.run_command('devel/clear-script-env', OVERLAY_SCRIPT)
+    require('plugins.overlay').rescan()
+    return fresh_registry.load_all(reqscript)
 end
 
 ---@param modules table<string, table>
