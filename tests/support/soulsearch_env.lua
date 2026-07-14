@@ -675,6 +675,195 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
     return environment, screen_registry, ui_state
 end
 
+---Loads the composed UI with deterministic pure-Lua collaborators. This keeps
+---the characterization boundary on the real ui.lua methods while avoiding a
+---dependency on a running DFHack graphical context.
+---@param repo_root string
+---@return table ui, fun(settings: table|nil): table new_window, table state
+function M.load_ui_characterization(repo_root)
+    local components = M.load_ui_components(repo_root)
+    local filter_state = M.load_filter_state(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    local ui_layout = M.load_ui_layout(repo_root)
+    local ui_refresh = M.load_ui_refresh(repo_root)
+    local screen_registry = M.load_screen_registry(repo_root)
+    local state = {
+        settings_updates={}, revealed={}, screen_registry=screen_registry,
+    }
+
+    local function class(parent)
+        local result = {super=parent or {}}
+        function result.ATTRS(attrs) result.attrs = attrs end
+        return result
+    end
+
+    local function add_runtime_methods(view, parent, root_subviews)
+        view.parent_view = parent
+        if view.visible == nil then view.visible = true end
+        view.subviews = view.subviews or {}
+        function view:setFocus(value) self.focused = value end
+        function view:setText(value) self.text = value end
+        function view:setChoices(choices, selected)
+            self.choices = choices
+            self.selected = selected
+        end
+        function view:getSelected()
+            return self.selected, self.choices and self.choices[self.selected]
+        end
+        function view:moveCursor(delta) self.cursor_delta = delta end
+        function view:getMousePos() return self.mouse_x, self.mouse_y end
+        function view:getIdxUnderMouse() return self.mouse_index end
+        function view:getMouseFramePos() return self.frame_mouse_x, self.frame_mouse_y end
+        function view:setSelected(index) self.selected = index end
+        for _, child in ipairs(view.subviews) do
+            if child.view_id then
+                view.subviews[child.view_id] = child
+                root_subviews[child.view_id] = child
+            end
+            add_runtime_methods(child, view, root_subviews)
+        end
+    end
+
+    local widgets_base = {
+        onInput=function() return false end,
+        onDragBegin=function() end,
+        onRenderBody=function() end,
+    }
+    local widgets = {Window=widgets_base}
+    local gui = {FRAME_THIN='thin', ZScreen={}}
+    local modules = {
+        ['internal/soulsearch/residents']={
+            get_unavailable_reason=function() return nil end,
+            collect_from_provider=function() return state.rows or {} end,
+        },
+        ['internal/soulsearch/unit_scope_provider']={
+            get_options=function()
+                return {
+                    {label='Residents', value='fort_residents'},
+                    {label='Visitors', value='visitors'},
+                }
+            end,
+            new=function(scope) return {scope=scope} end,
+        },
+        ['internal/soulsearch/race_filter_provider']={
+            new=function(provider) return provider end,
+        },
+        ['internal/soulsearch/search']={
+            apply=function() return state.results or {} end,
+            sort_results=function(results, key, reverse)
+                state.last_sort = {results=results, key=key, reverse=reverse}
+            end,
+        },
+        ['internal/soulsearch/descriptors']={
+            get_catalog=function()
+                return {by_id={}, groups={
+                    physical_attributes={}, mental_attributes={}, traits={},
+                    skills={}, races={},
+                }}
+            end,
+        },
+        ['internal/soulsearch/filter_state']=filter_state,
+        ['internal/soulsearch/window_settings']={
+            update=function(id, changes)
+                table.insert(state.settings_updates, {id=id, changes=changes})
+            end,
+        },
+        ['internal/soulsearch/window_config']={
+            resolve=function() error('explicit settings expected in characterization') end,
+        },
+        ['internal/soulsearch/screen_registry']=screen_registry,
+        ['internal/soulsearch/filter_defaults']={get=function() end, get_all=function() return {} end},
+        ['internal/soulsearch/role_presets']={
+            get=function() end,
+            get_role_presets=function() return {} end,
+            get_combat_presets=function() return {} end,
+        },
+        ['internal/soulsearch/filter_presets']={list=function() return {} end},
+        ['internal/soulsearch/skill_categories']={
+            get_category=function() end,
+            get_order=function() return {} end,
+        },
+        ['internal/soulsearch/text_match']=M.load_text_match(repo_root),
+        ['internal/soulsearch/ui_components']=components,
+        ['internal/soulsearch/ui_format']=ui_format,
+        ['internal/soulsearch/ui_layout']=ui_layout,
+        ['internal/soulsearch/ui_refresh']=ui_refresh,
+        ['internal/soulsearch/stats_panel']={
+            SoulSearchStatsPanel=function(info)
+                info.widget_kind = 'SoulSearchStatsPanel'
+                function info:set_subject(subject) self.subject = subject end
+                function info:get_tooltip_text() return self.tooltip_text end
+                return info
+            end,
+        },
+        ['internal/soulsearch/ui_tooltip']={
+            SoulSearchTooltip=function(info)
+                info.widget_kind = 'SoulSearchTooltip'
+                return info
+            end,
+        },
+        ['internal/soulsearch/ui_glyphs']={CP437_VERTICAL_LINE=179},
+        ['internal/soulsearch/filter_constants']={FILTER_CONSTANTS={
+            direction={HIGH='high', LOW='low'},
+            kind={RACE='race'},
+            race={group_id_prefix='race:group:'},
+        }},
+    }
+    local globals = make_presentation_globals()
+    globals.DEFAULT_NIL = nil
+    globals.defclass = function(_, parent) return class(parent) end
+    globals.dfhack = {
+        pen={parse=function(value) return value end},
+        screen={
+            getMousePos=function() return state.mouse_x, state.mouse_y end,
+            getWindowSize=function() return 150, 45 end,
+        },
+        units={getPosition=function(unit) return unit.position end},
+        gui={revealInDwarfmodeMap=function(pos)
+            table.insert(state.revealed, pos)
+        end},
+    }
+    globals.require = function(name)
+        if name == 'gui' then return gui end
+        if name == 'gui.dialogs' then return {showInputPrompt=function() end} end
+        if name == 'gui.widgets' then return widgets end
+        error('unexpected require: ' .. tostring(name))
+    end
+    globals.reqscript = function(name)
+        local module = modules[name]
+        assert(module, 'unexpected reqscript: ' .. tostring(name))
+        return module
+    end
+
+    local ui = module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui.lua', globals)
+
+    local function new_window(settings)
+        settings = settings or {
+            settings_id='default', explicit={},
+            frame={l=1, t=2, w=110, h=45},
+            filters={}, unit_scope='fort_residents',
+            result_sort={key=nil, reverse=false, phase=0},
+            stats_sort={key='value', reverse=true},
+        }
+        local window = setmetatable(
+            {settings=settings, subviews={}, visible=true},
+            {__index=ui.SoulSearchWindow})
+        function window:addviews(views)
+            self.subviews = views
+            for _, child in ipairs(views) do
+                if child.view_id then self.subviews[child.view_id] = child end
+                add_runtime_methods(child, self, self.subviews)
+            end
+        end
+        ui.SoulSearchWindow.init(window)
+        return window
+    end
+
+    return ui, new_window, state
+end
+
 function M.load_stats_popover(repo_root, options)
     options = options or {}
     local registry = M.load_screen_registry(repo_root)

@@ -86,32 +86,53 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Phase 0 - Baseline and characterization
 
-- [ ] Confirm the worktree state and record any pre-existing changes before
+- [x] Confirm the worktree state and record any pre-existing changes before
       source edits.
-- [ ] Record the current module dependency order for `ui_components.lua`,
+- [x] Record the current module dependency order for `ui_components.lua`,
       `ui.lua`, `stats_panel.lua`, `ui_tooltip.lua`, and their consumers.
-- [ ] Expand characterization tests before moving implementation:
-  - [ ] exact top-level and recursive child order;
-  - [ ] stable view IDs and descendant lookup;
-  - [ ] keyboard focus/traversal and result-list cursor shortcuts;
-  - [ ] modal open, close, right-click dismissal, and mouse capture;
-  - [ ] picker visibility and overlap order;
-  - [ ] filter action and Results header hit-testing;
-  - [ ] tooltip source precedence and exact copy;
-  - [ ] result selection, submission, sorting, and selection retention;
-  - [ ] refresh delegation into Results, Stats, filters, and pickers;
-  - [ ] drag/resize persistence and multiple-window settings isolation; and
-  - [ ] screen registration and idempotent cleanup.
-- [ ] Run the pre-refactor automated baseline:
-  - [ ] `tools/Build.ps1`;
-  - [ ] `tools/Test.ps1`; and
-  - [ ] `git diff --check`.
+- [x] Expand characterization tests before moving implementation:
+  - [x] exact top-level and recursive child order;
+  - [x] stable view IDs and descendant lookup;
+  - [x] keyboard focus/traversal and result-list cursor shortcuts;
+  - [x] modal open, close, right-click dismissal, and mouse capture;
+  - [x] picker visibility and overlap order;
+  - [x] filter action and Results header hit-testing;
+  - [x] tooltip source precedence and exact copy;
+  - [x] result selection, submission, sorting, and selection retention;
+  - [x] refresh delegation into Results, Stats, filters, and pickers;
+  - [x] drag/resize persistence and multiple-window settings isolation; and
+  - [x] screen registration and idempotent cleanup.
+- [x] Run the pre-refactor automated baseline:
+  - [x] `tools/Build.ps1`;
+  - [x] `tools/Test.ps1`; and
+  - [x] `git diff --check`.
+
+### Phase 0 recorded baseline
+
+- Worktree before Phase 0 edits: clean (`git status --short` produced no
+  entries). No pre-existing changes were present.
+- Registered dependency order (1-based `MODULES` positions):
+  `ui_tooltip` (27), `stats_panel` (29), `ui_components` (30), and `ui` (36).
+  Their relevant registered neighbors are `ui_format` (26),
+  `stats_presenter` (28), `ui_refresh` (31), `residents` (32), and
+  `stats_popover` (33).
+- Direct production dependencies and consumers:
+  - `ui_components` depends on `ui_format` and `ui_layout`; `ui` consumes it.
+  - `stats_panel` depends on `stats_presenter` and `stats_layout`; `ui`,
+    `stats_popover`, and `soulsearch-stats-overlay` consume it.
+  - `ui_tooltip` depends on `ui_format`; `ui`, `stats_popover`, and
+    `soulsearch-stats-overlay` consume it.
+  - `ui` consumes all three modules above and is consumed through its stable
+    facade by `soulsearch.lua`, `gui/soulsearch.lua`, and lifecycle reload.
+- Pure-Lua characterization is registered in `tests/run.lua`. The composed
+  boundary uses the real `ui.lua`, `ui_components.lua`, `ui_refresh.lua`, and
+  state/layout/format modules with deterministic DFHack collaborators.
 
 ### Phase 0 gate
 
-- [ ] Tests fail if extraction changes composition, focus, geometry, input,
+- [x] Tests fail if extraction changes composition, focus, geometry, input,
       tooltips, state transitions, refresh behavior, or lifecycle behavior.
-- [ ] The automated baseline is green and recorded before modules move.
+- [x] The automated baseline is green and recorded before modules move.
 
 ## Phase 1 - Establish the component namespace and leaf widgets
 
@@ -314,4 +335,4 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 | Date | Phase/gate | Evidence | Result | Notes |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| 2026-07-14 | Phase 0 | Clean pre-edit worktree; dependency baseline above; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 40 Lua files compile; 238 tests, 0 failures; whitespace check clean apart from Git line-ending notices. No production module moved. |

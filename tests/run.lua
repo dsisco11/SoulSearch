@@ -37,6 +37,7 @@ local suites = {
     (require('ui_format_test')),
     (require('stats_presenter_test')),
     (require('ui_components_test')),
+    (require('ui_characterization_test')),
     (require('ui_open_test')),
     (require('residents_test')),
     (require('keybindings_test')),
