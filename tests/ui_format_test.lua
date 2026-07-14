@@ -120,4 +120,14 @@ return function(test, repo_root)
         test.assert_equal('   2.3', texts[13])
         test.assert_equal('darkgrey', tokens[11].pen)
     end)
+
+    test.case('UI format: stats empty and fallback copy is generic to units', function()
+        local empty = format.format_stats_header(nil)
+        test.assert_equal('No unit selected.', empty[1].text)
+
+        local fallback = format.format_stats_header{
+            row={}, filter_criteria={},
+        }
+        test.assert_equal('Unknown unit', fallback[1].text)
+    end)
 end

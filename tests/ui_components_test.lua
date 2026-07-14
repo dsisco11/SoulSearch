@@ -286,14 +286,19 @@ return function(test, repo_root)
         test.assert_equal(1, list.selected)
         test.assert_equal(-10, list.delta)
 
-        local function label(height)
+        local function label(height, start_line_num)
             return {
-                setText=function(self, text) self.text = text end,
+                start_line_num=start_line_num,
+                setText=function(self, text)
+                    -- DFHack widgets.Label:setText() resets its scroll position.
+                    self.start_line_num = 1
+                    self.text = text
+                end,
                 getTextHeight=function() return height end,
                 updateLayout=function(self, frame) self.updated_with = frame end,
             }
         end
-        local header, columns, body = label(3), label(2), label(1)
+        local header, columns, body = label(3), label(2), label(1, 7)
         local frame = {height=30}
         components.update_stats_panel(
             header, columns, body, {unit_id=7}, 'value', true, frame)
@@ -302,10 +307,23 @@ return function(test, repo_root)
         test.assert_equal('body', body.text[1])
         test.assert_equal('value', body.text[3])
         test.assert_true(body.text[4])
+        test.assert_equal(1, body.start_line_num)
         test.assert_equal(4, header.frame.t)
         test.assert_equal(7, columns.frame.t)
         test.assert_equal(9, body.frame.t)
         test.assert_equal(frame, header.updated_with)
         test.assert_equal(frame, columns.updated_with)
+
+        local constrained_header = label(10)
+        local constrained_columns = label(3)
+        local constrained_body = label(1)
+        components.update_stats_panel(
+            constrained_header, constrained_columns, constrained_body,
+            {unit_id=7}, nil, false, {height=12})
+        test.assert_equal(4, constrained_header.frame.t)
+        test.assert_equal(5, constrained_header.frame.h)
+        test.assert_equal(9, constrained_columns.frame.t)
+        test.assert_equal(2, constrained_columns.frame.h)
+        test.assert_equal(11, constrained_body.frame.t)
     end)
 end

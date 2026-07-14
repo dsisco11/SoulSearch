@@ -512,7 +512,7 @@ function create_stats_panel(on_sort)
             view_id='stats_header',
             frame=ui_layout.get_frame('stats_header'),
             auto_height=false,
-            text='No resident selected.',
+            text='No unit selected.',
         },
         SortableHeader{
             view_id='stats_columns',

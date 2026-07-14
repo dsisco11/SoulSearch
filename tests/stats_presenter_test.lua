@@ -45,6 +45,18 @@ return function(test, repo_root)
         end
     end)
 
+    test.case('Stats presenter: no meaningful deviations produces no records', function()
+        local records = presenter.get_display_records({
+            unit={},
+            row={
+                physical_attributes={STRENGTH=0},
+                mental_attributes={FOCUS=0},
+                traits={PATIENCE=0},
+            },
+        }, nil, false)
+        test.assert_equal(0, #records)
+    end)
+
     local sort_cases = {
         {name='label ascending', key='label', reverse=false,
          expected={'Focus', 'Patience', 'Strength', 'Willpower'}},

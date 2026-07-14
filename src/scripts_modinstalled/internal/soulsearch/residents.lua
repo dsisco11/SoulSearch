@@ -1,6 +1,8 @@
 --@ module=true
 
 ---@class SoulSearchResidentRow
+---Historical name retained for compatibility. Its structure supports any
+---compatible df.unit, not only a fortress resident.
 ---@field unit df.unit
 ---@field unit_id integer
 ---@field name string

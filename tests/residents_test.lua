@@ -167,4 +167,27 @@ return function(test, repo_root)
         test.assert_nil(missing)
         test.assert_equal('candidate source unavailable', err)
     end)
+
+    test.case('resident collection: one-unit path preserves row semantics', function()
+        local unit = {id=42, status={}}
+        local dfhack_stub = {
+            units={
+                getVisibleName=function() return nil end,
+                getReadableName=function() return 'Stray yak (Tame)' end,
+                getProfessionName=function() return nil end,
+                getMentalAttrValue=function() return nil end,
+                getPhysicalAttrValue=function() return nil end,
+            },
+            translation={translateName=function() return nil end},
+        }
+        local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
+        local row = residents.collect_units({unit})[1]
+        test.assert_equal(unit, row.unit)
+        test.assert_equal(42, row.unit_id)
+        test.assert_equal('Stray yak (Tame)', row.name)
+        test.assert_equal('', row.profession)
+        test.assert_nil(next(row.traits))
+        test.assert_nil(next(row.mental_attributes))
+        test.assert_nil(next(row.physical_attributes))
+    end)
 end

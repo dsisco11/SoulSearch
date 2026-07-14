@@ -297,9 +297,9 @@ end
 function format_stats_header(result)
     local tokens = {}
     if not result or not result.row then
-        return {{text='No resident selected.', pen=COLOR_DARKGREY}}
+        return {{text='No unit selected.', pen=COLOR_DARKGREY}}
     end
-    table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
+    table.insert(tokens, {text=result.name or 'Unknown unit', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, {text=result.profession or '', pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)

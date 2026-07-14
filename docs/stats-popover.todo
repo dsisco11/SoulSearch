@@ -197,56 +197,56 @@ justify marking it complete.
 
 ## Phase 1 - Characterize the reusable behavior seam
 
-- [ ] Expand characterization coverage for all behavior moving out of
+- [x] Expand characterization coverage for all behavior moving out of
       `ui.lua`, `ui_components.lua`, and `ui_layout.lua`:
-  - [ ] view composition and stable child IDs;
-  - [ ] dynamic header/columns/body layout;
-  - [ ] label and delta column boundaries;
-  - [ ] the three-state sort cycle for both columns;
-  - [ ] sort defaults and reverse-direction rules;
-  - [ ] display-record retention, including section gaps;
-  - [ ] header, delta, and attribute tooltip selection;
-  - [ ] scrolled-row tooltip indexing;
-  - [ ] scroll reset/retention on subject and sort changes;
-  - [ ] current keyboard focus order and which inputs reach the Stats area;
-  - [ ] the Stats column headers' child-view input ownership: `SortableHeader`
+  - [x] view composition and stable child IDs;
+  - [x] dynamic header/columns/body layout;
+  - [x] label and delta column boundaries;
+  - [x] the three-state sort cycle for both columns;
+  - [x] sort defaults and reverse-direction rules;
+  - [x] display-record retention, including section gaps;
+  - [x] header, delta, and attribute tooltip selection;
+  - [x] scrolled-row tooltip indexing;
+  - [x] scroll reset/retention on subject and sort changes;
+  - [x] current keyboard focus order and which inputs reach the Stats area;
+  - [x] the Stats column headers' child-view input ownership: `SortableHeader`
         handles its click locally, while `SoulSearchWindow:onInput()` delegates
         to its superclass before only unhandled global fallback handling;
-  - [ ] current layout refresh timing during main-window resize; and
-  - [ ] current persistence behavior: user sort clicks update settings while
+  - [x] current layout refresh timing during main-window resize; and
+  - [x] current persistence behavior: user sort clicks update settings while
         initialization and ordinary Stats refresh do not.
-- [ ] Characterize the existing one-unit data path with
+- [x] Characterize the existing one-unit data path with
       `residents.collect_units({unit})[1]` so the later
       `residents.collect_unit(unit)` adapter preserves the same row semantics
       without scanning a candidate scope.
-- [ ] Add tests for units with:
-  - [ ] physical, mental, and personality data;
-  - [ ] no current soul;
-  - [ ] no meaningful deviations; and
-  - [ ] missing or fallback display names.
-- [ ] Define and document the `SoulSearchStatsSubject` contract, including an
+- [x] Add tests for units with:
+  - [x] physical, mental, and personality data;
+  - [x] no current soul;
+  - [x] no meaningful deviations; and
+  - [x] missing or fallback display names.
+- [x] Define and document the `SoulSearchStatsSubject` contract, including an
       stable `unit_id` snapshot, an empty `filter_criteria` sequence for
       unit-card subjects, and structural compatibility with normal SoulSearch
       results.
-- [ ] Add characterization tests for the current resident-specific empty and
+- [x] Add characterization tests for the current resident-specific empty and
       fallback strings, then deliberately update the shared expectations from
       `No resident selected.` and `Unknown resident` to `No unit selected.` and
       `Unknown unit`. Record this as an intentional cross-host copy correction,
       not an extraction regression.
-- [ ] Retain `SoulSearchResidentRow` as the historical internal row-type name
+- [x] Retain `SoulSearchResidentRow` as the historical internal row-type name
       and explicitly document that its structure supports any compatible
       `df.unit`. Do not introduce a cross-module row-type rename as part of this
       extraction.
-- [ ] Enumerate the current Stats sort default, normalization, and transition
+- [x] Enumerate the current Stats sort default, normalization, and transition
       cases in characterization tests without moving their implementation yet.
       Keep result-list sort cases separate.
 
 ### Phase 1 gate
 
-- [ ] Tests fail if the extraction changes existing sort, hitbox, tooltip,
+- [x] Tests fail if the extraction changes existing sort, hitbox, tooltip,
       scrolling, formatting, or empty-state behavior, except for the explicitly
       documented generic-unit copy correction.
-- [ ] A one-unit row and structurally valid Stats subject can be constructed in
+- [x] A one-unit row and structurally valid Stats subject can be constructed in
       tests without running a full search, while production ownership remains
       unchanged until Phase 2.
 

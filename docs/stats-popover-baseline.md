@@ -26,9 +26,10 @@ record. The outstanding live checks remain in Phase 0 of
 - Category pens are light green (physical), light blue (mental), and light
   magenta (traits). Positive/negative deviation pens retain their existing
   tier-sensitive green/red treatment.
-- The header renders the selected resident name, profession, and selected
-  filters. With no selected result it says `No resident selected.`; missing
-  names fall back to `Unknown resident`.
+- The header renders the selected unit name, profession, and selected filters.
+  With no selected result it says `No unit selected.`; missing names fall back
+  to `Unknown unit`. These are the intentional Phase 1 generic-unit copy
+  corrections from the previous resident-specific strings.
 - Default ordering preserves physical, mental, and trait sections, separating
   non-empty sections with blank rows. Sorted ordering is flat.
 
@@ -45,6 +46,14 @@ record. The outstanding live checks remain in Phase 0 of
 - User sort changes update the window identity's session `stats_sort` snapshot
   and refresh Stats. Initialization and ordinary `refresh_stats()` calls do not
   write settings.
+- `update_stats_panel()` calls `Label:setText()` for the body. DFHack resets
+  `start_line_num` to 1 in that method, so subject and sort changes reset the
+  Stats body to its first line.
+- The root inserts the results query first, then filter controls, result-panel
+  views, and the Stats views. This preserves the pre-extraction keyboard focus
+  traversal order. The Stats body is a standard `widgets.Label`: it handles
+  standard scroll keys when it can scroll, while the column header only owns
+  mouse sorting.
 
 ## Current tooltip behavior
 
@@ -65,7 +74,7 @@ added:
 - `tools/Test.ps1`
 - `git diff --check`
 
-They passed with 210 pure-Lua tests. The tests cover presentation categories,
+They passed with 215 pure-Lua tests. The tests cover presentation categories,
 meaningful-deviation filtering, section gaps, Stats sort ordering, column and
 cell hitbox boundaries, scrolling-record indexing, and current component view
 composition.
@@ -77,7 +86,6 @@ unchecked in `docs/stats-popover.todo`:
 
 - current fortress visual layout, colors, tooltip rendering, scrolling, and
   keyboard focus/traversal;
-- scroll reset/retention for subject and sort changes in a live DFHack UI;
 - vanilla unit-card focus strings and selected-unit lookup;
 - overlay discovery/default placement/global-enable behavior; and
 - `gui.ZScreenModal` pause and input-restoration behavior at the supported UI
