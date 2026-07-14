@@ -70,7 +70,13 @@
 ✔ Make SoulSearch work immediately after installation without requiring a manual initialization command: automatically bootstrap the default Ctrl + F binding while preserving user customization and saved removal. Keep `gui/soulsearch` as the UI command and `soulsearch` as idempotent runtime setup/validation and reload. See `docs/zero-touch-startup.todo`. @done(26-07-13 18:12)
 ☐ Encapsulate the columned-list-with-sortable-headers widget into a reusable class, so that it can be used in other parts of the project. (e.g. the results list and the stats panel both use this widget, so it should be encapsulated into a reusable class.) The new component should model each colum header as a separate `CycleHotkeyLabel` element. @todo(26-07-13 18:12)
 ☐ Add soul-search "stats view" modal window popover to the base games "unit card" window, so that users can quickly see the stats of a unit without having to open the full SoulSearch window.
+☐ [SoulSearch Menu]: Remove the "Stats" title from the stats panel when its in the primary sould search window.
+☐ [Filters->Unit Scope]: Add an "Animals" option to the unit scope dropdown, so that users can search for all animals in the fort, or all animals of a specific type (e.g. dogs, cats, etc.). This will allow users to quickly find animals with specific attributes or skills.
+☐ [Filters->Drowdowns]: Keep menu open after a selection is made, so that users can quickly select multiple filters without having to reopen the menu each time.
+☐ [Filters->Drowdowns]: Show items that are already selected in the dropdown menu, so that users can see what filters are already active and can quickly deselect them if needed.
+☐ [Filters]: padd the "Clear filters" button so it is the same size as all the other buttons in the panel, so that it looks more visually consistent.
+☐ [Filters]: Rename "Include: <scope>" to "Search for: <scope>" to make it more clear what the control does.
 ☐ Evaluate whether any of the projects ui elements/patterns can be replaced with built-in dfhack ui widgets which provide the same functionality.
 ☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)
-☐ Make soul search window panels resizeable.
-☐ Make soul search panels size to fit available window space, so that the user can resize the window and the panels will automatically resize to fit the new window size.
+☐ Make soul search window panels resizeable via the use of the native dfhack 'Divider' widget.
+☐ Make soul search panels size to fit available window space (via using the dfhack `ResizingPanel` widget), so that the user can resize the window and the panels will automatically resize to fit the new window size.
