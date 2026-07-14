@@ -252,121 +252,122 @@ justify marking it complete.
 
 ## Phase 2 - Extract the reusable Stats component
 
-- [ ] Add a focused internal module, preferably `stats_panel.lua`, containing a
+- [x] Add a focused internal module, preferably `stats_panel.lua`, containing a
       `widgets.Panel`-derived reusable component.
-- [ ] Add `stats_subject.lua` with a pure `from_row()` constructor and the
+- [x] Add `stats_subject.lua` with a pure `from_row()` constructor and the
       canonical `SoulSearchStatsSubject` LuaDoc contract.
-- [ ] Update Stats-specific formatter parameter names and LuaDoc in
+- [x] Update Stats-specific formatter parameter names and LuaDoc in
       `ui_format.lua`, especially `format_stats_header(subject)`, to match that
       contract without widening or renaming result-list formatter contracts.
-- [ ] Add `residents.collect_unit(unit)` as a one-row collection adapter that
+- [x] Add `residents.collect_unit(unit)` as a one-row collection adapter that
       returns `row|nil, error|nil` and does not know about Stats subjects or
       presentation fields.
-  - [ ] add `validate_unit_reference(unit) -> integer|nil, error|nil` as the
+  - [x] add `validate_unit_reference(unit) -> integer|nil, error|nil` as the
         shared non-throwing reference validator and use it before any other unit
         field access;
-  - [ ] call `get_unavailable_reason()` before unit-reference validation so the
+  - [x] call `get_unavailable_reason()` before unit-reference validation so the
         established unloaded-map/non-fortress error takes precedence;
-  - [ ] reject nil or malformed units without asserting or printing;
-  - [ ] snapshot exactly one valid unit with the same row semantics as
+  - [x] reject nil or malformed units without asserting or printing;
+  - [x] snapshot exactly one valid unit with the same row semantics as
         `collect_units({unit})[1]`; and
-  - [ ] leave stale ID-to-object validation to the popover API.
-- [ ] Add focused collection tests for valid and nil references, missing,
+  - [x] leave stale ID-to-object validation to the popover API.
+- [x] Add focused collection tests for valid and nil references, missing,
       non-integer, and negative IDs, an ID access that raises, context-error
       precedence, no printing, and one-row parity with
       `collect_units({unit})[1]`.
-- [ ] Add dependency-free `stats_layout.lua` before moving layout constants:
-  - [ ] move reusable label width, value-column position, and hitbox boundaries
+- [x] Add dependency-free `stats_layout.lua` before moving layout constants:
+  - [x] move reusable label width, value-column position, and hitbox boundaries
         into it;
-  - [ ] update `ui_format.lua` to consume it; and
-  - [ ] keep main-window placement coordinates in `ui_layout.lua`.
-- [ ] Add pure `stats_sort.lua` and make the component, Stats portion of window
+  - [x] update `ui_format.lua` to consume it; and
+  - [x] keep main-window placement coordinates in `ui_layout.lua`.
+- [x] Add pure `stats_sort.lua` and make the component, Stats portion of window
       configuration, and tests consume its default, normalization, and
       next-state helpers. Leave result-list sort normalization in
       `window_config.lua`.
-- [ ] Extract `SoulSearchTooltip` into `ui_tooltip.lua` without importing
+- [x] Extract `SoulSearchTooltip` into `ui_tooltip.lua` without importing
       `ui.lua` or depending on `SoulSearchWindow`.
-- [ ] Give the component a small host-facing API:
-  - [ ] initial `subject` and `sort` attributes;
-  - [ ] `set_subject(subject)`;
-  - [ ] `set_sort(sort)`;
-  - [ ] `reset_view_state(sort)`, which silently applies the supplied normalized
+- [x] Give the component a small host-facing API:
+  - [x] initial `subject` and `sort` attributes;
+  - [x] `set_subject(subject)`;
+  - [x] `set_sort(sort)`;
+  - [x] `reset_view_state(sort)`, which silently applies the supplied normalized
         sort and resets the scrollable body to its first row;
-  - [ ] `get_sort()`;
-  - [ ] `get_tooltip_text()`; and
-  - [ ] `on_sort_change(sort)` callback.
-- [ ] Add component-contract tests proving `set_sort()` is silent, user sort
+  - [x] `get_sort()`;
+  - [x] `get_tooltip_text()`; and
+  - [x] `on_sort_change(sort)` callback.
+- [x] Add component-contract tests proving `set_sort()` is silent, user sort
       actions invoke `on_sort_change()`, `reset_view_state()` resets sort and
       scroll without invoking the callback, and relayout after a frame change
       does not require `set_subject()`.
-- [ ] Add sort-ownership tests proving incoming tables, `get_sort()` results,
+- [x] Add sort-ownership tests proving incoming tables, `get_sort()` results,
       callback values, and two simultaneous Stats component instances cannot
       mutate one another through shared references.
-- [ ] Move Stats-owned view creation into the component:
-  - [ ] title and underline;
-  - [ ] unit header;
-  - [ ] fixed column header; and
-  - [ ] scrollable stats body.
-- [ ] Convert Stats layout from main-window absolute coordinates to
+- [x] Move Stats-owned view creation into the component:
+  - [x] title and underline;
+  - [x] unit header;
+  - [x] fixed column header; and
+  - [x] scrollable stats body.
+- [x] Convert Stats layout from main-window absolute coordinates to
       component-relative coordinates.
-- [ ] Recompute component-relative frames and hitboxes when the component's
+- [x] Recompute component-relative frames and hitboxes when the component's
       current `frame_body` changes through its layout lifecycle, independently
       of data refresh.
-- [ ] Supply component-relative frame calculation through the panel's
+- [x] Supply component-relative frame calculation through the panel's
       `on_layout(frame_body)` callback so dynamic child frames are established
       during `postComputeFrame()` before the normal child layout pass.
-- [ ] Prove with focused layout-call coverage that each affected child receives
+- [x] Prove with focused layout-call coverage that each affected child receives
       one normal layout pass after its frame is updated; do not manually relay
       out children or override `updateLayout()` in the normal implementation.
-- [ ] Use an `updateLayout()` fallback only if focused automated and live
+- [x] Use an `updateLayout()` fallback only if focused automated and live
       evidence shows the target DFHack version cannot support `on_layout()`;
       record that evidence and preserve superclass-first, non-recursive layout.
-- [ ] Export the component's minimum content dimensions from `stats_layout.lua`
+- [x] Export the component's minimum content dimensions from `stats_layout.lua`
       with one usable body row already included, and test that structural
       minimum independently from the popover's outer-chrome calculation.
-- [ ] Preserve the current text column geometry and click boundaries unless a
+- [x] Preserve the current text column geometry and click boundaries unless a
       separately recorded live incompatibility requires a deliberate change.
-- [ ] Move Stats-owned behavior into the component:
-  - [ ] presentation refresh and `stats_records` retention;
-  - [ ] sort-column hit-testing and sort cycling;
-  - [ ] attribute-row and delta-cell hit-testing; and
-  - [ ] header, attribute, and delta tooltip selection.
-- [ ] Continue using `stats_presenter.lua` as the sole component-facing facade
+- [x] Move Stats-owned behavior into the component:
+  - [x] presentation refresh and `stats_records` retention;
+  - [x] sort-column hit-testing and sort cycling;
+  - [x] attribute-row and delta-cell hit-testing; and
+  - [x] header, attribute, and delta tooltip selection.
+- [x] Continue using `stats_presenter.lua` as the sole component-facing facade
       for Stats text and display records, with `ui_format.lua` remaining the
       underlying text formatter.
-- [ ] Keep screen-sized tooltip positioning and painting outside the component.
-- [ ] Remove obsolete Stats construction/update helpers from
-      `ui_components.lua` after both behavior and tests have moved.
-- [ ] Move component-internal constants and hit-testing out of the main-window
+- [x] Keep screen-sized tooltip positioning and painting outside the component.
+- [x] Move component-internal constants and hit-testing out of the main-window
       `ui_layout.lua`; keep only the component's placement frame there and put
       shared formatting geometry in `stats_layout.lua`.
-- [ ] Register every module introduced in this phase and update
+- [x] Register every module introduced in this phase and update
       `tests/run.lua`, loader stubs, focused suites, and loader-contract tests
       in this phase rather than deferring them to Phase 6.
-- [ ] Assert dependency-safe registry order explicitly:
-  - [ ] `ui_layout` precedes `ui_format` for the result widths and filter-action
+- [x] Assert dependency-safe registry order explicitly:
+  - [x] `ui_layout` precedes `ui_format` for the result widths and filter-action
         metadata that remain main-window-owned;
-  - [ ] `stats_layout` precedes `ui_format`;
-  - [ ] `ui_format` precedes `stats_presenter`;
-  - [ ] `ui_format` precedes `ui_tooltip` because tooltip wrapping consumes
+  - [x] `stats_layout` precedes `ui_format`;
+  - [x] `ui_format` precedes `stats_presenter`;
+  - [x] `ui_format` precedes `ui_tooltip` because tooltip wrapping consumes
         `ui_format.wrap_text()`;
-  - [ ] `stats_sort` precedes `window_config` and `stats_panel`;
-  - [ ] `stats_subject` precedes popover consumers;
-  - [ ] `ui_tooltip` precedes `ui` and the popover screen; and
-  - [ ] `stats_presenter`, `attribute_descriptions`, and `stats_layout` precede
+  - [x] `stats_sort` precedes `window_config` and `stats_panel`;
+  - [x] `stats_subject` precedes popover consumers;
+  - [x] `ui_tooltip` precedes `ui` and the popover screen; and
+  - [x] `stats_presenter`, `attribute_descriptions`, and `stats_layout` precede
         `stats_panel`, which precedes `ui`.
 
 ### Phase 2 gate
 
-- [ ] The component can be instantiated in an arbitrary parent frame without
+- [x] The component can be instantiated in an arbitrary parent frame without
       referring to `STATS_LEFT`, the main window, result-list subviews, or
       `window_settings`.
-- [ ] Component tests cover rendering state, sorting, layout, scrolling, and
+- [x] Component tests cover rendering state, sorting, layout, scrolling, and
       tooltips without constructing the full SoulSearch screen.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 3 - Migrate the main SoulSearch window
 
+- [ ] Remove the compatibility `create_stats_panel()` and `update_stats_panel()`
+      helpers from `ui_components.lua` after this phase replaces their active
+      full-window callers with `stats_panel.lua`.
 - [ ] Replace the existing five loose Stats views with one reusable Stats
       component positioned at the current Stats panel location.
 - [ ] Keep the `ui_refresh.apply()` owner contract unchanged. Implement

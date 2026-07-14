@@ -22,6 +22,7 @@ local ui_components = reqscript('internal/soulsearch/ui_components')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
+local SoulSearchTooltip = reqscript('internal/soulsearch/ui_tooltip')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 local attribute_descriptions = reqscript('internal/soulsearch/attribute_descriptions')
 local filter_constants =
@@ -34,9 +35,6 @@ local FILTER_KIND_RACE = filter_constants.kind.RACE
 local RACE_GROUP_ID_PREFIX = filter_constants.race.group_id_prefix
 local STATS_SORT_LABEL = 'label'
 local STATS_SORT_VALUE = 'value'
-local TOOLTIP_BACKGROUND_PEN = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}
-local TOOLTIP_TEXT_PEN = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
-local TOOLTIP_MAX_TEXT_WIDTH = 60
 
 ---@class SoulSearchPosition
 ---@field x integer
@@ -88,82 +86,6 @@ local function is_mouse_over(view)
     return rect and x and is_visible(view) and rect:inClipGlobalXY(x, y)
 end
 
----@param text string
----@param max_width integer
----@return string tooltip_text
----@return integer tooltip_width
----@return integer tooltip_height
-local function get_tooltip_box(text, max_width)
-    local text_width = math.max(1, math.min(TOOLTIP_MAX_TEXT_WIDTH, max_width - 2))
-    local lines = ui_format.wrap_text(text, text_width)
-    local widest_line = 0
-    for _, line in ipairs(lines) do
-        widest_line = math.max(widest_line, #line)
-    end
-    return table.concat(lines, '\n'), widest_line + 2, #lines + 2
-end
-
----@class SoulSearchTooltip: widgets.Window
----@field label widgets.Label
----@field owner SoulSearchWindow|nil
-SoulSearchTooltip = defclass(SoulSearchTooltip, widgets.Window)
-SoulSearchTooltip.ATTRS{
-    frame={l=0, t=0, w=1, h=3},
-    frame_style=gui.FRAME_THIN,
-    frame_background=TOOLTIP_BACKGROUND_PEN,
-    frame_inset=0,
-    draggable=false,
-    no_force_pause_badge=true,
-    owner=DEFAULT_NIL,
-}
-
----Creates tooltip label content.
-function SoulSearchTooltip:init()
-    self.label = widgets.Label{
-        frame={l=0, t=0, w=1, h=1},
-        auto_height=false,
-        text_pen=TOOLTIP_TEXT_PEN,
-        text='',
-    }
-    self:addviews{self.label}
-end
-
----Positions and draws the tooltip near the mouse cursor.
----@param dc gui.Painter
-function SoulSearchTooltip:render(dc)
-    local owner = self.owner
-    local mouse_x, mouse_y = dfhack.screen.getMousePos()
-    if not owner or not mouse_x then
-        return
-    end
-
-    local text = owner:get_tooltip_text()
-    if text == '' then
-        return
-    end
-
-    local screen_width, screen_height = dfhack.screen.getWindowSize()
-    local tooltip_text, tooltip_width, tooltip_height = get_tooltip_box(
-        text, screen_width)
-    local x = math.min(mouse_x + 2, screen_width - tooltip_width)
-    local y = math.min(mouse_y + 1, screen_height - tooltip_height)
-
-    self.frame = {
-        l=math.max(0, x),
-        t=math.max(0, y),
-        w=tooltip_width,
-        h=tooltip_height,
-    }
-    self.label.frame = {
-        l=0,
-        t=0,
-        w=math.max(1, tooltip_width - 2),
-        h=math.max(1, tooltip_height - 2),
-    }
-    self.label:setText(tooltip_text)
-    self:updateLayout()
-    SoulSearchTooltip.super.render(self, dc)
-end
 
 ---@param target SoulSearchFilterDescriptor[]
 ---@param descriptors SoulSearchFilterDescriptor[]|nil
@@ -1351,7 +1273,7 @@ function SoulSearchScreen:init()
     }
     self:addviews{
         self.window,
-        SoulSearchTooltip{owner=self.window},
+        SoulSearchTooltip{get_text=function() return self.window:get_tooltip_text() end},
     }
 end
 

@@ -1,6 +1,7 @@
 --@ module=true
 
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
+local stats_layout = reqscript('internal/soulsearch/stats_layout')
 
 WINDOW_FRAME = {w=110, h=45, xalign=0.5, yalign=0.5}
 WINDOW_RESIZE_MIN = {w=90, h=30}
@@ -25,9 +26,9 @@ WINDOW_CONTENT_INSET = 1
 UNIT_SCOPE_PICKER_VERTICAL_PADDING = 2 *
     (WINDOW_FRAME_BORDER + WINDOW_CONTENT_INSET)
 
-STATS_LABEL_WIDTH = 24
-STATS_VALUE_COLUMN_X = 27
-STATS_VALUE_HEADER_WIDTH = 7
+STATS_LABEL_WIDTH = stats_layout.LABEL_WIDTH
+STATS_VALUE_COLUMN_X = stats_layout.VALUE_COLUMN_X
+STATS_VALUE_HEADER_WIDTH = stats_layout.VALUE_HEADER_WIDTH
 
 ACTIVE_FILTER_BUTTON_START_X = 21
 FILTER_ACTION_WIDTH = 3
@@ -183,31 +184,19 @@ end
 ---@param y integer|nil
 ---@return string|nil
 function get_stats_header_column(x, y)
-    if not x or y ~= 0 then
-        return nil
-    end
-    if x >= 0 and x < STATS_LABEL_WIDTH then
-        return 'label'
-    end
-    if x >= STATS_VALUE_COLUMN_X and
-            x < STATS_VALUE_COLUMN_X + STATS_VALUE_HEADER_WIDTH then
-        return 'value'
-    end
-    return nil
+    return stats_layout.get_header_column(x, y)
 end
 
 ---@param x integer|nil
 ---@param y integer|nil
 ---@return boolean
 function is_stats_value_cell(x, y)
-    return x and y and y >= 0 and
-        x >= STATS_VALUE_COLUMN_X and
-        x < STATS_VALUE_COLUMN_X + STATS_VALUE_HEADER_WIDTH
+    return stats_layout.is_value_cell(x, y)
 end
 
 ---@param x integer|nil
 ---@param y integer|nil
 ---@return boolean
 function is_stats_label_cell(x, y)
-    return x and y and y >= 0 and x >= 2 and x < STATS_VALUE_COLUMN_X
+    return stats_layout.is_label_cell(x, y)
 end

@@ -4,9 +4,9 @@ local filter_state = reqscript('internal/soulsearch/filter_state')
 local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
 local window_settings = reqscript('internal/soulsearch/window_settings')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
+local stats_sort = reqscript('internal/soulsearch/stats_sort')
 
 local RESULT_SORT_KEYS = {name=true, profession=true, unit_id=true}
-local STATS_SORT_KEYS = {label=true, value=true}
 
 ---@param value any
 ---@return table
@@ -124,8 +124,8 @@ function resolve(options, screen_width, screen_height)
 
     local stats_sort_source = options.stats_sort ~= nil and options.stats_sort or
         saved.stats_sort
-    local stats_sort = normalize_sort(stats_sort_source, STATS_SORT_KEYS, 'stats')
-    if options.stats_sort ~= nil then explicit.stats_sort = stats_sort end
+    local normalized_stats_sort = stats_sort.normalize(stats_sort_source)
+    if options.stats_sort ~= nil then explicit.stats_sort = normalized_stats_sort end
 
     local frame_source = options.frame ~= nil and options.frame or saved.frame
     local frame = normalize_frame(frame_source, screen_width, screen_height)
@@ -136,7 +136,7 @@ function resolve(options, screen_width, screen_height)
         filters=filters,
         unit_scope=unit_scope,
         result_sort=result_sort,
-        stats_sort=stats_sort,
+        stats_sort=normalized_stats_sort,
         frame=frame,
         explicit=explicit,
     }

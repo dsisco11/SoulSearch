@@ -190,4 +190,45 @@ return function(test, repo_root)
         test.assert_nil(next(row.mental_attributes))
         test.assert_nil(next(row.physical_attributes))
     end)
+
+    test.case('resident collection: collect_unit validates safely and preserves parity', function()
+        local unit = {id=42, status={}}
+        local printed = 0
+        local dfhack_stub = {
+            isMapLoaded=function() return true end,
+            world={isFortressMode=function() return true end},
+            printerr=function() printed = printed + 1 end,
+            units={
+                getVisibleName=function() return nil end,
+                getReadableName=function() return 'Stray yak (Tame)' end,
+                getProfessionName=function() return nil end,
+                getMentalAttrValue=function() return nil end,
+                getPhysicalAttrValue=function() return nil end,
+            },
+            translation={translateName=function() return nil end},
+        }
+        local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
+        local expected = residents.collect_units({unit})[1]
+        local row, err = residents.collect_unit(unit)
+        test.assert_nil(err)
+        test.assert_equal(expected.unit_id, row.unit_id)
+        test.assert_equal(expected.name, row.name)
+        local invalid, invalid_err = residents.collect_unit({id=-1})
+        test.assert_nil(invalid)
+        test.assert_equal('SoulSearch requires a valid unit.', invalid_err)
+        local missing, missing_err = residents.collect_unit(nil)
+        test.assert_nil(missing)
+        test.assert_equal('SoulSearch requires a valid unit.', missing_err)
+        local raised, raised_err = residents.collect_unit(setmetatable({}, {
+            __index=function() error('stale') end,
+        }))
+        test.assert_nil(raised)
+        test.assert_equal('SoulSearch requires a valid unit.', raised_err)
+        test.assert_equal(0, printed)
+
+        dfhack_stub.isMapLoaded=function() return false end
+        local unavailable, unavailable_err = residents.collect_unit(nil)
+        test.assert_nil(unavailable)
+        test.assert_equal('SoulSearch requires a loaded fortress map.', unavailable_err)
+    end)
 end

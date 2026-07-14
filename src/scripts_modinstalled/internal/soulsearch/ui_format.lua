@@ -1,6 +1,7 @@
 --@ module=true
 
 local layout = reqscript('internal/soulsearch/ui_layout')
+local stats_layout = reqscript('internal/soulsearch/stats_layout')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
@@ -228,17 +229,17 @@ function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     local label_header = 'Stat' .. marker('label')
     local value_header = 'Delta' .. marker('value')
     table.insert(tokens, {
-        text=('%-' .. layout.STATS_VALUE_COLUMN_X .. 's'):format(label_header),
+        text=('%-' .. stats_layout.VALUE_COLUMN_X .. 's'):format(label_header),
         pen=COLOR_GREY,
     })
     table.insert(tokens, {text=value_header, pen=COLOR_GREY})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, {
-        text=glyphs.CP437_HORIZONTAL_LINE:rep(layout.STATS_LABEL_WIDTH),
+        text=glyphs.CP437_HORIZONTAL_LINE:rep(stats_layout.LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
     table.insert(tokens, {
-        text=(' '):rep(layout.STATS_VALUE_COLUMN_X - layout.STATS_LABEL_WIDTH),
+        text=(' '):rep(stats_layout.VALUE_COLUMN_X - stats_layout.LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
     table.insert(tokens, {
@@ -250,7 +251,7 @@ end
 ---@param record SoulSearchStatsRecord
 function append_attribute_record_tokens(tokens, record)
     table.insert(tokens, {
-        text=('  %-' .. layout.STATS_LABEL_WIDTH .. 's '):format(record.label),
+        text=('  %-' .. stats_layout.LABEL_WIDTH .. 's '):format(record.label),
         pen=record.pen,
     })
     table.insert(tokens, {
@@ -292,18 +293,18 @@ function append_selected_filter_section_tokens(tokens, filter_criteria)
     table.insert(tokens, NEWLINE)
 end
 
----@param result SoulSearchResult|nil
+---@param subject SoulSearchStatsSubject|nil
 ---@return table[]
-function format_stats_header(result)
+function format_stats_header(subject)
     local tokens = {}
-    if not result or not result.row then
+    if not subject or not subject.row then
         return {{text='No unit selected.', pen=COLOR_DARKGREY}}
     end
-    table.insert(tokens, {text=result.name or 'Unknown unit', pen=COLOR_WHITE})
+    table.insert(tokens, {text=subject.name or 'Unknown unit', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text=result.profession or '', pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=subject.profession or '', pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
-    append_selected_filter_section_tokens(tokens, result.filter_criteria)
+    append_selected_filter_section_tokens(tokens, subject.filter_criteria)
     return tokens
 end

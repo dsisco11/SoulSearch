@@ -304,11 +304,12 @@ end
 
 function M.load_ui_layout(repo_root)
     local glyphs = M.load_ui_glyphs(repo_root)
+    local stats_layout = M.load_stats_layout(repo_root)
     local globals = {
         reqscript=function(name)
-            assert(name == 'internal/soulsearch/ui_glyphs',
-                'unexpected reqscript: ' .. tostring(name))
-            return glyphs
+            if name == 'internal/soulsearch/ui_glyphs' then return glyphs end
+            if name == 'internal/soulsearch/stats_layout' then return stats_layout end
+            error('unexpected reqscript: ' .. tostring(name))
         end,
     }
     return module_loader.load(
@@ -347,12 +348,14 @@ end
 
 function M.load_ui_format(repo_root)
     local layout = M.load_ui_layout(repo_root)
+    local stats_layout = M.load_stats_layout(repo_root)
     local glyphs = M.load_ui_glyphs(repo_root)
     local filter_constants = M.load_filter_constants(repo_root)
     local globals = make_presentation_globals()
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/ui_layout' then return layout end
         if name == 'internal/soulsearch/ui_glyphs' then return glyphs end
+        if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         if name == 'internal/soulsearch/filter_constants' then
             return filter_constants
         end
@@ -362,6 +365,73 @@ function M.load_ui_format(repo_root)
         repo_root,
         'src/scripts_modinstalled/internal/soulsearch/ui_format.lua',
         globals)
+end
+
+function M.load_stats_layout(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_layout.lua')
+end
+
+function M.load_stats_sort(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_sort.lua')
+end
+
+function M.load_stats_subject(repo_root)
+    return module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_subject.lua')
+end
+
+function M.load_stats_panel(repo_root)
+    local stats_layout = M.load_stats_layout(repo_root)
+    local stats_sort = M.load_stats_sort(repo_root)
+    local function label(config)
+        config.setText=function(self, text) self.text=text; self.start_line_num=1 end
+        config.getTextHeight=function(self)
+            local count=1; for _ in tostring(self.text or ''):gmatch('\n') do count=count+1 end
+            return count
+        end
+        config.getMousePos=function(self) return self.mouse_x, self.mouse_y end
+        return config
+    end
+    local Panel = setmetatable({}, {__call=function(_, config)
+        config.addviews=function(self, views)
+            self.subviews=self.subviews or {}
+            for _, view in ipairs(views) do self.subviews[view.view_id]=view end
+        end
+        return config
+    end})
+    local widgets={Panel=Panel, Label=setmetatable({}, {__call=function(_, c) return label(c) end})}
+    local globals={COLOR_WHITE='white', COLOR_GREY='grey', DEFAULT_NIL=nil}
+    globals.defclass=function(_, parent)
+        local class={super={onInput=function() return false end}}
+        class.ATTRS=function() end
+        return setmetatable(class, {__call=function(_, config)
+            local instance=parent(config); setmetatable(instance, {__index=class})
+            if class.init then class.init(instance, config) end
+            return instance
+        end})
+    end
+    globals.require=function() return widgets end
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/stats_layout' then return stats_layout end
+        if name == 'internal/soulsearch/stats_sort' then return stats_sort end
+        if name == 'internal/soulsearch/attribute_descriptions' then
+            return {get_tooltip=function(kind, key) return kind .. ':' .. key end}
+        end
+        if name == 'internal/soulsearch/stats_presenter' then return {
+            header=function() return 'header' end, column_header=function() return 'columns' end,
+            body=function() return 'one\ntwo' end,
+            get_display_records=function() return {{kind='trait', key='PATIENCE'}} end,
+        } end
+        error('unexpected reqscript: ' .. name)
+    end
+    local loaded = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/stats_panel.lua', globals)
+    return loaded.SoulSearchStatsPanel
 end
 
 function M.load_stats_presenter(repo_root, attributes)
@@ -384,6 +454,7 @@ end
 
 function M.load_ui_components(repo_root)
     local layout = M.load_ui_layout(repo_root)
+    local stats_layout = M.load_stats_layout(repo_root)
     local ui_format = M.load_ui_format(repo_root)
     local function constructor(kind)
         return setmetatable({widget_kind=kind}, {__call=function(self, config)
@@ -430,6 +501,7 @@ function M.load_ui_components(repo_root)
         end
         if name == 'internal/soulsearch/ui_format' then return ui_format end
         if name == 'internal/soulsearch/ui_layout' then return layout end
+        if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         error('unexpected reqscript: ' .. tostring(name))
     end
     return module_loader.load(
@@ -487,11 +559,13 @@ function M.load_window_config(repo_root)
         repo_root, M.make_df_stub(), {units={}})
     local window_settings = M.load_window_settings(repo_root)
     local ui_layout = M.load_ui_layout(repo_root)
+    local stats_sort = M.load_stats_sort(repo_root)
     local modules = {
         ['internal/soulsearch/filter_state']=filter_state,
         ['internal/soulsearch/unit_scope_provider']=unit_scope_provider,
         ['internal/soulsearch/window_settings']=window_settings,
         ['internal/soulsearch/ui_layout']=ui_layout,
+        ['internal/soulsearch/stats_sort']=stats_sort,
     }
     local config = module_loader.load(
         repo_root,
@@ -557,6 +631,7 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
         ['internal/soulsearch/residents']=residents,
         ['internal/soulsearch/filter_constants']=filter_constants,
         ['internal/soulsearch/ui_layout']=layout,
+        ['internal/soulsearch/ui_tooltip']=function(info) return info end,
         ['internal/soulsearch/screen_registry']=screen_registry,
         ['internal/soulsearch/window_config']=window_config,
         ['internal/soulsearch/window_settings']=window_settings,
