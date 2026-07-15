@@ -819,6 +819,12 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
     }
     local window_settings = {update=function() end}
     local empty_module = {}
+    local screen_constructor = {construct=function()
+        error('SoulSearchScreen was constructed for an unavailable context')
+    end}
+    setmetatable(screen_constructor, {__call=function(self, attributes)
+        return self.construct(attributes)
+    end})
     local modules = {
         ['internal/soulsearch/residents']=residents,
         ['internal/soulsearch/filter_constants']=filter_constants,
@@ -829,6 +835,9 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
         ['internal/soulsearch/screen_registry']=screen_registry,
         ['internal/soulsearch/window_config']=window_config,
         ['internal/soulsearch/window_settings']=window_settings,
+        ['internal/soulsearch/ui/main_screen']={
+            SoulSearchScreen=screen_constructor,
+        },
     }
     local widgets = {
         Window=class(),
@@ -859,12 +868,7 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
     local environment = module_loader.load(
         repo_root,
         'src/scripts_modinstalled/internal/soulsearch/ui.lua', globals)
-    environment.SoulSearchScreen = setmetatable({}, {
-        __call=function()
-            error('SoulSearchScreen was constructed for an unavailable context')
-        end,
-    })
-    return environment, screen_registry, ui_state
+    return environment, screen_registry, ui_state, screen_constructor
 end
 
 ---Loads the composed UI with deterministic pure-Lua collaborators. This keeps
@@ -1078,6 +1082,14 @@ function M.load_ui_characterization(repo_root)
         return module
     end
 
+    local main_window = module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/main_window.lua', globals)
+    modules['internal/soulsearch/ui/main_window'] = main_window
+    local main_screen = module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua', globals)
+    modules['internal/soulsearch/ui/main_screen'] = main_screen
     local ui = module_loader.load(
         repo_root,
         'src/scripts_modinstalled/internal/soulsearch/ui.lua', globals)
@@ -1092,7 +1104,7 @@ function M.load_ui_characterization(repo_root)
         }
         local window = setmetatable(
             {settings=settings, subviews={}, visible=true},
-            {__index=ui.SoulSearchWindow})
+            {__index=main_window.SoulSearchWindow})
         function window:addviews(views)
             self.subviews = views
             for _, child in ipairs(views) do
@@ -1100,11 +1112,11 @@ function M.load_ui_characterization(repo_root)
                 add_runtime_methods(child, self, self.subviews)
             end
         end
-        ui.SoulSearchWindow.init(window)
+        main_window.SoulSearchWindow.init(window)
         return window
     end
 
-    return ui, new_window, state
+    return ui, new_window, state, main_window, main_screen
 end
 
 function M.load_stats_popover(repo_root, options)

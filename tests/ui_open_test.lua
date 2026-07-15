@@ -53,14 +53,13 @@ return function(test, repo_root)
     end)
 
     test.case('UI open: scoped options construct one new screen', function()
-        local ui, _, state = soulsearch_env.load_ui_open_guard(repo_root, nil)
+        local ui, _, state, screen_constructor =
+            soulsearch_env.load_ui_open_guard(repo_root, nil)
         local constructed
-        ui.SoulSearchScreen = setmetatable({}, {
-            __call=function(_, attributes)
-                constructed = attributes
-                return {show=function(self) return self end}
-            end,
-        })
+        screen_constructor.construct=function(attributes)
+            constructed = attributes
+            return {show=function(self) return self end}
+        end
         local options = {
             settings_id='creatures:miners',
             filters={{id='skill:MINING', direction='high'}},
@@ -75,9 +74,10 @@ return function(test, repo_root)
     end)
 
     test.case('UI input: child handling precedes global fallback handling', function()
-        local ui = soulsearch_env.load_ui_open_guard(repo_root, nil)
+        local _, _, _, main_window =
+            soulsearch_env.load_ui_characterization(repo_root)
         local super_calls, refreshes = 0, 0
-        ui.SoulSearchWindow.super = {
+        main_window.SoulSearchWindow.super = {
             onInput=function()
                 super_calls = super_calls + 1
                 return true
@@ -86,7 +86,8 @@ return function(test, repo_root)
         local window = {
             refresh_residents=function() refreshes = refreshes + 1 end,
         }
-        test.assert_true(ui.SoulSearchWindow.onInput(window, {CUSTOM_R=true}))
+        test.assert_true(main_window.SoulSearchWindow.onInput(
+            window, {CUSTOM_R=true}))
         test.assert_equal(1, super_calls)
         test.assert_equal(0, refreshes)
     end)

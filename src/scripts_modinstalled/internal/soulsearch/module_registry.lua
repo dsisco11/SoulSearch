@@ -76,6 +76,14 @@ MODULES = {
     },
     {name='internal/soulsearch/keybindings', contract='ensure_default'},
     {name='internal/soulsearch/lifecycle', contract='prepare_for_world'},
+    {
+        name='internal/soulsearch/ui/main_window',
+        contract='SoulSearchWindow', contract_type='table',
+    },
+    {
+        name='internal/soulsearch/ui/main_screen',
+        contract='SoulSearchScreen', contract_type='table',
+    },
     {name='internal/soulsearch/ui', contract='open'},
 }
 

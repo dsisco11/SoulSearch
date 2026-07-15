@@ -18,7 +18,7 @@ local function recursive_ids(view, result)
 end
 
 return function(test, repo_root)
-    local ui, new_window, state =
+    local ui, new_window, state, _, main_screen =
         soulsearch_env.load_ui_characterization(repo_root)
 
     test.case('UI characterization: root and recursive child order is exact', function()
@@ -220,12 +220,12 @@ return function(test, repo_root)
     test.case('UI characterization: screen registration and cleanup are idempotent', function()
         local registry = state.screen_registry
         registry.clear()
-        test.assert_equal('soulsearch', ui.SoulSearchScreen.attrs.focus_path)
+        test.assert_equal('soulsearch', main_screen.SoulSearchScreen.attrs.focus_path)
         local persists = 0
         local screen = {window={persist_frame_if_needed=function()
             persists = persists + 1
         end}}
-        setmetatable(screen, {__index=ui.SoulSearchScreen})
+        setmetatable(screen, {__index=main_screen.SoulSearchScreen})
         screen:onShow()
         test.assert_equal(1, registry.count())
         test.assert_true(screen:cleanup())
