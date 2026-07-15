@@ -31,7 +31,7 @@ document. Do not mark a phase gate complete until its stated checks have passed.
   - [x] `unit_scope_picker.lua` for the unit-scope popup;
   - [x] `filter_panel.lua` for filter controls, active filters, picker
         composition, and filter-owned tooltip resolution;
-  - [ ] `results_panel.lua` for query, result headings, result list, sorting,
+  - [x] `results_panel.lua` for query, result headings, result list, sorting,
         navigation, and result-owned tooltip resolution;
   - [ ] `main_window.lua` for state orchestration and component composition;
         and
@@ -203,35 +203,35 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Phase 3 - Extract the Results Panel
 
-- [ ] Add `ui/results_panel.lua` as a `widgets.Panel` class containing the
+- [x] Add `ui/results_panel.lua` as a `widgets.Panel` class containing the
       Results-owned views:
-  - [ ] query edit field;
-  - [ ] title and underline;
-  - [ ] existing sortable header implementation; and
-  - [ ] result list.
-- [ ] Define a narrow component API:
-  - [ ] set query text without changing query semantics;
-  - [ ] set choices and selected index;
-  - [ ] return the selected result;
-  - [ ] move the cursor by the requested delta; and
-  - [ ] return the active Results header tooltip.
-- [ ] Preserve host callbacks for query change, selection, submission/zoom,
+  - [x] query edit field;
+  - [x] title and underline;
+  - [x] existing sortable header implementation; and
+  - [x] result list.
+- [x] Define a narrow component API:
+  - [x] set query text without changing query semantics;
+  - [x] set choices and selected index;
+  - [x] return the selected result;
+  - [x] move the cursor by the requested delta; and
+  - [x] return the active Results header tooltip.
+- [x] Preserve host callbacks for query change, selection, submission/zoom,
       and sort transitions.
-- [ ] Keep result formatting in `ui_format.lua`, column geometry in
+- [x] Keep result formatting in `ui_format.lua`, column geometry in
       `ui_layout.lua`, and result-sort state/transition behavior in the main
       window.
-- [ ] Preserve the query field's effective focus order when the flat view list
+- [x] Preserve the query field's effective focus order when the flat view list
       becomes a component subtree.
-- [ ] Migrate Results-owned tests from `ui_components_test.lua` and update
+- [x] Migrate Results-owned tests from `ui_components_test.lua` and update
       main-window tests to assert delegation through the component API.
 
 ### Phase 3 gate
 
-- [ ] Querying, selection refresh, zoom submission, cursor movement, sorting,
+- [x] Querying, selection refresh, zoom submission, cursor movement, sorting,
       row formatting, and header tooltips match the Phase 0 baseline.
-- [ ] Results and Stats continue using their existing independent header
+- [x] Results and Stats continue using their existing independent header
       implementations.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 4 - Extract the main Window and Screen
 
@@ -346,3 +346,4 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 | 2026-07-14 | Phase 0 | Clean pre-edit worktree; dependency baseline above; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 40 Lua files compile; 238 tests, 0 failures; whitespace check clean apart from Git line-ending notices. No production module moved. |
 | 2026-07-14 | Phase 1 | New leaf-module suites; compatibility characterization; registry-order assertions; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 42 Lua files compile; 245 tests, 0 failures; one implementation owner per extracted class; public `internal/soulsearch/ui.lua` facade unchanged. |
 | 2026-07-14 | Phase 2 | Focused Filter Panel/picker coverage; Phase 0 characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 46 Lua files compile; 245 tests, 0 failures; picker composites are named `widgets.Window` classes, and `ui.lua` delegates Filter Panel view updates and filter tooltip resolution while retaining domain state and refresh sequencing. |
+| 2026-07-14 | Phase 3 | Focused Results Panel and main-window characterization coverage; registry-order assertions; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 47 Lua files compile; 246 tests, 0 failures; `ResultsPanel` owns the Results subtree, navigation, and header tooltip while `ui.lua` retains result construction, sorting state, and refresh sequencing. |

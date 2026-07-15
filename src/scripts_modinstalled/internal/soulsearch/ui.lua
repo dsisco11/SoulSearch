@@ -20,6 +20,7 @@ local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
 local ui_components = reqscript('internal/soulsearch/ui_components')
 local filter_panel = reqscript('internal/soulsearch/ui/filter_panel')
+local ResultsPanel = reqscript('internal/soulsearch/ui/results_panel').ResultsPanel
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
@@ -90,14 +91,6 @@ end
 local function append_descriptors(target, descriptors)
     for _, descriptor in ipairs(descriptors or {}) do
         table.insert(target, descriptor)
-    end
-end
-
----@param target table[]
----@param views table[]
-local function append_views(target, views)
-    for _, child in ipairs(views) do
-        table.insert(target, child)
     end
 end
 
@@ -217,25 +210,26 @@ function SoulSearchWindow:init()
     self.filter_state = filter_state.new(settings.filters)
 
     local views = {}
-    -- Preserve the original child order: the modal results query remains first
-    -- so keyboard focus traversal is unchanged by component extraction.
-    table.insert(views, ui_components.create_results_query(function(text)
-        self.query = text
-        self:refresh_views{results=true}
-    end))
+    -- The Results Panel remains first, and its query field remains its first
+    -- child, preserving the effective focus traversal order.
+    table.insert(views, ResultsPanel{view_id='results_panel',
+        frame={l=0, t=0, r=0, b=0}, inputs={
+            on_query=function(text)
+                self.query = text
+                self:refresh_views{results=true}
+            end,
+            on_select=function(result)
+                if not self.suppress_result_select_refresh then
+                    self:refresh_views{stats=true, result=result}
+                end
+            end,
+            on_submit=function(result) self:zoom_to_result(result) end,
+            on_sort=function(column) self:cycle_result_sort(column) end,
+        }})
     table.insert(views, filter_panel.create_button(function()
         self:toggle_filter_panel()
     end))
     table.insert(views, filter_panel.create_active_filter_count())
-    append_views(views, ui_components.create_results_panel{
-        on_select=function(result)
-            if not self.suppress_result_select_refresh then
-                self:refresh_views{stats=true, result=result}
-            end
-        end,
-        on_submit=function(result) self:zoom_to_result(result) end,
-        on_sort=function(column) self:cycle_result_sort(column) end,
-    })
     table.insert(views, StatsPanel{
         view_id='stats_panel',
         frame={l=ui_layout.STATS_LEFT, t=ui_layout.HEADER_ROW, r=1, b=0},
@@ -350,17 +344,8 @@ end
 
 
 ---@return string|nil
-function SoulSearchWindow:get_result_header_column()
-    local columns = self.subviews.result_columns
-    if not columns then return nil end
-    local x, y = columns:getMousePos()
-    return ui_layout.get_result_header_column(x, y)
-end
-
----@return string|nil
 function SoulSearchWindow:get_result_header_tooltip()
-    local column = self:get_result_header_column()
-    return column and ui_components.RESULT_HEADER_TOOLTIPS[column] or nil
+    return self.subviews.results_panel:get_header_tooltip()
 end
 
 ---@return string|nil
@@ -594,8 +579,9 @@ end
 ---to the final row; an empty result set has no selection.
 ---@return SoulSearchResult|nil
 function SoulSearchWindow:recompute_results()
-    local previous_index, previous_choice = self.subviews.result_list:getSelected()
-    local previous_result = previous_choice and previous_choice.result
+    local results_panel = self.subviews.results_panel
+    local previous_index = results_panel:get_selected_index()
+    local previous_result = results_panel:get_selected_result()
     local previous_unit_id = previous_result and previous_result.unit_id
 
     self.results = search.apply(self.rows, {
@@ -617,12 +603,10 @@ function SoulSearchWindow:recompute_results()
     end
 
     local result_header = ('Results (%d)'):format(#choices)
-    self.subviews.result_header:setText(result_header)
-    self.subviews.result_header_underline:setText(
-        ui_format.get_title_underline(result_header))
-    self.subviews.result_columns:setText(ui_format.format_result_columns(
-        self.result_sort_key,
-        self.result_sort_reverse))
+    results_panel:set_header_text(result_header,
+        ui_format.get_title_underline(result_header),
+        ui_format.format_result_columns(self.result_sort_key,
+            self.result_sort_reverse))
 
     local selected = ui_refresh.get_result_selection(
         self.results,
@@ -631,13 +615,9 @@ function SoulSearchWindow:recompute_results()
     -- DFHack List:setChoices() force-fires on_select. Suppress that nested view
     -- refresh so the dispatcher remains the single owner of the Stats update.
     self.suppress_result_select_refresh = true
-    ui_components.set_result_choices(
-        self.subviews.result_list,
-        choices,
-        selected)
+    results_panel:set_choices(choices, selected)
     self.suppress_result_select_refresh = false
-    local _, choice = self.subviews.result_list:getSelected()
-    return choice and choice.result or nil
+    return results_panel:get_selected_result()
 end
 
 ---@param result SoulSearchResult|nil
@@ -674,8 +654,7 @@ end
 
 ---@return SoulSearchResult|nil
 function SoulSearchWindow:get_selected_result()
-    local _, choice = self.subviews.result_list:getSelected()
-    return choice and choice.result or nil
+    return self.subviews.results_panel:get_selected_result()
 end
 
 ---Centers the map on the currently selected result when possible.
@@ -1072,7 +1051,7 @@ end
 
 ---@param delta integer
 function SoulSearchWindow:move_result_cursor(delta)
-    ui_components.move_result_cursor(self.subviews.result_list, delta)
+    self.subviews.results_panel:move_cursor(delta)
 end
 
 ---@param keys table

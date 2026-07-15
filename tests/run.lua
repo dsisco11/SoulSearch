@@ -39,6 +39,7 @@ local suites = {
     (require('modal_panel_test')),
     (require('filter_action_list_test')),
     (require('filter_panel_test')),
+    (require('results_panel_test')),
     (require('ui_components_test')),
     (require('ui_characterization_test')),
     (require('ui_open_test')),

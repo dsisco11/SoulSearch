@@ -24,25 +24,22 @@ return function(test, repo_root)
     test.case('UI characterization: root and recursive child order is exact', function()
         local window = new_window()
         test.assert_sequence({
-            'search_field',
+            'results_panel',
             'filters_button',
             'active_filter_count',
-            'result_header',
-            'result_header_underline',
-            'result_columns',
-            'result_list',
             'stats_panel',
             'close_button',
             'filter_panel_window',
         }, ids(window.subviews))
         test.assert_sequence({
+            'results_panel',
             'search_field',
-            'filters_button',
-            'active_filter_count',
             'result_header',
             'result_header_underline',
             'result_columns',
             'result_list',
+            'filters_button',
+            'active_filter_count',
             'stats_panel',
             'close_button',
             'filter_panel_window',
@@ -87,11 +84,14 @@ return function(test, repo_root)
             window.subviews.available_filter_window)
         test.assert_true(window.subviews.filter_list.parent_view ==
             window.subviews.filter_panel_window)
+        test.assert_true(window.subviews.result_list.parent_view ==
+            window.subviews.results_panel)
     end)
 
     test.case('UI characterization: query focus position and cursor shortcuts are stable', function()
         local window = new_window()
-        test.assert_equal('search_field', window.subviews[1].view_id)
+        test.assert_equal('results_panel', window.subviews[1].view_id)
+        test.assert_equal('search_field', window.subviews.results_panel.subviews[1].view_id)
         test.assert_true(window.subviews.search_field.modal)
         test.assert_equal('CUSTOM_F', window.subviews.search_field.key)
 

@@ -570,6 +570,71 @@ function M.load_filter_panel(repo_root)
     return load('src/scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua'), modules
 end
 
+function M.load_results_panel(repo_root)
+    local layout = M.load_ui_layout(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    local function constructor(kind, methods)
+        local value = {widget_kind=kind}
+        for key, method in pairs(methods or {}) do value[key] = method end
+        return setmetatable(value, {__call=function(self, info)
+            info.widget_kind = self.widget_kind
+            for key, method in pairs(self) do
+                if type(method) == 'function' and info[key] == nil then
+                    info[key] = method
+                end
+            end
+            return info
+        end})
+    end
+    local widgets = {
+        Panel=constructor('Panel', {addviews=function(self, views)
+            self.subviews = self.subviews or {}
+            for _, view in ipairs(views) do
+                table.insert(self.subviews, view)
+                self.subviews[view.view_id] = view
+            end
+        end}),
+        Label=constructor('Label', {onInput=function() return false end,
+            setText=function(self, text) self.text = text end}),
+        EditField=constructor('EditField', {setText=function(self, text)
+            self.text = text
+        end}),
+        List=constructor('List', {
+            setChoices=function(self, choices, selected)
+                self.choices, self.selected = choices, selected
+            end,
+            getSelected=function(self)
+                return self.selected, self.choices and self.choices[self.selected]
+            end,
+            moveCursor=function(self, delta) self.cursor_delta = delta end,
+        }),
+    }
+    local globals = make_presentation_globals()
+    globals.defclass=function(_, parent)
+        local class = {super=parent}
+        return setmetatable(class, {
+            __index=parent,
+            __call=function(_, info)
+                info.widget_kind = parent.widget_kind
+                local instance = setmetatable(info, {__index=class})
+                if class.init then class.init(instance, info) end
+                return instance
+            end,
+        })
+    end
+    globals.require=function(name)
+        assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
+        return widgets
+    end
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/ui_layout' then return layout end
+        if name == 'internal/soulsearch/ui_format' then return ui_format end
+        error('unexpected reqscript: ' .. tostring(name))
+    end
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/results_panel.lua', globals)
+end
+
 function M.load_ui_components(repo_root)
     local layout = M.load_ui_layout(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
@@ -809,6 +874,7 @@ end
 ---@return table ui, fun(settings: table|nil): table new_window, table state
 function M.load_ui_characterization(repo_root)
     local components = M.load_ui_components(repo_root)
+    local results_panel = M.load_results_panel(repo_root)
     local filter_state = M.load_filter_state(repo_root)
     local ui_format = M.load_ui_format(repo_root)
     local ui_layout = M.load_ui_layout(repo_root)
@@ -961,6 +1027,7 @@ function M.load_ui_characterization(repo_root)
         ['internal/soulsearch/text_match']=M.load_text_match(repo_root),
         ['internal/soulsearch/ui_components']=components,
         ['internal/soulsearch/ui/filter_panel']=filter_panel_stub,
+        ['internal/soulsearch/ui/results_panel']=results_panel,
         ['internal/soulsearch/ui_format']=ui_format,
         ['internal/soulsearch/ui_layout']=ui_layout,
         ['internal/soulsearch/ui_refresh']=ui_refresh,

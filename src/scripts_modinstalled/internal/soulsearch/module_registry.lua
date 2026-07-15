@@ -39,6 +39,10 @@ MODULES = {
         name='internal/soulsearch/ui/filter_panel',
         contract='FilterPanel', contract_type='table',
     },
+    {
+        name='internal/soulsearch/ui/results_panel',
+        contract='ResultsPanel', contract_type='table',
+    },
     {name='internal/soulsearch/window_settings', contract='load'},
     {name='internal/soulsearch/attributes', contract='evaluate'},
     {name='internal/soulsearch/race_catalog', contract='get_descriptors'},
@@ -63,7 +67,7 @@ MODULES = {
         name='internal/soulsearch/stats_panel',
         contract='SoulSearchStatsPanel', contract_type='table',
     },
-    {name='internal/soulsearch/ui_components', contract='create_filter_panel'},
+    {name='internal/soulsearch/ui_components', contract='create_close_button'},
     {name='internal/soulsearch/ui_refresh', contract='apply'},
     {name='internal/soulsearch/residents', contract='collect_from_provider'},
     {

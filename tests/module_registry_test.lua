@@ -23,7 +23,7 @@ return function(test, repo_root)
         local screen_registry_index, stats_layout_index, stats_config_index
         local residents_index, stats_panel_index, tooltip_index, popover_index
         local race_filter_index, layout_index, modal_index, action_list_index
-        local components_index
+        local filter_panel_index, results_panel_index, components_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/filter_constants' then
                 constants_index = index
@@ -63,6 +63,10 @@ return function(test, repo_root)
                 modal_index = index
             elseif name == 'internal/soulsearch/ui/filter_action_list' then
                 action_list_index = index
+            elseif name == 'internal/soulsearch/ui/filter_panel' then
+                filter_panel_index = index
+            elseif name == 'internal/soulsearch/ui/results_panel' then
+                results_panel_index = index
             elseif name == 'internal/soulsearch/ui_components' then
                 components_index = index
             end
@@ -86,7 +90,9 @@ return function(test, repo_root)
         test.assert_true(screen_registry_index < popover_index)
         test.assert_true(layout_index < modal_index)
         test.assert_true(modal_index < action_list_index)
-        test.assert_true(action_list_index < components_index)
+        test.assert_true(action_list_index < filter_panel_index)
+        test.assert_true(filter_panel_index < results_panel_index)
+        test.assert_true(results_panel_index < components_index)
         test.assert_true(loaded['internal/soulsearch/search'].apply ~= nil)
         test.assert_true(
             loaded['internal/soulsearch/candidate_provider'].new ~= nil)
