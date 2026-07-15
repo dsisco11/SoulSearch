@@ -497,7 +497,6 @@ function M.load_stats_panel(repo_root)
                     self.on_sort_change(self:get_sort())
                 end
                 function info:set_header_height(height) self.header_height = height end
-                function info:get_tooltip_text() return self.tooltip_text end
                 return info
             end,
         } end
@@ -1045,7 +1044,6 @@ function M.load_ui_characterization(repo_root)
             SoulSearchStatsPanel=function(info)
                 info.widget_kind = 'SoulSearchStatsPanel'
                 function info:set_subject(subject) self.subject = subject end
-                function info:get_tooltip_text() return self.tooltip_text end
                 return info
             end,
         },
@@ -1184,7 +1182,6 @@ function M.load_stats_popover(repo_root, options)
             self.sort=sort; self.subviews.body.start_line_num=1
             state.resets=state.resets+1
         end
-        function result:get_tooltip_text() return nil end
         return result
     end
     local residents = {
@@ -1304,7 +1301,6 @@ function M.load_stats_overlay(repo_root, options)
             self.subject=subject
             state.subjects=(state.subjects or 0)+1
         end
-        function info:get_tooltip_text() return nil end
         return info
     end
     local globals = {

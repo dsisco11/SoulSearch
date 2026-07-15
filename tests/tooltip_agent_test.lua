@@ -83,6 +83,20 @@ return function(test, repo_root)
         test.assert_equal('Native static tooltip', renderer.text)
     end)
 
+    test.case('tooltip agent: presents terminal-owned dynamic text after pointer update', function()
+        local mouse = {x=2, y=2, samples=0}
+        local TooltipAgent = load_agent(mouse).TooltipAgent
+        local renderer = {set_tooltip=function(self, text) self.text = text end}
+        local control = target(1, 1, nil)
+        control.on_pointer_update=function(target_view, x, y)
+            target_view.tooltip = ('Local %d,%d'):format(x, y)
+        end
+        local agent = TooltipAgent.new(root({control}), renderer)
+
+        agent:update()
+        test.assert_equal('Local 1,1', renderer.text)
+    end)
+
     test.case('tooltip agent: hides for blocked and excluded targets without parent fallback', function()
         local mouse = {x=2, y=2, samples=0}
         local TooltipAgent = load_agent(mouse).TooltipAgent

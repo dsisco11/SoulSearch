@@ -231,13 +231,13 @@ Static strings now live beside the native controls they describe: main and filte
 - [x] Remove `ResultsPanel:get_header_tooltip()`, `UnitStatsList:get_tooltip_text()`, and tooltip-only forwarding methods after their replacements are active.
 - [x] Remove `get_text` callback wiring from `SoulSearchTooltip` construction and rename the renderer/host types if their old names no longer describe their responsibilities.
 - [x] Remove duplicated visibility and mouse-over helpers that are no longer used outside legacy tooltip discovery.
-- [ ] Update `module_registry.lua` contracts and reload ordering for the widget extension, pointer infrastructure, and tooltip host while retaining the normal-import guarantees established in Phase 1.
-- [ ] Search production code and tests for obsolete getter/provider callback APIs and parent-level tooltip precedence logic.
-- [ ] Replace legacy parent-precedence tests with pointer-target and control-ownership integration tests.
+- [x] Update `module_registry.lua` contracts and reload ordering for the widget extension, pointer infrastructure, and tooltip host while retaining the normal-import guarantees established in Phase 1.
+- [x] Search production code and tests for obsolete getter/provider callback APIs and parent-level tooltip precedence logic.
+- [x] Replace legacy parent-precedence tests with pointer-target and control-ownership integration tests.
 
 ### Phase 6 exit criteria
 
-- [ ] No window or parent component aggregates descendant tooltips, and no tooltip renderer accepts a content getter callback.
+- [x] No window or parent component aggregates descendant tooltips, and no tooltip renderer accepts a content getter callback.
 
 ## Phase 7 - Validate reloads, packaging, and live modal behavior
 

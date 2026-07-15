@@ -30,7 +30,7 @@ MODULES = {
     {name='internal/soulsearch/result_presenter', contract='present'},
     {
         name='internal/soulsearch/ui/widget_extensions',
-        contract='install_tooltip_attribute',
+        contract='install_pointer_attributes',
     },
     {
         name='internal/soulsearch/ui/pointer_dispatcher',

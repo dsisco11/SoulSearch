@@ -39,7 +39,7 @@ function FilterActionList:getActionUnderMouse()
     return self:get_action_at(x, y)
 end
 
-local function get_descriptor_tooltip(choice)
+local function describe_choice(choice)
     local descriptor = choice and choice.descriptor
     if descriptor and descriptor.kind == FILTER_KIND_RACE then
         return 'Filters by a creatures race.'
@@ -66,7 +66,7 @@ function FilterActionList:on_pointer_update(target, x, y)
         target.tooltip = choice and action.tooltip or nil
         return
     end
-    target.tooltip = get_descriptor_tooltip(choice)
+    target.tooltip = describe_choice(choice)
 end
 
 ---@param keys table

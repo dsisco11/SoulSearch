@@ -149,6 +149,17 @@ return function(test, repo_root)
         test.assert_true(tostring(err):find('missing entries()', 1, true) ~= nil)
     end)
 
+    test.case('module registry: pointer infrastructure has the reload contract', function()
+        local contracts = {}
+        for _, spec in ipairs(registry.MODULES) do contracts[spec.name] = spec.contract end
+        test.assert_equal('install_pointer_attributes',
+            contracts['internal/soulsearch/ui/widget_extensions'])
+        test.assert_equal('PointerDispatcher',
+            contracts['internal/soulsearch/ui/pointer_dispatcher'])
+        test.assert_equal('TooltipAgent',
+            contracts['internal/soulsearch/ui/tooltip_agent'])
+    end)
+
     test.case('module registry: clear order is reverse dependency order', function()
         local names = registry.get_script_names()
         test.assert_equal(#registry.MODULES + 1, #names)
