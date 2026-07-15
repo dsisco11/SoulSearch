@@ -32,6 +32,12 @@ local FILTER_CONTROL_TOOLTIPS = {
     {id='close_race_picker_button', text='Close'},
 }
 
+local PICKER_VIEW_IDS = {
+    attribute='available_filter_window', skill='available_skill_window',
+    race='available_race_window', scope='unit_scope_picker_window',
+    preset='preset_picker_window',
+}
+
 local function is_visible(view)
     while view do
         if type(view.visible) == 'function' then
@@ -69,25 +75,18 @@ end
 ---@field inputs SoulSearchFilterPanelInputs
 ---@field active_filter_choices table[]|nil
 ---@field picker_choices table<string, table[]>
----@field active_picker 'attribute'|'skill'|'race'|'scope'|'preset'|nil
 FilterPanel = defclass(FilterPanel, ModalPanelWindow)
 
 function FilterPanel:init(info)
-    info.is_open = function() return self.opened end
-    info.visible = function() return self.opened end
     info.on_open = function()
-        self.opened = true
         self.inputs.on_refresh{pickers=true, presets=true}
     end
     info.on_close = function()
-        self.opened = false
-        self.active_picker = nil
+        self:close_picker(true)
         self.inputs.on_refresh{pickers=true, presets=true}
     end
     FilterPanel.super.init(self, info)
     self.inputs = info.inputs
-    self.opened = false
-    self.active_picker = nil
     self.picker_choices = {}
     local inputs = self.inputs
     local unit_scope_label
@@ -114,33 +113,41 @@ function FilterPanel:init(info)
             key='CUSTOM_P', label='Filter presets', on_activate=function() self:toggle_picker('preset') end},
         FilterActionList{view_id='filter_list', frame=ui_layout.get_frame('filter_list'),
             visible=function()
-                return self.active_picker == nil
+                return not self:has_open_picker()
             end, on_filter_action=inputs.on_filter_action},
         searchable_picker.SearchablePicker{view_id='available_filter_window',
             frame=ui_layout.get_frame('picker'), frame_title='Select attribute/trait',
-            draggable=false, visible=function() return self:is_picker_open('attribute') end, kind='attribute', inputs={
-            on_query=inputs.on_attribute_query, on_close=function() self:close_picker() end,
+            draggable=false, kind='attribute',
+            on_open=function() self:on_picker_open('attribute') end,
+            on_close=function() self:on_picker_close('attribute') end, inputs={
+            on_query=inputs.on_attribute_query,
             on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
         searchable_picker.SearchablePicker{view_id='available_race_window',
             frame=ui_layout.get_frame('picker'), frame_title='Select race',
-            draggable=false, visible=function() return self:is_picker_open('race') end, kind='race', inputs={
-            on_query=inputs.on_race_query, on_close=function() self:close_picker() end,
+            draggable=false, kind='race',
+            on_open=function() self:on_picker_open('race') end,
+            on_close=function() self:on_picker_close('race') end, inputs={
+            on_query=inputs.on_race_query,
             on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
         searchable_picker.SearchablePicker{view_id='available_skill_window',
             frame=ui_layout.get_frame('picker'), frame_title='Select skill',
-            draggable=false, visible=function() return self:is_picker_open('skill') end, kind='skill', inputs={
-            on_query=inputs.on_skill_query, on_close=function() self:close_picker() end,
+            draggable=false, kind='skill',
+            on_open=function() self:on_picker_open('skill') end,
+            on_close=function() self:on_picker_close('skill') end, inputs={
+            on_query=inputs.on_skill_query,
             on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
         preset_picker.PresetPicker{view_id='preset_picker_window',
             frame=ui_layout.get_frame('preset_picker'), frame_title='Filter presets',
-            draggable=false, visible=function() return self:is_picker_open('preset') end, inputs={
-            on_close=function() self:close_picker() end, on_save=inputs.on_save_preset,
+            draggable=false, on_open=function() self:on_picker_open('preset') end,
+            on_close=function() self:on_picker_close('preset') end, inputs={
+            on_save=inputs.on_save_preset,
             on_query=inputs.on_preset_query, on_load=inputs.on_load_preset,
             on_load_default=inputs.on_load_default_preset, on_load_role=inputs.on_load_role_preset}},
         unit_scope_picker.UnitScopePicker{view_id='unit_scope_picker_window',
             frame=ui_layout.get_unit_scope_picker_frame(#inputs.unit_scope_options),
             frame_title='Search scope', draggable=false,
-            visible=function() return self:is_picker_open('scope') end, inputs={
+            on_open=function() self:on_picker_open('scope') end,
+            on_close=function() self:on_picker_close('scope') end, inputs={
             options=inputs.unit_scope_options, on_select=inputs.on_unit_scope_change}},
     }
 end
@@ -148,30 +155,52 @@ end
 ---@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
 ---@return boolean changed
 function FilterPanel:toggle_picker(kind)
-    if self.active_picker == kind then return self:close_picker() end
-    self.active_picker = kind
-    self.inputs.on_refresh{pickers=true, presets=kind == 'preset'}
-    return true
+    local picker = get_subview(self, PICKER_VIEW_IDS[kind])
+    assert(picker, 'unknown picker kind: ' .. tostring(kind))
+    if picker:is_open() then return picker:close() end
+    self:close_picker()
+    return picker:open()
 end
 
 ---@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
 ---@return boolean
 function FilterPanel:is_picker_open(kind)
-    return self.active_picker == kind
+    local picker = get_subview(self, PICKER_VIEW_IDS[kind])
+    return picker and picker:is_open() or false
 end
 
 ---@return boolean changed
-function FilterPanel:close_picker()
-    if not self.active_picker then return false end
-    local was_preset = self.active_picker == 'preset'
-    self.active_picker = nil
-    self.inputs.on_refresh{pickers=true, presets=was_preset}
-    return true
+function FilterPanel:close_picker(suppress_refresh)
+    for _, kind in ipairs({'attribute', 'skill', 'race', 'scope', 'preset'}) do
+        local picker = get_subview(self, PICKER_VIEW_IDS[kind])
+        if picker:is_open() then
+            self.suppress_picker_refresh = suppress_refresh
+            local changed = picker:close()
+            self.suppress_picker_refresh = false
+            return changed
+        end
+    end
+    return false
 end
 
 ---@return boolean
 function FilterPanel:has_open_picker()
-    return self.active_picker ~= nil
+    for _, kind in ipairs({'attribute', 'skill', 'race', 'scope', 'preset'}) do
+        if self:is_picker_open(kind) then return true end
+    end
+    return false
+end
+
+---@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
+function FilterPanel:on_picker_open(kind)
+    self.inputs.on_refresh{pickers=true, presets=kind == 'preset'}
+end
+
+---@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
+function FilterPanel:on_picker_close(kind)
+    if not self.suppress_picker_refresh then
+        self.inputs.on_refresh{pickers=true, presets=kind == 'preset'}
+    end
 end
 
 ---@return string|nil

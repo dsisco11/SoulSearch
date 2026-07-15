@@ -52,7 +52,7 @@ end
 ---@return table widgets
 function M.widgets(overrides)
     local widgets = {}
-    local names = {'Window', 'Panel', 'Label', 'TextButton', 'EditField', 'List',
+    local names = {'Window', 'Panel', 'Widget', 'Divider', 'Label', 'TextButton', 'EditField', 'List',
         'HotkeyLabel', 'CycleHotkeyLabel'}
     for _, name in ipairs(names) do
         local methods = overrides and overrides[name] or nil

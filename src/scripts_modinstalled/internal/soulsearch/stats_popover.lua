@@ -5,7 +5,7 @@ local widgets = require('gui.widgets')
 local residents = reqscript('internal/soulsearch/residents')
 local subject_factory = reqscript('internal/soulsearch/stats_subject')
 local config = reqscript('internal/soulsearch/stats_popover_config')
-local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
+local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList
 local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 local screen_registry = reqscript('internal/soulsearch/screen_registry')
 
@@ -60,7 +60,7 @@ function SoulSearchStatsPopoverScreen:init(info)
         draggable=false,
         resizable=false,
         subviews={
-            StatsPanel{
+            UnitStatsList{
                 view_id='stats_panel', frame={l=0, t=0, r=0, b=0},
                 subject=self.subject, sort=copy_sort(config.DEFAULT_SORT),
             },

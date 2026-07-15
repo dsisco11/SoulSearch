@@ -456,36 +456,49 @@ feature and live-behavior requirements are complete.
 This phase coordinates existing `docs/project.todo` items. It must not mark
 those feature items complete merely because component files exist.
 
-- [ ] Begin Unit Info decomposition when the Stats popover needs a smaller
+- [x] Begin Unit Info decomposition when the Stats popover needs a smaller
       reusable component than the full current panel.
-- [ ] Confirm final naming and responsibility before renaming the existing
+- [x] Confirm final naming and responsibility before renaming the existing
       Stats panel to `UnitInfoPanel`.
 - [ ] Extract cohesive reusable widgets only where there is a real consumer:
-  - [ ] `UnitIdentity` for name/title/profession presentation;
-  - [ ] `MatchedFiltersPanel` for matched-filter title and rows; and
-  - [ ] `UnitStatsList` for stat columns, records, scrolling, sorting, and
+  - [x] defer `UnitIdentity` for name/title/profession presentation until a
+        second consumer exists;
+  - [x] defer `MatchedFiltersPanel` until a second consumer exists; and
+  - [x] `UnitStatsList` for stat columns, records, scrolling, sorting, and
         tooltips.
-- [ ] Compose the full Unit Info panel from those widgets.
-- [ ] Make the popover consume `UnitStatsList` when it intentionally excludes
+- [x] Compose the full Unit Info panel from those widgets.
+- [x] Make the popover consume `UnitStatsList` when it intentionally excludes
       identity or matched-filter content.
-- [ ] Preserve shared Stats subject and presenter contracts rather than
+- [x] Preserve shared Stats subject and presenter contracts rather than
       copying row construction into each host.
-- [ ] Start Divider/ResizingPanel work only after hosts no longer depend on
+- [x] Start Divider/ResizingPanel work only after hosts no longer depend on
       descendant aliases or hard-coded component internals.
-- [ ] Keep responsive layout policy outside domain/session modules.
+- [x] Keep responsive layout policy outside domain/session modules.
 - [ ] Add component-specific tests and perform live layout checks at minimum,
       typical, and large window sizes.
 
 ### Phase 8 gate
 
-- [ ] Each extracted Unit Info widget has at least two justified consumers or
+- [x] Each extracted Unit Info widget has at least two justified consumers or
       one clear independent lifecycle/reuse boundary.
-- [ ] Main window and popover compose shared widgets without copied
+- [x] Main window and popover compose shared widgets without copied
       implementations.
-- [ ] Responsive hosts use documented layout/component APIs.
+- [x] Responsive hosts use documented layout/component APIs where applicable.
 - [ ] Related `docs/project.todo` items reflect actual feature completion and
       live validation.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+### Phase 8 design record - 2026-07-14
+
+- `UnitStatsList` is the justified shared widget: Main Stats, the modal
+  popover, and the overlay all consume it. `UnitIdentity` and matched-filter
+  display remain local until they acquire a second legitimate consumer.
+- The main window now uses native `widgets.Divider` for the Results/Stats
+  boundary. DFHack documents Divider as a visual sibling, not a resizing
+  control. `ResizingPanel` auto-sizes itself to subviews and therefore does
+  not implement the project todo's user-driven pane resizing.
+- The workspace contains no runnable DFHack or Dwarf Fortress executable, so
+  live layout checks at minimum, typical, and large sizes remain outstanding.
 
 ## Phase 9 - Automated, packaged, reload, and live closure
 

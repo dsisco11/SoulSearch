@@ -24,11 +24,9 @@ local filter_presenter = reqscript('internal/soulsearch/filter_presenter')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
-local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
 
@@ -110,16 +108,6 @@ local function normalize_frame_for_drag(window)
         w=window.frame_rect.width,
         h=window.frame_rect.height,
     }
-end
-
----@param dc gui.Painter
-local function draw_section_dividers(dc)
-    local y2 = math.max(2, dc.height)
-    for _, x in ipairs(ui_layout.DIVIDER_XS) do
-        for y = 2, y2 do
-            dc:seek(x, y):char(glyphs.CP437_VERTICAL_LINE, SECTION_DIVIDER_PEN)
-        end
-    end
 end
 
 ---@param on_close function
@@ -208,6 +196,10 @@ function SoulSearchWindow:init()
             self:update_session_settings{stats_sort=sort}
         end,
     })
+    -- Native Divider owns the visual junction with the framed window. It is a
+    -- sibling added after the divided panel, as required by DFHack.
+    table.insert(views, widgets.Divider{view_id='results_stats_divider',
+        frame={l=ui_layout.DIVIDER_XS[1], t=ui_layout.HEADER_ROW, w=1, b=0}})
     table.insert(views, create_close_button(function()
         self.parent_view:dismiss()
     end))
@@ -283,13 +275,6 @@ function SoulSearchWindow:persist_frame_if_needed()
         frame=ui_layout.copy_dimensions(self.frame),
     }
     return true
-end
-
----Draws the main window body and section dividers.
----@param dc gui.Painter
-function SoulSearchWindow:onRenderBody(dc)
-    SoulSearchWindow.super.onRenderBody(self, dc)
-    draw_section_dividers(dc)
 end
 
 ---@return string|nil

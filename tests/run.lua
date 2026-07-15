@@ -33,6 +33,7 @@ local suites = {
     (require('stats_layout_test')),
     (require('stats_sort_subject_test')),
     (require('stats_panel_test')),
+    (require('unit_stats_list_test')),
     (require('stats_popover_test')),
     (require('stats_overlay_test')),
     (require('text_match_test')),

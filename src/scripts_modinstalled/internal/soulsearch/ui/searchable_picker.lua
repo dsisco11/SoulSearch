@@ -2,6 +2,8 @@
 
 local widgets = require('gui.widgets')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
+local ModalPanelWindow =
+    reqscript('internal/soulsearch/ui/modal_panel').ModalPanelWindow
 
 ---@class SoulSearchSearchablePickerInputs
 ---@field on_query fun(text: string)
@@ -25,11 +27,12 @@ local PICKER_CONFIGS = {
 
 ---Popup widget shared by the attribute, skill, and race pickers. It owns its
 ---child views while the host retains query filtering and descriptor semantics.
----@class SearchablePicker: widgets.Window
+---@class SearchablePicker: ModalPanelWindow
 ---@field inputs SoulSearchSearchablePickerInputs
-SearchablePicker = defclass(SearchablePicker, widgets.Window)
+SearchablePicker = defclass(SearchablePicker, ModalPanelWindow)
 
 function SearchablePicker:init(info)
+    SearchablePicker.super.init(self, info)
     self.inputs = info.inputs
     local inputs = self.inputs
     local config = assert(PICKER_CONFIGS[info.kind], 'unknown searchable picker kind')
@@ -38,7 +41,7 @@ function SearchablePicker:init(info)
                 view_id=config.close_id,
                 frame=ui_layout.get_frame('picker_close'),
                 label='X',
-                on_activate=inputs.on_close,
+                on_activate=function() self:close() end,
             },
             widgets.EditField{
                 view_id=config.search_id,

@@ -5,7 +5,7 @@ local widgets = require('gui.widgets')
 local overlay = require('plugins.overlay')
 local config = reqscript('internal/soulsearch/stats_popover_config')
 local popover = reqscript('internal/soulsearch/stats_popover')
-local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
+local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList
 local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 
 UNIT_CARD_FOCUS = 'dwarfmode/ViewSheets/UNIT'
@@ -61,7 +61,7 @@ function SoulSearchStatsOverlay:init()
             view_id='window', frame={l=0, t=0, r=0, b=0},
             frame_style=gui.FRAME_BOLD, draggable=false, resizable=false,
             subviews={
-                StatsPanel{
+                UnitStatsList{
                     view_id='stats_panel', frame={l=0, t=0, r=0, b=0},
                     subject=nil, sort=config.DEFAULT_SORT,
                 },

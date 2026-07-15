@@ -430,6 +430,40 @@ function M.load_stats_subject(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/stats_subject.lua')
 end
 
+function M.load_unit_stats_list(repo_root)
+    local stats_layout = M.load_stats_layout(repo_root)
+    local sort_state = M.load_sort_state(repo_root)
+    local widgets = widget_harness.widgets()
+    local globals={COLOR_WHITE='white', COLOR_GREY='grey', DEFAULT_NIL=nil,
+        defclass=widget_harness.defclass}
+    globals.require=function() return widgets end
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/stats_layout' then return stats_layout end
+        if name == 'internal/soulsearch/sort_state' then return sort_state end
+        if name == 'internal/soulsearch/ui/sortable_header' then return {
+            new=function(info)
+                local on_cycle = info.on_cycle
+                info.on_change = function() on_cycle() end
+                return widgets.CycleHotkeyLabel(info)
+            end,
+            set_sort=function(control, active, reverse)
+                control:setOption(not active and 0 or reverse and 2 or 1, false)
+            end,
+        } end
+        if name == 'internal/soulsearch/attribute_descriptions' then
+            return {get_tooltip=function(kind, key) return kind .. ':' .. key end}
+        end
+        if name == 'internal/soulsearch/stats_presenter' then return {
+            body=function() return 'one\ntwo' end,
+            get_display_records=function() return {{kind='trait', key='PATIENCE'}} end,
+        } end
+        error('unexpected reqscript: ' .. name)
+    end
+    local loaded = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua', globals)
+    return loaded.UnitStatsList
+end
+
 function M.load_stats_panel(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
     local sort_state = M.load_sort_state(repo_root)
@@ -440,6 +474,30 @@ function M.load_stats_panel(repo_root)
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         if name == 'internal/soulsearch/sort_state' then return sort_state end
+        if name == 'internal/soulsearch/ui/unit_stats_list' then return {
+            UnitStatsList=function(info)
+                info.subviews = {body={start_line_num=1}, columns={}, value_column={}}
+                info.sort = {key=info.sort.key, reverse=info.sort.reverse, phase=info.sort.phase}
+                function info:get_sort()
+                    return {key=self.sort.key, reverse=self.sort.reverse, phase=self.sort.phase}
+                end
+                function info:set_subject(subject) self.subject = subject end
+                function info:set_sort(sort)
+                    self.sort = {key=sort.key, reverse=sort.reverse, phase=sort.phase}
+                end
+                function info:reset_view_state(sort)
+                    self:set_sort(sort)
+                    self.subviews.body.start_line_num = 1
+                end
+                function info:cycle_sort(column)
+                    self.sort = {key=column, reverse=false, phase=1}
+                    self.on_sort_change(self:get_sort())
+                end
+                function info:set_header_height(height) self.header_height = height end
+                function info:get_tooltip_text() return self.tooltip_text end
+                return info
+            end,
+        } end
         if name == 'internal/soulsearch/ui/sortable_header' then return {
             new=function(info)
                 local on_cycle = info.on_cycle
@@ -1112,7 +1170,7 @@ function M.load_stats_popover(repo_root, options)
             from_row=function(row) return {unit=row.unit, unit_id=row.unit_id, row=row} end,
         },
         ['internal/soulsearch/stats_popover_config']=config,
-        ['internal/soulsearch/stats_panel']={SoulSearchStatsPanel=panel},
+        ['internal/soulsearch/ui/unit_stats_list']={UnitStatsList=panel},
         ['internal/soulsearch/ui_tooltip']={SoulSearchTooltip=function(info) return info end},
         ['internal/soulsearch/screen_registry']=registry,
     }
@@ -1243,8 +1301,8 @@ function M.load_stats_overlay(repo_root, options)
         reqscript=function(name)
             if name == 'internal/soulsearch/stats_popover_config' then return config end
             if name == 'internal/soulsearch/stats_popover' then return popover end
-            if name == 'internal/soulsearch/stats_panel' then
-                return {SoulSearchStatsPanel=stats_panel}
+            if name == 'internal/soulsearch/ui/unit_stats_list' then
+                return {UnitStatsList=stats_panel}
             end
             if name == 'internal/soulsearch/ui_tooltip' then
                 return {SoulSearchTooltip=function(info) return info end}

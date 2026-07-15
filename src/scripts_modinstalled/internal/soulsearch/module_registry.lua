@@ -53,6 +53,15 @@ MODULES = {
     },
     {name='internal/soulsearch/window_settings', contract='load'},
     {name='internal/soulsearch/attributes', contract='evaluate'},
+    {name='internal/soulsearch/stats_presenter', contract='build_records'},
+    {
+        name='internal/soulsearch/ui/unit_stats_list',
+        contract='UnitStatsList', contract_type='table',
+    },
+    {
+        name='internal/soulsearch/stats_panel',
+        contract='SoulSearchStatsPanel', contract_type='table',
+    },
     {name='internal/soulsearch/race_catalog', contract='get_descriptors'},
     {name='internal/soulsearch/descriptors', contract='get_catalog'},
     {name='internal/soulsearch/candidate_provider', contract='new'},
@@ -69,11 +78,6 @@ MODULES = {
     {
         name='internal/soulsearch/ui_tooltip',
         contract='SoulSearchTooltip', contract_type='table',
-    },
-    {name='internal/soulsearch/stats_presenter', contract='build_records'},
-    {
-        name='internal/soulsearch/stats_panel',
-        contract='SoulSearchStatsPanel', contract_type='table',
     },
     {name='internal/soulsearch/ui_refresh', contract='apply'},
     {name='internal/soulsearch/residents', contract='collect_from_provider'},

@@ -21,7 +21,8 @@ return function(test, repo_root)
         local constants_index, settings_index, race_catalog_index, descriptor_index
         local candidate_index, scope_index, state_index, config_index
         local screen_registry_index, stats_layout_index, stats_config_index
-        local residents_index, stats_panel_index, tooltip_index, popover_index
+        local residents_index, stats_presenter_index, stats_list_index
+        local stats_panel_index, tooltip_index, popover_index
         local race_filter_index, layout_index, modal_index, action_list_index
         local format_index, filter_panel_index, results_panel_index
         local main_window_index, main_screen_index, ui_index
@@ -52,6 +53,10 @@ return function(test, repo_root)
                 residents_index = index
             elseif name == 'internal/soulsearch/stats_panel' then
                 stats_panel_index = index
+            elseif name == 'internal/soulsearch/stats_presenter' then
+                stats_presenter_index = index
+            elseif name == 'internal/soulsearch/ui/unit_stats_list' then
+                stats_list_index = index
             elseif name == 'internal/soulsearch/ui_tooltip' then
                 tooltip_index = index
             elseif name == 'internal/soulsearch/stats_popover' then
@@ -90,8 +95,11 @@ return function(test, repo_root)
         test.assert_true(screen_registry_index < #calls)
         test.assert_true(state_index < race_filter_index)
         test.assert_true(stats_layout_index < stats_config_index)
+        test.assert_true(stats_presenter_index < stats_list_index)
+        test.assert_true(stats_list_index < stats_panel_index)
         test.assert_true(stats_config_index < popover_index)
         test.assert_true(residents_index < popover_index)
+        test.assert_true(stats_list_index < popover_index)
         test.assert_true(stats_panel_index < popover_index)
         test.assert_true(tooltip_index < popover_index)
         test.assert_true(screen_registry_index < popover_index)

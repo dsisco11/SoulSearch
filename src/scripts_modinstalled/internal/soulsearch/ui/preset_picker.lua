@@ -2,6 +2,8 @@
 
 local widgets = require('gui.widgets')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
+local ModalPanelWindow =
+    reqscript('internal/soulsearch/ui/modal_panel').ModalPanelWindow
 
 ---@class SoulSearchPresetPickerInputs
 ---@field on_close fun()
@@ -13,18 +15,19 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 ---Popup widget that owns the preset picker child views and dispatches preset
 ---actions through the host callbacks.
----@class PresetPicker: widgets.Window
+---@class PresetPicker: ModalPanelWindow
 ---@field inputs SoulSearchPresetPickerInputs
-PresetPicker = defclass(PresetPicker, widgets.Window)
+PresetPicker = defclass(PresetPicker, ModalPanelWindow)
 
 function PresetPicker:init(info)
+    PresetPicker.super.init(self, info)
     self.inputs = info.inputs
     local inputs = self.inputs
     self:addviews{
             widgets.TextButton{
                 view_id='close_preset_picker_button',
                 frame=ui_layout.get_frame('picker_close'),
-                label='X', on_activate=inputs.on_close,
+                label='X', on_activate=function() self:close() end,
             },
             widgets.TextButton{
                 view_id='save_preset_button',

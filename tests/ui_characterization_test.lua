@@ -28,6 +28,7 @@ return function(test, repo_root)
             'filters_button',
             'active_filter_count',
             'stats_panel',
+            'results_stats_divider',
             'close_button',
             'filter_panel_window',
         }, ids(window.subviews))
@@ -43,6 +44,7 @@ return function(test, repo_root)
             'filters_button',
             'active_filter_count',
             'stats_panel',
+            'results_stats_divider',
             'close_button',
             'filter_panel_window',
             'close_filter_panel_button',
@@ -118,13 +120,13 @@ return function(test, repo_root)
 
         panel:open()
         panel:toggle_picker('attribute')
-        test.assert_true(window.subviews.available_filter_window.visible())
+        test.assert_true(window.subviews.available_filter_window.visible)
         test.assert_false(window.subviews.filter_list.visible())
         panel:toggle_picker('skill')
-        test.assert_true(window.subviews.available_skill_window.visible())
-        test.assert_false(window.subviews.available_filter_window.visible())
+        test.assert_true(window.subviews.available_skill_window.visible)
+        test.assert_false(window.subviews.available_filter_window.visible)
         panel:toggle_picker('scope')
-        test.assert_true(window.subviews.unit_scope_picker_window.visible())
+        test.assert_true(window.subviews.unit_scope_picker_window.visible)
         test.assert_false(window.subviews.filter_list.visible())
     end)
 
@@ -133,24 +135,24 @@ return function(test, repo_root)
         local panel = window.subviews.filter_panel_window
 
         window:toggle_add_filter_dropdown()
-        test.assert_equal('attribute', panel.active_picker)
+        test.assert_true(panel:is_picker_open('attribute'))
 
         window:toggle_add_skill_dropdown()
-        test.assert_equal('skill', panel.active_picker)
+        test.assert_true(panel:is_picker_open('skill'))
 
         window:toggle_unit_scope_picker()
-        test.assert_equal('scope', panel.active_picker)
+        test.assert_true(panel:is_picker_open('scope'))
 
         window:toggle_preset_picker()
-        test.assert_equal('preset', panel.active_picker)
+        test.assert_true(panel:is_picker_open('preset'))
         test.assert_true(window:close_preset_picker())
-        test.assert_nil(panel.active_picker)
+        test.assert_false(panel:has_open_picker())
 
         panel:open()
         panel:toggle_picker('race')
         test.assert_true(window:close_filter_panel_state())
         test.assert_false(panel:is_open())
-        test.assert_nil(panel.active_picker)
+        test.assert_false(panel:has_open_picker())
     end)
 
     test.case('UI characterization: Main Window delegates through component APIs', function()
