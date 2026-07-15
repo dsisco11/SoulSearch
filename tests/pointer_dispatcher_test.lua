@@ -45,6 +45,20 @@ return function(test, repo_root)
         test.assert_equal(panel, result.blocker)
     end)
 
+    test.case('pointer dispatcher: target controls retain ownership over implementation children', function()
+        local dispatcher = load_dispatcher()
+        local implementation_child = view('target', 2, 2, 6, 2)
+        local control = view('target', 1, 1, 8, 4, {implementation_child})
+        local root = view('target', 0, 0, 12, 8, {control})
+        local result = dispatcher.PointerDispatcher.sample(
+            dispatcher.PointerContext.new(root), 3, 3)
+
+        test.assert_equal('target', result.kind)
+        test.assert_equal(control, result.target)
+        test.assert_equal(2, result.x)
+        test.assert_equal(2, result.y)
+    end)
+
     test.case('pointer dispatcher: windows block frames while preserving child targets', function()
         local dispatcher = load_dispatcher()
         local behind = view('target', 0, 0, 20, 20)

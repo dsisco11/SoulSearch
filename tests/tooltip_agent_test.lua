@@ -103,6 +103,7 @@ return function(test, repo_root)
         local renderer = {set_tooltip=function(self, text) self.text = text end}
         local parent = target(1, 1, 'Parent must not be used')
         local child = target(1, 1, nil)
+        parent.pointer_policy = 'pass'
         parent.subviews = {child}
         local agent = TooltipAgent.new(root({parent}), renderer)
         agent:update()

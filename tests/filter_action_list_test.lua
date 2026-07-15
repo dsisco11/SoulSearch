@@ -60,6 +60,19 @@ return function(test, repo_root)
         test.assert_sequence({'attribute:agility', 'set_high'}, dispatched)
     end)
 
+    test.case('filter action list: native page top identifies the hovered action row', function()
+        local list = make_list(function() end)
+        list:setChoices({
+            {descriptor={id='attribute:strength'}},
+            {descriptor={id='attribute:agility'}},
+            {descriptor={id='attribute:toughness'}},
+        }, 1)
+        list.page_top = 3
+        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X, 0)
+
+        test.assert_equal('Prefer high', list.tooltip)
+    end)
+
     test.case('filter action list: misses and incomplete rows delegate', function()
         local calls = 0
         local list = make_list(function() calls = calls + 1 end)

@@ -31,6 +31,8 @@ function install_pointer_attributes()
         'SoulSearch requires gui.widgets.Panel for pointer attributes.')
     local window = assert(widgets.Window,
         'SoulSearch requires gui.widgets.Window for pointer attributes.')
+    local text_button = assert(widgets.TextButton,
+        'SoulSearch requires gui.widgets.TextButton for pointer attributes.')
 
     changed = install_attribute(widget, 'pointer_policy', 'target',
         'gui.widgets.Widget') or changed
@@ -44,6 +46,12 @@ function install_pointer_attributes()
         'gui.widgets.Panel') or changed
     changed = install_attribute(window, 'pointer_policy', 'block',
         'gui.widgets.Window') or changed
+    -- TextButton is a Panel that delegates input to an internal HotkeyLabel.
+    -- It is nevertheless the public control that declares the tooltip, so it
+    -- must remain the terminal pointer target rather than its implementation
+    -- child.
+    changed = install_attribute(text_button, 'pointer_policy', 'target',
+        'gui.widgets.TextButton') or changed
     return changed
 end
 

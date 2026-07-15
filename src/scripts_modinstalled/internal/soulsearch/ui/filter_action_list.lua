@@ -29,7 +29,9 @@ function FilterActionList:get_action_at(x, y)
     local action = ui_layout.get_filter_action_at_x(x)
     if y == nil then return nil end
 
-    local index = (self.start_line_num or 1) + y
+    -- widgets.List calls its first visible row page_top. start_line_num is
+    -- retained as the lightweight test-harness fallback.
+    local index = (self.page_top or self.start_line_num or 1) + y
     return index, self.action_choices and self.action_choices[index], action
 end
 

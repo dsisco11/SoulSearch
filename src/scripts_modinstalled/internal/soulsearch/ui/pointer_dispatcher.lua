@@ -60,6 +60,11 @@ local function resolve_view(view, x, y)
         'invalid pointer_policy ' .. tostring(policy) .. '; expected target, pass, block, or none.')
     if policy == 'none' then return miss() end
 
+    -- A target is a terminal control. This keeps a composite control (for
+    -- example, TextButton or List) responsible for its own tooltip instead
+    -- of letting an undecorated implementation child steal the target.
+    if policy == 'target' and inside_body then return targeted(view, x, y) end
+
     if inside_body then
         local subviews = view.subviews or {}
         for index = #subviews, 1, -1 do
@@ -68,7 +73,6 @@ local function resolve_view(view, x, y)
         end
     end
 
-    if policy == 'target' and inside_body then return targeted(view, x, y) end
     if policy == 'block' and inside_frame then return blocked(view) end
     return miss()
 end
