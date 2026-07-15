@@ -128,6 +128,95 @@ return function(test, repo_root)
         test.assert_false(window.subviews.filter_list.visible())
     end)
 
+    test.case('UI characterization: picker transitions close competing state', function()
+        local window = new_window()
+
+        window:toggle_add_filter_dropdown()
+        test.assert_true(window.add_filter_open)
+        test.assert_false(window.add_skill_open)
+        test.assert_false(window.add_race_open)
+        test.assert_false(window.unit_scope_picker_open)
+        test.assert_false(window.preset_picker_open)
+
+        window:toggle_add_skill_dropdown()
+        test.assert_false(window.add_filter_open)
+        test.assert_true(window.add_skill_open)
+        test.assert_false(window.add_race_open)
+
+        window:toggle_unit_scope_picker()
+        test.assert_false(window.add_skill_open)
+        test.assert_true(window.unit_scope_picker_open)
+        test.assert_false(window.preset_picker_open)
+
+        window:toggle_preset_picker()
+        test.assert_false(window.unit_scope_picker_open)
+        test.assert_true(window.preset_picker_open)
+        test.assert_true(window:close_preset_picker())
+        test.assert_false(window.preset_picker_open)
+
+        window.filter_panel_open = true
+        window.add_race_open = true
+        test.assert_true(window:close_filter_panel_state())
+        test.assert_false(window.filter_panel_open)
+        test.assert_false(window.add_filter_open)
+        test.assert_false(window.add_skill_open)
+        test.assert_false(window.add_race_open)
+        test.assert_false(window.unit_scope_picker_open)
+        test.assert_false(window.preset_picker_open)
+    end)
+
+    test.case('UI characterization: Main Window delegates through component APIs', function()
+        local window = new_window()
+        local calls = {}
+        window.subviews.filter_panel_window = {
+            set_active_filter_choices=function(_, choices, selected)
+                calls.active = {choices=choices, selected=selected}
+            end,
+            set_picker_choices=function(_, kind, choices, selected)
+                calls.picker = {kind=kind, choices=choices, selected=selected}
+            end,
+            set_unit_scope_choices=function(_, choices, selected, label)
+                calls.scope = {choices=choices, selected=selected, label=label}
+            end,
+        }
+        window.subviews.active_filter_count = {
+            setText=function(_, text) calls.filter_count = text end,
+        }
+
+        window:refresh_active_filter_choices()
+        test.assert_equal('Filters: 1', calls.filter_count)
+    test.assert_equal('Use Add attribute, Add skill, or Add race.',
+        calls.active.choices[1].text)
+        window:update_available_filter_choices()
+        test.assert_equal('attribute', calls.picker.kind)
+        test.assert_equal('No matching attributes.', calls.picker.choices[1].text)
+        window:update_unit_scope_picker()
+        test.assert_equal('Residents', calls.scope.label)
+
+        local result_calls = {}
+        window.subviews.results_panel = {
+            get_selected_index=function() return 1 end,
+            get_selected_result=function() return nil end,
+            set_header_text=function(_, title, underline, columns)
+                result_calls.header = {title, underline, columns}
+            end,
+            set_choices=function(_, choices, selected)
+                result_calls.choices = {choices=choices, selected=selected}
+            end,
+        }
+        state.results = {{unit_id=1, name='Urist', profession='Miner'}}
+        window:recompute_results()
+        test.assert_equal('Results (1)', result_calls.header[1])
+        test.assert_equal(1, result_calls.choices.selected)
+
+        window.subviews.stats_panel = {
+            set_subject=function(_, subject) calls.stats_subject = subject end,
+        }
+        local result = {unit_id=1}
+        window:refresh_stats(result)
+        test.assert_true(calls.stats_subject == result)
+    end)
+
     test.case('UI characterization: tooltip precedence and exact copy are stable', function()
         local window = new_window()
         local filters_button = window.subviews.filters_button

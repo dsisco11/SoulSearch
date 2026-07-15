@@ -78,32 +78,61 @@ inspection alone.
 
 ## Phase 0 - Baseline and ownership characterization
 
-- [ ] Record the clean/dirty worktree state and preserve unrelated changes.
-- [ ] Record current source size and responsibility baselines for:
-  - [ ] `ui/main_window.lua` imports, methods, and state fields;
-  - [ ] `ui/filter_panel.lua` constructor/factory responsibilities;
-  - [ ] `ui_format.lua` consumers and function groups;
-  - [ ] `tests/support/soulsearch_env.lua` loaders and widget stubs; and
-  - [ ] `module_registry.lua` entries and asserted reconstruction order.
-- [ ] Add or confirm focused characterization for:
-  - [ ] direct Filter Panel construction and child order;
-  - [ ] picker exclusivity and close transitions;
-  - [ ] Main Window use of component APIs;
-  - [ ] result and filter selection across refreshes;
-  - [ ] Results and Stats sort cycles, hitboxes, and persistence; and
-  - [ ] edited-module reload with open and dismissed windows.
-- [ ] Document the intended ownership boundary before moving code:
-  - [ ] widgets own their subviews and transient view state;
-  - [ ] presenters own display-model construction;
-  - [ ] the search session owns domain/search interaction state;
-  - [ ] Main Window binds widgets to the session and external adapters; and
-  - [ ] Main Screen owns screen registration and teardown.
+- [x] Record the clean/dirty worktree state and preserve unrelated changes.
+- [x] Record current source size and responsibility baselines for:
+  - [x] `ui/main_window.lua` imports, methods, and state fields;
+  - [x] `ui/filter_panel.lua` constructor/factory responsibilities;
+  - [x] `ui_format.lua` consumers and function groups;
+  - [x] `tests/support/soulsearch_env.lua` loaders and widget stubs; and
+  - [x] `module_registry.lua` entries and asserted reconstruction order.
+- [x] Add or confirm focused characterization for:
+  - [x] direct Filter Panel construction and child order;
+  - [x] picker exclusivity and close transitions;
+  - [x] Main Window use of component APIs;
+  - [x] result and filter selection across refreshes;
+  - [x] Results and Stats sort cycles, hitboxes, and persistence; and
+  - [x] edited-module reload with open and dismissed windows.
+- [x] Document the intended ownership boundary before moving code:
+  - [x] widgets own their subviews and transient view state;
+  - [x] presenters own display-model construction;
+  - [x] the search session owns domain/search interaction state;
+  - [x] Main Window binds widgets to the session and external adapters; and
+  - [x] Main Screen owns screen registration and teardown.
+
+### Recorded baseline - 2026-07-14
+
+- Worktree was clean before Phase 0 edits; this phase changes only its
+  characterization test and this plan.
+- `ui/main_window.lua`: 1,109 lines, 39,323 bytes, 21 internal imports, and
+  57 `SoulSearchWindow` methods. It currently initializes rows/results,
+  queries, result sort, six Filter Panel/picker booleans, scope, descriptors,
+  and filter state, then also coordinates persistence, presenters, and DFHack
+  actions.
+- `ui/filter_panel.lua`: 289 lines, 8 class methods, and 3 factories. The
+  `create()` factory currently owns the composite child-tree construction,
+  while `FilterPanel:init()` stores inputs and choice state.
+- `ui_format.lua`: 310 lines, 21 functions, and 5 direct module consumers. It
+  mixes shared text helpers with Filter, preset, Results, and Stats display
+  transformations.
+- `tests/support/soulsearch_env.lua`: 1,230 lines and 39 `load_*` helpers,
+  including several purpose-specific widget/class stubs.
+- `module_registry.lua`: 44 listed modules; `module_registry_test.lua` has 31
+  explicit reconstruction-order assertions. The registry remains a flat clean
+  reload manifest, not a dependency graph.
+- Existing focused suites cover direct Filter Panel construction/order, result
+  selection retention, Results and Stats sorting/hitboxes/persistence, and
+  reload teardown. This phase adds real picker close/exclusivity transitions
+  and Main Window component-delegation characterization.
+- Ownership after the planned refactor is: widgets own subviews and transient
+  view state; presenters own display snapshots; SearchSession owns pure
+  search/filter/scope/sort state; Main Window binds widgets, external adapters,
+  and refresh; Main Screen owns screen registration and teardown.
 
 ### Phase 0 gate
 
-- [ ] No production implementation has moved.
-- [ ] Focused characterization passes against the pre-refactor architecture.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] No production implementation has moved.
+- [x] Focused characterization passes against the pre-refactor architecture.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 1 - Make Filter Panel fully class-owned
 
@@ -494,3 +523,4 @@ those feature items complete merely because component files exist.
 
 | Date | Phase/gate | Evidence | Result | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-07-14 | Phase 0 | Ownership baseline; picker-transition and Main Window component-delegation characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; no production implementation moved. |
