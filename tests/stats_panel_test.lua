@@ -32,6 +32,9 @@ return function(test, root)
         panel.subviews.columns.mouse_x, panel.subviews.columns.mouse_y=0,0
         test.assert_equal('Sort by stat name.', panel:get_tooltip_text())
         panel.subviews.columns.mouse_x=nil
+        panel.subviews.value_column.mouse_x, panel.subviews.value_column.mouse_y=0,0
+        test.assert_equal('Sort by baseline difference.', panel:get_tooltip_text())
+        panel.subviews.value_column.mouse_x=nil
         panel.subviews.body.mouse_x, panel.subviews.body.mouse_y=2,0
         test.assert_equal('trait:PATIENCE', panel:get_tooltip_text())
     end)

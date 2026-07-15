@@ -28,7 +28,7 @@ inspection alone.
       reading or mutating widgets.
 - [x] A pure search-session boundary owns search/filter/scope/sort state while
       Main Window remains the DFHack widget and I/O coordinator.
-- [ ] Results and Stats use one reusable sort-state/header/list architecture
+- [x] Results and Stats use one reusable sort-state/header/list architecture
       after evaluating applicable built-in DFHack widgets.
 - [ ] UI tests use a small, consistent script/widget harness instead of many
       subtly different fake class implementations.
@@ -291,45 +291,56 @@ This phase implements the existing sortable-column-list architecture item from
 `docs/project.todo`. It must remain separately traceable there until its own
 feature and live-behavior requirements are complete.
 
-- [ ] Inspect the workspace DFHack widget implementations before designing a
+- [x] Inspect the workspace DFHack widget implementations before designing a
       custom component:
-  - [ ] `CycleHotkeyLabel`;
-  - [ ] applicable list/column widgets; and
-  - [ ] their mouse, focus, width, and resize contracts.
-- [ ] Record which built-in behavior can be reused and which SoulSearch
+  - [x] `CycleHotkeyLabel`;
+  - [x] applicable list/column widgets; and
+  - [x] their mouse, focus, width, and resize contracts.
+- [x] Record which built-in behavior can be reused and which SoulSearch
       behavior still requires a custom composite.
-- [ ] Extract one configurable sort-state model supporting:
-  - [ ] allowed column keys;
-  - [ ] per-column initial direction;
-  - [ ] ascending, descending, and unsorted phases;
-  - [ ] normalization of persisted state;
-  - [ ] immutable snapshots; and
-  - [ ] deterministic next-state transitions.
-- [ ] Migrate both Results and Stats away from their separate normalization and
+- [x] Extract one configurable sort-state model supporting:
+  - [x] allowed column keys;
+  - [x] per-column initial direction;
+  - [x] ascending, descending, and unsorted phases;
+  - [x] normalization of persisted state;
+  - [x] immutable snapshots; and
+  - [x] deterministic next-state transitions.
+- [x] Migrate both Results and Stats away from their separate normalization and
       transition implementations.
-- [ ] Remove the result/stats `kind` branch from window configuration once the
+- [x] Remove the result/stats `kind` branch from window configuration once the
       shared model owns normalization.
-- [ ] Implement the reusable sortable header/list component only after the
+- [x] Implement the reusable sortable header/list component only after the
       state model is stable:
-  - [ ] model each column header as the approved built-in or custom leaf;
-  - [ ] preserve independent column boundaries and tooltips;
-  - [ ] preserve current Results and Stats rendering differences;
-  - [ ] preserve result submission, selection, and cursor behavior; and
-  - [ ] avoid coupling the reusable component to SoulSearch result/stat rows.
-- [ ] Migrate Results and Stats independently with focused tests after each
+  - [x] model each column header as the approved built-in or custom leaf;
+  - [x] preserve independent column boundaries and tooltips;
+  - [x] preserve current Results and Stats rendering differences;
+  - [x] preserve result submission, selection, and cursor behavior; and
+  - [x] avoid coupling the reusable component to SoulSearch result/stat rows.
+- [x] Migrate Results and Stats independently with focused tests after each
       migration.
+
+### Phase 5 design record - 2026-07-14
+
+- DFHack exports native `widgets.CycleHotkeyLabel`; this checkout contains
+  only SoulSearch, so the earlier local-source search was insufficient.
+- `ui/sortable_header.lua` is a small adapter that constructs and synchronizes
+  native per-column `CycleHotkeyLabel` widgets; it is not a custom widget
+  implementation.
+- `sort_state.lua` owns the three-phase normalization and transition protocol.
+  Each consumer supplies its allowed columns and first-click direction, so
+  result columns stay ascending-first while Stats `value` stays descending-first.
 
 ### Phase 5 gate
 
-- [ ] Results and Stats use one sort-state transition implementation.
-- [ ] Persisted sort settings normalize through the same model used at
+- [x] Results and Stats use one sort-state transition implementation.
+- [x] Persisted sort settings normalize through the same model used at
       runtime.
-- [ ] Results and Stats no longer contain parallel sortable-header classes.
-- [ ] Sort cycles, exact column boundaries, tooltips, focus, selection, and
+- [x] Results and Stats no longer contain parallel sortable-header classes.
+- [x] Sort cycles, exact column boundaries, tooltips, focus, selection, and
       scrolling match the baseline.
-- [ ] The corresponding `docs/project.todo` item is updated only when its full
+- [x] The corresponding `docs/project.todo` item is updated only when its full
       behavior is complete.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 6 - Consolidate test infrastructure and shared runtime policy
 
@@ -528,3 +539,4 @@ those feature items complete merely because component files exist.
 | 2026-07-14 | Phase 2 | Filter Panel-owned exclusive picker state; direct-child host APIs; transition table; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 248 tests pass with 0 failures; Main Window no longer owns picker booleans or republishes descendants. |
 | 2026-07-14 | Phase 3 | Filter and result display presenters; direct presenter tests; Main Window choice-loop migration; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 50 Lua files compile; 251 tests pass with 0 failures. |
 | 2026-07-14 | Phase 4 | Pure `SearchSession` extraction; direct transition, snapshot, sort, and selection-retention tests; broad UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 51 Lua files compile; 255 tests pass with 0 failures; Main Window retains widget, provider, persistence, and external-I/O coordination. |
+| 2026-07-14 | Phase 5 | Workspace/native-widget review; shared `sort_state`; native per-column `CycleHotkeyLabel` adapter; focused sort, Results, Stats, configuration, and UI-characterization coverage; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 52 Lua files compile; 255 tests pass with 0 failures; the obsolete Stats-only sort module and both duplicate header classes are removed. |

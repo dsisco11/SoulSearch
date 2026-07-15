@@ -23,7 +23,8 @@ return function(test, repo_root)
         local panel = make_panel({})
         test.assert_equal('Panel', panel.widget_kind)
         test.assert_sequence({'search_field', 'result_header',
-            'result_header_underline', 'result_columns', 'result_list'},
+            'result_header_underline', 'result_columns',
+            'result_profession_column', 'result_unit_id_column', 'result_list'},
             ids(panel.subviews))
         test.assert_equal('CUSTOM_F', panel.subviews.search_field.key)
         test.assert_true(panel.subviews.search_field.modal)
@@ -36,8 +37,7 @@ return function(test, repo_root)
         panel.subviews.search_field.on_change('miner')
         panel.subviews.result_list.on_select(1, {result=result})
         panel.subviews.result_list.on_submit(1, {result=result})
-        panel.subviews.result_columns.getMousePos=function() return 0, 0 end
-        test.assert_true(panel.subviews.result_columns:onInput{_MOUSE_L=true})
+        panel.subviews.result_columns.on_change()
         test.assert_equal('miner', calls.query)
         test.assert_true(calls.selected == result)
         test.assert_true(calls.submitted == result)
@@ -48,15 +48,19 @@ return function(test, repo_root)
         local panel = make_panel({})
         local result = {unit_id=7}
         panel:set_query_text('smith')
-        panel:set_header_text('Results (1)', '-----------', 'columns')
+        panel:set_header_text('Results (1)', '-----------', nil,
+            {key='unit_id', reverse=true})
         panel:set_choices({{result=result}}, 1)
         panel:move_cursor(-10)
-        panel.subviews.result_columns.getMousePos=function() return 55, 0 end
+        panel.subviews.result_unit_id_column.getMousePos=function() return 0, 0 end
         test.assert_equal('smith', panel.subviews.search_field.text)
         test.assert_equal('Results (1)', panel.subviews.result_header.text)
         test.assert_equal(1, panel:get_selected_index())
         test.assert_true(panel:get_selected_result() == result)
         test.assert_equal(-10, panel.subviews.result_list.cursor_delta)
+        test.assert_equal(0, panel.subviews.result_columns.option)
+        test.assert_equal(0, panel.subviews.result_profession_column.option)
+        test.assert_equal(2, panel.subviews.result_unit_id_column.option)
         test.assert_equal('Sort by unit ID.', panel:get_header_tooltip())
     end)
 end

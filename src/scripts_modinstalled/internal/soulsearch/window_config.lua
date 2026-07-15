@@ -4,9 +4,10 @@ local filter_state = reqscript('internal/soulsearch/filter_state')
 local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
 local window_settings = reqscript('internal/soulsearch/window_settings')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
-local stats_sort = reqscript('internal/soulsearch/stats_sort')
+local sort_state = reqscript('internal/soulsearch/sort_state')
 
-local RESULT_SORT_KEYS = {name=true, profession=true, unit_id=true}
+local RESULT_SORT_SPEC = sort_state.new_spec({'name', 'profession', 'unit_id'})
+local STATS_SORT_SPEC = sort_state.new_spec({'label', 'value'}, {value=true})
 
 ---@param value any
 ---@return table
@@ -69,23 +70,10 @@ local function normalize_frame(frame, screen_width, screen_height)
 end
 
 ---@param sort any
----@param valid_keys table<string, boolean>
----@param kind 'result'|'stats'
+---@param spec SoulSearchSortSpec
 ---@return table
-local function normalize_sort(sort, valid_keys, kind)
-    if type(sort) ~= 'table' or not valid_keys[sort.key] or
-            sort.phase ~= 1 and sort.phase ~= 2 then
-        return {key=nil, reverse=false, phase=0}
-    end
-    local reverse
-    if kind == 'result' then
-        reverse = sort.phase == 2
-    elseif sort.phase == 1 then
-        reverse = sort.key == 'value'
-    else
-        reverse = sort.key ~= 'value'
-    end
-    return {key=sort.key, reverse=reverse, phase=sort.phase}
+local function normalize_sort(sort, spec)
+    return sort_state.normalize(sort, spec)
 end
 
 ---@param scope any
@@ -118,13 +106,12 @@ function resolve(options, screen_width, screen_height)
 
     local result_sort_source = options.result_sort ~= nil and options.result_sort or
         saved.result_sort
-    local result_sort = normalize_sort(
-        result_sort_source, RESULT_SORT_KEYS, 'result')
+    local result_sort = normalize_sort(result_sort_source, RESULT_SORT_SPEC)
     if options.result_sort ~= nil then explicit.result_sort = result_sort end
 
     local stats_sort_source = options.stats_sort ~= nil and options.stats_sort or
         saved.stats_sort
-    local normalized_stats_sort = stats_sort.normalize(stats_sort_source)
+    local normalized_stats_sort = normalize_sort(stats_sort_source, STATS_SORT_SPEC)
     if options.stats_sort ~= nil then explicit.stats_sort = normalized_stats_sort end
 
     local frame_source = options.frame ~= nil and options.frame or saved.frame

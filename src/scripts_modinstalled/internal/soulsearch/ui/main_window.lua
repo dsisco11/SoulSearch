@@ -418,7 +418,7 @@ function SoulSearchWindow:recompute_results()
     local results, selected = self.session:recompute_results()
     local sort = self.session:get_result_sort()
     local display = result_presenter.present(results, sort.key, sort.reverse)
-    results_panel:set_header_text(display.title, display.underline, display.columns)
+    results_panel:set_header_text(display.title, display.underline, display.columns, sort)
 
     -- DFHack List:setChoices() force-fires on_select. Suppress that nested view
     -- refresh so the dispatcher remains the single owner of the Stats update.

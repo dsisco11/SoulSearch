@@ -394,6 +394,7 @@ end
 function M.load_search_session(repo_root)
     local filters = M.load_filter_state(repo_root)
     local search = M.load_search(repo_root)
+    local sort_state = M.load_sort_state(repo_root)
     local scopes = M.load_unit_scope_provider(repo_root,
         {global={world={units={active={}}}}}, {units={getCitizens=function() return {} end}})
     return module_loader.load(repo_root,
@@ -401,6 +402,7 @@ function M.load_search_session(repo_root)
         reqscript=function(name)
             if name == 'internal/soulsearch/filter_state' then return filters end
             if name == 'internal/soulsearch/search' then return search end
+            if name == 'internal/soulsearch/sort_state' then return sort_state end
             if name == 'internal/soulsearch/unit_scope_provider' then return scopes end
             error('unexpected reqscript: ' .. tostring(name))
         end,
@@ -413,10 +415,10 @@ function M.load_stats_layout(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/stats_layout.lua')
 end
 
-function M.load_stats_sort(repo_root)
+function M.load_sort_state(repo_root)
     return module_loader.load(
         repo_root,
-        'src/scripts_modinstalled/internal/soulsearch/stats_sort.lua')
+        'src/scripts_modinstalled/internal/soulsearch/sort_state.lua')
 end
 
 function M.load_stats_subject(repo_root)
@@ -427,7 +429,7 @@ end
 
 function M.load_stats_panel(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
-    local stats_sort = M.load_stats_sort(repo_root)
+    local sort_state = M.load_sort_state(repo_root)
     local function label(config)
         config.setText=function(self, text) self.text=text; self.start_line_num=1 end
         config.getTextHeight=function(self)
@@ -458,7 +460,18 @@ function M.load_stats_panel(repo_root)
     globals.require=function() return widgets end
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
-        if name == 'internal/soulsearch/stats_sort' then return stats_sort end
+        if name == 'internal/soulsearch/sort_state' then return sort_state end
+        if name == 'internal/soulsearch/ui/sortable_header' then return {
+            new=function(info)
+                local on_cycle = info.on_cycle
+                info.on_change = function() on_cycle() end
+                info.setOption = function(self, value) self.option = value end
+                return label(info)
+            end,
+            set_sort=function(control, active, reverse)
+                control:setOption(not active and 0 or reverse and 2 or 1, false)
+            end,
+        } end
         if name == 'internal/soulsearch/attribute_descriptions' then
             return {get_tooltip=function(kind, key) return kind .. ':' .. key end}
         end
@@ -669,6 +682,18 @@ function M.load_results_panel(repo_root)
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/ui_layout' then return layout end
         if name == 'internal/soulsearch/ui_format' then return ui_format end
+        if name == 'internal/soulsearch/ui/sortable_header' then return {
+            new=function(info)
+                local on_cycle = info.on_cycle
+                info.on_change = function() on_cycle() end
+                info.setOption = function(self, value) self.option = value end
+                info.getMousePos = function(self) return self.mouse_x, self.mouse_y end
+                return info
+            end,
+            set_sort=function(control, active, reverse)
+                control:setOption(not active and 0 or reverse and 2 or 1, false)
+            end,
+        } end
         error('unexpected reqscript: ' .. tostring(name))
     end
     return module_loader.load(repo_root,
@@ -724,13 +749,13 @@ function M.load_window_config(repo_root)
         repo_root, M.make_df_stub(), {units={}})
     local window_settings = M.load_window_settings(repo_root)
     local ui_layout = M.load_ui_layout(repo_root)
-    local stats_sort = M.load_stats_sort(repo_root)
+    local sort_state = M.load_sort_state(repo_root)
     local modules = {
         ['internal/soulsearch/filter_state']=filter_state,
         ['internal/soulsearch/unit_scope_provider']=unit_scope_provider,
         ['internal/soulsearch/window_settings']=window_settings,
         ['internal/soulsearch/ui_layout']=ui_layout,
-        ['internal/soulsearch/stats_sort']=stats_sort,
+        ['internal/soulsearch/sort_state']=sort_state,
     }
     local config = module_loader.load(
         repo_root,

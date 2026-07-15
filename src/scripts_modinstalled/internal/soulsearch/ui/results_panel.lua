@@ -4,23 +4,7 @@ local widgets = require('gui.widgets')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
-local SortableHeader = defclass(SortableHeader, widgets.Label)
-
-function SortableHeader:init(info)
-    self.get_column = info.get_column
-    self.on_sort = info.on_sort
-end
-
-function SortableHeader:onInput(keys)
-    if keys._MOUSE_L then
-        local column = self.get_column(self:getMousePos())
-        if column then
-            self.on_sort(column)
-            return true
-        end
-    end
-    return SortableHeader.super.onInput(self, keys)
-end
+local sortable_header = reqscript('internal/soulsearch/ui/sortable_header')
 
 local HEADER_TOOLTIPS = {
     name='Sort by name.', unit_id='Sort by unit ID.',
@@ -53,11 +37,17 @@ function ResultsPanel:init(info)
         widgets.Label{view_id='result_header_underline',
             frame=ui_layout.get_frame('result_underline'),
             text=ui_format.get_title_underline('Results'), text_pen=COLOR_GREY},
-        SortableHeader{view_id='result_columns',
-            frame=ui_layout.get_frame('result_columns'),
-            text=ui_format.format_result_columns(), text_pen=COLOR_GREY,
-            get_column=ui_layout.get_result_header_column,
-            on_sort=inputs.on_sort},
+        sortable_header.new{view_id='result_columns',
+            frame={l=ui_layout.RESULTS_LEFT, t=5, w=ui_layout.RESULT_NAME_WIDTH},
+            label='Name', text_pen=COLOR_GREY, on_cycle=function() inputs.on_sort('name') end},
+        sortable_header.new{view_id='result_profession_column',
+            frame={l=ui_layout.RESULTS_LEFT + ui_layout.RESULT_PROFESSION_COLUMN_X, t=5,
+                w=ui_layout.RESULT_PROFESSION_WIDTH}, label='Profession', text_pen=COLOR_GREY,
+            on_cycle=function() inputs.on_sort('profession') end},
+        sortable_header.new{view_id='result_unit_id_column',
+            frame={l=ui_layout.RESULTS_LEFT + ui_layout.RESULT_UNIT_ID_COLUMN_X, t=5,
+                w=ui_layout.RESULT_UNIT_ID_WIDTH}, label='Unit ID', text_pen=COLOR_GREY,
+            on_cycle=function() inputs.on_sort('unit_id') end},
         widgets.List{view_id='result_list',
             frame=ui_layout.get_frame('result_list'),
             on_select=function(_, choice)
@@ -76,11 +66,14 @@ end
 
 ---@param title string
 ---@param underline string
----@param columns string
-function ResultsPanel:set_header_text(title, underline, columns)
+---@param sort SoulSearchSortState|nil
+function ResultsPanel:set_header_text(title, underline, _, sort)
     self.subviews.result_header:setText(title)
     self.subviews.result_header_underline:setText(underline)
-    self.subviews.result_columns:setText(columns)
+    local active, reverse = sort and sort.key, sort and sort.reverse
+    sortable_header.set_sort(self.subviews.result_columns, active == 'name', reverse)
+    sortable_header.set_sort(self.subviews.result_profession_column, active == 'profession', reverse)
+    sortable_header.set_sort(self.subviews.result_unit_id_column, active == 'unit_id', reverse)
 end
 
 ---@param choices table[]
@@ -108,7 +101,13 @@ end
 
 ---@return string|nil
 function ResultsPanel:get_header_tooltip()
-    local x, y = self.subviews.result_columns:getMousePos()
-    local column = ui_layout.get_result_header_column(x, y)
-    return column and HEADER_TOOLTIPS[column] or nil
+    local headers = {
+        {view_id='result_columns', column='name'},
+        {view_id='result_profession_column', column='profession'},
+        {view_id='result_unit_id_column', column='unit_id'},
+    }
+    for _, header in ipairs(headers) do
+        local x, y = self.subviews[header.view_id]:getMousePos()
+        if x and y == 0 then return HEADER_TOOLTIPS[header.column] end
+    end
 end

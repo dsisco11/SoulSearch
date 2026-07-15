@@ -37,6 +37,8 @@ return function(test, repo_root)
             'result_header',
             'result_header_underline',
             'result_columns',
+            'result_profession_column',
+            'result_unit_id_column',
             'result_list',
             'filters_button',
             'active_filter_count',
@@ -255,9 +257,7 @@ return function(test, repo_root)
         window.subviews.result_list.on_select(1, {result=result})
         test.assert_true(requests[1].stats)
         test.assert_true(requests[1].result == result)
-        window.subviews.result_columns.mouse_x = 0
-        window.subviews.result_columns.mouse_y = 0
-        test.assert_true(window.subviews.result_columns:onInput{_MOUSE_L=true})
+        window.subviews.result_columns.on_change()
         test.assert_equal('name', window.session:get_result_sort().key)
         test.assert_false(window.session:get_result_sort().reverse)
         test.assert_equal(1, window.session:get_result_sort().phase)
