@@ -13,6 +13,7 @@ MODULES = {
     {name='internal/soulsearch/skill_categories', contract='get_category'},
     {name='internal/soulsearch/text_match', contract='contains'},
     {name='internal/soulsearch/attribute_descriptions', contract='get_tooltip'},
+    {name='internal/soulsearch/availability', contract='get_unavailable_reason'},
     {name='internal/soulsearch/ui_glyphs', contract='get_glyph'},
     {name='internal/soulsearch/stats_layout', contract='get_content_frames'},
     {name='internal/soulsearch/stats_popover_config', contract='resolve'},

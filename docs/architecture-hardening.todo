@@ -30,7 +30,7 @@ inspection alone.
       Main Window remains the DFHack widget and I/O coordinator.
 - [x] Results and Stats use one reusable sort-state/header/list architecture
       after evaluating applicable built-in DFHack widgets.
-- [ ] UI tests use a small, consistent script/widget harness instead of many
+- [x] UI tests use a small, consistent script/widget harness instead of many
       subtly different fake class implementations.
 - [ ] Clean reload adds only the behavior DFHack does not provide natively:
       old-screen teardown, stale-definition cleanup, coherent reconstruction,
@@ -344,42 +344,42 @@ feature and live-behavior requirements are complete.
 
 ## Phase 6 - Consolidate test infrastructure and shared runtime policy
 
-- [ ] Introduce a small reusable script-loading test harness that accepts:
-  - [ ] a source path;
-  - [ ] an explicit `reqscript` dependency map;
-  - [ ] explicit `require` modules; and
-  - [ ] per-test global overrides.
-- [ ] Introduce one minimal widget/class stub with consistent support for:
-  - [ ] `defclass` inheritance and superclass dispatch;
-  - [ ] widget construction and `ATTRS` defaults needed by tested modules;
-  - [ ] `addviews` and subview indexing;
-  - [ ] focus, text, choices, selection, and cursor operations;
-  - [ ] mouse coordinates and input delegation; and
-  - [ ] only the layout methods exercised by tests.
-- [ ] Do not emulate all of DFHack or silently make every missing method a
+- [x] Introduce a small reusable script-loading test harness that accepts:
+  - [x] a source path;
+  - [x] an explicit `reqscript` dependency map;
+  - [x] explicit `require` modules; and
+  - [x] per-test global overrides.
+- [x] Introduce one minimal widget/class stub with consistent support for:
+  - [x] `defclass` inheritance and superclass dispatch;
+  - [x] widget construction and `ATTRS` defaults needed by tested modules;
+  - [x] `addviews` and subview indexing;
+  - [x] focus, text, choices, selection, and cursor operations;
+  - [x] mouse coordinates and input delegation; and
+  - [x] only the layout methods exercised by tests.
+- [x] Do not emulate all of DFHack or silently make every missing method a
       no-op; unexpected dependencies should still fail clearly.
-- [ ] Migrate touched UI loaders incrementally, then remove duplicate local
+- [x] Migrate touched UI loaders incrementally, then remove duplicate local
       class/constructor/widget implementations from
       `tests/support/soulsearch_env.lua`.
-- [ ] Keep domain collaborators explicit so tests still reveal real module
+- [x] Keep domain collaborators explicit so tests still reveal real module
       boundaries.
-- [ ] Split the support file by responsibility only if the resulting modules
+- [x] Split the support file by responsibility only if the resulting modules
       are cohesive, for example script loading, GUI stubs, and scenario
       fixtures.
-- [ ] Extract one fortress/map availability policy module used by residents,
+- [x] Extract one fortress/map availability policy module used by residents,
       unit-scope providers, UI open guards, and other compatible entry points.
-- [ ] Preserve the existing exact user-facing availability messages.
-- [ ] Add focused availability tests for no map, wrong mode, valid fortress,
+- [x] Preserve the existing exact user-facing availability messages.
+- [x] Add focused availability tests for no map, wrong mode, valid fortress,
       and downstream propagation.
 
 ### Phase 6 gate
 
-- [ ] UI tests construct classes through one consistent minimal widget model.
-- [ ] No migrated loader carries a private incompatible class implementation.
-- [ ] Missing fake dependencies fail explicitly.
-- [ ] Fortress/map availability has one implementation owner.
-- [ ] The full pure-Lua suite passes without weakening assertions.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] UI tests construct classes through one consistent minimal widget model.
+- [x] No migrated loader carries a private incompatible class implementation.
+- [x] Missing fake dependencies fail explicitly.
+- [x] Fortress/map availability has one implementation owner.
+- [x] The full pure-Lua suite passes without weakening assertions.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 7 - Simplify and validate clean reload
 
@@ -540,3 +540,4 @@ those feature items complete merely because component files exist.
 | 2026-07-14 | Phase 3 | Filter and result display presenters; direct presenter tests; Main Window choice-loop migration; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 50 Lua files compile; 251 tests pass with 0 failures. |
 | 2026-07-14 | Phase 4 | Pure `SearchSession` extraction; direct transition, snapshot, sort, and selection-retention tests; broad UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 51 Lua files compile; 255 tests pass with 0 failures; Main Window retains widget, provider, persistence, and external-I/O coordination. |
 | 2026-07-14 | Phase 5 | Workspace/native-widget review; shared `sort_state`; native per-column `CycleHotkeyLabel` adapter; focused sort, Results, Stats, configuration, and UI-characterization coverage; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 52 Lua files compile; 255 tests pass with 0 failures; the obsolete Stats-only sort module and both duplicate header classes are removed. |
+| 2026-07-14 | Phase 6 | Explicit script harness; shared minimal widget/class harness migrated through touched UI loaders; centralized availability policy; direct harness and availability tests; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 53 Lua files compile; 258 tests pass with 0 failures; missing fake dependencies fail explicitly and map/fortress messages remain unchanged. |

@@ -9,11 +9,13 @@ package.path = table.concat({
 
 local test = require('support.testlib')
 local suites = {
+    (require('script_harness_test')),
     (require('attributes_test')),
     (require('attribute_descriptions_test')),
     (require('metadata_test')),
     (require('filter_constants_test')),
     (require('candidate_provider_test')),
+    (require('availability_test')),
     (require('unit_scope_provider_test')),
     (require('race_catalog_test')),
     (require('race_filter_provider_test')),

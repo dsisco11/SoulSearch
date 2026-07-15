@@ -7,6 +7,7 @@
 
 local candidate_provider =
     reqscript('internal/soulsearch/candidate_provider')
+local availability = reqscript('internal/soulsearch/availability')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 local UNIT_SCOPE = filter_constants.unit_scope
@@ -44,13 +45,7 @@ local PREDICATE_BY_SCOPE = {
 
 ---@return string|nil
 local function get_unavailable_reason()
-    if not dfhack.isMapLoaded() then
-        return 'SoulSearch requires a loaded fortress map.'
-    end
-    if not dfhack.world.isFortressMode() then
-        return 'SoulSearch only works in fortress mode.'
-    end
-    return nil
+    return availability.get_unavailable_reason()
 end
 
 ---@param unit df.unit

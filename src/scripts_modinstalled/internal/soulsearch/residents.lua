@@ -25,6 +25,7 @@
 ---@field skills df.unit_skill[]|nil
 
 local df_enums = reqscript('internal/soulsearch/df_enums')
+local availability = reqscript('internal/soulsearch/availability')
 
 local skill_name_by_id
 
@@ -243,13 +244,7 @@ end
 ---Gets the reason resident data cannot currently be collected.
 ---@return string|nil
 function get_unavailable_reason()
-    if not dfhack.isMapLoaded() then
-        return 'SoulSearch requires a loaded fortress map.'
-    end
-    if not dfhack.world.isFortressMode() then
-        return 'SoulSearch only works in fortress mode.'
-    end
-    return nil
+    return availability.get_unavailable_reason()
 end
 
 ---Collects searchable rows for fortress citizens.

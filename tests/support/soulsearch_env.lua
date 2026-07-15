@@ -1,4 +1,5 @@
 local module_loader = require('support.module_loader')
+local widget_harness = require('support.widget_harness')
 
 local M = {}
 
@@ -198,6 +199,7 @@ end
 function M.load_unit_scope_provider(repo_root, df_stub, dfhack_stub)
     local candidate_provider = M.load_candidate_provider(repo_root)
     local filter_constants = M.load_filter_constants(repo_root)
+    local availability = M.load_availability(repo_root, dfhack_stub)
     local globals = {
         df=df_stub,
         dfhack=dfhack_stub,
@@ -208,6 +210,7 @@ function M.load_unit_scope_provider(repo_root, df_stub, dfhack_stub)
             if name == 'internal/soulsearch/filter_constants' then
                 return filter_constants
             end
+            if name == 'internal/soulsearch/availability' then return availability end
             error('unexpected reqscript: ' .. tostring(name))
         end,
     }
@@ -430,33 +433,9 @@ end
 function M.load_stats_panel(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
     local sort_state = M.load_sort_state(repo_root)
-    local function label(config)
-        config.setText=function(self, text) self.text=text; self.start_line_num=1 end
-        config.getTextHeight=function(self)
-            local count=1; for _ in tostring(self.text or ''):gmatch('\n') do count=count+1 end
-            return count
-        end
-        config.getMousePos=function(self) return self.mouse_x, self.mouse_y end
-        return config
-    end
-    local Panel = setmetatable({}, {__call=function(_, config)
-        config.addviews=function(self, views)
-            self.subviews=self.subviews or {}
-            for _, view in ipairs(views) do self.subviews[view.view_id]=view end
-        end
-        return config
-    end})
-    local widgets={Panel=Panel, Label=setmetatable({}, {__call=function(_, c) return label(c) end})}
+    local widgets = widget_harness.widgets()
     local globals={COLOR_WHITE='white', COLOR_GREY='grey', DEFAULT_NIL=nil}
-    globals.defclass=function(_, parent)
-        local class={super={onInput=function() return false end}}
-        class.ATTRS=function() end
-        return setmetatable(class, {__call=function(_, config)
-            local instance=parent(config); setmetatable(instance, {__index=class})
-            if class.init then class.init(instance, config) end
-            return instance
-        end})
-    end
+    globals.defclass=widget_harness.defclass
     globals.require=function() return widgets end
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
@@ -465,8 +444,7 @@ function M.load_stats_panel(repo_root)
             new=function(info)
                 local on_cycle = info.on_cycle
                 info.on_change = function() on_cycle() end
-                info.setOption = function(self, value) self.option = value end
-                return label(info)
+                return widgets.CycleHotkeyLabel(info)
             end,
             set_sort=function(control, active, reverse)
                 control:setOption(not active and 0 or reverse and 2 or 1, false)
@@ -507,10 +485,12 @@ end
 
 local function load_ui_leaf_module(repo_root, relative_path)
     local layout = M.load_ui_layout(repo_root)
-    local function parent(kind)
-        return {
-            widget_kind=kind,
-            onInput=function(self)
+    local widgets = widget_harness.widgets({
+        Window={onInput=function(self)
+                self.super_input_calls = (self.super_input_calls or 0) + 1
+                return self.super_input_result or false
+            end},
+        List={onInput=function(self)
                 self.super_input_calls = (self.super_input_calls or 0) + 1
                 return self.super_input_result or false
             end,
@@ -518,20 +498,10 @@ local function load_ui_leaf_module(repo_root, relative_path)
                 self.base_choices = choices
                 self.base_selected = selected
                 return self.base_set_choices_result
-            end,
-        }
-    end
-    local widgets = {Window=parent('Window'), List=parent('List')}
+            end},
+    })
     local globals = make_presentation_globals()
-    globals.defclass=function(_, base)
-        local class = {super=base}
-        return setmetatable(class, {__call=function(_, config)
-            config.widget_kind = base.widget_kind
-            local instance = setmetatable(config, {__index=class})
-            if class.init then class.init(instance, config) end
-            return instance
-        end})
-    end
+    globals.defclass=widget_harness.defclass
     globals.require=function(name)
         assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
         return widgets
@@ -560,38 +530,9 @@ function M.load_filter_panel(repo_root, get_mouse_pos)
     local ui_format = M.load_ui_format(repo_root)
     local descriptions = M.load_attribute_descriptions(repo_root)
     local constants = M.load_filter_constants(repo_root)
-    local function constructor(kind, methods)
-        local value = methods or {}
-        value.widget_kind = kind
-        return setmetatable(value, {__call=function(self, info)
-            info.widget_kind = self.widget_kind
-            return info
-        end})
-    end
-    local widgets = {
-        Window=constructor('Window', {
-            onInput=function() return false end,
-            addviews=function(self, views)
-                self.subviews = self.subviews or {}
-                for _, view in ipairs(views) do table.insert(self.subviews, view) end
-            end,
-        }),
-        Label=constructor('Label'), TextButton=constructor('TextButton'),
-        EditField=constructor('EditField'), List=constructor('List'),
-    }
+    local widgets = widget_harness.widgets()
     local globals = make_presentation_globals()
-    globals.defclass=function(_, parent)
-        local class = {super=parent}
-        return setmetatable(class, {
-            __index=parent,
-            __call=function(_, info)
-                info.widget_kind = parent.widget_kind
-                local instance = setmetatable(info, {__index=class})
-                if class.init then class.init(instance, info) end
-                return instance
-            end,
-        })
-    end
+    globals.defclass=widget_harness.defclass
     globals.dfhack={screen={getMousePos=get_mouse_pos or function() return nil end}}
     globals.require=function(name)
         assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
@@ -626,55 +567,9 @@ end
 function M.load_results_panel(repo_root)
     local layout = M.load_ui_layout(repo_root)
     local ui_format = M.load_ui_format(repo_root)
-    local function constructor(kind, methods)
-        local value = {widget_kind=kind}
-        for key, method in pairs(methods or {}) do value[key] = method end
-        return setmetatable(value, {__call=function(self, info)
-            info.widget_kind = self.widget_kind
-            for key, method in pairs(self) do
-                if type(method) == 'function' and info[key] == nil then
-                    info[key] = method
-                end
-            end
-            return info
-        end})
-    end
-    local widgets = {
-        Panel=constructor('Panel', {addviews=function(self, views)
-            self.subviews = self.subviews or {}
-            for _, view in ipairs(views) do
-                table.insert(self.subviews, view)
-                self.subviews[view.view_id] = view
-            end
-        end}),
-        Label=constructor('Label', {onInput=function() return false end,
-            setText=function(self, text) self.text = text end}),
-        EditField=constructor('EditField', {setText=function(self, text)
-            self.text = text
-        end}),
-        List=constructor('List', {
-            setChoices=function(self, choices, selected)
-                self.choices, self.selected = choices, selected
-            end,
-            getSelected=function(self)
-                return self.selected, self.choices and self.choices[self.selected]
-            end,
-            moveCursor=function(self, delta) self.cursor_delta = delta end,
-        }),
-    }
+    local widgets = widget_harness.widgets()
     local globals = make_presentation_globals()
-    globals.defclass=function(_, parent)
-        local class = {super=parent}
-        return setmetatable(class, {
-            __index=parent,
-            __call=function(_, info)
-                info.widget_kind = parent.widget_kind
-                local instance = setmetatable(info, {__index=class})
-                if class.init then class.init(instance, info) end
-                return instance
-            end,
-        })
-    end
+    globals.defclass=widget_harness.defclass
     globals.require=function(name)
         assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
         return widgets
@@ -686,9 +581,7 @@ function M.load_results_panel(repo_root)
             new=function(info)
                 local on_cycle = info.on_cycle
                 info.on_change = function() on_cycle() end
-                info.setOption = function(self, value) self.option = value end
-                info.getMousePos = function(self) return self.mouse_x, self.mouse_y end
-                return info
+                return widgets.CycleHotkeyLabel(info)
             end,
             set_sort=function(control, active, reverse)
                 control:setOption(not active and 0 or reverse and 2 or 1, false)
@@ -702,11 +595,17 @@ end
 
 function M.load_residents(repo_root, df_enums_override, dfhack_override)
     local df_enums = df_enums_override or M.load_df_enums(repo_root)
+    local dfhack = dfhack_override or {
+        isMapLoaded=function() return true end,
+        world={isFortressMode=function() return true end},
+    }
+    local availability = M.load_availability(repo_root, dfhack)
     local globals = {
         df=M.make_df_stub(),
-        dfhack=dfhack_override,
+        dfhack=dfhack,
         reqscript=function(name)
             if name == 'internal/soulsearch/df_enums' then return df_enums end
+            if name == 'internal/soulsearch/availability' then return availability end
             error('unexpected reqscript: ' .. tostring(name))
         end,
     }
@@ -869,6 +768,13 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
     return environment, screen_registry, ui_state, screen_constructor
 end
 
+function M.load_availability(repo_root, dfhack_stub)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/availability.lua', {
+            dfhack=dfhack_stub,
+        })
+end
+
 ---Loads the composed UI with deterministic pure-Lua collaborators. This keeps
 ---the characterization boundary on the real ui.lua methods while avoiding a
 ---dependency on a running DFHack graphical context.
@@ -960,48 +866,7 @@ function M.load_ui_characterization(repo_root)
             return session
         end,
     }
-    local function class(parent)
-        local result = {super=parent or {}}
-        function result.ATTRS(attrs) result.attrs = attrs end
-        return result
-    end
-
-    local function add_runtime_methods(view, parent, root_subviews)
-        view.parent_view = parent
-        if view.visible == nil then view.visible = true end
-        view.subviews = view.subviews or {}
-        function view:setFocus(value) self.focused = value end
-        function view:setText(value) self.text = value end
-        function view:setChoices(choices, selected)
-            self.choices = choices
-            self.selected = selected
-        end
-        function view:getSelected()
-            return self.selected, self.choices and self.choices[self.selected]
-        end
-        function view:moveCursor(delta) self.cursor_delta = delta end
-        function view:getMousePos() return self.mouse_x, self.mouse_y end
-        function view:getIdxUnderMouse() return self.mouse_index end
-        function view:getMouseFramePos() return self.frame_mouse_x, self.frame_mouse_y end
-        function view:setSelected(index) self.selected = index end
-        for _, child in ipairs(view.subviews) do
-            if child.view_id then
-                view.subviews[child.view_id] = child
-                root_subviews[child.view_id] = child
-            end
-            add_runtime_methods(child, view, root_subviews)
-        end
-    end
-
-    local widgets_base = {
-        onInput=function() return false end,
-        onDragBegin=function() end,
-        onRenderBody=function() end,
-    }
-    local widgets = {
-        Window=widgets_base,
-        HotkeyLabel=function(info) return info end,
-    }
+    local widgets = widget_harness.widgets()
     local gui = {FRAME_THIN='thin', ZScreen={}}
     local modules = {
         ['internal/soulsearch/residents']={
@@ -1110,7 +975,7 @@ function M.load_ui_characterization(repo_root)
     }
     local globals = make_presentation_globals()
     globals.DEFAULT_NIL = nil
-    globals.defclass = function(_, parent) return class(parent) end
+    globals.defclass = widget_harness.defclass
     globals.dfhack = {
         pen={parse=function(value) return value end},
         screen={
@@ -1161,7 +1026,7 @@ function M.load_ui_characterization(repo_root)
             self.subviews = views
             for _, child in ipairs(views) do
                 if child.view_id then self.subviews[child.view_id] = child end
-                add_runtime_methods(child, self, self.subviews)
+                widget_harness.attach_recursive(child, self, self.subviews)
             end
         end
         main_window.SoulSearchWindow.init(window)
