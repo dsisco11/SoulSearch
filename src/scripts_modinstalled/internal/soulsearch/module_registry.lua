@@ -32,6 +32,13 @@ MODULES = {
         contract='FILTER_CONSTANTS',
         contract_type='table',
     },
+    {name='internal/soulsearch/ui/searchable_picker', contract='SearchablePicker', contract_type='table'},
+    {name='internal/soulsearch/ui/preset_picker', contract='PresetPicker', contract_type='table'},
+    {name='internal/soulsearch/ui/unit_scope_picker', contract='UnitScopePicker', contract_type='table'},
+    {
+        name='internal/soulsearch/ui/filter_panel',
+        contract='FilterPanel', contract_type='table',
+    },
     {name='internal/soulsearch/window_settings', contract='load'},
     {name='internal/soulsearch/attributes', contract='evaluate'},
     {name='internal/soulsearch/race_catalog', contract='get_descriptors'},

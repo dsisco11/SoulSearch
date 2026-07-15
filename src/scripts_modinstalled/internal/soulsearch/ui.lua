@@ -19,6 +19,7 @@ local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
 local ui_components = reqscript('internal/soulsearch/ui_components')
+local filter_panel = reqscript('internal/soulsearch/ui/filter_panel')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
@@ -31,7 +32,6 @@ local filter_constants =
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
-local FILTER_KIND_RACE = filter_constants.kind.RACE
 local RACE_GROUP_ID_PREFIX = filter_constants.race.group_id_prefix
 
 ---@class SoulSearchPosition
@@ -223,10 +223,10 @@ function SoulSearchWindow:init()
         self.query = text
         self:refresh_views{results=true}
     end))
-    table.insert(views, ui_components.create_filter_panel_button(function()
+    table.insert(views, filter_panel.create_button(function()
         self:toggle_filter_panel()
     end))
-    table.insert(views, ui_components.create_active_filter_count())
+    table.insert(views, filter_panel.create_active_filter_count())
     append_views(views, ui_components.create_results_panel{
         on_select=function(result)
             if not self.suppress_result_select_refresh then
@@ -248,7 +248,7 @@ function SoulSearchWindow:init()
     table.insert(views, ui_components.create_close_button(function()
         self.parent_view:dismiss()
     end))
-    table.insert(views, ui_components.create_filter_panel{
+    table.insert(views, filter_panel.create{
         is_filter_panel_open=function() return self.filter_panel_open end,
         on_open_filter_panel=function() self:open_filter_panel() end,
         on_close_filter_panel_state=function()
@@ -345,29 +345,7 @@ end
 
 ---@return string|nil
 function SoulSearchWindow:get_filter_action_tooltip()
-    if not self.filter_panel_open or self.add_filter_open or
-            self.add_skill_open or self.add_race_open or
-            self.preset_picker_open then
-        return nil
-    end
-
-    local filter_list = self.subviews.filter_list
-    if not filter_list then return nil end
-    local index, _, action = filter_list:getActionUnderMouse()
-    local choice = index and self.active_filter_choices and
-        self.active_filter_choices[index]
-    if not choice then return nil end
-    local descriptor = choice and choice.descriptor
-    if descriptor and descriptor.kind == FILTER_KIND_RACE and action then
-        if action.callback == 'set_high' then
-            return 'Include in results.'
-        elseif action.callback == 'set_low' then
-            return 'Exclude from results.'
-        elseif action.callback == 'move_up' or action.callback == 'move_down' then
-            return nil
-        end
-    end
-    return action and action.tooltip or nil
+    return self.subviews.filter_panel_window:get_filter_action_tooltip()
 end
 
 
@@ -385,50 +363,18 @@ function SoulSearchWindow:get_result_header_tooltip()
     return column and ui_components.RESULT_HEADER_TOOLTIPS[column] or nil
 end
 
----@param list widgets.List|nil
----@param choices table[]|nil
----@return string|nil
-local function get_descriptor_tooltip(list, choices)
-    local index = list and list:getIdxUnderMouse()
-    local descriptor = index and choices and choices[index] and choices[index].descriptor
-    if descriptor and descriptor.kind == FILTER_KIND_RACE then
-        return 'Filters by a creatures race.'
-    end
-    return descriptor and attribute_descriptions.get_tooltip(
-        descriptor.kind, descriptor.key) or nil
-end
-
 ---@return string|nil
 function SoulSearchWindow:get_filter_descriptor_tooltip()
-    if not self.filter_panel_open or self.preset_picker_open then return nil end
-    if self.add_filter_open then
-        return get_descriptor_tooltip(
-            self.subviews.available_filter_list,
-            self.available_filter_choices)
-    end
-    if self.add_skill_open then
-        return nil
-    end
-    if self.add_race_open then
-        return get_descriptor_tooltip(
-            self.subviews.available_race_list,
-            self.available_race_choices)
-    end
-    local filter_list = self.subviews.filter_list
-    local x = filter_list and filter_list:getMousePos()
-    if ui_layout.get_filter_action_at_x(x) then return nil end
-    return get_descriptor_tooltip(
-        filter_list, self.active_filter_choices)
+    return self.subviews.filter_panel_window:get_descriptor_tooltip()
 end
 
 
 ---@return string
 function SoulSearchWindow:get_tooltip_text()
-    for _, tooltip in ipairs(ui_components.CONTROL_TOOLTIPS) do
-        if is_mouse_over(self.subviews[tooltip.id]) then
-            return tooltip.text
-        end
-    end
+    local panel = self.subviews.filter_panel_window
+    local filter_control_tooltip = filter_panel.get_button_tooltip(
+        self.subviews.filters_button) or panel:get_control_tooltip()
+    if filter_control_tooltip then return filter_control_tooltip end
 
     local stats_tooltip = self.subviews.stats_panel and
         self.subviews.stats_panel:get_tooltip_text() or nil
@@ -478,8 +424,7 @@ function SoulSearchWindow:refresh_active_filter_choices(selected)
     if #choices == 0 then
         table.insert(choices, {text='Use Add attribute, Add skill, or Add race.'})
     end
-    self.subviews.filter_list:setChoices(choices, selected)
-    self.active_filter_choices = choices
+    self.subviews.filter_panel_window:set_active_filter_choices(choices, selected)
     self.subviews.active_filter_count:setText(
         'Filters: ' .. filter_state.count(self.filter_state))
 end
@@ -561,7 +506,7 @@ function SoulSearchWindow:refresh_preset_choices()
         end
     end
     if #choices == 0 then table.insert(choices, {text='No matching presets.'}) end
-    self.subviews.preset_list:setChoices(choices)
+    self.subviews.filter_panel_window:set_preset_choices(choices)
 end
 
 ---Dispatches one explicit pass over the requested derived views.
@@ -606,8 +551,8 @@ function SoulSearchWindow:update_available_filter_choices(selected)
     if #choices == 0 then
         table.insert(choices, {text='No matching attributes.'})
     end
-    self.subviews.available_filter_list:setChoices(choices, selected)
-    self.available_filter_choices = choices
+    self.subviews.filter_panel_window:set_picker_choices(
+        'attribute', choices, selected)
 end
 
 ---@param selected integer|nil
@@ -641,7 +586,7 @@ function SoulSearchWindow:update_available_skill_choices(selected)
     if #choices == 0 then
         table.insert(choices, {text='No matching skills.'})
     end
-    self.subviews.available_skill_list:setChoices(choices, selected)
+    self.subviews.filter_panel_window:set_picker_choices('skill', choices, selected)
 end
 
 ---Recomputes results and preserves selection by unit ID when possible. If the
@@ -1065,9 +1010,8 @@ function SoulSearchWindow:update_unit_scope_picker()
             scope=option.value,
         })
     end
-    self.subviews.unit_scope_picker_list:setChoices(choices, selected)
-    self.subviews.unit_scope_label:setText(ui_format.format_unit_scope_control(
-        selected_label))
+    self.subviews.filter_panel_window:set_unit_scope_choices(
+        choices, selected, selected_label)
 end
 
 ---Opens or closes the unit-scope selector.
@@ -1118,8 +1062,7 @@ function SoulSearchWindow:update_available_race_choices(selected)
     if #choices == 0 then
         table.insert(choices, {text='No matching races.'})
     end
-    self.subviews.available_race_list:setChoices(choices, selected)
-    self.available_race_choices = choices
+    self.subviews.filter_panel_window:set_picker_choices('race', choices, selected)
 end
 
 ---Reloads candidate rows and then recomputes their ranking results.

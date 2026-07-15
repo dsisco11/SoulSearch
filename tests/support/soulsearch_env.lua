@@ -502,6 +502,74 @@ function M.load_filter_action_list(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua')
 end
 
+function M.load_filter_panel(repo_root)
+    local layout = M.load_ui_layout(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    local descriptions = M.load_attribute_descriptions(repo_root)
+    local constants = M.load_filter_constants(repo_root)
+    local function constructor(kind, methods)
+        local value = methods or {}
+        value.widget_kind = kind
+        return setmetatable(value, {__call=function(self, info)
+            info.widget_kind = self.widget_kind
+            return info
+        end})
+    end
+    local widgets = {
+        Window=constructor('Window', {
+            onInput=function() return false end,
+            addviews=function(self, views)
+                self.subviews = self.subviews or {}
+                for _, view in ipairs(views) do table.insert(self.subviews, view) end
+            end,
+        }),
+        Label=constructor('Label'), TextButton=constructor('TextButton'),
+        EditField=constructor('EditField'), List=constructor('List'),
+    }
+    local globals = make_presentation_globals()
+    globals.defclass=function(_, parent)
+        local class = {super=parent}
+        return setmetatable(class, {
+            __index=parent,
+            __call=function(_, info)
+                info.widget_kind = parent.widget_kind
+                local instance = setmetatable(info, {__index=class})
+                if class.init then class.init(instance, info) end
+                return instance
+            end,
+        })
+    end
+    globals.dfhack={screen={getMousePos=function() return nil end}}
+    globals.require=function(name)
+        assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
+        return widgets
+    end
+    local modules = {}
+    modules['internal/soulsearch/ui_layout'] = layout
+    modules['internal/soulsearch/ui_format'] = ui_format
+    modules['internal/soulsearch/attribute_descriptions'] = descriptions
+    modules['internal/soulsearch/filter_constants'] = constants
+    globals.reqscript=function(name)
+        return assert(modules[name], 'unexpected reqscript: ' .. tostring(name))
+    end
+    local function load(relative_path)
+        local environment = {}
+        for key, value in pairs(globals) do environment[key] = value end
+        return module_loader.load(repo_root, relative_path, environment)
+    end
+    modules['internal/soulsearch/ui/modal_panel'] = load(
+        'src/scripts_modinstalled/internal/soulsearch/ui/modal_panel.lua')
+    modules['internal/soulsearch/ui/filter_action_list'] = load(
+        'src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua')
+    modules['internal/soulsearch/ui/searchable_picker'] = load(
+        'src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua')
+    modules['internal/soulsearch/ui/preset_picker'] = load(
+        'src/scripts_modinstalled/internal/soulsearch/ui/preset_picker.lua')
+    modules['internal/soulsearch/ui/unit_scope_picker'] = load(
+        'src/scripts_modinstalled/internal/soulsearch/ui/unit_scope_picker.lua')
+    return load('src/scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua'), modules
+end
+
 function M.load_ui_components(repo_root)
     local layout = M.load_ui_layout(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
@@ -557,6 +625,9 @@ function M.load_ui_components(repo_root)
         end
         if name == 'internal/soulsearch/ui/filter_action_list' then
             return M.load_filter_action_list(repo_root)
+        end
+        if name == 'internal/soulsearch/ui/filter_panel' then
+            return M.load_filter_panel(repo_root)
         end
         error('unexpected reqscript: ' .. tostring(name))
     end
@@ -746,6 +817,54 @@ function M.load_ui_characterization(repo_root)
     local state = {
         settings_updates={}, revealed={}, screen_registry=screen_registry,
     }
+    local function find(views, id)
+        for _, view in ipairs(views or {}) do
+            if view.view_id == id then return view end
+        end
+    end
+    local filter_panel_stub = {
+        create_button=components.create_filter_panel_button,
+        create_active_filter_count=components.create_active_filter_count,
+        get_button_tooltip=function(view)
+            return view and view.frame_body and 'Edit the current filters.' or nil
+        end,
+        create=function(inputs)
+            local panel = components.create_filter_panel(inputs)
+            local function subview(id) return find(panel.subviews, id) end
+            function panel:set_active_filter_choices(choices, selected)
+                self.active_filter_choices = choices
+                subview('filter_list'):setChoices(choices, selected)
+            end
+            function panel:set_picker_choices(kind, choices, selected)
+                local ids = {attribute='available_filter_list',
+                    skill='available_skill_list', race='available_race_list'}
+                self.picker_choices = self.picker_choices or {}
+                self.picker_choices[kind] = choices
+                local function find_recursive(view, id)
+                    if view.view_id == id then return view end
+                    for _, child in ipairs(view.subviews or {}) do
+                        local found = find_recursive(child, id)
+                        if found then return found end
+                    end
+                end
+                find_recursive(panel, ids[kind]):setChoices(choices, selected)
+            end
+            function panel:set_preset_choices(choices)
+                local picker = subview('preset_picker_window')
+                find(picker.subviews, 'preset_list'):setChoices(choices)
+            end
+            function panel:set_unit_scope_choices(choices, selected, label)
+                local picker = subview('unit_scope_picker_window')
+                find(picker.subviews, 'unit_scope_picker_list'):setChoices(choices, selected)
+                subview('unit_scope_label'):setText(
+                    ui_format.format_unit_scope_control(label))
+            end
+            function panel:get_control_tooltip() return nil end
+            function panel:get_filter_action_tooltip() return nil end
+            function panel:get_descriptor_tooltip() return nil end
+            return panel
+        end,
+    }
 
     local function class(parent)
         local result = {super=parent or {}}
@@ -841,6 +960,7 @@ function M.load_ui_characterization(repo_root)
         },
         ['internal/soulsearch/text_match']=M.load_text_match(repo_root),
         ['internal/soulsearch/ui_components']=components,
+        ['internal/soulsearch/ui/filter_panel']=filter_panel_stub,
         ['internal/soulsearch/ui_format']=ui_format,
         ['internal/soulsearch/ui_layout']=ui_layout,
         ['internal/soulsearch/ui_refresh']=ui_refresh,

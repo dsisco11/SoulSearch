@@ -10,6 +10,11 @@ Trivial labels and one-purpose buttons remain inside the component that owns
 them. Existing focused modules such as `stats_panel.lua`, `ui_tooltip.lua`, and
 `stats_popover.lua` remain in place except for necessary import changes.
 
+Each reusable composite with child views, lifecycle behavior, or a host-facing
+API is a named `defclass` widget. Popup composites derive from `widgets.Window`
+(preserving their title and frame behavior); embedded composites derive from
+`widgets.Panel`. Factories are reserved for trivial, one-purpose leaf controls.
+
 Record phase results in the `Execution evidence` table at the end of this
 document. Do not mark a phase gate complete until its stated checks have passed.
 
@@ -20,11 +25,11 @@ document. Do not mark a phase gate complete until its stated checks have passed.
         capture behavior;
   - [x] `filter_action_list.lua` for filter-row action hit-testing and
         dispatch;
-  - [ ] `searchable_picker.lua` for the shared attribute, skill, and race
+  - [x] `searchable_picker.lua` for the shared attribute, skill, and race
         picker structure;
-  - [ ] `preset_picker.lua` for preset search, save, and selection UI;
-  - [ ] `unit_scope_picker.lua` for the unit-scope popup;
-  - [ ] `filter_panel.lua` for filter controls, active filters, picker
+  - [x] `preset_picker.lua` for preset search, save, and selection UI;
+  - [x] `unit_scope_picker.lua` for the unit-scope popup;
+  - [x] `filter_panel.lua` for filter controls, active filters, picker
         composition, and filter-owned tooltip resolution;
   - [ ] `results_panel.lua` for query, result headings, result list, sorting,
         navigation, and result-owned tooltip resolution;
@@ -163,41 +168,43 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Phase 2 - Extract picker and Filter Panel components
 
-- [ ] Add `ui/searchable_picker.lua` as one configurable component used for
+- [x] Add `ui/searchable_picker.lua` as one configurable `widgets.Window`
+      class used for
       attribute, skill, and race pickers:
-  - [ ] accept stable IDs, title, visibility, key, query, close, and submit
+  - [x] accept stable IDs, title, visibility, key, query, close, and submit
         callbacks;
-  - [ ] preserve each existing picker-specific view ID and keybinding;
-  - [ ] preserve choice payloads and descriptor submission behavior; and
-  - [ ] avoid moving filtering/query semantics into the component.
-- [ ] Add `ui/preset_picker.lua` with the current save, query, custom preset,
+- [x] preserve each existing picker-specific view ID and keybinding;
+  - [x] preserve choice payloads and descriptor submission behavior; and
+  - [x] avoid moving filtering/query semantics into the component.
+- [x] Add `ui/preset_picker.lua` as a `widgets.Window` class with the current save, query, custom preset,
       default preset, and role preset callback paths.
-- [ ] Add `ui/unit_scope_picker.lua` with option-count-derived frames and the
+- [x] Add `ui/unit_scope_picker.lua` as a `widgets.Window` class with option-count-derived frames and the
       current scope-selection payload.
-- [ ] Add `ui/filter_panel.lua` as a `ModalPanelWindow`-derived composite:
-  - [ ] own creation of filter controls, `FilterActionList`, and all picker
+- [x] Add `ui/filter_panel.lua` as a `ModalPanelWindow`-derived composite:
+  - [x] own creation of filter controls, `FilterActionList`, and all picker
         components;
-  - [ ] retain the current host callback contract for state-changing actions;
-  - [ ] expose narrow methods for active-filter and picker choice updates;
-  - [ ] own filter-control, filter-action, and descriptor tooltip lookup; and
-  - [ ] preserve the unit-scope picker as the last-painted overlapping child.
-- [ ] Change `main_window.lua`'s future-facing contract only through delegation
+  - [x] retain the current host callback contract for state-changing actions;
+  - [x] expose narrow methods for active-filter and picker choice updates;
+  - [x] own filter-control, filter-action, and descriptor tooltip lookup; and
+  - [x] preserve the unit-scope picker as the last-painted overlapping child.
+- [x] Change `main_window.lua`'s future-facing contract only through delegation
       methods; leave domain filter state and refresh sequencing in the current
       main window until Phase 4.
-- [ ] Split filter/picker characterization assertions into focused module tests
+- [x] Split filter/picker characterization assertions into focused module tests
       and remove migrated assertions from `ui_components_test.lua`.
 
 ### Phase 2 gate
 
-- [ ] Attribute, skill, race, preset, and unit-scope workflows behave exactly
+- [x] Attribute, skill, race, preset, and unit-scope workflows behave exactly
       as before through the extracted Filter Panel.
-- [ ] Filter action hitboxes, modal capture, focus, child order, and tooltips
+- [x] Filter action hitboxes, modal capture, focus, child order, and tooltips
       match the Phase 0 characterization.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 3 - Extract the Results Panel
 
-- [ ] Add `ui/results_panel.lua` containing the Results-owned views:
+- [ ] Add `ui/results_panel.lua` as a `widgets.Panel` class containing the
+      Results-owned views:
   - [ ] query edit field;
   - [ ] title and underline;
   - [ ] existing sortable header implementation; and
@@ -228,7 +235,8 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Phase 4 - Extract the main Window and Screen
 
-- [ ] Move `SoulSearchWindow` into `ui/main_window.lua`:
+- [ ] Move the existing `SoulSearchWindow` `widgets.Window` class into
+      `ui/main_window.lua`:
   - [ ] compose Results, Stats, Filter, tooltip-source, and window controls;
   - [ ] keep domain state, candidate/ranking orchestration, filter/preset
         operations, result-sort state, and session-setting writes here;
@@ -237,7 +245,7 @@ document. Do not mark a phase gate complete until its stated checks have passed.
   - [ ] retain descendant view exposure where existing code/tests depend on
         stable IDs; and
   - [ ] preserve global input fallback order after superclass/component input.
-- [ ] Move `SoulSearchScreen` into `ui/main_screen.lua`:
+- [ ] Move the existing `SoulSearchScreen` class into `ui/main_screen.lua`:
   - [ ] construct the main window and existing `SoulSearchTooltip` sibling;
   - [ ] preserve `focus_path='soulsearch'`;
   - [ ] retain screen-registry add/remove behavior; and
@@ -337,3 +345,4 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 | --- | --- | --- | --- | --- |
 | 2026-07-14 | Phase 0 | Clean pre-edit worktree; dependency baseline above; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 40 Lua files compile; 238 tests, 0 failures; whitespace check clean apart from Git line-ending notices. No production module moved. |
 | 2026-07-14 | Phase 1 | New leaf-module suites; compatibility characterization; registry-order assertions; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 42 Lua files compile; 245 tests, 0 failures; one implementation owner per extracted class; public `internal/soulsearch/ui.lua` facade unchanged. |
+| 2026-07-14 | Phase 2 | Focused Filter Panel/picker coverage; Phase 0 characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 46 Lua files compile; 245 tests, 0 failures; picker composites are named `widgets.Window` classes, and `ui.lua` delegates Filter Panel view updates and filter tooltip resolution while retaining domain state and refresh sequencing. |
