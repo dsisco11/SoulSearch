@@ -34,6 +34,9 @@ return function(test, repo_root)
                     error('unexpected require: ' .. tostring(name))
                 end,
                 reqscript=function(name)
+                    if name == 'internal/soulsearch/ui/widget_extensions' then
+                        return {}
+                    end
                     assert(name == 'internal/soulsearch/ui_format')
                     return soulsearch_env.load_ui_format(repo_root)
                 end,

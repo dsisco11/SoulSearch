@@ -38,6 +38,7 @@ local suites = {
     (require('stats_overlay_test')),
     (require('text_match_test')),
     (require('ui_format_test')),
+    (require('widget_extensions_test')),
     (require('ui_tooltip_test')),
     (require('stats_presenter_test')),
     (require('modal_panel_test')),

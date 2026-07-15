@@ -2,6 +2,7 @@
 
 local gui = require('gui')
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 local residents = reqscript('internal/soulsearch/residents')
 local subject_factory = reqscript('internal/soulsearch/stats_subject')
 local config = reqscript('internal/soulsearch/stats_popover_config')

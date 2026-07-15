@@ -1,6 +1,7 @@
 --@ module=true
 
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local attribute_descriptions =

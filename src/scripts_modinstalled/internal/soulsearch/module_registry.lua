@@ -29,6 +29,10 @@ MODULES = {
     {name='internal/soulsearch/filter_presenter', contract='present_active'},
     {name='internal/soulsearch/result_presenter', contract='present'},
     {
+        name='internal/soulsearch/ui/widget_extensions',
+        contract='install_tooltip_attribute',
+    },
+    {
         name='internal/soulsearch/ui/modal_panel',
         contract='ModalPanelWindow', contract_type='table',
     },

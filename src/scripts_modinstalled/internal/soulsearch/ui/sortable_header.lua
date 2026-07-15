@@ -1,6 +1,7 @@
 --@ module=true
 
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 
 local OPTIONS = {{label='', value=0}, {label=' ' .. string.char(24), value=1},
     {label=' ' .. string.char(25), value=2}}

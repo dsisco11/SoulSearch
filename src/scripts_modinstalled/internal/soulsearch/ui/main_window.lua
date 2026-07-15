@@ -2,6 +2,7 @@
 
 local dialogs = require('gui.dialogs')
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 
 local residents = reqscript('internal/soulsearch/residents')
 local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')

@@ -1,4 +1,5 @@
 local M = {}
+local DEFAULT_NIL = {}
 
 local BASE_METHODS = {
     onInput=function() return false end,
@@ -33,12 +34,27 @@ local function addviews(self, views)
     end
 end
 
-local function constructor(kind, methods)
-    local prototype = {widget_kind=kind}
+local function constructor(kind, methods, parent, default_nil)
+    local attrs = {}
+    local prototype = {widget_kind=kind, super=parent}
+    prototype.ATTRS = setmetatable(attrs, {__call=function(_, additions)
+        for key, value in pairs(additions) do attrs[key] = value end
+    end})
     for key, value in pairs(BASE_METHODS) do prototype[key] = value end
     for key, value in pairs(methods or {}) do prototype[key] = value end
-    return setmetatable(prototype, {__call=function(self, info)
+    return setmetatable(prototype, {__index=parent, __call=function(self, info)
         info = info or {}
+        local chain = {}
+        local current = self
+        while current do
+            table.insert(chain, 1, current)
+            current = current.super
+        end
+        for _, current in ipairs(chain) do
+            for key, value in pairs(current.ATTRS or {}) do
+                if info[key] == nil and value ~= default_nil then info[key] = value end
+            end
+        end
         info.widget_kind = self.widget_kind
         for key, value in pairs(self) do
             if type(value) == 'function' and info[key] == nil then info[key] = value end
@@ -50,10 +66,12 @@ end
 ---Returns a deliberately small DFHack widget model for UI unit tests.
 ---@param overrides table<string, table>|nil
 ---@return table widgets
-function M.widgets(overrides)
+function M.widgets(overrides, default_nil)
+    default_nil = default_nil or DEFAULT_NIL
     local widgets = {}
     local names = {'Window', 'Panel', 'Widget', 'Divider', 'Label', 'TextButton', 'EditField', 'List',
         'HotkeyLabel', 'CycleHotkeyLabel'}
+    widgets.Widget = constructor('Widget', overrides and overrides.Widget, nil, default_nil)
     for _, name in ipairs(names) do
         local methods = overrides and overrides[name] or nil
         if name == 'Window' or name == 'Panel' then
@@ -65,10 +83,12 @@ function M.widgets(overrides)
                 methods = copied
             end
         end
-        widgets[name] = constructor(name, methods)
+        widgets[name] = constructor(name, methods, widgets.Widget, default_nil)
     end
     return widgets
 end
+
+function M.default_nil() return DEFAULT_NIL end
 
 ---Creates a defclass-compatible constructor with explicit superclass dispatch.
 ---@param _ string

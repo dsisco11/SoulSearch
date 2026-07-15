@@ -1,6 +1,7 @@
 --@ module=true
 
 local gui = require('gui')
+reqscript('internal/soulsearch/ui/widget_extensions')
 local screen_registry = reqscript('internal/soulsearch/screen_registry')
 local SoulSearchWindow =
     reqscript('internal/soulsearch/ui/main_window').SoulSearchWindow

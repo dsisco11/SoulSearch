@@ -2,6 +2,7 @@
 
 local gui = require('gui')
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 
 local BACKGROUND = dfhack.pen.parse{ch=32, fg=COLOR_BLACK, bg=COLOR_BLACK}

@@ -1,6 +1,7 @@
 --@ module=true
 
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 ---List that snapshots filter choices and dispatches clicks in the fixed-width
@@ -48,4 +49,3 @@ function FilterActionList:onInput(keys)
     end
     return FilterActionList.super.onInput(self, keys)
 end
-

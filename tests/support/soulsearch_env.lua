@@ -334,6 +334,7 @@ end
 
 local function make_presentation_globals()
     return {
+        DEFAULT_NIL=widget_harness.default_nil(),
         NEWLINE='<NL>',
         COLOR_DARKGREY='darkgrey',
         COLOR_GREY='grey',
@@ -438,6 +439,7 @@ function M.load_unit_stats_list(repo_root)
         defclass=widget_harness.defclass}
     globals.require=function() return widgets end
     globals.reqscript=function(name)
+        if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         if name == 'internal/soulsearch/sort_state' then return sort_state end
         if name == 'internal/soulsearch/ui/sortable_header' then return {
@@ -472,6 +474,7 @@ function M.load_stats_panel(repo_root)
     globals.defclass=widget_harness.defclass
     globals.require=function() return widgets end
     globals.reqscript=function(name)
+        if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         if name == 'internal/soulsearch/sort_state' then return sort_state end
         if name == 'internal/soulsearch/ui/unit_stats_list' then return {
@@ -566,8 +569,13 @@ local function load_ui_leaf_module(repo_root, relative_path)
     end
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/ui_layout' then return layout end
+        if name == 'internal/soulsearch/ui/widget_extensions' then
+            return extension
+        end
         error('unexpected reqscript: ' .. tostring(name))
     end
+    extension = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua', globals)
     return module_loader.load(repo_root, relative_path, globals)
 end
 
@@ -609,6 +617,8 @@ function M.load_filter_panel(repo_root, get_mouse_pos)
         for key, value in pairs(globals) do environment[key] = value end
         return module_loader.load(repo_root, relative_path, environment)
     end
+    modules['internal/soulsearch/ui/widget_extensions'] = load(
+        'src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua')
     modules['internal/soulsearch/ui/modal_panel'] = load(
         'src/scripts_modinstalled/internal/soulsearch/ui/modal_panel.lua')
     modules['internal/soulsearch/ui/filter_action_list'] = load(
@@ -633,6 +643,9 @@ function M.load_results_panel(repo_root)
         return widgets
     end
     globals.reqscript=function(name)
+        if name == 'internal/soulsearch/ui/widget_extensions' then
+            return extension
+        end
         if name == 'internal/soulsearch/ui_layout' then return layout end
         if name == 'internal/soulsearch/ui_format' then return ui_format end
         if name == 'internal/soulsearch/ui/sortable_header' then return {
@@ -647,6 +660,8 @@ function M.load_results_panel(repo_root)
         } end
         error('unexpected reqscript: ' .. tostring(name))
     end
+    extension = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua', globals)
     return module_loader.load(repo_root,
         'src/scripts_modinstalled/internal/soulsearch/ui/results_panel.lua', globals)
 end
@@ -1032,7 +1047,6 @@ function M.load_ui_characterization(repo_root)
         }},
     }
     local globals = make_presentation_globals()
-    globals.DEFAULT_NIL = nil
     globals.defclass = widget_harness.defclass
     globals.dfhack = {
         pen={parse=function(value) return value end},
@@ -1056,6 +1070,10 @@ function M.load_ui_characterization(repo_root)
         assert(module, 'unexpected reqscript: ' .. tostring(name))
         return module
     end
+    modules['internal/soulsearch/ui/widget_extensions'] = module_loader.load(
+        repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua',
+        globals)
 
     local main_window = module_loader.load(
         repo_root,
@@ -1171,6 +1189,7 @@ function M.load_stats_popover(repo_root, options)
         },
         ['internal/soulsearch/stats_popover_config']=config,
         ['internal/soulsearch/ui/unit_stats_list']={UnitStatsList=panel},
+        ['internal/soulsearch/ui/widget_extensions']={},
         ['internal/soulsearch/ui_tooltip']={SoulSearchTooltip=function(info) return info end},
         ['internal/soulsearch/screen_registry']=registry,
     }
@@ -1299,6 +1318,7 @@ function M.load_stats_overlay(repo_root, options)
             error('unexpected require: ' .. name)
         end,
         reqscript=function(name)
+            if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
             if name == 'internal/soulsearch/stats_popover_config' then return config end
             if name == 'internal/soulsearch/stats_popover' then return popover end
             if name == 'internal/soulsearch/ui/unit_stats_list' then

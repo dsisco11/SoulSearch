@@ -3,6 +3,7 @@
 local gui = require('gui')
 local widgets = require('gui.widgets')
 local overlay = require('plugins.overlay')
+reqscript('internal/soulsearch/ui/widget_extensions')
 local config = reqscript('internal/soulsearch/stats_popover_config')
 local popover = reqscript('internal/soulsearch/stats_popover')
 local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList

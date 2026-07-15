@@ -88,23 +88,33 @@ Baseline result (2026-07-14): `Test.ps1` passed **262 tests**; `Build.ps1` passe
 
 ## Phase 1 - Add the common declarative widget attribute
 
-- [ ] Audit the active DFHack widget API for an existing `tooltip` attribute or naming collision.
-- [ ] Evaluate native `widgets.TooltipLabel` and `widgets.DimensionsTooltip`; document which rendering pieces, if any, are reusable and why neither class replaces the required declarative pointer-target system.
-- [ ] Add one idempotent SoulSearch widget-extension module that declares `tooltip=DEFAULT_NIL` on the common `widgets.Widget.ATTRS` base before SoulSearch widgets are constructed.
-- [ ] Make the base-attribute extension collision-safe: preserve a compatible DFHack-provided attribute and fail clearly instead of overwriting an incompatible existing contract.
-- [ ] Verify that native widget classes such as `HotkeyLabel`, `CycleHotkeyLabel`, `Label`, and `List` accept `tooltip='text'` in their normal constructors without custom subclasses.
-- [ ] Define the attribute contract: a string is current tooltip text; `nil` or an empty string means no tooltip; functions and other value types are invalid.
-- [ ] Specify that unsupported tooltip value types are validated when the tooltip agent reads the attribute; direct Lua field assignment must not require an observable property setter.
-- [ ] Verify that assigning `widget.tooltip` after construction updates the value observed on the next tooltip update.
-- [ ] Load the widget-extension module through every normal independently constructed UI host, including the main screen, stats popover, and stats overlay, before any tooltip-bearing widget instances are constructed.
-- [ ] Ensure direct component-test imports also load the extension instead of depending on `module_registry.lua` reload ordering.
-- [ ] Ensure repeated module loads/reloads do not replace DFHack classes, duplicate attributes, or retain stale widget-extension state.
-- [ ] Update the test environment and widget harness to model the same inherited `tooltip` attribute behavior.
-- [ ] Add focused tests for constructor assignment, direct runtime mutation, clearing, and reload idempotence.
+- [x] Audit the active DFHack widget API for an existing `tooltip` attribute or naming collision.
+- [x] Evaluate native `widgets.TooltipLabel` and `widgets.DimensionsTooltip`; document which rendering pieces, if any, are reusable and why neither class replaces the required declarative pointer-target system.
+- [x] Add one idempotent SoulSearch widget-extension module that declares `tooltip=DEFAULT_NIL` on the common `widgets.Widget.ATTRS` base before SoulSearch widgets are constructed.
+- [x] Make the base-attribute extension collision-safe: preserve a compatible DFHack-provided attribute and fail clearly instead of overwriting an incompatible existing contract.
+- [x] Verify that native widget classes such as `HotkeyLabel`, `CycleHotkeyLabel`, `Label`, and `List` accept `tooltip='text'` in their normal constructors without custom subclasses.
+- [x] Define the attribute contract: a string is current tooltip text; `nil` or an empty string means no tooltip; functions and other value types are invalid.
+- [x] Specify that unsupported tooltip value types are validated when the tooltip agent reads the attribute; direct Lua field assignment must not require an observable property setter.
+- [x] Verify that assigning `widget.tooltip` after construction updates the value observed on the next tooltip update.
+- [x] Load the widget-extension module through every normal independently constructed UI host, including the main screen, stats popover, and stats overlay, before any tooltip-bearing widget instances are constructed.
+- [x] Ensure direct component-test imports also load the extension instead of depending on `module_registry.lua` reload ordering.
+- [x] Ensure repeated module loads/reloads do not replace DFHack classes, duplicate attributes, or retain stale widget-extension state.
+- [x] Update the test environment and widget harness to model the same inherited `tooltip` attribute behavior.
+- [x] Add focused tests for constructor assignment, direct runtime mutation, clearing, and reload idempotence.
+
+### Phase 1 API audit and attribute contract
+
+The active DFHack installation's `gui.widgets.Widget.ATTRS` defines `frame`, `frame_inset`, and `frame_background`; it has no `tooltip` attribute. `DEFAULT_NIL` is DFHack's unique nil-default token, so `tooltip=DEFAULT_NIL` is compatible with normal inherited attribute construction and represents an initially absent value.
+
+`widgets.TooltipLabel` is a wrapped label whose `show_tooltip` value only controls its visibility. `widgets.DimensionsTooltip` is a resizing map-selection display that computes a `WxHxZ` label from a map anchor. The latter demonstrates mouse-relative placement, but neither provides generic terminal-widget hit detection, mutable text ownership, modal blocking, or per-root isolation. SoulSearch therefore retains its own renderer during this migration and reuses neither native class.
+
+`internal/soulsearch/ui/widget_extensions.lua` extends only the existing `widgets.Widget.ATTRS` table; it does not replace a DFHack class. On first load it adds `tooltip=DEFAULT_NIL`. On later loads it preserves that exact compatible attribute; any other existing default fails clearly as an incompatible contract. `module_registry.lua` loads the extension before widget modules, and every module that constructs a native widget requests it directly so component imports do not rely on registry ordering. Main-screen, stats-popover, and stats-overlay hosts request it before constructing their roots.
+
+Attribute contract: a string is the current tooltip text; `nil` and `''` mean no tooltip. Functions and all non-string non-nil values are invalid. Direct `widget.tooltip` assignment remains ordinary Lua field mutation with no setter or subscription requirement. Phase 3's tooltip agent will read and validate the current value each update, so a direct mutation is visible on its next sample.
 
 ### Phase 1 exit criteria
 
-- [ ] Any DFHack widget descendant can declare or update tooltip text without a tooltip-specific subclass or getter.
+- [x] Any DFHack widget descendant can declare or update tooltip text without a tooltip-specific subclass or getter.
 
 ## Phase 2 - Introduce generic per-root pointer targeting
 

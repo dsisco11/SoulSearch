@@ -1,6 +1,7 @@
 --@ module=true
 
 local widgets = require('gui.widgets')
+reqscript('internal/soulsearch/ui/widget_extensions')
 
 ---Reusable modal window that owns open/close focus transitions and consumes
 ---mouse input within its frame while open.
