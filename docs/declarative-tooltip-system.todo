@@ -78,6 +78,7 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 - [ ] Default visible `widgets.Window` instances to `block`, preserving descendant targeting and blocking underlying siblings throughout the window frame when no descendant wins.
 - [ ] Keep `ModalPanelWindow` on the `block` policy while it is open/visible; a closed/hidden modal does not participate in targeting.
 - [ ] Add common `on_pointer_enter`, `on_pointer_update`, and `on_pointer_leave` event attributes so native widgets can update their own tooltip state without custom subclasses.
+- [ ] Define the event signatures as `on_pointer_enter(target, x, y)`, `on_pointer_update(target, x, y)`, and `on_pointer_leave(target)`, where `x` and `y` are local to the terminal target and the callback updates `target.tooltip` when needed.
 - [ ] Sample pointer state once per root render/update tick, before tooltip presentation, because DFHack does not provide a continuous hovered-widget event stream.
 - [ ] Emit `on_pointer_leave` and `on_pointer_enter` when the target changes, then emit `on_pointer_update` with current local coordinates for the selected target on every sample.
 - [ ] Resolve overlapping siblings in reverse render order so the last-rendered eligible widget wins; keyboard focus-owner priority must not override the mouse target.
@@ -88,6 +89,8 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 - [ ] Ensure an empty area inside any visible window returns `blocked` instead of exposing a widget behind the window.
 - [ ] Ensure pointer positions outside a window frame can continue to lower siblings when allowed by the surrounding root.
 - [ ] Support independently rendered roots for `gui.Screen` instances and `overlay.OverlayWidget` hosts without sharing pointer state.
+- [ ] Treat the supplied root as a traversal boundary with implicit `pass` behavior; the root itself is never returned as a terminal pointer target regardless of its inherited widget policy.
+- [ ] Update `soulsearch_env.lua` and `widget_harness.lua` to model pointer policies, tagged results, root-boundary behavior, clipping, and pointer-event callback signatures consistently with production.
 - [ ] Add focused dispatcher tests for nested controls, transparent panels, explicit panel targets, blocking windows, window borders, sibling overlap, clipping, visibility, target removal, and independently rendered roots.
 - [ ] Add nested-modal tests proving that the topmost picker blocks the filter window only within the picker's frame, while positions outside the picker can still target the containing filter window.
 
@@ -164,7 +167,7 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 
 ## Phase 7 - Validate reloads, packaging, and live modal behavior
 
-- [ ] Run the focused pointer, modal-panel, filter-panel, results-panel, stats-panel, popover, overlay, and tooltip tests.
+- [ ] Author and maintain focused pointer, modal-panel, filter-panel, results-panel, stats-panel, popover, overlay, and tooltip test files; execute them through the repository's full-suite runner, which currently loads every registered suite.
 - [ ] Run the complete test suite with `tools/Test.ps1` and record the final passing count.
 - [ ] Run `tools/Build.ps1` for production Lua syntax validation.
 - [ ] Run `tools/Publish.ps1`; use its built-in `VerifyPackage.ps1` invocation instead of calling `VerifyPackage.ps1` without its mandatory package arguments.
