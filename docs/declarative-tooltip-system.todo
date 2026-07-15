@@ -32,17 +32,59 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 
 ## Phase 0 - Characterize the current behavior and freeze the contract
 
-- [ ] Inventory every tooltip producer, forwarding method, and renderer host in the main SoulSearch screen, stats popover, and stats overlay.
-- [ ] Record which tooltips are static and which depend on a row, column, picker selection, filter action, or subject record.
-- [ ] Add or retain characterization tests for current tooltip text, wrapping, placement, and immediate display behavior.
-- [ ] Retain a characterization test proving that an open picker prevents the underlying filter-management controls from producing tooltips.
-- [ ] Record the new pointer-contract cases for sibling overlap, transparent panels, blocking windows, excluded tooltip renderers, no parent fallback, hidden ancestors, clipping, and independently rendered roots.
-- [ ] Keep the new pointer-contract cases as documented acceptance scenarios until the dispatcher test seam is introduced in Phase 2; Phase 0 must not leave the existing suite failing against an abstraction that does not exist yet.
-- [ ] Record the baseline unit-test count and package/build validation commands in this document before implementation begins.
+- [x] Inventory every tooltip producer, forwarding method, and renderer host in the main SoulSearch screen, stats popover, and stats overlay.
+- [x] Record which tooltips are static and which depend on a row, column, picker selection, filter action, or subject record.
+- [x] Add or retain characterization tests for current tooltip text, wrapping, placement, and immediate display behavior.
+- [x] Retain a characterization test proving that an open picker prevents the underlying filter-management controls from producing tooltips.
+- [x] Record the new pointer-contract cases for sibling overlap, transparent panels, blocking windows, excluded tooltip renderers, no parent fallback, hidden ancestors, clipping, and independently rendered roots.
+- [x] Keep the new pointer-contract cases as documented acceptance scenarios until the dispatcher test seam is introduced in Phase 2; Phase 0 must not leave the existing suite failing against an abstraction that does not exist yet.
+- [x] Record the baseline unit-test count and package/build validation commands in this document before implementation begins.
+
+### Phase 0 inventory and acceptance scenarios
+
+Current renderer hosts and forwarding paths:
+
+- The main `SoulSearchScreen` creates `SoulSearchTooltip` with a callback to `SoulSearchWindow:get_tooltip_text()`.
+- `SoulSearchStatsPopoverScreen` creates the same renderer with a callback through its `UnitStatsList`.
+- `SoulSearchStatsOverlay` creates the same renderer with a callback through its overlay-hosted `UnitStatsList`.
+- `SoulSearchWindow:get_tooltip_text()` is the legacy precedence aggregator. It consults the main filter button and `FilterPanel` controls first, then filter actions, result headers, stats, and filter descriptors.
+- `StatsPanel:get_tooltip_text()` only forwards to `UnitStatsList:get_tooltip_text()`.
+
+Current tooltip producers:
+
+- Static: main/filter-management controls in `FILTER_CONTROL_TOOLTIPS`; result-column headers in `ResultsPanel`; stats-column headers and the stats value-cell explanation in `UnitStatsList`.
+- Dynamic by filter action: `FilterActionList` action text, including race include/exclude wording.
+- Dynamic by picker choice: active, attribute, and race descriptor descriptions; the selected picker and its available rows determine the text. Skill, preset, and unit-scope picker rows currently do not supply descriptor tooltips.
+- Dynamic by subject record and row/column: `UnitStatsList` resolves a hovered stats row against the current subject records. `attribute_descriptions` remains the semantic source of descriptor text.
+
+Existing legacy characterization coverage is intentionally retained in `ui_characterization_test.lua`, `filter_panel_test.lua`, `results_panel_test.lua`, and `unit_stats_list_test.lua`. `ui_tooltip_test.lua` covers the renderer's immediate callback read, wrapping, and screen-edge placement. The filter-panel picker test proves that an open picker suppresses underlying filter-action tooltip lookup; it is a legacy behavior test, not an early implementation of the Phase 2 dispatcher.
+
+Phase 2 pointer-contract acceptance scenarios (documentation only until its dispatcher seam exists):
+
+- Overlapping siblings resolve in reverse render order.
+- A transparent `Panel` passes through when none of its eligible descendants wins.
+- A visible `Window` blocks its whole frame, including its border and empty interior, while allowing descendants to win first.
+- The tooltip renderer is `none`: neither it nor any child can become a target.
+- A target with no tooltip does not fall back to a parent tooltip.
+- A hidden or inactive widget, or one below a hidden/inactive ancestor, is ineligible.
+- A target cannot be selected outside its clipped visible bounds.
+- Independently rendered screen and overlay roots keep separate pointer contexts and never target across roots.
+
+These scenarios remain documented acceptance criteria in this phase. They will become dispatcher tests in Phase 2; Phase 0 must not add tests against an API that does not yet exist.
+
+### Phase 0 baseline validation
+
+Run from the repository root before migration work:
+
+- `./tools/Test.ps1` — complete pure-Lua suite.
+- `./tools/Build.ps1` — production Lua syntax validation.
+- `./tools/Publish.ps1` — package validation; this script invokes `VerifyPackage.ps1` with the required package arguments.
+
+Baseline result (2026-07-14): `Test.ps1` passed **262 tests**; `Build.ps1` passed syntax validation for **54 Lua files**. `Publish.ps1` rebuilt the package but its built-in verifier currently fails before archive comparison because `VerifyPackage.ps1` still requires the removed `internal/soulsearch/keybinding_preferences.lua` bootstrap dependency. This pre-existing package-verifier mismatch is recorded here and is outside the declarative-tooltip migration; do not treat it as tooltip implementation failure.
 
 ### Phase 0 exit criteria
 
-- [ ] Current tooltip behavior is protected by passing characterization tests, and the new pointer-target contract is documented for implementation and testing in Phase 2.
+- [x] Current tooltip behavior is protected by passing characterization tests, and the new pointer-target contract is documented for implementation and testing in Phase 2.
 
 ## Phase 1 - Add the common declarative widget attribute
 

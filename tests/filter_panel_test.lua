@@ -175,4 +175,22 @@ return function(test, repo_root)
         test.assert_false(panel:has_open_picker())
         test.assert_equal(13, #refreshes)
     end)
+
+    test.case('filter panel: open picker suppresses underlying filter-action tooltip', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        panel:set_active_filter_choices({{descriptor={kind='trait'}}}, 1)
+        panel.subviews.filter_list.getActionUnderMouse=function()
+            return 1, nil, {tooltip='Remove this filter.'}
+        end
+
+        test.assert_equal('Remove this filter.', panel:get_filter_action_tooltip())
+        panel:toggle_picker('attribute')
+        test.assert_true(panel:has_open_picker())
+        test.assert_equal(nil, panel:get_filter_action_tooltip())
+    end)
 end
