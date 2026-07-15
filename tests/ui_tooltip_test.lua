@@ -49,7 +49,13 @@ return function(test, repo_root)
         local Tooltip = load_tooltip(state)
         local text = 'Difference from the attribute average.'
         local tooltip = Tooltip{}
+        local parent = {invalidate=function(self)
+            self.invalidations = (self.invalidations or 0) + 1
+        end}
+        tooltip.parent_view = parent
         tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
+        test.assert_true(tooltip.visible)
+        test.assert_equal(1, parent.invalidations)
 
         tooltip:render('first')
         test.assert_equal('Difference from the\nattribute average.', tooltip.label.text)
@@ -71,6 +77,10 @@ return function(test, repo_root)
         local state = {mouse_x=9, mouse_y=4, width=10, height=5}
         local Tooltip = load_tooltip(state)
         local tooltip = Tooltip{}
+        local parent = {invalidate=function(self)
+            self.invalidations = (self.invalidations or 0) + 1
+        end}
+        tooltip.parent_view = parent
         tooltip:set_tooltip('Tip', state.mouse_x, state.mouse_y)
 
         tooltip:render('edge')
@@ -80,11 +90,16 @@ return function(test, repo_root)
         test.assert_equal(3, tooltip.frame.h)
 
         tooltip:set_tooltip('', state.mouse_x, state.mouse_y)
+        test.assert_false(tooltip.visible)
+        test.assert_equal('', tooltip.label.text)
+        test.assert_equal(2, parent.invalidations)
         tooltip:render('empty')
         test.assert_equal(1, tooltip.render_count)
 
         state.mouse_x = nil
         tooltip:set_tooltip('Hidden without a pointer', state.mouse_x, state.mouse_y)
+        test.assert_false(tooltip.visible)
+        test.assert_equal(3, parent.invalidations)
         tooltip:render('no-pointer')
         test.assert_equal(1, tooltip.render_count)
     end)
