@@ -4,7 +4,7 @@ Status: planned
 
 ## Goal
 
-Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget attribute and a generic, per-screen pointer-target dispatcher. Each control owns its current tooltip text; the tooltip presentation layer reads that text from the one control selected by normal pointer targeting.
+Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget attribute and a generic pointer-target dispatcher scoped to each independently rendered root. Each control owns its current tooltip text; the tooltip presentation layer reads that text from the one control selected by normal pointer targeting.
 
 ## Locked architectural decisions
 
@@ -12,11 +12,14 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 - Controls may update `self.tooltip` whenever their state, hovered row, or backing data changes.
 - The tooltip agent reads the current attribute on every update and must not retain a stale cached copy.
 - Tooltip lookup stops at the selected pointer target. It never falls back to a parent widget's tooltip.
+- Pointer-target eligibility is independent of whether a widget currently has tooltip text.
 - Layout containers and parent panels are transparent to pointer targeting by default.
 - A panel can explicitly opt into being a pointer target when the panel itself owns an interaction or tooltip.
-- Open modal surfaces are opaque pointer barriers even when no child under the pointer has a tooltip. Controls behind them cannot become pointer targets.
+- Windows are opaque pointer barriers by default even when no descendant under the pointer has a tooltip. Controls behind a window cannot become pointer targets within the window's frame.
+- Open modal windows inherit normal window blocking behavior while preserving pointer targeting for their visible descendants.
+- Tooltip renderer widgets and their descendants are excluded from pointer targeting.
 - Pointer targeting is generic UI infrastructure shared with tooltip behavior; the tooltip system does not independently reverse-walk the widget hierarchy.
-- Pointer state and tooltip presentation are owned per screen/window context, not by a process-global registry.
+- Pointer state and tooltip presentation are owned per independently rendered root/host context, not by a process-global registry. Roots include `gui.Screen` instances and overlay widget roots.
 - Existing tooltip text, wrapping, placement, and immediate hover behavior remain characterization behavior during this migration.
 
 ## Non-goals
@@ -32,24 +35,27 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 - [ ] Inventory every tooltip producer, forwarding method, and renderer host in the main SoulSearch screen, stats popover, and stats overlay.
 - [ ] Record which tooltips are static and which depend on a row, column, picker selection, filter action, or subject record.
 - [ ] Add or retain characterization tests for current tooltip text, wrapping, placement, and immediate display behavior.
-- [ ] Add a characterization test proving that an open picker prevents the underlying filter-management controls from producing tooltips.
-- [ ] Add a characterization test for overlapping sibling controls so the visually/input-topmost eligible control wins.
-- [ ] Add a characterization test proving that a target without tooltip text produces no tooltip instead of consulting a parent.
-- [ ] Add a characterization test proving that hidden controls and controls beneath hidden ancestors cannot become targets.
+- [ ] Retain a characterization test proving that an open picker prevents the underlying filter-management controls from producing tooltips.
+- [ ] Record the new pointer-contract cases for sibling overlap, transparent panels, blocking windows, excluded tooltip renderers, no parent fallback, hidden ancestors, clipping, and independently rendered roots.
+- [ ] Keep the new pointer-contract cases as documented acceptance scenarios until the dispatcher test seam is introduced in Phase 2; Phase 0 must not leave the existing suite failing against an abstraction that does not exist yet.
 - [ ] Record the baseline unit-test count and package/build validation commands in this document before implementation begins.
 
 ### Phase 0 exit criteria
 
-- [ ] Current tooltip behavior and the new targeting rules are represented by tests before production routing changes begin.
+- [ ] Current tooltip behavior is protected by passing characterization tests, and the new pointer-target contract is documented for implementation and testing in Phase 2.
 
 ## Phase 1 - Add the common declarative widget attribute
 
 - [ ] Audit the active DFHack widget API for an existing `tooltip` attribute or naming collision.
+- [ ] Evaluate native `widgets.TooltipLabel` and `widgets.DimensionsTooltip`; document which rendering pieces, if any, are reusable and why neither class replaces the required declarative pointer-target system.
 - [ ] Add one idempotent SoulSearch widget-extension module that declares `tooltip=DEFAULT_NIL` on the common `widgets.Widget.ATTRS` base before SoulSearch widgets are constructed.
+- [ ] Make the base-attribute extension collision-safe: preserve a compatible DFHack-provided attribute and fail clearly instead of overwriting an incompatible existing contract.
 - [ ] Verify that native widget classes such as `HotkeyLabel`, `CycleHotkeyLabel`, `Label`, and `List` accept `tooltip='text'` in their normal constructors without custom subclasses.
 - [ ] Define the attribute contract: a string is current tooltip text; `nil` or an empty string means no tooltip; functions and other value types are invalid.
-- [ ] Add validation or a clear failure for unsupported tooltip value types instead of silently invoking them.
+- [ ] Specify that unsupported tooltip value types are validated when the tooltip agent reads the attribute; direct Lua field assignment must not require an observable property setter.
 - [ ] Verify that assigning `widget.tooltip` after construction updates the value observed on the next tooltip update.
+- [ ] Load the widget-extension module through every normal independently constructed UI host, including the main screen, stats popover, and stats overlay, before any tooltip-bearing widget instances are constructed.
+- [ ] Ensure direct component-test imports also load the extension instead of depending on `module_registry.lua` reload ordering.
 - [ ] Ensure repeated module loads/reloads do not replace DFHack classes, duplicate attributes, or retain stale widget-extension state.
 - [ ] Update the test environment and widget harness to model the same inherited `tooltip` attribute behavior.
 - [ ] Add focused tests for constructor assignment, direct runtime mutation, clearing, and reload idempotence.
@@ -58,41 +64,54 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 
 - [ ] Any DFHack widget descendant can declare or update tooltip text without a tooltip-specific subclass or getter.
 
-## Phase 2 - Introduce generic per-screen pointer targeting
+## Phase 2 - Introduce generic per-root pointer targeting
 
-- [ ] Create a `PointerContext`/`PointerDispatcher` abstraction whose result contains the selected widget and pointer coordinates local to that widget.
-- [ ] Define an explicit targeting protocol for terminal targets, transparent containers, misses, and opaque blockers.
-- [ ] Make static widgets with non-empty tooltip text eligible pointer targets without additional subclasses.
-- [ ] Provide an explicit opt-in for dynamic controls that need pointer enter/move events before they have populated `tooltip`.
-- [ ] Keep ordinary layout panels transparent unless they explicitly opt into targeting.
-- [ ] Resolve overlapping siblings according to the same ordering used by DFHack rendering and input routing.
+- [ ] Define `PointerContext` as per-root pointer state and `PointerDispatcher` as the service that resolves and updates that state.
+- [ ] Return an explicit tagged result for `target`, `blocked`, or `miss`, including pointer coordinates local to a selected target.
+- [ ] Add a common `pointer_policy` contract with `target`, `pass`, `block`, and `none` values.
+- [ ] Audit the common pointer-policy and pointer-event attribute names for DFHack collisions before extending the shared widget classes.
+- [ ] Make repeated pointer-attribute extension loads idempotent and preserve compatible DFHack-provided contracts.
+- [ ] Define policy behavior: descend into eligible children first; `target` selects the widget if no child wins; `pass` falls through; `block` returns blocked; `none` excludes the widget and its complete subtree.
+- [ ] Make pointer eligibility independent of `tooltip`; adding, changing, or clearing tooltip text must never alter which widget is targeted.
+- [ ] Default terminal/leaf widgets to `target`.
+- [ ] Default ordinary `widgets.Panel` layout containers to `pass`, while allowing an individual panel to opt into `target` or `block`.
+- [ ] Default visible `widgets.Window` instances to `block`, preserving descendant targeting and blocking underlying siblings throughout the window frame when no descendant wins.
+- [ ] Keep `ModalPanelWindow` on the `block` policy while it is open/visible; a closed/hidden modal does not participate in targeting.
+- [ ] Add common `on_pointer_enter`, `on_pointer_update`, and `on_pointer_leave` event attributes so native widgets can update their own tooltip state without custom subclasses.
+- [ ] Sample pointer state once per root render/update tick, before tooltip presentation, because DFHack does not provide a continuous hovered-widget event stream.
+- [ ] Emit `on_pointer_leave` and `on_pointer_enter` when the target changes, then emit `on_pointer_update` with current local coordinates for the selected target on every sample.
+- [ ] Resolve overlapping siblings in reverse render order so the last-rendered eligible widget wins; keyboard focus-owner priority must not override the mouse target.
 - [ ] Respect evaluated `visible` and `active` state across the complete ancestor chain.
 - [ ] Respect frame clipping so a widget cannot be targeted outside its visible clipped bounds.
-- [ ] Emit target transition events for pointer enter, pointer move, and pointer leave with local coordinates.
 - [ ] Clear or replace the current target safely when it closes, becomes hidden, moves, or is removed.
-- [ ] Make each open `ModalPanelWindow` an opaque pointer barrier while preserving targeting of its visible descendants.
-- [ ] Ensure an empty area inside an open modal returns a blocked/no-target result instead of exposing a widget behind the modal.
-- [ ] Add focused dispatcher tests for nested controls, transparent panels, explicit panel targets, sibling overlap, clipping, visibility, target removal, and modal blocking.
+- [ ] Distinguish control body hit regions from blocking window-frame regions so window borders also occlude underlying controls.
+- [ ] Ensure an empty area inside any visible window returns `blocked` instead of exposing a widget behind the window.
+- [ ] Ensure pointer positions outside a window frame can continue to lower siblings when allowed by the surrounding root.
+- [ ] Support independently rendered roots for `gui.Screen` instances and `overlay.OverlayWidget` hosts without sharing pointer state.
+- [ ] Add focused dispatcher tests for nested controls, transparent panels, explicit panel targets, blocking windows, window borders, sibling overlap, clipping, visibility, target removal, and independently rendered roots.
+- [ ] Add nested-modal tests proving that the topmost picker blocks the filter window only within the picker's frame, while positions outside the picker can still target the containing filter window.
 
 ### Phase 2 exit criteria
 
-- [ ] Each screen can identify exactly one current pointer target, or an explicit no-target/blocked result, without tooltip-specific hierarchy traversal.
+- [ ] Each independently rendered root can identify exactly one current pointer target, or an explicit miss/blocked result, without tooltip-specific hierarchy traversal.
 
 ## Phase 3 - Make tooltip presentation consume pointer state
 
 - [ ] Separate the existing tooltip renderer from tooltip discovery and component-specific content lookup.
-- [ ] Add one tooltip agent/host per screen context that observes its `PointerContext`.
+- [ ] Add one tooltip agent/host per independently rendered root context that observes its `PointerContext`.
 - [ ] Have the agent read only `pointer_context.target.tooltip` after pointer transition handling has completed.
 - [ ] Read the attribute on every update so direct control mutations are visible without callbacks or change subscriptions.
+- [ ] Validate the current tooltip value at read time and fail clearly for functions or other unsupported value types instead of invoking or silently accepting them.
 - [ ] Hide the tooltip immediately when there is no target, the target is blocked, or the current attribute is `nil`/empty.
 - [ ] Preserve the existing tooltip wrapping, screen-edge positioning, pens, and immediate hover timing.
-- [ ] Render the tooltip above ordinary screen content without allowing it to become the underlying control's pointer target.
+- [ ] Assign the tooltip renderer `pointer_policy='none'` so neither the renderer nor its label/subviews participate in target resolution.
+- [ ] Render the tooltip above ordinary root content without changing the pointer target selected beneath it.
 - [ ] Ensure tooltip rendering cannot leak pointer state or text between separate SoulSearch windows, popovers, or overlay instances.
-- [ ] Add focused tests for live text mutation, clearing text while hovered, target changes, modal blocking, and per-screen isolation.
+- [ ] Add focused tests for live text mutation, clearing text while hovered, target changes, renderer-subtree exclusion, window blocking, and per-root isolation.
 
 ### Phase 3 exit criteria
 
-- [ ] Tooltip presentation depends only on the screen's current pointer target and that target's current `tooltip` attribute.
+- [ ] Tooltip presentation depends only on its root's current pointer target and that target's current `tooltip` attribute.
 
 ## Phase 4 - Migrate static tooltip declarations
 
@@ -103,6 +122,7 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 - [ ] Remove `FILTER_CONTROL_TOOLTIPS` and other centralized view-id-to-text tables once all entries are declared by their controls.
 - [ ] Remove static tooltip hit-test helpers that exist only to support parent aggregation.
 - [ ] Update component tests to assert the widgets' declared attributes rather than calling parent tooltip lookup methods.
+- [ ] Add integration coverage proving a native widget's declared static tooltip is found through normal pointer targeting.
 
 ### Phase 4 exit criteria
 
@@ -110,10 +130,12 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 
 ## Phase 5 - Migrate dynamic tooltip ownership
 
-- [ ] Update `FilterActionList` to derive and assign its own `tooltip` during pointer enter/move and clear it when no action owns the local position.
-- [ ] Update searchable picker/list controls to assign descriptor tooltip text for their own hovered choices.
-- [ ] Keep attribute, skill, preset, race, and unit-scope description lookup inside the control that owns the displayed choice.
-- [ ] Update `UnitStatsList` to assign header, stat, delta, and row-description tooltip text from local pointer coordinates and its current subject records.
+- [ ] Update `FilterActionList` to derive and assign its own `tooltip` during `on_pointer_update` and clear it when no action owns the local position.
+- [ ] Update searchable picker/list target widgets to assign existing descriptor tooltip text for their own hovered choices through `on_pointer_update`.
+- [ ] Migrate only dynamic descriptions found in the Phase 0 inventory; do not invent new skill, preset, or unit-scope tooltip content as part of the architecture change.
+- [ ] Keep existing attribute, race, active-filter, and stats description lookup in the terminal control that owns the displayed content.
+- [ ] Give each `UnitStatsList` header target its static tooltip directly and have its body-label target assign stat, delta, and row-description tooltip text from local pointer coordinates and current subject records.
+- [ ] Use the common pointer-event attributes when a native child widget needs dynamic behavior; do not create a tooltip-specific subclass solely to receive pointer updates.
 - [ ] Ensure dynamic controls refresh `tooltip` when backing data changes while the pointer remains over the same target.
 - [ ] Ensure blank rows, separators, padding, and non-descriptive regions explicitly clear dynamic tooltip text.
 - [ ] Remove tooltip forwarding methods from `StatsPanel`, picker parents, and other composite controls after their children own the text.
@@ -121,18 +143,18 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 
 ### Phase 5 exit criteria
 
-- [ ] Dynamic controls own and maintain their current tooltip text; no ancestor computes tooltip content on their behalf.
+- [ ] Dynamic terminal controls own and maintain their current tooltip text; no ancestor is consulted for tooltip content.
 
 ## Phase 6 - Remove legacy aggregation and wire every host
 
-- [ ] Wire `SoulSearchScreen` to construct and update one pointer context and tooltip agent for its widget tree.
-- [ ] Wire the stats popover and stats overlay to their own isolated pointer contexts and tooltip agents.
+- [ ] Wire `SoulSearchScreen` to construct and update one pointer context and tooltip agent for its root widget tree.
+- [ ] Wire the stats popover screen and stats overlay widget root to their own isolated pointer contexts and tooltip agents.
 - [ ] Remove `SoulSearchWindow:get_tooltip_text()` and its hard-coded precedence chain.
 - [ ] Remove `FilterPanel:get_control_tooltip()`, `get_filter_action_tooltip()`, `get_descriptor_tooltip()`, and superseded button helpers.
 - [ ] Remove `ResultsPanel:get_header_tooltip()`, `UnitStatsList:get_tooltip_text()`, and tooltip-only forwarding methods after their replacements are active.
 - [ ] Remove `get_text` callback wiring from `SoulSearchTooltip` construction and rename the renderer/host types if their old names no longer describe their responsibilities.
 - [ ] Remove duplicated visibility and mouse-over helpers that are no longer used outside legacy tooltip discovery.
-- [ ] Update `module_registry.lua` load ordering for the widget extension, pointer infrastructure, and tooltip host.
+- [ ] Update `module_registry.lua` contracts and reload ordering for the widget extension, pointer infrastructure, and tooltip host while retaining the normal-import guarantees established in Phase 1.
 - [ ] Search production code and tests for obsolete getter/provider callback APIs and parent-level tooltip precedence logic.
 - [ ] Replace legacy parent-precedence tests with pointer-target and control-ownership integration tests.
 
@@ -144,7 +166,8 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 
 - [ ] Run the focused pointer, modal-panel, filter-panel, results-panel, stats-panel, popover, overlay, and tooltip tests.
 - [ ] Run the complete test suite with `tools/Test.ps1` and record the final passing count.
-- [ ] Run `tools/Build.ps1` and `tools/VerifyPackage.ps1`.
+- [ ] Run `tools/Build.ps1` for production Lua syntax validation.
+- [ ] Run `tools/Publish.ps1`; use its built-in `VerifyPackage.ps1` invocation instead of calling `VerifyPackage.ps1` without its mandatory package arguments.
 - [ ] Reload SoulSearch repeatedly in a live DFHack session and verify the common widget attribute remains available without duplicate-class or stale-module failures.
 - [ ] Verify static tooltips on native widgets in the main SoulSearch window.
 - [ ] Verify dynamic filter-action, picker-choice, results-header, stats-header, and stats-row tooltips.
@@ -164,7 +187,10 @@ Replace SoulSearch's parent-aggregated tooltip lookup with a declarative widget 
 - [ ] Controls can dynamically replace or clear their tooltip attribute and the visible tooltip reflects the new value on the next update.
 - [ ] Tooltip content is never supplied through a getter/provider callback.
 - [ ] Tooltip lookup never falls back to a parent.
-- [ ] Parent/layout containers are transparent unless explicitly targetable.
-- [ ] Open modal panels prevent all underlying controls from becoming pointer targets within the modal's blocked region.
-- [ ] Tooltip resolution, text, and visibility state are isolated per screen instance.
+- [ ] Pointer-target eligibility never depends on the current tooltip value.
+- [ ] Parent/layout panels are transparent unless explicitly assigned another pointer policy.
+- [ ] Visible windows block all underlying controls within their frame unless explicitly assigned another pointer policy.
+- [ ] Open modal windows preserve descendant targeting and block underlying controls within their frame.
+- [ ] The tooltip renderer and its complete subtree are excluded from pointer targeting.
+- [ ] Tooltip resolution, text, and visibility state are isolated per independently rendered root instance.
 - [ ] No parent window contains a descendant-tooltip map or precedence chain.
