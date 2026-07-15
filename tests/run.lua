@@ -38,6 +38,7 @@ local suites = {
     (require('stats_presenter_test')),
     (require('modal_panel_test')),
     (require('filter_action_list_test')),
+    (require('search_session_test')),
     (require('filter_panel_test')),
     (require('results_panel_test')),
     (require('ui_characterization_test')),

@@ -60,6 +60,7 @@ MODULES = {
     {name='internal/soulsearch/role_presets', contract='get_all'},
     {name='internal/soulsearch/filter_presets', contract='list'},
     {name='internal/soulsearch/search', contract='apply'},
+    {name='internal/soulsearch/search_session', contract='new'},
     {
         name='internal/soulsearch/ui_tooltip',
         contract='SoulSearchTooltip', contract_type='table',

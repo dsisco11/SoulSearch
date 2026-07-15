@@ -26,7 +26,7 @@ inspection alone.
       active pickers.
 - [ ] Pure presenters build filter, preset, and result display models without
       reading or mutating widgets.
-- [ ] A pure search-session boundary owns search/filter/scope/sort state while
+- [x] A pure search-session boundary owns search/filter/scope/sort state while
       Main Window remains the DFHack widget and I/O coordinator.
 - [ ] Results and Stats use one reusable sort-state/header/list architecture
       after evaluating applicable built-in DFHack widgets.
@@ -240,27 +240,27 @@ inspection alone.
 
 ## Phase 4 - Extract the search-session application boundary
 
-- [ ] Define a pure `SearchSession` contract before implementation.
-- [ ] Move cohesive mutable search state out of Main Window:
-  - [ ] query text;
-  - [ ] validated filter state;
-  - [ ] unit scope;
-  - [ ] result-sort state;
-  - [ ] candidate row snapshots; and
-  - [ ] computed results and selected-result identity needed across refreshes.
-- [ ] Give the session explicit operations for filter add/remove/clear,
+- [x] Define a pure `SearchSession` contract before implementation.
+- [x] Move cohesive mutable search state out of Main Window:
+  - [x] query text;
+  - [x] validated filter state;
+  - [x] unit scope;
+  - [x] result-sort state;
+  - [x] candidate row snapshots; and
+  - [x] computed results and selected-result identity needed across refreshes.
+- [x] Give the session explicit operations for filter add/remove/clear,
       direction changes, priority movement, preset replacement, scope changes,
       query changes, row replacement, result recomputation, and sort cycling.
-- [ ] Return change/effect information that lets Main Window request the
+- [x] Return change/effect information that lets Main Window request the
       correct refresh and persistence actions without duplicating transition
       logic.
-- [ ] Keep the session independent of:
-  - [ ] `gui.widgets` and component instances;
-  - [ ] dialogs and console output;
-  - [ ] filesystem preset storage;
-  - [ ] `dfhack.gui.revealInDwarfmodeMap()`; and
-  - [ ] direct world/unit collection.
-- [ ] Keep Main Window responsible for:
+- [x] Keep the session independent of:
+  - [x] `gui.widgets` and component instances;
+  - [x] dialogs and console output;
+  - [x] filesystem preset storage;
+  - [x] `dfhack.gui.revealInDwarfmodeMap()`; and
+  - [x] direct world/unit collection.
+- [x] Keep Main Window responsible for:
   - [ ] binding component callbacks;
   - [ ] candidate-provider execution and error presentation;
   - [ ] preset load/save adapters and dialogs;
@@ -268,22 +268,22 @@ inspection alone.
   - [ ] zoom/map actions;
   - [ ] refresh dispatch into component APIs; and
   - [ ] drag, resize, render, and global input behavior.
-- [ ] Preserve `ui_refresh.apply()` ordering or replace it only with a tested,
+- [x] Preserve `ui_refresh.apply()` ordering or replace it only with a tested,
       equally explicit effect/refresh pipeline.
-- [ ] Add direct SearchSession tests for every state transition, invalid input,
+- [x] Add direct SearchSession tests for every state transition, invalid input,
       result recomputation, sort cycle, and selection-retention rule.
-- [ ] Reduce Main Window fields and methods after migration; do not leave
+- [x] Reduce Main Window fields and methods after migration; do not leave
       forwarding methods without a host/UI responsibility.
 
 ### Phase 4 gate
 
-- [ ] Search/filter/scope/sort state can be exercised without constructing a
+- [x] Search/filter/scope/sort state can be exercised without constructing a
       widget or faking DFHack GUI classes.
-- [ ] Main Window is primarily a widget adapter and orchestration boundary.
-- [ ] Session snapshots do not alias caller-owned tables.
-- [ ] Persistence and external I/O remain outside the session.
-- [ ] Direct session tests and broad UI characterization pass.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] Main Window is primarily a widget adapter and orchestration boundary.
+- [x] Session snapshots do not alias caller-owned tables.
+- [x] Persistence and external I/O remain outside the session.
+- [x] Direct session tests and broad UI characterization pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 5 - Unify sort state and sortable list/header behavior
 
@@ -527,3 +527,4 @@ those feature items complete merely because component files exist.
 | 2026-07-14 | Phase 1 | `FilterPanel:init()` composite-tree ownership; direct class construction; picker input-contract cleanup; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; obsolete `filter_panel.create()` factory removed. |
 | 2026-07-14 | Phase 2 | Filter Panel-owned exclusive picker state; direct-child host APIs; transition table; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 248 tests pass with 0 failures; Main Window no longer owns picker booleans or republishes descendants. |
 | 2026-07-14 | Phase 3 | Filter and result display presenters; direct presenter tests; Main Window choice-loop migration; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 50 Lua files compile; 251 tests pass with 0 failures. |
+| 2026-07-14 | Phase 4 | Pure `SearchSession` extraction; direct transition, snapshot, sort, and selection-retention tests; broad UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 51 Lua files compile; 255 tests pass with 0 failures; Main Window retains widget, provider, persistence, and external-I/O coordination. |

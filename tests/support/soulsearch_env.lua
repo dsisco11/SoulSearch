@@ -391,6 +391,22 @@ function M.load_filter_presenter(repo_root)
     })
 end
 
+function M.load_search_session(repo_root)
+    local filters = M.load_filter_state(repo_root)
+    local search = M.load_search(repo_root)
+    local scopes = M.load_unit_scope_provider(repo_root,
+        {global={world={units={active={}}}}}, {units={getCitizens=function() return {} end}})
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/search_session.lua', {
+        reqscript=function(name)
+            if name == 'internal/soulsearch/filter_state' then return filters end
+            if name == 'internal/soulsearch/search' then return search end
+            if name == 'internal/soulsearch/unit_scope_provider' then return scopes end
+            error('unexpected reqscript: ' .. tostring(name))
+        end,
+    })
+end
+
 function M.load_stats_layout(repo_root)
     return module_loader.load(
         repo_root,
@@ -846,6 +862,79 @@ function M.load_ui_characterization(repo_root)
         return state.mouse_x, state.mouse_y
     end)
     local results_panel = M.load_results_panel(repo_root)
+    local search_session = {
+        SEARCH_QUERY_KIND={
+            RESULT='result', ATTRIBUTE='attribute', SKILL='skill', RACE='race',
+            PRESET='preset',
+        },
+        new=function(settings)
+            local session = {
+                filter_state=filter_state.new(settings.filters),
+                unit_scope=settings.unit_scope,
+                result_sort={key=settings.result_sort.key,
+                    reverse=settings.result_sort.reverse,
+                    phase=settings.result_sort.phase},
+                query='', attribute_query='', skill_query='', race_query='',
+                preset_query='', rows={}, selected_index=1,
+            }
+            function session:get_filters() return filter_state.get_filters(self.filter_state) end
+            function session:get_candidate_filters()
+                return filter_state.get_candidate_filters(self.filter_state)
+            end
+            function session:filter_count() return filter_state.count(self.filter_state) end
+            function session:get_filter_priority(id) return filter_state.get_priority(self.filter_state, id) end
+            function session:contains_filter(id) return filter_state.contains(self.filter_state, id) end
+            function session:set_query(kind, value)
+                local field = kind == 'attribute' and 'attribute_query' or kind == 'skill' and 'skill_query' or
+                    kind == 'race' and 'race_query' or kind == 'preset' and 'preset_query' or 'query'
+                if self[field] == value then return false end
+                self[field] = value
+                return true
+            end
+            function session:set_selected_result(result, index)
+                self.selected_unit_id = result and result.unit_id or nil
+                self.selected_index = index or self.selected_index
+            end
+            function session:recompute_results()
+                local results = state.results or {}
+                state.last_sort = {results=results, key=self.result_sort.key,
+                    reverse=self.result_sort.reverse}
+                local index = math.max(1, math.min(self.selected_index, #results))
+                for i, result in ipairs(results) do
+                    if result.unit_id == self.selected_unit_id then index = i break end
+                end
+                return results, index
+            end
+            function session:get_result_sort()
+                return {key=self.result_sort.key, reverse=self.result_sort.reverse,
+                    phase=self.result_sort.phase}
+            end
+            function session:cycle_sort(column)
+                local sort = self.result_sort
+                if sort.key == column then sort.phase = sort.phase + 1
+                else sort.key, sort.phase = column, 1 end
+                if sort.phase >= 3 then sort.key, sort.reverse, sort.phase = nil, false, 0
+                else sort.reverse = sort.phase == 2 end
+                return self:get_result_sort()
+            end
+            function session:add_filter(id) return filter_state.add(self.filter_state, id) end
+            function session:remove_filter(id) return filter_state.remove(self.filter_state, id) end
+            function session:clear_filters() return filter_state.clear(self.filter_state) end
+            function session:replace_filters(filters) return filter_state.replace(self.filter_state, filters) end
+            function session:set_filter_direction(id, direction)
+                return filter_state.set_direction(self.filter_state, id, direction)
+            end
+            function session:move_filter(id, delta) return filter_state.move(self.filter_state, id, delta) end
+            function session:replace_rows(rows) self.rows = rows end
+            function session:get_unit_scope() return self.unit_scope end
+            function session:set_unit_scope(scope)
+                if scope == self.unit_scope then return false end
+                self.unit_scope = scope
+                return true
+            end
+            return session
+        end,
+    }
     local function class(parent)
         local result = {super=parent or {}}
         function result.ATTRS(attrs) result.attrs = attrs end
@@ -912,6 +1001,7 @@ function M.load_ui_characterization(repo_root)
                 state.last_sort = {results=results, key=key, reverse=reverse}
             end,
         },
+        ['internal/soulsearch/search_session']=search_session,
         ['internal/soulsearch/descriptors']={
             get_catalog=function()
                 return {by_id={}, groups={

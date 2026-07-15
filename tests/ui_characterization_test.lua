@@ -258,13 +258,13 @@ return function(test, repo_root)
         window.subviews.result_columns.mouse_x = 0
         window.subviews.result_columns.mouse_y = 0
         test.assert_true(window.subviews.result_columns:onInput{_MOUSE_L=true})
-        test.assert_equal('name', window.result_sort_key)
-        test.assert_false(window.result_sort_reverse)
-        test.assert_equal(1, window.result_sort_phase)
+        test.assert_equal('name', window.session:get_result_sort().key)
+        test.assert_false(window.session:get_result_sort().reverse)
+        test.assert_equal(1, window.session:get_result_sort().phase)
         window:cycle_result_sort('name')
-        test.assert_true(window.result_sort_reverse)
+        test.assert_true(window.session:get_result_sort().reverse)
         window:cycle_result_sort('name')
-        test.assert_nil(window.result_sort_key)
+        test.assert_nil(window.session:get_result_sort().key)
         test.assert_equal(4, #requests)
     end)
 

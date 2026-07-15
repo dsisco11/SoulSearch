@@ -6,16 +6,15 @@ local widgets = require('gui.widgets')
 local residents = reqscript('internal/soulsearch/residents')
 local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
 local race_filter_provider = reqscript('internal/soulsearch/race_filter_provider')
-local search = reqscript('internal/soulsearch/search')
+local search_session = reqscript('internal/soulsearch/search_session')
+local QUERY_KIND = search_session.SEARCH_QUERY_KIND
 local descriptors = reqscript('internal/soulsearch/descriptors')
-local filter_state = reqscript('internal/soulsearch/filter_state')
 local window_settings = reqscript('internal/soulsearch/window_settings')
 local window_config = reqscript('internal/soulsearch/window_config')
 local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 local role_presets = reqscript('internal/soulsearch/role_presets')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
-local text_match = reqscript('internal/soulsearch/text_match')
 local filter_panel = reqscript('internal/soulsearch/ui/filter_panel')
 local FilterPanel = filter_panel.FilterPanel
 local ResultsPanel = reqscript('internal/soulsearch/ui/results_panel').ResultsPanel
@@ -32,7 +31,6 @@ local filter_constants =
 local SECTION_DIVIDER_PEN = COLOR_DARKGREY
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
-local RACE_GROUP_ID_PREFIX = filter_constants.race.group_id_prefix
 
 ---@class SoulSearchPosition
 ---@field x integer
@@ -137,20 +135,12 @@ local function create_close_button(on_close)
 end
 
 ---@class SoulSearchWindow: widgets.Window
----@field rows SoulSearchResidentRow[]
----@field results SoulSearchResult[]
----@field query string
----@field attribute_query string
----@field skill_query string
----@field result_sort_key 'name'|'unit_id'|'profession'|nil
----@field result_sort_reverse boolean
----@field result_sort_phase integer
+---@field session SoulSearchSearchSession
 ---@field suppress_result_select_refresh boolean
 ---@field filter_catalog SoulSearchFilterCatalog
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field skill_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field race_filter_descriptors SoulSearchFilterDescriptor[]
----@field filter_state SoulSearchFilterState
 SoulSearchWindow = defclass(SoulSearchWindow, widgets.Window)
 SoulSearchWindow.ATTRS {
     frame_title='SoulSearch',
@@ -173,18 +163,8 @@ function SoulSearchWindow:init()
     self.initial_frame = ui_layout.copy_dimensions(settings.frame)
     self.frame_explicit = settings.explicit and settings.explicit.frame ~= nil
     self.frame_dirty = false
-    self.rows = {}
-    self.results = {}
-    self.query = ''
-    self.attribute_query = ''
-    self.skill_query = ''
-    self.race_query = ''
-    self.result_sort_key = settings.result_sort.key
-    self.result_sort_reverse = settings.result_sort.reverse
-    self.result_sort_phase = settings.result_sort.phase
+    self.session = search_session.new(settings)
     self.suppress_result_select_refresh = false
-    self.preset_query = ''
-    self.unit_scope = settings.unit_scope
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
     self.filter_catalog = filter_catalog
@@ -194,7 +174,6 @@ function SoulSearchWindow:init()
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
     self.race_filter_descriptors = filter_descriptor_groups.races or {}
-    self.filter_state = filter_state.new(settings.filters)
 
     local views = {}
     -- The Results Panel remains first, and its query field remains its first
@@ -202,10 +181,13 @@ function SoulSearchWindow:init()
     table.insert(views, ResultsPanel{view_id='results_panel',
         frame={l=0, t=0, r=0, b=0}, inputs={
             on_query=function(text)
-                self.query = text
-                self:refresh_views{results=true}
+                if self.session:set_query(QUERY_KIND.RESULT, text) then
+                    self:refresh_views{results=true}
+                end
             end,
             on_select=function(result)
+                self.session:set_selected_result(result,
+                    self.subviews.results_panel:get_selected_index())
                 if not self.suppress_result_select_refresh then
                     self:refresh_views{stats=true, result=result}
                 end
@@ -233,30 +215,34 @@ function SoulSearchWindow:init()
         view_id='filter_panel_window', frame=ui_layout.get_frame('filter_panel'),
         frame_title='Search filters', draggable=false,
         inputs={
-        unit_scope=self.unit_scope,
+        unit_scope=self.session:get_unit_scope(),
         unit_scope_options=unit_scope_provider.get_options(),
         on_unit_scope_change=function(scope) self:select_unit_scope(scope) end,
         on_clear=function() self:clear_filters() end,
         on_refresh=function(request) self:refresh_views(request) end,
         on_preset_query=function(text)
-            self.preset_query = text
-            self:refresh_views{presets=true}
+            if self.session:set_query(QUERY_KIND.PRESET, text) then
+                self:refresh_views{presets=true}
+            end
         end,
         on_save_preset=function() self:save_filter_preset() end,
         on_load_preset=function(name) self:load_filter_preset(name) end,
         on_load_default_preset=function(id) self:load_default_filter_preset(id) end,
         on_load_role_preset=function(id) self:load_role_filter_preset(id) end,
         on_attribute_query=function(text)
-            self.attribute_query = text
-            self:refresh_views{pickers=true}
+            if self.session:set_query(QUERY_KIND.ATTRIBUTE, text) then
+                self:refresh_views{pickers=true}
+            end
         end,
         on_skill_query=function(text)
-            self.skill_query = text
-            self:refresh_views{pickers=true}
+            if self.session:set_query(QUERY_KIND.SKILL, text) then
+                self:refresh_views{pickers=true}
+            end
         end,
         on_race_query=function(text)
-            self.race_query = text
-            self:refresh_views{pickers=true}
+            if self.session:set_query(QUERY_KIND.RACE, text) then
+                self:refresh_views{pickers=true}
+            end
         end,
         on_add=function(filter_id) self:add_filter(filter_id) end,
         on_filter_action=function(filter_id, action)
@@ -340,7 +326,7 @@ end
 function SoulSearchWindow:get_active_filter_descriptors()
     local active_descriptors = {}
 
-    for _, filter in ipairs(filter_state.get_filters(self.filter_state)) do
+    for _, filter in ipairs(self.session:get_filters()) do
         local descriptor = self.filter_catalog.by_id[filter.id]
         if descriptor then
             table.insert(active_descriptors, descriptor)
@@ -353,16 +339,16 @@ end
 ---@param filter_id string
 ---@return integer
 function SoulSearchWindow:get_filter_choice_index(filter_id)
-    return filter_state.get_priority(self.filter_state, filter_id) or 1
+    return self.session:get_filter_priority(filter_id) or 1
 end
 
 ---@param selected integer|nil
 function SoulSearchWindow:refresh_active_filter_choices(selected)
     local choices = filter_presenter.present_active(
-        self:get_active_filter_descriptors(), filter_state.get_filters(self.filter_state))
+        self:get_active_filter_descriptors(), self.session:get_filters())
     self.subviews.filter_panel_window:set_active_filter_choices(choices, selected)
     self.subviews.active_filter_count:setText(
-        'Filters: ' .. filter_state.count(self.filter_state))
+        'Filters: ' .. self.session:filter_count())
 end
 
 ---Refreshes the two picker lists from filter state and picker queries.
@@ -376,7 +362,7 @@ end
 function SoulSearchWindow:refresh_preset_choices()
     local choices = filter_presenter.present_presets(filter_presets.list(),
         role_presets.get_role_presets(), role_presets.get_combat_presets(),
-        filter_defaults.get_all(), self.preset_query)
+        filter_defaults.get_all(), self.session.preset_query)
     self.subviews.filter_panel_window:set_preset_choices(choices)
 end
 
@@ -395,7 +381,7 @@ end
 ---@param selected integer|nil
 function SoulSearchWindow:on_filter_state_changed(selected)
     self:update_session_settings{
-        filters=filter_state.get_filters(self.filter_state),
+        filters=self.session:get_filters(),
     }
     self:refresh_views{
         active_filters=true,
@@ -409,7 +395,7 @@ end
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_filter_choices(selected)
     local choices = filter_presenter.present_available(self.attribute_filter_descriptors,
-        filter_state.get_filters(self.filter_state), self.attribute_query, 'No matching attributes.')
+        self.session:get_filters(), self.session.attribute_query, 'No matching attributes.')
     self.subviews.filter_panel_window:set_picker_choices(
         'attribute', choices, selected)
 end
@@ -417,7 +403,7 @@ end
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_skill_choices(selected)
     local choices = filter_presenter.present_skills(self.skill_filter_descriptors,
-        filter_state.get_filters(self.filter_state), self.skill_query, skill_categories.get_order())
+        self.session:get_filters(), self.session.skill_query, skill_categories.get_order())
     self.subviews.filter_panel_window:set_picker_choices('skill', choices, selected)
 end
 
@@ -427,27 +413,13 @@ end
 ---@return SoulSearchResult|nil
 function SoulSearchWindow:recompute_results()
     local results_panel = self.subviews.results_panel
-    local previous_index = results_panel:get_selected_index()
-    local previous_result = results_panel:get_selected_result()
-    local previous_unit_id = previous_result and previous_result.unit_id
-
-    self.results = search.apply(self.rows, {
-        query=self.query,
-        selected_filters=filter_state.get_ranking_filters(self.filter_state),
-    })
-    search.sort_results(
-        self.results,
-        self.result_sort_key,
-        self.result_sort_reverse)
-
-    local display = result_presenter.present(self.results, self.result_sort_key,
-        self.result_sort_reverse)
+    self.session:set_selected_result(results_panel:get_selected_result(),
+        results_panel:get_selected_index())
+    local results, selected = self.session:recompute_results()
+    local sort = self.session:get_result_sort()
+    local display = result_presenter.present(results, sort.key, sort.reverse)
     results_panel:set_header_text(display.title, display.underline, display.columns)
 
-    local selected = ui_refresh.get_result_selection(
-        self.results,
-        previous_unit_id,
-        previous_index)
     -- DFHack List:setChoices() force-fires on_select. Suppress that nested view
     -- refresh so the dispatcher remains the single owner of the Stats update.
     self.suppress_result_select_refresh = true
@@ -463,26 +435,7 @@ end
 
 ---@param column string
 function SoulSearchWindow:cycle_result_sort(column)
-    if self.result_sort_key == column then
-        self.result_sort_phase = self.result_sort_phase + 1
-    else
-        self.result_sort_key = column
-        self.result_sort_phase = 1
-    end
-
-    if self.result_sort_phase >= 3 then
-        self.result_sort_key = nil
-        self.result_sort_reverse = false
-        self.result_sort_phase = 0
-    else
-        self.result_sort_reverse = self.result_sort_phase == 2
-    end
-
-    self:update_session_settings{result_sort={
-        key=self.result_sort_key,
-        reverse=self.result_sort_reverse,
-        phase=self.result_sort_phase,
-    }}
+    self:update_session_settings{result_sort=self.session:cycle_sort(column)}
     self:refresh_views{results=true}
 end
 
@@ -517,7 +470,7 @@ end
 ---@param filter_id string
 ---@return boolean
 function SoulSearchWindow:add_filter(filter_id)
-    if not filter_state.add(self.filter_state, filter_id, FILTER_HIGH) then
+    if not self.session:add_filter(filter_id) then
         return false
     end
     self.subviews.filter_panel_window:close_picker()
@@ -528,19 +481,19 @@ end
 ---@param filter_id string
 ---@return boolean
 function SoulSearchWindow:remove_filter(filter_id)
-    local selected = filter_state.get_priority(self.filter_state, filter_id) or 1
-    if not filter_state.remove(self.filter_state, filter_id) then
+    local selected = self.session:get_filter_priority(filter_id) or 1
+    if not self.session:remove_filter(filter_id) then
         return false
     end
     self:on_filter_state_changed(math.max(
         1,
-        math.min(selected, filter_state.count(self.filter_state))))
+        math.min(selected, self.session:filter_count())))
     return true
 end
 
 ---@return boolean
 function SoulSearchWindow:clear_filters()
-    if not filter_state.clear(self.filter_state) then
+    if not self.session:clear_filters() then
         return false
     end
 
@@ -565,7 +518,7 @@ end
 ---@return boolean
 function SoulSearchWindow:save_filter_preset_named(name)
     local success, err = filter_presets.save(
-        name, filter_state.get_filters(self.filter_state))
+        name, self.session:get_filters())
     if not success then
         print('SoulSearch: ' .. err)
         return false
@@ -612,7 +565,7 @@ end
 
 ---@param filters SoulSearchSelectedFilter[]
 function SoulSearchWindow:apply_loaded_filter_preset(filters)
-    filter_state.replace(self.filter_state, filters)
+    self.session:replace_filters(filters)
     self.subviews.filter_panel_window:close_picker()
     self:on_filter_state_changed(1)
 end
@@ -650,8 +603,8 @@ end
 ---@param direction SoulSearchFilterDirection
 ---@return boolean
 function SoulSearchWindow:set_filter_direction(filter_id, direction)
-    local was_active = filter_state.contains(self.filter_state, filter_id)
-    if not filter_state.set_direction(self.filter_state, filter_id, direction) then
+    local was_active = self.session:contains_filter(filter_id)
+    if not self.session:set_filter_direction(filter_id, direction) then
         return false
     end
     if not was_active then
@@ -697,7 +650,7 @@ end
 ---@param delta integer
 ---@return boolean
 function SoulSearchWindow:move_filter_priority(filter_id, delta)
-    local changed, new_index = filter_state.move(self.filter_state, filter_id, delta)
+    local changed, new_index = self.session:move_filter(filter_id, delta)
     if not changed then
         return false
     end
@@ -724,25 +677,23 @@ end
 
 ---Rebuilds rows from the active unit scope and race candidate filters.
 function SoulSearchWindow:refresh_candidates()
-    local scope_provider = unit_scope_provider.new(self.unit_scope)
+    local scope_provider = unit_scope_provider.new(self.session:get_unit_scope())
     local provider = race_filter_provider.new(
         scope_provider,
-        filter_state.get_candidate_filters(self.filter_state))
+        self.session:get_candidate_filters())
     local rows, err = residents.collect_from_provider(provider)
     if not rows then
         print(err)
-        self.rows = {}
+        self.session:replace_rows({})
     else
-        self.rows = rows
+        self.session:replace_rows(rows)
     end
 end
 
 ---@param scope SoulSearchUnitScope
 ---@return boolean changed
 function SoulSearchWindow:set_unit_scope(scope)
-    if scope == self.unit_scope then return false end
-    unit_scope_provider.new(scope)
-    self.unit_scope = scope
+    if not self.session:set_unit_scope(scope) then return false end
     self:update_session_settings{unit_scope=scope}
     self:refresh_views{candidates=true, results=true, pickers=true}
     return true
@@ -752,7 +703,7 @@ end
 ---control. The popup is intentionally a short modal directly below Search.
 function SoulSearchWindow:update_unit_scope_picker()
     local choices, selected, selected_label = filter_presenter.present_scopes(
-        unit_scope_provider.get_options(), self.unit_scope)
+        unit_scope_provider.get_options(), self.session:get_unit_scope())
     self.subviews.filter_panel_window:set_unit_scope_choices(
         choices, selected, selected_label)
 end
@@ -776,7 +727,7 @@ end
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_race_choices(selected)
     local choices = filter_presenter.present_races(self.race_filter_descriptors,
-        filter_state.get_filters(self.filter_state), self.race_query)
+        self.session:get_filters(), self.session.race_query)
     self.subviews.filter_panel_window:set_picker_choices('race', choices, selected)
 end
 
