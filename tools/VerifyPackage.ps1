@@ -67,9 +67,8 @@ if ($sourceFiles -notcontains 'info.txt' -or
         $sourceFiles -notcontains 'scripts_modinstalled/soulsearch.lua') {
     throw "Source payload must contain info.txt and scripts_modinstalled/soulsearch.lua."
 }
-if ($sourceFiles -notcontains 'scripts_modinstalled/internal/soulsearch/keybindings.lua' -or
-        $sourceFiles -notcontains 'scripts_modinstalled/internal/soulsearch/keybinding_preferences.lua') {
-    throw "Source payload must contain SoulSearch bootstrap dependencies."
+if ($sourceFiles -notcontains 'scripts_modinstalled/internal/soulsearch/keybindings.lua') {
+    throw "Source payload must contain the SoulSearch keybinding bootstrap dependency."
 }
 Assert-SoulSearchBootstrapPayload -ScriptText (
     Get-Content -LiteralPath (Join-Path $sourcePath 'scripts_modinstalled/soulsearch.lua') -Raw

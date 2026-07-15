@@ -123,7 +123,7 @@ Attribute contract: a string is the current tooltip text; `nil` and `''` mean no
 - [x] Add a common `pointer_policy` contract with `target`, `pass`, `block`, and `none` values.
 - [x] Audit the common pointer-policy and pointer-event attribute names for DFHack collisions before extending the shared widget classes.
 - [x] Make repeated pointer-attribute extension loads idempotent and preserve compatible DFHack-provided contracts.
-- [x] Define policy behavior: descend into eligible children first; `target` selects the widget if no child wins; `pass` falls through; `block` returns blocked; `none` excludes the widget and its complete subtree.
+- [x] Define policy behavior: `target` selects the terminal control before implementation children; `pass` descends into eligible children then falls through; `block` allows descendants to win before returning blocked; `none` excludes the widget and its complete subtree.
 - [x] Make pointer eligibility independent of `tooltip`; adding, changing, or clearing tooltip text must never alter which widget is targeted.
 - [x] Default terminal/leaf widgets to `target`.
 - [x] Default ordinary `widgets.Panel` layout containers to `pass`, while allowing an individual panel to opt into `target` or `block`.
@@ -241,10 +241,10 @@ Static strings now live beside the native controls they describe: main and filte
 
 ## Phase 7 - Validate reloads, packaging, and live modal behavior
 
-- [ ] Author and maintain focused pointer, modal-panel, filter-panel, results-panel, stats-panel, popover, overlay, and tooltip test files; execute them through the repository's full-suite runner, which currently loads every registered suite.
-- [ ] Run the complete test suite with `tools/Test.ps1` and record the final passing count.
-- [ ] Run `tools/Build.ps1` for production Lua syntax validation.
-- [ ] Run `tools/Publish.ps1`; use its built-in `VerifyPackage.ps1` invocation instead of calling `VerifyPackage.ps1` without its mandatory package arguments.
+- [x] Author and maintain focused pointer, modal-panel, filter-panel, results-panel, stats-panel, popover, overlay, and tooltip test files; execute them through the repository's full-suite runner, which currently loads every registered suite.
+- [x] Run the complete test suite with `tools/Test.ps1` and record the final passing count: 280 tests, 0 failures (2026-07-15).
+- [x] Run `tools/Build.ps1` for production Lua syntax validation (57 files, 2026-07-15).
+- [x] Run `tools/Publish.ps1`; use its built-in `VerifyPackage.ps1` invocation instead of calling `VerifyPackage.ps1` without its mandatory package arguments. The default artifacts were locked by the active game, so an isolated standard-root package in `dist-validation/` passed the built-in ZIP verification (2026-07-15).
 - [ ] Reload SoulSearch repeatedly in a live DFHack session and verify the common widget attribute remains available without duplicate-class or stale-module failures.
 - [ ] Verify static tooltips on native widgets in the main SoulSearch window.
 - [ ] Verify dynamic filter-action, picker-choice, results-header, stats-header, and stats-row tooltips.
