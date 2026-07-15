@@ -91,18 +91,6 @@ local function append_descriptors(target, descriptors)
     end
 end
 
----Makes nested modal descendants addressable from the root window, matching
----the direct-subview access used by the refresh and tooltip paths.
----@param parent table
----@param root_subviews table
-local function expose_descendant_subviews(parent, root_subviews)
-    for _, child in ipairs(parent.subviews or {}) do
-        if child.view_id then
-            root_subviews[child.view_id] = child
-        end
-        expose_descendant_subviews(child, root_subviews)
-    end
-end
 
 ---@param result SoulSearchResult|nil
 ---@return SoulSearchPosition|nil
@@ -156,12 +144,6 @@ end
 ---@field result_sort_reverse boolean
 ---@field result_sort_phase integer
 ---@field suppress_result_select_refresh boolean
----@field filter_panel_open boolean
----@field add_filter_open boolean
----@field add_skill_open boolean
----@field add_race_open boolean
----@field unit_scope_picker_open boolean
----@field preset_picker_open boolean
 ---@field filter_catalog SoulSearchFilterCatalog
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
 ---@field skill_filter_descriptors SoulSearchFilterDescriptor[]
@@ -199,12 +181,6 @@ function SoulSearchWindow:init()
     self.result_sort_reverse = settings.result_sort.reverse
     self.result_sort_phase = settings.result_sort.phase
     self.suppress_result_select_refresh = false
-    self.filter_panel_open = false
-    self.add_filter_open = false
-    self.add_skill_open = false
-    self.add_race_open = false
-    self.unit_scope_picker_open = false
-    self.preset_picker_open = false
     self.preset_query = ''
     self.unit_scope = settings.unit_scope
     local filter_catalog = descriptors.get_catalog()
@@ -254,36 +230,12 @@ function SoulSearchWindow:init()
     table.insert(views, FilterPanel{
         view_id='filter_panel_window', frame=ui_layout.get_frame('filter_panel'),
         frame_title='Search filters', draggable=false,
-        visible=function() return self.filter_panel_open end,
-        is_open=function() return self.filter_panel_open end,
-        on_open=function() self:open_filter_panel() end,
-        on_close=function() self:close_filter_panel_state() end,
         inputs={
-        is_filter_panel_open=function() return self.filter_panel_open end,
-        on_open_filter_panel=function() self:open_filter_panel() end,
-        on_close_filter_panel_state=function()
-            self:close_filter_panel_state()
-        end,
-        on_close_filter_panel=function() self:close_filter_panel() end,
-        is_attribute_picker_open=function() return self.add_filter_open end,
-        is_skill_picker_open=function() return self.add_skill_open end,
-        is_race_picker_open=function() return self.add_race_open end,
-        is_unit_scope_picker_open=function()
-            return self.unit_scope_picker_open
-        end,
         unit_scope=self.unit_scope,
         unit_scope_options=unit_scope_provider.get_options(),
         on_unit_scope_change=function(scope) self:select_unit_scope(scope) end,
-        on_toggle_unit_scope_picker=function()
-            self:toggle_unit_scope_picker()
-        end,
-        is_preset_picker_open=function() return self.preset_picker_open end,
-        on_toggle_attribute_picker=function() self:toggle_add_filter_dropdown() end,
-        on_toggle_skill_picker=function() self:toggle_add_skill_dropdown() end,
-        on_toggle_race_picker=function() self:toggle_add_race_dropdown() end,
         on_clear=function() self:clear_filters() end,
-        on_toggle_preset_picker=function() self:toggle_preset_picker() end,
-        on_close_preset_picker=function() self:close_preset_picker() end,
+        on_refresh=function(request) self:refresh_views(request) end,
         on_preset_query=function(text)
             self.preset_query = text
             self:refresh_views{presets=true}
@@ -292,7 +244,6 @@ function SoulSearchWindow:init()
         on_load_preset=function(name) self:load_filter_preset(name) end,
         on_load_default_preset=function(id) self:load_default_filter_preset(id) end,
         on_load_role_preset=function(id) self:load_role_filter_preset(id) end,
-        on_close_picker=function() self:close_add_filter_dropdown() end,
         on_attribute_query=function(text)
             self.attribute_query = text
             self:refresh_views{pickers=true}
@@ -312,7 +263,6 @@ function SoulSearchWindow:init()
         },
     })
     self:addviews(views)
-    expose_descendant_subviews(self, self.subviews)
 
     self:update_unit_scope_picker()
     self:refresh_residents()
@@ -701,9 +651,7 @@ function SoulSearchWindow:add_filter(filter_id)
     if not filter_state.add(self.filter_state, filter_id, FILTER_HIGH) then
         return false
     end
-    self.add_filter_open = false
-    self.add_skill_open = false
-    self.add_race_open = false
+    self.subviews.filter_panel_window:close_picker()
     self:on_filter_state_changed(self:get_filter_choice_index(filter_id))
     return true
 end
@@ -727,9 +675,7 @@ function SoulSearchWindow:clear_filters()
         return false
     end
 
-    self.add_filter_open = false
-    self.add_skill_open = false
-    self.add_race_open = false
+    self.subviews.filter_panel_window:close_picker()
     self:on_filter_state_changed(1)
     return true
 end
@@ -798,20 +744,13 @@ end
 ---@param filters SoulSearchSelectedFilter[]
 function SoulSearchWindow:apply_loaded_filter_preset(filters)
     filter_state.replace(self.filter_state, filters)
-    self.preset_picker_open = false
+    self.subviews.filter_panel_window:close_picker()
     self:on_filter_state_changed(1)
 end
 
 ---Opens or closes the saved-filter preset picker.
 function SoulSearchWindow:toggle_preset_picker()
-    self.preset_picker_open = not self.preset_picker_open
-    if self.preset_picker_open then
-        self.add_filter_open = false
-        self.add_skill_open = false
-        self.add_race_open = false
-        self.unit_scope_picker_open = false
-    end
-    self:refresh_views{pickers=true, presets=true}
+    return self.subviews.filter_panel_window:toggle_picker('preset')
 end
 
 ---Opens or closes the filter-panel overlay.
@@ -821,11 +760,6 @@ function SoulSearchWindow:toggle_filter_panel()
 end
 
 ---Updates state after ModalPanelWindow has opened.
-function SoulSearchWindow:open_filter_panel()
-    self.filter_panel_open = true
-    self:refresh_views{pickers=true, presets=true}
-end
-
 ---@return boolean
 function SoulSearchWindow:close_filter_panel()
     return self.subviews.filter_panel_window:close()
@@ -833,23 +767,14 @@ end
 
 ---Updates state after ModalPanelWindow has closed.
 function SoulSearchWindow:close_filter_panel_state()
-    if not self.filter_panel_open then return false end
-    self.filter_panel_open = false
-    self.add_filter_open = false
-    self.add_skill_open = false
-    self.add_race_open = false
-    self.unit_scope_picker_open = false
-    self.preset_picker_open = false
-    self:refresh_views{pickers=true, presets=true}
-    return true
+    return self:close_filter_panel()
 end
 
 ---@return boolean
 function SoulSearchWindow:close_preset_picker()
-    if not self.preset_picker_open then return false end
-    self.preset_picker_open = false
-    self:refresh_views{pickers=true}
-    return true
+    local panel = self.subviews.filter_panel_window
+    if not panel:is_picker_open('preset') then return false end
+    return panel:close_picker()
 end
 
 ---@param filter_id string
@@ -861,10 +786,7 @@ function SoulSearchWindow:set_filter_direction(filter_id, direction)
         return false
     end
     if not was_active then
-        self.add_filter_open = false
-        self.add_skill_open = false
-        self.add_race_open = false
-        self.unit_scope_picker_open = false
+        self.subviews.filter_panel_window:close_picker()
     end
     local selected = self:get_filter_choice_index(filter_id)
     self:on_filter_state_changed(selected)
@@ -873,60 +795,28 @@ end
 
 ---Opens or closes the attribute/trait filter picker.
 function SoulSearchWindow:toggle_add_filter_dropdown()
-    self.add_filter_open = not self.add_filter_open
-    if self.add_filter_open then
-        self.add_skill_open = false
-        self.add_race_open = false
-        self.unit_scope_picker_open = false
-        self.preset_picker_open = false
-    end
-    self:refresh_views{pickers=true}
+    return self.subviews.filter_panel_window:toggle_picker('attribute')
 end
 
 ---Opens or closes the skill filter picker.
 function SoulSearchWindow:toggle_add_skill_dropdown()
-    self.add_skill_open = not self.add_skill_open
-    if self.add_skill_open then
-        self.add_filter_open = false
-        self.add_race_open = false
-        self.unit_scope_picker_open = false
-        self.preset_picker_open = false
-    end
-    self:refresh_views{pickers=true}
+    return self.subviews.filter_panel_window:toggle_picker('skill')
 end
 
 ---Opens or closes the race candidate-scope picker.
 function SoulSearchWindow:toggle_add_race_dropdown()
-    self.add_race_open = not self.add_race_open
-    if self.add_race_open then
-        self.add_filter_open = false
-        self.add_skill_open = false
-        self.unit_scope_picker_open = false
-        self.preset_picker_open = false
-    end
-    self:refresh_views{pickers=true}
+    return self.subviews.filter_panel_window:toggle_picker('race')
 end
 
 ---@return boolean
 function SoulSearchWindow:close_add_filter_dropdown()
-    if not self.add_filter_open and not self.add_skill_open and
-            not self.add_race_open and not self.unit_scope_picker_open then
-        return false
-    end
-
-    self.add_filter_open = false
-    self.add_skill_open = false
-    self.add_race_open = false
-    self.unit_scope_picker_open = false
-    self:refresh_views{pickers=true}
-    return true
+    return self.subviews.filter_panel_window:close_picker()
 end
 
 ---@param delta integer
 ---@return boolean
 function SoulSearchWindow:move_selected_filter_priority(delta)
-    local _, choice = self.subviews.filter_list:getSelected()
-    local filter_id = choice and choice.descriptor and choice.descriptor.id
+    local filter_id = self.subviews.filter_panel_window:get_selected_filter_id()
     if not filter_id then
         return false
     end
@@ -1012,20 +902,13 @@ end
 
 ---Opens or closes the unit-scope selector.
 function SoulSearchWindow:toggle_unit_scope_picker()
-    self.unit_scope_picker_open = not self.unit_scope_picker_open
-    if self.unit_scope_picker_open then
-        self.add_filter_open = false
-        self.add_skill_open = false
-        self.add_race_open = false
-        self.preset_picker_open = false
-    end
     self:update_unit_scope_picker()
-    self:refresh_views{pickers=true}
+    return self.subviews.filter_panel_window:toggle_picker('scope')
 end
 
 ---@param scope SoulSearchUnitScope
 function SoulSearchWindow:select_unit_scope(scope)
-    self.unit_scope_picker_open = false
+    self.subviews.filter_panel_window:close_picker()
     local changed = self:set_unit_scope(scope)
     self:update_unit_scope_picker()
     if not changed then

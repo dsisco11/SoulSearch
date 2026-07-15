@@ -114,55 +114,41 @@ return function(test, repo_root)
         test.assert_equal('unit_scope_picker_window',
             panel.subviews[#panel.subviews].view_id)
 
-        window.filter_panel_open = true
-        window.add_filter_open = true
+        panel:open()
+        panel:toggle_picker('attribute')
         test.assert_true(window.subviews.available_filter_window.visible())
         test.assert_false(window.subviews.filter_list.visible())
-        window.add_filter_open = false
-        window.add_skill_open = true
+        panel:toggle_picker('skill')
         test.assert_true(window.subviews.available_skill_window.visible())
         test.assert_false(window.subviews.available_filter_window.visible())
-        window.add_skill_open = false
-        window.unit_scope_picker_open = true
+        panel:toggle_picker('scope')
         test.assert_true(window.subviews.unit_scope_picker_window.visible())
         test.assert_false(window.subviews.filter_list.visible())
     end)
 
     test.case('UI characterization: picker transitions close competing state', function()
         local window = new_window()
+        local panel = window.subviews.filter_panel_window
 
         window:toggle_add_filter_dropdown()
-        test.assert_true(window.add_filter_open)
-        test.assert_false(window.add_skill_open)
-        test.assert_false(window.add_race_open)
-        test.assert_false(window.unit_scope_picker_open)
-        test.assert_false(window.preset_picker_open)
+        test.assert_equal('attribute', panel.active_picker)
 
         window:toggle_add_skill_dropdown()
-        test.assert_false(window.add_filter_open)
-        test.assert_true(window.add_skill_open)
-        test.assert_false(window.add_race_open)
+        test.assert_equal('skill', panel.active_picker)
 
         window:toggle_unit_scope_picker()
-        test.assert_false(window.add_skill_open)
-        test.assert_true(window.unit_scope_picker_open)
-        test.assert_false(window.preset_picker_open)
+        test.assert_equal('scope', panel.active_picker)
 
         window:toggle_preset_picker()
-        test.assert_false(window.unit_scope_picker_open)
-        test.assert_true(window.preset_picker_open)
+        test.assert_equal('preset', panel.active_picker)
         test.assert_true(window:close_preset_picker())
-        test.assert_false(window.preset_picker_open)
+        test.assert_nil(panel.active_picker)
 
-        window.filter_panel_open = true
-        window.add_race_open = true
+        panel:open()
+        panel:toggle_picker('race')
         test.assert_true(window:close_filter_panel_state())
-        test.assert_false(window.filter_panel_open)
-        test.assert_false(window.add_filter_open)
-        test.assert_false(window.add_skill_open)
-        test.assert_false(window.add_race_open)
-        test.assert_false(window.unit_scope_picker_open)
-        test.assert_false(window.preset_picker_open)
+        test.assert_false(panel:is_open())
+        test.assert_nil(panel.active_picker)
     end)
 
     test.case('UI characterization: Main Window delegates through component APIs', function()

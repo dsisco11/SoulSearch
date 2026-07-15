@@ -169,40 +169,40 @@ inspection alone.
 
 ## Phase 2 - Enforce component APIs and consolidate transient UI state
 
-- [ ] Add narrow Filter Panel APIs for every remaining legitimate host action,
+- [x] Add narrow Filter Panel APIs for every remaining legitimate host action,
       including selected-filter lookup, picker visibility/state transitions,
       focus operations, choice updates, and tooltip resolution.
-- [ ] Migrate Main Window away from direct descendant access, including the
+- [x] Migrate Main Window away from direct descendant access, including the
       active `filter_list` selection path.
-- [ ] Migrate characterization tests that reach through Main Window into
+- [x] Migrate characterization tests that reach through Main Window into
       Filter Panel focused tests or host-facing API assertions.
-- [ ] Delete recursive descendant republishing from Main Window once no
+- [x] Delete recursive descendant republishing from Main Window once no
       production consumer depends on it.
-- [ ] Replace the picker boolean matrix with one exclusive state:
-  - [ ] define the allowed picker values (`attribute`, `skill`, `race`,
+- [x] Replace the picker boolean matrix with one exclusive state:
+  - [x] define the allowed picker values (`attribute`, `skill`, `race`,
         `scope`, `preset`, or none);
-  - [ ] make open, toggle, close, and panel-dismiss transitions explicit;
-  - [ ] make invalid simultaneous-picker states unrepresentable; and
-  - [ ] preserve current query text and picker selection behavior.
-- [ ] Prefer Filter Panel ownership of transient picker state. Use a small
+  - [x] make open, toggle, close, and panel-dismiss transitions explicit;
+  - [x] make invalid simultaneous-picker states unrepresentable; and
+  - [x] preserve current query text and picker selection behavior.
+- [x] Prefer Filter Panel ownership of transient picker state. Use a small
       pure `filter_editor_state.lua` value module only if the transitions need
       independent reuse or testing.
-- [ ] Remove `is_*_picker_open`, `on_toggle_*`, and `on_close_*` callback pairs
+- [x] Remove `is_*_picker_open`, `on_toggle_*`, and `on_close_*` callback pairs
       that exist only because Main Window currently owns component state.
-- [ ] Retain domain-changing callbacks for filters, scope, and presets.
-- [ ] Add a transition-table test covering every picker-to-picker,
+- [x] Retain domain-changing callbacks for filters, scope, and presets.
+- [x] Add a transition-table test covering every picker-to-picker,
       picker-to-list, close, and panel-dismiss path.
 
 ### Phase 2 gate
 
-- [ ] Main Window accesses only direct children and documented component APIs.
-- [ ] No recursive descendant aliases exist at the Main Window root.
-- [ ] At most one Filter Panel picker can be active.
-- [ ] The Filter Panel host contract is materially narrower than the previous
+- [x] Main Window accesses only direct children and documented component APIs.
+- [x] No recursive descendant aliases exist at the Main Window root.
+- [x] At most one Filter Panel picker can be active.
+- [x] The Filter Panel host contract is materially narrower than the previous
       callback matrix.
-- [ ] Focus, mouse capture, tooltips, selection, and paint order match the
+- [x] Focus, mouse capture, tooltips, selection, and paint order match the
       baseline.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 3 - Extract pure display-model presenters
 
@@ -525,3 +525,4 @@ those feature items complete merely because component files exist.
 | --- | --- | --- | --- | --- |
 | 2026-07-14 | Phase 0 | Ownership baseline; picker-transition and Main Window component-delegation characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; no production implementation moved. |
 | 2026-07-14 | Phase 1 | `FilterPanel:init()` composite-tree ownership; direct class construction; picker input-contract cleanup; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; obsolete `filter_panel.create()` factory removed. |
+| 2026-07-14 | Phase 2 | Filter Panel-owned exclusive picker state; direct-child host APIs; transition table; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 248 tests pass with 0 failures; Main Window no longer owns picker booleans or republishes descendants. |

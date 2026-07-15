@@ -35,7 +35,7 @@ return function(test, repo_root)
             on_unit_scope_change=function(scope) calls.scope = scope end,
             on_toggle_unit_scope_picker=noop,
             on_toggle_attribute_picker=noop, on_toggle_skill_picker=noop,
-            on_toggle_race_picker=noop, on_clear=noop,
+            on_toggle_race_picker=noop, on_clear=noop, on_refresh=noop,
             is_preset_picker_open=function() return state.preset end,
             on_toggle_preset_picker=noop, on_close_preset_picker=noop,
             on_preset_query=function(text) calls.preset_query = text end,
@@ -96,7 +96,7 @@ return function(test, repo_root)
         test.assert_true(by_id(panel.subviews, 'filter_list').visible())
         test.assert_equal('Include: Residents',
             by_id(panel.subviews, 'unit_scope_label').text)
-        state.attribute = true
+        panel:toggle_picker('attribute')
         test.assert_false(by_id(panel.subviews, 'filter_list').visible())
         test.assert_true(by_id(panel.subviews, 'available_filter_window').visible())
     end)
@@ -146,5 +146,31 @@ return function(test, repo_root)
         test.assert_sequence({'race'}, panel.subviews.available_race_list.last_choices)
         test.assert_sequence({'preset'}, panel.subviews.preset_list.last_choices)
         test.assert_equal('Include: Residents', panel.subviews.unit_scope_label.text)
+    end)
+
+    test.case('filter panel: picker transition table is exclusive and closes cleanly', function()
+        local state, calls = {panel=false}, {}
+        local inputs = make_inputs(state, calls)
+        local refreshes = {}
+        inputs.on_refresh=function(request) table.insert(refreshes, request) end
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', inputs=inputs}
+        panel.setFocus=noop
+        index_subviews(panel)
+        test.assert_true(panel:open())
+        for _, kind in ipairs({'attribute', 'skill', 'race', 'scope', 'preset'}) do
+            test.assert_true(panel:toggle_picker(kind))
+            test.assert_equal(kind, panel.active_picker)
+            test.assert_true(panel:is_picker_open(kind))
+            test.assert_false(panel.subviews.filter_list.visible())
+        end
+        test.assert_true(panel:close_picker())
+        test.assert_nil(panel.active_picker)
+        test.assert_true(panel.subviews.filter_list.visible())
+        panel:toggle_picker('race')
+        test.assert_true(panel:close())
+        test.assert_false(panel:is_open())
+        test.assert_nil(panel.active_picker)
+        test.assert_equal(9, #refreshes)
     end)
 end
