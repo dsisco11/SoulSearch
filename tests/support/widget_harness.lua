@@ -34,6 +34,9 @@ local function addviews(self, views)
     end
 end
 
+-- All DFHack views inherit addviews(), not only container widgets.
+BASE_METHODS.addviews = addviews
+
 local function constructor(kind, methods, parent, default_nil)
     local attrs = {}
     local prototype = {widget_kind=kind, super=parent}

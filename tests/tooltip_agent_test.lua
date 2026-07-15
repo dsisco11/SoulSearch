@@ -49,7 +49,8 @@ return function(test, repo_root)
 
     test.case('tooltip agent: reads only the selected target and current mutation', function()
         local mouse = {x=2, y=2, samples=0}
-        local TooltipAgent = load_agent(mouse).TooltipAgent
+        local agent_module = load_agent(mouse)
+        local TooltipAgent = agent_module.TooltipAgent
         local renderer = {set_tooltip=function(self, text, x, y)
             self.text, self.x, self.y = text, x, y
         end}
@@ -137,5 +138,37 @@ return function(test, repo_root)
         second:update()
         test.assert_equal('Second root', second_renderer.text)
         test.assert_nil(first_renderer.text)
+    end)
+
+    test.case('tooltip agent: diagnostics expose resolver transitions and suppress stable samples', function()
+        local mouse = {x=2, y=2, samples=0}
+        local agent_module = load_agent(mouse)
+        local TooltipAgent = agent_module.TooltipAgent
+        local renderer = {set_tooltip=function(self, text) self.text = text end}
+        local control = target(1, 1, 'Diagnostic tooltip')
+        control.view_id = 'diagnostic_control'
+        local messages = {}
+        local agent = TooltipAgent.new(root({control}), renderer,
+            function(message) table.insert(messages, message) end)
+
+        agent:update()
+        agent:update()
+        test.assert_equal(1, #messages)
+        test.assert_equal(1, #agent_module.get_debug_messages())
+        test.assert_true(messages[1]:find('sample=1 mouse=2,2 result=target', 1, true) ~= nil)
+        test.assert_true(messages[1]:find('path=root/diagnostic_control[1]', 1, true) ~= nil)
+        test.assert_true(messages[1]:find('tooltip="Diagnostic tooltip"', 1, true) ~= nil)
+
+        mouse.x, mouse.y = 10, 10
+        agent:update()
+        test.assert_equal(2, #messages)
+        test.assert_equal(2, #agent_module.get_debug_messages())
+        test.assert_true(messages[2]:find('sample=3 mouse=10,10 result=miss', 1, true) ~= nil)
+        test.assert_true(messages[2]:find('previous=diagnostic_control@', 1, true) ~= nil)
+        local snapshot = agent_module.get_debug_messages()
+        snapshot[1] = 'mutated'
+        test.assert_true(agent_module.get_debug_messages()[1] ~= 'mutated')
+        agent_module.clear_debug_messages()
+        test.assert_equal(0, #agent_module.get_debug_messages())
     end)
 end

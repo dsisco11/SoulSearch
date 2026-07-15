@@ -5,7 +5,7 @@ local widget_harness = require('support.widget_harness')
 return function(test, repo_root)
     local function load_tooltip(state)
         local widgets = widget_harness.widgets({
-            Window={
+            Widget={
                 render=function(self, dc)
                     self.render_count = (self.render_count or 0) + 1
                     self.last_dc = dc
@@ -49,6 +49,7 @@ return function(test, repo_root)
         local Tooltip = load_tooltip(state)
         local text = 'Difference from the attribute average.'
         local tooltip = Tooltip{}
+        test.assert_equal('Widget', tooltip.widget_kind)
         local parent = {invalidate=function(self)
             self.invalidations = (self.invalidations or 0) + 1
         end}
@@ -56,6 +57,7 @@ return function(test, repo_root)
         tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
         test.assert_true(tooltip.visible)
         test.assert_equal(1, parent.invalidations)
+        test.assert_equal(1, tooltip.layout_update_count)
 
         tooltip:render('first')
         test.assert_equal('Difference from the\nattribute average.', tooltip.label.text)
@@ -64,9 +66,11 @@ return function(test, repo_root)
         test.assert_equal(21, tooltip.frame.w)
         test.assert_equal(4, tooltip.frame.h)
         test.assert_equal(1, tooltip.render_count)
+        test.assert_equal(1, tooltip.layout_update_count)
 
         text = 'Updated immediately.'
         tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
+        test.assert_equal(2, tooltip.layout_update_count)
         tooltip:render('second')
         test.assert_equal('Updated immediately.', tooltip.label.text)
         test.assert_equal(2, tooltip.render_count)

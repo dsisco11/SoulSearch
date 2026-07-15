@@ -9,6 +9,10 @@ local SoulSearchTooltip =
     reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
+local function tooltip_debug_log(message)
+    dfhack.println(message)
+end
+
 ---@class SoulSearchScreen: gui.ZScreen
 ---@field window SoulSearchWindow
 SoulSearchScreen = defclass(SoulSearchScreen, gui.ZScreen)
@@ -25,7 +29,11 @@ function SoulSearchScreen:init()
     }
     self.tooltip = SoulSearchTooltip{}
     self:addviews{self.window, self.tooltip}
-    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
+    -- Temporary resolver instrumentation for diagnosing live hover-state
+    -- oscillation. The agent suppresses consecutive identical samples.
+    tooltip_debug_log('[SoulSearch tooltip resolver] logging enabled')
+    self.tooltip_agent = TooltipAgent.new(
+        self, self.tooltip, tooltip_debug_log)
 end
 
 function SoulSearchScreen:onRender()
