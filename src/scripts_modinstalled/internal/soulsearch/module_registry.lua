@@ -20,17 +20,18 @@ MODULES = {
     {name='internal/soulsearch/stats_subject', contract='from_row'},
     {name='internal/soulsearch/ui_layout', contract='get_frame'},
     {
+        name='internal/soulsearch/filter_constants',
+        contract='FILTER_CONSTANTS',
+        contract_type='table',
+    },
+    {name='internal/soulsearch/ui_format', contract='format_result_choice'},
+    {
         name='internal/soulsearch/ui/modal_panel',
         contract='ModalPanelWindow', contract_type='table',
     },
     {
         name='internal/soulsearch/ui/filter_action_list',
         contract='FilterActionList', contract_type='table',
-    },
-    {
-        name='internal/soulsearch/filter_constants',
-        contract='FILTER_CONSTANTS',
-        contract_type='table',
     },
     {name='internal/soulsearch/ui/searchable_picker', contract='SearchablePicker', contract_type='table'},
     {name='internal/soulsearch/ui/preset_picker', contract='PresetPicker', contract_type='table'},
@@ -57,7 +58,6 @@ MODULES = {
     {name='internal/soulsearch/role_presets', contract='get_all'},
     {name='internal/soulsearch/filter_presets', contract='list'},
     {name='internal/soulsearch/search', contract='apply'},
-    {name='internal/soulsearch/ui_format', contract='format_result_choice'},
     {
         name='internal/soulsearch/ui_tooltip',
         contract='SoulSearchTooltip', contract_type='table',
@@ -67,7 +67,6 @@ MODULES = {
         name='internal/soulsearch/stats_panel',
         contract='SoulSearchStatsPanel', contract_type='table',
     },
-    {name='internal/soulsearch/ui_components', contract='create_close_button'},
     {name='internal/soulsearch/ui_refresh', contract='apply'},
     {name='internal/soulsearch/residents', contract='collect_from_provider'},
     {

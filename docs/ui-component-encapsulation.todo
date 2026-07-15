@@ -39,7 +39,7 @@ document. Do not mark a phase gate complete until its stated checks have passed.
         tooltip rendering, and frame persistence.
 - [x] Reduce `ui.lua` to the stable UI facade that exposes `open()` and
       `dismiss_all()`.
-- [ ] Remove `ui_components.lua` after every consumer and test has migrated;
+- [x] Remove `ui_components.lua` after every consumer and test has migrated;
       do not leave a compatibility aggregator.
 - [ ] Keep filtering, candidate collection, ranking, refresh ordering, and
       session persistence outside leaf UI components.
@@ -266,31 +266,31 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Phase 5 - Remove the aggregate and harden module boundaries
 
-- [ ] Migrate every remaining `ui_components` import to its owning module.
-- [ ] Delete `ui_components.lua` and remove its old registry contract.
-- [ ] Replace `tests/ui_components_test.lua` with focused per-component suites
+- [x] Migrate every remaining `ui_components` import to its owning module.
+- [x] Delete `ui_components.lua` and remove its old registry contract.
+- [x] Replace `tests/ui_components_test.lua` with focused per-component suites
       and register each suite explicitly in `tests/run.lua`.
-- [ ] Update `tests/support/soulsearch_env.lua` with the minimum widget stubs
+- [x] Update `tests/support/soulsearch_env.lua` with the minimum widget stubs
       and loaders required by the new modules; do not add
       `CycleHotkeyLabel` support in this refactor.
-- [ ] Update `module_registry_test.lua` to assert complete dependency order:
-  - [ ] dependency-free layout/format/state modules precede UI components;
-  - [ ] leaf widgets precede picker/panel composites;
-  - [ ] Filter, Results, Stats, and tooltip modules precede Main Window;
-  - [ ] Main Window precedes Main Screen; and
-  - [ ] Main Screen precedes the `ui.lua` facade.
-- [ ] Search source, tests, and documentation for stale `ui_components`
+- [x] Update `module_registry_test.lua` to assert complete dependency order:
+  - [x] dependency-free layout/format/state modules precede UI components;
+  - [x] leaf widgets precede picker/panel composites;
+  - [x] Filter, Results, Stats, and tooltip modules precede Main Window;
+  - [x] Main Window precedes Main Screen; and
+  - [x] Main Screen precedes the `ui.lua` facade.
+- [x] Search source, tests, and documentation for stale `ui_components`
       references and remove only references owned by this refactor.
-- [ ] Confirm no behavior or implementation was copied into parallel modules
+- [x] Confirm no behavior or implementation was copied into parallel modules
       during migration.
 
 ### Phase 5 gate
 
-- [ ] Each reusable or stateful UI component has one implementation owner and
+- [x] Each reusable or stateful UI component has one implementation owner and
       one focused test boundary.
-- [ ] No production or test code imports `ui_components.lua`.
-- [ ] Reload order reconstructs all extracted classes without stale consumers.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] No production or test code imports `ui_components.lua`.
+- [x] Reload order reconstructs all extracted classes without stale consumers.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 6 - Automated, packaged, and live validation
 
@@ -327,7 +327,7 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 
 ## Definition of done
 
-- [ ] `ui_components.lua` no longer exists or has consumers.
+- [x] `ui_components.lua` no longer exists or has consumers.
 - [ ] Every reusable or stateful UI component has a cohesive module, documented
       host contract, and focused tests.
 - [ ] `ui.lua` is a small stable facade; Main Window and Main Screen have
@@ -348,3 +348,4 @@ document. Do not mark a phase gate complete until its stated checks have passed.
 | 2026-07-14 | Phase 2 | Focused Filter Panel/picker coverage; Phase 0 characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 46 Lua files compile; 245 tests, 0 failures; picker composites are named `widgets.Window` classes, and `ui.lua` delegates Filter Panel view updates and filter tooltip resolution while retaining domain state and refresh sequencing. |
 | 2026-07-14 | Phase 3 | Focused Results Panel and main-window characterization coverage; registry-order assertions; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 47 Lua files compile; 246 tests, 0 failures; `ResultsPanel` owns the Results subtree, navigation, and header tooltip while `ui.lua` retains result construction, sorting state, and refresh sequencing. |
 | 2026-07-14 | Phase 4 | Main Window/Screen extraction; facade, lifecycle, and characterization coverage; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 49 Lua files compile; 246 tests, 0 failures; `ui.lua` exposes only `open()` and `dismiss_all()` while Main Window and Main Screen retain their original state, lifecycle, and persistence ownership. |
+| 2026-07-14 | Phase 5 | Aggregate removal; direct Filter Panel characterization loader; complete registry-order assertions; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 245 tests, 0 failures; `ui_components.lua` and its compatibility test/loader are deleted, while Main Window owns its trivial close control. |

@@ -16,7 +16,6 @@ local role_presets = reqscript('internal/soulsearch/role_presets')
 local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
-local ui_components = reqscript('internal/soulsearch/ui_components')
 local filter_panel = reqscript('internal/soulsearch/ui/filter_panel')
 local ResultsPanel = reqscript('internal/soulsearch/ui/results_panel').ResultsPanel
 local ui_format = reqscript('internal/soulsearch/ui_format')
@@ -134,6 +133,18 @@ local function draw_section_dividers(dc)
     end
 end
 
+---@param on_close function
+---@return widgets.HotkeyLabel
+local function create_close_button(on_close)
+    return widgets.HotkeyLabel{
+        view_id='close_button',
+        frame=ui_layout.get_frame('close'),
+        key='LEAVESCREEN',
+        label='Close',
+        on_activate=on_close,
+    }
+end
+
 ---@class SoulSearchWindow: widgets.Window
 ---@field rows SoulSearchResidentRow[]
 ---@field results SoulSearchResult[]
@@ -236,7 +247,7 @@ function SoulSearchWindow:init()
             self:update_session_settings{stats_sort=sort}
         end,
     })
-    table.insert(views, ui_components.create_close_button(function()
+    table.insert(views, create_close_button(function()
         self.parent_view:dismiss()
     end))
     table.insert(views, filter_panel.create{

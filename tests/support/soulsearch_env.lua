@@ -502,7 +502,7 @@ function M.load_filter_action_list(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua')
 end
 
-function M.load_filter_panel(repo_root)
+function M.load_filter_panel(repo_root, get_mouse_pos)
     local layout = M.load_ui_layout(repo_root)
     local ui_format = M.load_ui_format(repo_root)
     local descriptions = M.load_attribute_descriptions(repo_root)
@@ -539,7 +539,7 @@ function M.load_filter_panel(repo_root)
             end,
         })
     end
-    globals.dfhack={screen={getMousePos=function() return nil end}}
+    globals.dfhack={screen={getMousePos=get_mouse_pos or function() return nil end}}
     globals.require=function(name)
         assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
         return widgets
@@ -633,73 +633,6 @@ function M.load_results_panel(repo_root)
     end
     return module_loader.load(repo_root,
         'src/scripts_modinstalled/internal/soulsearch/ui/results_panel.lua', globals)
-end
-
-function M.load_ui_components(repo_root)
-    local layout = M.load_ui_layout(repo_root)
-    local stats_layout = M.load_stats_layout(repo_root)
-    local ui_format = M.load_ui_format(repo_root)
-    local function constructor(kind)
-        return setmetatable({widget_kind=kind}, {__call=function(self, config)
-            config.widget_kind = self.widget_kind
-            return config
-        end})
-    end
-    local widgets = {
-        Label=constructor('Label'),
-        HotkeyLabel=constructor('HotkeyLabel'),
-        TextButton=constructor('TextButton'),
-        CycleHotkeyLabel=constructor('CycleHotkeyLabel'),
-        EditField=constructor('EditField'),
-        List=constructor('List'),
-        Window=constructor('Window'),
-    }
-    local globals = make_presentation_globals()
-    globals.defclass=function(_, parent)
-        local class = {}
-        class.super={onInput=function() return false end}
-        return setmetatable(class, {__call=function(_, config)
-            config.widget_kind = parent.widget_kind
-            local instance = setmetatable(config, {__index=class})
-            if class.init then class.init(instance, config) end
-            return instance
-        end})
-    end
-    globals.require=function(name)
-        assert(name == 'gui.widgets', 'unexpected require: ' .. tostring(name))
-        return widgets
-    end
-    globals.reqscript=function(name)
-        if name == 'internal/soulsearch/stats_presenter' then
-            return {
-            header=function(result) return {'header', result} end,
-            column_header=function(key, reverse)
-                return {'columns', key, reverse}
-            end,
-            get_display_records=function() return {} end,
-            body=function(result, key, reverse)
-                    return {'body', result, key, reverse}
-                end,
-            }
-        end
-        if name == 'internal/soulsearch/ui_format' then return ui_format end
-        if name == 'internal/soulsearch/ui_layout' then return layout end
-        if name == 'internal/soulsearch/stats_layout' then return stats_layout end
-        if name == 'internal/soulsearch/ui/modal_panel' then
-            return M.load_modal_panel(repo_root)
-        end
-        if name == 'internal/soulsearch/ui/filter_action_list' then
-            return M.load_filter_action_list(repo_root)
-        end
-        if name == 'internal/soulsearch/ui/filter_panel' then
-            return M.load_filter_panel(repo_root)
-        end
-        error('unexpected reqscript: ' .. tostring(name))
-    end
-    return module_loader.load(
-        repo_root,
-        'src/scripts_modinstalled/internal/soulsearch/ui_components.lua',
-        globals)
 end
 
 function M.load_residents(repo_root, df_enums_override, dfhack_override)
@@ -877,8 +810,6 @@ end
 ---@param repo_root string
 ---@return table ui, fun(settings: table|nil): table new_window, table state
 function M.load_ui_characterization(repo_root)
-    local components = M.load_ui_components(repo_root)
-    local results_panel = M.load_results_panel(repo_root)
     local filter_state = M.load_filter_state(repo_root)
     local ui_format = M.load_ui_format(repo_root)
     local ui_layout = M.load_ui_layout(repo_root)
@@ -887,55 +818,10 @@ function M.load_ui_characterization(repo_root)
     local state = {
         settings_updates={}, revealed={}, screen_registry=screen_registry,
     }
-    local function find(views, id)
-        for _, view in ipairs(views or {}) do
-            if view.view_id == id then return view end
-        end
-    end
-    local filter_panel_stub = {
-        create_button=components.create_filter_panel_button,
-        create_active_filter_count=components.create_active_filter_count,
-        get_button_tooltip=function(view)
-            return view and view.frame_body and 'Edit the current filters.' or nil
-        end,
-        create=function(inputs)
-            local panel = components.create_filter_panel(inputs)
-            local function subview(id) return find(panel.subviews, id) end
-            function panel:set_active_filter_choices(choices, selected)
-                self.active_filter_choices = choices
-                subview('filter_list'):setChoices(choices, selected)
-            end
-            function panel:set_picker_choices(kind, choices, selected)
-                local ids = {attribute='available_filter_list',
-                    skill='available_skill_list', race='available_race_list'}
-                self.picker_choices = self.picker_choices or {}
-                self.picker_choices[kind] = choices
-                local function find_recursive(view, id)
-                    if view.view_id == id then return view end
-                    for _, child in ipairs(view.subviews or {}) do
-                        local found = find_recursive(child, id)
-                        if found then return found end
-                    end
-                end
-                find_recursive(panel, ids[kind]):setChoices(choices, selected)
-            end
-            function panel:set_preset_choices(choices)
-                local picker = subview('preset_picker_window')
-                find(picker.subviews, 'preset_list'):setChoices(choices)
-            end
-            function panel:set_unit_scope_choices(choices, selected, label)
-                local picker = subview('unit_scope_picker_window')
-                find(picker.subviews, 'unit_scope_picker_list'):setChoices(choices, selected)
-                subview('unit_scope_label'):setText(
-                    ui_format.format_unit_scope_control(label))
-            end
-            function panel:get_control_tooltip() return nil end
-            function panel:get_filter_action_tooltip() return nil end
-            function panel:get_descriptor_tooltip() return nil end
-            return panel
-        end,
-    }
-
+    local filter_panel = M.load_filter_panel(repo_root, function()
+        return state.mouse_x, state.mouse_y
+    end)
+    local results_panel = M.load_results_panel(repo_root)
     local function class(parent)
         local result = {super=parent or {}}
         function result.ATTRS(attrs) result.attrs = attrs end
@@ -974,7 +860,10 @@ function M.load_ui_characterization(repo_root)
         onDragBegin=function() end,
         onRenderBody=function() end,
     }
-    local widgets = {Window=widgets_base}
+    local widgets = {
+        Window=widgets_base,
+        HotkeyLabel=function(info) return info end,
+    }
     local gui = {FRAME_THIN='thin', ZScreen={}}
     local modules = {
         ['internal/soulsearch/residents']={
@@ -1029,8 +918,7 @@ function M.load_ui_characterization(repo_root)
             get_order=function() return {} end,
         },
         ['internal/soulsearch/text_match']=M.load_text_match(repo_root),
-        ['internal/soulsearch/ui_components']=components,
-        ['internal/soulsearch/ui/filter_panel']=filter_panel_stub,
+        ['internal/soulsearch/ui/filter_panel']=filter_panel,
         ['internal/soulsearch/ui/results_panel']=results_panel,
         ['internal/soulsearch/ui_format']=ui_format,
         ['internal/soulsearch/ui_layout']=ui_layout,
