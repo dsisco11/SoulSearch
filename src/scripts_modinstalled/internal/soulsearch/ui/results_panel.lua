@@ -7,11 +7,6 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 local sortable_header = reqscript('internal/soulsearch/ui/sortable_header')
 
-local HEADER_TOOLTIPS = {
-    name='Sort by name.', unit_id='Sort by unit ID.',
-    profession='Sort by profession.',
-}
-
 ---@class SoulSearchResultsPanelInputs
 ---@field on_query fun(text: string)
 ---@field on_select fun(result: SoulSearchResult|nil)
@@ -40,14 +35,17 @@ function ResultsPanel:init(info)
             text=ui_format.get_title_underline('Results'), text_pen=COLOR_GREY},
         sortable_header.new{view_id='result_columns',
             frame={l=ui_layout.RESULTS_LEFT, t=5, w=ui_layout.RESULT_NAME_WIDTH},
-            label='Name', text_pen=COLOR_GREY, on_cycle=function() inputs.on_sort('name') end},
+            label='Name', text_pen=COLOR_GREY, tooltip='Sort by name.',
+            on_cycle=function() inputs.on_sort('name') end},
         sortable_header.new{view_id='result_profession_column',
             frame={l=ui_layout.RESULTS_LEFT + ui_layout.RESULT_PROFESSION_COLUMN_X, t=5,
                 w=ui_layout.RESULT_PROFESSION_WIDTH}, label='Profession', text_pen=COLOR_GREY,
+                tooltip='Sort by profession.',
             on_cycle=function() inputs.on_sort('profession') end},
         sortable_header.new{view_id='result_unit_id_column',
             frame={l=ui_layout.RESULTS_LEFT + ui_layout.RESULT_UNIT_ID_COLUMN_X, t=5,
                 w=ui_layout.RESULT_UNIT_ID_WIDTH}, label='Unit ID', text_pen=COLOR_GREY,
+                tooltip='Sort by unit ID.',
             on_cycle=function() inputs.on_sort('unit_id') end},
         widgets.List{view_id='result_list',
             frame=ui_layout.get_frame('result_list'),
@@ -98,17 +96,4 @@ end
 ---@param delta integer
 function ResultsPanel:move_cursor(delta)
     self.subviews.result_list:moveCursor(delta)
-end
-
----@return string|nil
-function ResultsPanel:get_header_tooltip()
-    local headers = {
-        {view_id='result_columns', column='name'},
-        {view_id='result_profession_column', column='profession'},
-        {view_id='result_unit_id_column', column='unit_id'},
-    }
-    for _, header in ipairs(headers) do
-        local x, y = self.subviews[header.view_id]:getMousePos()
-        if x and y == 0 then return HEADER_TOOLTIPS[header.column] end
-    end
 end

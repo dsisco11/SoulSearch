@@ -207,27 +207,11 @@ return function(test, repo_root)
         test.assert_true(calls.stats_subject == result)
     end)
 
-    test.case('UI characterization: tooltip precedence and exact copy are stable', function()
+    test.case('UI characterization: filter button owns its static tooltip', function()
         local window = new_window()
-        local filters_button = window.subviews.filters_button
-        filters_button.frame_body = {
-            inClipGlobalXY=function() return true end,
-        }
-        state.mouse_x, state.mouse_y = 1, 1
-        test.assert_equal('Edit the current filters.', window:get_tooltip_text())
-
-        filters_button.frame_body = nil
-        window.get_filter_action_tooltip=function() return 'filter action' end
-        window.get_result_header_tooltip=function() return 'result header' end
-        window.subviews.stats_panel.tooltip_text = 'stats'
-        window.get_filter_descriptor_tooltip=function() return 'descriptor' end
-        test.assert_equal('filter action', window:get_tooltip_text())
-        window.get_filter_action_tooltip=function() return nil end
-        test.assert_equal('result header', window:get_tooltip_text())
-        window.get_result_header_tooltip=function() return nil end
-        test.assert_equal('stats', window:get_tooltip_text())
-        window.subviews.stats_panel.tooltip_text = nil
-        test.assert_equal('descriptor', window:get_tooltip_text())
+        test.assert_equal('Edit the current filters.',
+            window.subviews.filters_button.tooltip)
+        test.assert_equal('Close', window.subviews.close_button.tooltip)
     end)
 
     test.case('UI characterization: recompute retains selection by unit ID', function()

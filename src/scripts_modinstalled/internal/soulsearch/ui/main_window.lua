@@ -119,6 +119,7 @@ local function create_close_button(on_close)
         frame=ui_layout.get_frame('close'),
         key='LEAVESCREEN',
         label='Close',
+        tooltip='Close',
         on_activate=on_close,
     }
 end
@@ -285,10 +286,6 @@ end
 
 
 ---@return string|nil
-function SoulSearchWindow:get_result_header_tooltip()
-    return self.subviews.results_panel:get_header_tooltip()
-end
-
 ---@return string|nil
 function SoulSearchWindow:get_filter_descriptor_tooltip()
     return self.subviews.filter_panel_window:get_descriptor_tooltip()
@@ -297,15 +294,10 @@ end
 
 ---@return string
 function SoulSearchWindow:get_tooltip_text()
-    local panel = self.subviews.filter_panel_window
-    local filter_control_tooltip = filter_panel.get_button_tooltip(
-        self.subviews.filters_button) or panel:get_control_tooltip()
-    if filter_control_tooltip then return filter_control_tooltip end
-
     local stats_tooltip = self.subviews.stats_panel and
         self.subviews.stats_panel:get_tooltip_text() or nil
-    return self:get_filter_action_tooltip() or self:get_result_header_tooltip() or
-        stats_tooltip or self:get_filter_descriptor_tooltip() or ''
+    return self:get_filter_action_tooltip() or stats_tooltip or
+        self:get_filter_descriptor_tooltip() or ''
 end
 
 ---@return SoulSearchFilterDescriptor[]

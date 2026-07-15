@@ -1,7 +1,7 @@
 local env = require('support.soulsearch_env')
 
 return function(test, root)
-    test.case('unit stats list: owns sortable records, scrolling, and tooltips', function()
+    test.case('unit stats list: owns sortable records, scrolling, and declared header tooltips', function()
         local UnitStatsList = env.load_unit_stats_list(root)
         local changes = {}
         local list = UnitStatsList{subject={row={}, unit={}},
@@ -16,12 +16,8 @@ return function(test, root)
         list:set_header_height(2)
         test.assert_equal(2, list.subviews.columns.frame.h)
         test.assert_equal(2, list.subviews.body.frame.t)
-        list.subviews.columns.mouse_x, list.subviews.columns.mouse_y = 0, 0
-        test.assert_equal('Sort by stat name.', list:get_tooltip_text())
-        list.subviews.columns.mouse_x = nil
-        list.subviews.value_column.mouse_x, list.subviews.value_column.mouse_y = 0, 0
-        test.assert_equal('Sort by baseline difference.', list:get_tooltip_text())
-        list.subviews.value_column.mouse_x = nil
+        test.assert_equal('Sort by stat name.', list.subviews.columns.tooltip)
+        test.assert_equal('Sort by baseline difference.', list.subviews.value_column.tooltip)
         list.subviews.body.mouse_x, list.subviews.body.mouse_y = 2, 0
         test.assert_equal('trait:PATIENCE', list:get_tooltip_text())
     end)

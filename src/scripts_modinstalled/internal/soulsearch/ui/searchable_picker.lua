@@ -42,6 +42,7 @@ function SearchablePicker:init(info)
                 view_id=config.close_id,
                 frame=ui_layout.get_frame('picker_close'),
                 label='X',
+                tooltip='Close',
                 on_activate=function() self:close() end,
             },
             widgets.EditField{

@@ -182,18 +182,22 @@ The main screen and stats popover update their agents before their root render p
 
 ## Phase 4 - Migrate static tooltip declarations
 
-- [ ] Move static main-window and filter-management button tooltips directly onto their native widget declarations.
-- [ ] Move results-column header tooltips directly onto the corresponding native `CycleHotkeyLabel` widgets.
-- [ ] Move stats-column header tooltips directly onto the corresponding header widgets.
-- [ ] Move picker buttons, close buttons, scope controls, and preset controls with static text to their own `tooltip` attributes.
-- [ ] Remove `FILTER_CONTROL_TOOLTIPS` and other centralized view-id-to-text tables once all entries are declared by their controls.
-- [ ] Remove static tooltip hit-test helpers that exist only to support parent aggregation.
-- [ ] Update component tests to assert the widgets' declared attributes rather than calling parent tooltip lookup methods.
-- [ ] Add integration coverage proving a native widget's declared static tooltip is found through normal pointer targeting.
+- [x] Move static main-window and filter-management button tooltips directly onto their native widget declarations.
+- [x] Move results-column header tooltips directly onto the corresponding native `CycleHotkeyLabel` widgets.
+- [x] Move stats-column header tooltips directly onto the corresponding header widgets.
+- [x] Move picker buttons, close buttons, scope controls, and preset controls with static text to their own `tooltip` attributes.
+- [x] Remove `FILTER_CONTROL_TOOLTIPS` and other centralized view-id-to-text tables once all entries are declared by their controls.
+- [x] Remove static tooltip hit-test helpers that exist only to support parent aggregation.
+- [x] Update component tests to assert the widgets' declared attributes rather than calling parent tooltip lookup methods.
+- [x] Add integration coverage proving a native widget's declared static tooltip is found through normal pointer targeting.
+
+### Phase 4 implementation notes
+
+Static strings now live beside the native controls they describe: main and filter-management buttons, searchable/preset-picker close controls, preset save, result `CycleHotkeyLabel` headers, and stats headers. `FILTER_CONTROL_TOOLTIPS`, `HEADER_TOOLTIPS`, `get_control_tooltip()`, `get_button_tooltip()`, and `get_header_tooltip()` have been removed. The remaining `FilterPanel` and `UnitStatsList` tooltip lookup code is dynamic descriptor/action/body behavior reserved for Phase 5.
 
 ### Phase 4 exit criteria
 
-- [ ] Every static tooltip is declared next to the control it describes, with no parent-maintained tooltip table.
+- [x] Every static tooltip is declared next to the control it describes, with no parent-maintained tooltip table.
 
 ## Phase 5 - Migrate dynamic tooltip ownership
 

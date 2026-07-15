@@ -28,12 +28,14 @@ function PresetPicker:init(info)
             widgets.TextButton{
                 view_id='close_preset_picker_button',
                 frame=ui_layout.get_frame('picker_close'),
-                label='X', on_activate=function() self:close() end,
+                label='X', tooltip='Close', on_activate=function() self:close() end,
             },
             widgets.TextButton{
                 view_id='save_preset_button',
                 frame=ui_layout.get_frame('preset_save'),
-                key='CUSTOM_W', label='Save preset', on_activate=inputs.on_save,
+                key='CUSTOM_W', label='Save preset',
+                tooltip='Save the current ordered filters under this preset name.',
+                on_activate=inputs.on_save,
             },
             widgets.EditField{
                 view_id='preset_search_field',

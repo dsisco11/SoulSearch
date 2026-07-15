@@ -31,9 +31,11 @@ function UnitStatsList:init(info)
     self:addviews{
         sortable_header.new{view_id='columns', auto_height=false,
             frame={l=0, t=0, w=layout.LABEL_WIDTH}, label='Stat',
+            tooltip='Sort by stat name.',
             on_cycle=function() self:cycle_sort('label') end},
         sortable_header.new{view_id='value_column', auto_height=false,
             frame={l=layout.VALUE_COLUMN_X, t=0, w=layout.VALUE_HEADER_WIDTH},
+            tooltip='Sort by baseline difference.',
             label='Delta', on_cycle=function() self:cycle_sort('value') end},
         widgets.Label{view_id='body', auto_height=false, text=''},
     }
@@ -76,11 +78,7 @@ function UnitStatsList:set_header_height(height)
 end
 
 function UnitStatsList:get_tooltip_text()
-    local x, y = self.subviews.columns:getMousePos()
-    if x and y == 0 then return 'Sort by stat name.' end
-    x, y = self.subviews.value_column:getMousePos()
-    if x and y == 0 then return 'Sort by baseline difference.' end
-    x, y = self.subviews.body:getMousePos()
+    local x, y = self.subviews.body:getMousePos()
     if layout.is_value_cell(x, y) then return 'Difference from the attribute average.' end
     if layout.is_label_cell(x, y) then
         local record = self.stats_records[(self.subviews.body.start_line_num or 1) + y]

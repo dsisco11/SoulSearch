@@ -19,43 +19,11 @@ local unit_scope_picker = reqscript('internal/soulsearch/ui/unit_scope_picker')
 
 local FILTER_KIND_RACE = filter_constants.kind.RACE
 
-local FILTER_CONTROL_TOOLTIPS = {
-    {id='close_filter_panel_button', text='Close'},
-    {id='unit_scope_edit', text='Choose which units are included in the results.'},
-    {id='add_filter_button', text='Add an attribute or trait to the ranking criteria.'},
-    {id='add_skill_button', text='Add a skill to the ranking criteria.'},
-    {id='add_race_button', text='Add a race to the candidate scope.'},
-    {id='preset_button', text='Save the current filters or load a custom, role, or skill preset.'},
-    {id='save_preset_button', text='Save the current ordered filters under this preset name.'},
-    {id='close_preset_picker_button', text='Close'},
-    {id='close_filter_picker_button', text='Close'},
-    {id='close_skill_picker_button', text='Close'},
-    {id='close_race_picker_button', text='Close'},
-}
-
 local PICKER_VIEW_IDS = {
     attribute='available_filter_window', skill='available_skill_window',
     race='available_race_window', scope='unit_scope_picker_window',
     preset='preset_picker_window',
 }
-
-local function is_visible(view)
-    while view do
-        if type(view.visible) == 'function' then
-            if not view.visible() then return false end
-        elseif not view.visible then
-            return false
-        end
-        view = view.parent_view
-    end
-    return true
-end
-
-local function is_mouse_over(view)
-    local rect = view and view.frame_body
-    local x, y = dfhack.screen.getMousePos()
-    return rect and x and is_visible(view) and rect:inClipGlobalXY(x, y)
-end
 
 local function get_descriptor_tooltip(list, choices)
     local index = list and list:getIdxUnderMouse()
@@ -97,21 +65,31 @@ function FilterPanel:init(info)
     self:addviews{
         widgets.TextButton{view_id='close_filter_panel_button',
             frame=ui_layout.get_frame('filter_panel_close'), label='X',
+            tooltip='Close',
             on_activate=function() self:close() end},
         widgets.Label{view_id='unit_scope_label', frame=ui_layout.get_frame('unit_scope'),
             text=ui_format.format_unit_scope_control(unit_scope_label)},
         widgets.TextButton{view_id='unit_scope_edit', frame=ui_layout.get_frame('unit_scope_edit'),
-            label='Edit', on_activate=function() self:toggle_picker('scope') end},
+            label='Edit', tooltip='Choose which units are included in the results.',
+            on_activate=function() self:toggle_picker('scope') end},
         widgets.TextButton{view_id='add_filter_button', frame=ui_layout.get_frame('add_filter'),
-            key='CUSTOM_A', label='Add attribute filter', on_activate=function() self:toggle_picker('attribute') end},
+            key='CUSTOM_A', label='Add attribute filter',
+            tooltip='Add an attribute or trait to the ranking criteria.',
+            on_activate=function() self:toggle_picker('attribute') end},
         widgets.TextButton{view_id='add_skill_button', frame=ui_layout.get_frame('add_skill'),
-            key='CUSTOM_S', label='Add skill filter', on_activate=function() self:toggle_picker('skill') end},
+            key='CUSTOM_S', label='Add skill filter',
+            tooltip='Add a skill to the ranking criteria.',
+            on_activate=function() self:toggle_picker('skill') end},
         widgets.TextButton{view_id='add_race_button', frame=ui_layout.get_frame('add_race'),
-            key='CUSTOM_G', label='Add race filter', on_activate=function() self:toggle_picker('race') end},
+            key='CUSTOM_G', label='Add race filter',
+            tooltip='Add a race to the candidate scope.',
+            on_activate=function() self:toggle_picker('race') end},
         widgets.TextButton{view_id='clear_filters_button', frame=ui_layout.get_frame('clear_filters'),
             key='CUSTOM_C', label='Clear filters', on_activate=inputs.on_clear},
         widgets.TextButton{view_id='preset_button', frame=ui_layout.get_frame('presets'),
-            key='CUSTOM_P', label='Filter presets', on_activate=function() self:toggle_picker('preset') end},
+            key='CUSTOM_P', label='Filter presets',
+            tooltip='Save the current filters or load a custom, role, or skill preset.',
+            on_activate=function() self:toggle_picker('preset') end},
         FilterActionList{view_id='filter_list', frame=ui_layout.get_frame('filter_list'),
             visible=function()
                 return not self:has_open_picker()
@@ -244,12 +222,6 @@ function FilterPanel:set_unit_scope_choices(choices, selected, label)
 end
 
 ---@return string|nil
-function FilterPanel:get_control_tooltip()
-    for _, tooltip in ipairs(FILTER_CONTROL_TOOLTIPS) do
-        if is_mouse_over(get_subview(self, tooltip.id)) then return tooltip.text end
-    end
-end
-
 ---@return string|nil
 function FilterPanel:get_filter_action_tooltip()
     local inputs = self.inputs
@@ -311,17 +283,12 @@ end
 ---@return table
 function create_button(on_activate)
     return widgets.TextButton{view_id='filters_button', frame=ui_layout.get_frame('filters_button'),
-        label='Edit', text_pen=COLOR_YELLOW, on_activate=on_activate}
+        label='Edit', text_pen=COLOR_YELLOW, tooltip='Edit the current filters.',
+        on_activate=on_activate}
 end
 
 ---@return table
 function create_active_filter_count()
     return widgets.Label{view_id='active_filter_count',
         frame=ui_layout.get_frame('active_filter_count'), text='Filters: 0', text_pen=COLOR_GREY}
-end
-
----@param view table|nil
----@return string|nil
-function get_button_tooltip(view)
-    return is_mouse_over(view) and 'Edit the current filters.' or nil
 end

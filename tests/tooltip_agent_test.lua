@@ -27,6 +27,20 @@ return function(test, repo_root)
         return view
     end
 
+    local function native_widgets()
+        local default_nil = widget_harness.default_nil()
+        local widgets = widget_harness.widgets(nil, default_nil)
+        module_loader.load(repo_root,
+            'src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua', {
+                DEFAULT_NIL=default_nil,
+                require=function(name)
+                    assert(name == 'gui.widgets')
+                    return widgets
+                end,
+            })
+        return widgets
+    end
+
     local function root(children)
         local view = {visible=true, active=true, pointer_policy='target', subviews=children}
         widget_harness.set_frame(view, 0, 0, 20, 20)
@@ -51,6 +65,22 @@ return function(test, repo_root)
         agent:update()
         test.assert_nil(renderer.text)
         test.assert_equal(3, mouse.samples)
+    end)
+
+    test.case('tooltip agent: targets a native widget declared with static text', function()
+        local mouse = {x=2, y=2, samples=0}
+        local TooltipAgent = load_agent(mouse).TooltipAgent
+        local widgets = native_widgets()
+        local button = widgets.TextButton{tooltip='Native static tooltip', visible=true,
+            active=true, subviews={}}
+        widget_harness.set_frame(button, 1, 1, 4, 4)
+        local renderer = {set_tooltip=function(self, text) self.text = text end}
+        local agent = TooltipAgent.new(root({button}), renderer)
+
+        agent:update()
+        test.assert_equal('target', agent.pointer_context.result.kind)
+        test.assert_equal(button, agent.pointer_context.target)
+        test.assert_equal('Native static tooltip', renderer.text)
     end)
 
     test.case('tooltip agent: hides for blocked and excluded targets without parent fallback', function()

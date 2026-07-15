@@ -84,6 +84,23 @@ return function(test, repo_root)
         end)())
         test.assert_equal('unit_scope_picker_window',
             panel.subviews[#panel.subviews].view_id)
+        test.assert_equal('Close', panel.subviews.close_filter_panel_button.tooltip)
+        test.assert_equal('Choose which units are included in the results.',
+            panel.subviews.unit_scope_edit.tooltip)
+        test.assert_equal('Add an attribute or trait to the ranking criteria.',
+            panel.subviews.add_filter_button.tooltip)
+        test.assert_equal('Add a skill to the ranking criteria.',
+            panel.subviews.add_skill_button.tooltip)
+        test.assert_equal('Add a race to the candidate scope.',
+            panel.subviews.add_race_button.tooltip)
+        test.assert_equal('Save the current filters or load a custom, role, or skill preset.',
+            panel.subviews.preset_button.tooltip)
+        local attribute_picker = by_id(panel.subviews, 'available_filter_window')
+        local preset_picker = by_id(panel.subviews, 'preset_picker_window')
+        test.assert_equal('Close', attribute_picker.subviews[1].tooltip)
+        test.assert_equal('Close', preset_picker.subviews[1].tooltip)
+        test.assert_equal('Save the current ordered filters under this preset name.',
+            preset_picker.subviews[2].tooltip)
         test.assert_equal('CUSTOM_T',
             by_id(panel.subviews, 'available_filter_window').subviews[2].key)
         test.assert_equal('CUSTOM_K',
