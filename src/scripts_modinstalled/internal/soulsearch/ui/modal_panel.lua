@@ -11,6 +11,9 @@ reqscript('internal/soulsearch/ui/widget_extensions')
 ---@field on_close fun()|nil
 ---@field visible boolean
 ModalPanelWindow = defclass(ModalPanelWindow, widgets.Window)
+ModalPanelWindow.ATTRS{
+    pointer_policy='block',
+}
 
 function ModalPanelWindow:init(info)
     self.on_open = info.on_open

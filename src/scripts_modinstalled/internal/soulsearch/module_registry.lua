@@ -33,6 +33,10 @@ MODULES = {
         contract='install_tooltip_attribute',
     },
     {
+        name='internal/soulsearch/ui/pointer_dispatcher',
+        contract='PointerDispatcher', contract_type='table',
+    },
+    {
         name='internal/soulsearch/ui/modal_panel',
         contract='ModalPanelWindow', contract_type='table',
     },

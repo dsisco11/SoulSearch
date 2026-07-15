@@ -39,6 +39,7 @@ local suites = {
     (require('text_match_test')),
     (require('ui_format_test')),
     (require('widget_extensions_test')),
+    (require('pointer_dispatcher_test')),
     (require('ui_tooltip_test')),
     (require('stats_presenter_test')),
     (require('modal_panel_test')),

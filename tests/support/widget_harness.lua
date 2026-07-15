@@ -90,6 +90,29 @@ end
 
 function M.default_nil() return DEFAULT_NIL end
 
+---@return table
+function M.rect(x, y, width, height, clip)
+    clip = clip or {x1=x, y1=y, x2=x + width - 1, y2=y + height - 1}
+    return {
+        x1=x, y1=y, width=width, height=height,
+        x2=x + width - 1, y2=y + height - 1,
+        clip_x1=clip.x1, clip_y1=clip.y1,
+        clip_x2=clip.x2, clip_y2=clip.y2,
+        inClipGlobalXY=function(self, px, py)
+            return px >= self.clip_x1 and px <= self.clip_x2 and
+                py >= self.clip_y1 and py <= self.clip_y2
+        end,
+        localXY=function(self, px, py) return px - self.x1, py - self.y1 end,
+    }
+end
+
+function M.set_frame(view, x, y, width, height, body)
+    view.frame_parent_rect = {x1=0, y1=0}
+    view.frame_rect = M.rect(x, y, width, height)
+    view.frame_body = body or M.rect(x, y, width, height)
+    return view
+end
+
 ---Creates a defclass-compatible constructor with explicit superclass dispatch.
 ---@param _ string
 ---@param parent table

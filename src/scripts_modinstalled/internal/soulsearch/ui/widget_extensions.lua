@@ -2,22 +2,55 @@
 
 local widgets = require('gui.widgets')
 
-function install_tooltip_attribute()
-    local widget = assert(widgets.Widget,
-        'SoulSearch requires gui.widgets.Widget for tooltip attributes.')
-    local attrs = assert(widget.ATTRS,
-        'SoulSearch requires gui.widgets.Widget.ATTRS for tooltip attributes.')
-    local existing = rawget(attrs, 'tooltip')
+local function install_attribute(class, name, default, description)
+    local attrs = assert(class and class.ATTRS,
+        'SoulSearch requires ' .. description .. '.ATTRS.')
+    local existing = rawget(attrs, name)
     if existing == nil then
-        attrs{tooltip=DEFAULT_NIL}
+        attrs{[name]=default}
         return true
     end
-    assert(existing == DEFAULT_NIL,
-        'gui.widgets.Widget.ATTRS.tooltip has an incompatible contract; ' ..
-        'SoulSearch requires tooltip=DEFAULT_NIL.')
+    assert(existing == default,
+        description .. '.ATTRS.' .. name .. ' has an incompatible contract; ' ..
+        'SoulSearch requires ' .. name .. '=' .. tostring(default) .. '.')
     return false
 end
 
-install_tooltip_attribute()
+function install_tooltip_attribute()
+    local widget = assert(widgets.Widget,
+        'SoulSearch requires gui.widgets.Widget for tooltip attributes.')
+    return install_attribute(widget, 'tooltip', DEFAULT_NIL,
+        'gui.widgets.Widget')
+end
 
-return {install_tooltip_attribute=install_tooltip_attribute}
+function install_pointer_attributes()
+    local changed = false
+    local widget = assert(widgets.Widget,
+        'SoulSearch requires gui.widgets.Widget for pointer attributes.')
+    local panel = assert(widgets.Panel,
+        'SoulSearch requires gui.widgets.Panel for pointer attributes.')
+    local window = assert(widgets.Window,
+        'SoulSearch requires gui.widgets.Window for pointer attributes.')
+
+    changed = install_attribute(widget, 'pointer_policy', 'target',
+        'gui.widgets.Widget') or changed
+    changed = install_attribute(widget, 'on_pointer_enter', DEFAULT_NIL,
+        'gui.widgets.Widget') or changed
+    changed = install_attribute(widget, 'on_pointer_update', DEFAULT_NIL,
+        'gui.widgets.Widget') or changed
+    changed = install_attribute(widget, 'on_pointer_leave', DEFAULT_NIL,
+        'gui.widgets.Widget') or changed
+    changed = install_attribute(panel, 'pointer_policy', 'pass',
+        'gui.widgets.Panel') or changed
+    changed = install_attribute(window, 'pointer_policy', 'block',
+        'gui.widgets.Window') or changed
+    return changed
+end
+
+install_tooltip_attribute()
+install_pointer_attributes()
+
+return {
+    install_tooltip_attribute=install_tooltip_attribute,
+    install_pointer_attributes=install_pointer_attributes,
+}

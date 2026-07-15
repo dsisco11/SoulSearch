@@ -118,37 +118,43 @@ Attribute contract: a string is the current tooltip text; `nil` and `''` mean no
 
 ## Phase 2 - Introduce generic per-root pointer targeting
 
-- [ ] Define `PointerContext` as per-root pointer state and `PointerDispatcher` as the service that resolves and updates that state.
-- [ ] Return an explicit tagged result for `target`, `blocked`, or `miss`, including pointer coordinates local to a selected target.
-- [ ] Add a common `pointer_policy` contract with `target`, `pass`, `block`, and `none` values.
-- [ ] Audit the common pointer-policy and pointer-event attribute names for DFHack collisions before extending the shared widget classes.
-- [ ] Make repeated pointer-attribute extension loads idempotent and preserve compatible DFHack-provided contracts.
-- [ ] Define policy behavior: descend into eligible children first; `target` selects the widget if no child wins; `pass` falls through; `block` returns blocked; `none` excludes the widget and its complete subtree.
-- [ ] Make pointer eligibility independent of `tooltip`; adding, changing, or clearing tooltip text must never alter which widget is targeted.
-- [ ] Default terminal/leaf widgets to `target`.
-- [ ] Default ordinary `widgets.Panel` layout containers to `pass`, while allowing an individual panel to opt into `target` or `block`.
-- [ ] Default visible `widgets.Window` instances to `block`, preserving descendant targeting and blocking underlying siblings throughout the window frame when no descendant wins.
-- [ ] Keep `ModalPanelWindow` on the `block` policy while it is open/visible; a closed/hidden modal does not participate in targeting.
-- [ ] Add common `on_pointer_enter`, `on_pointer_update`, and `on_pointer_leave` event attributes so native widgets can update their own tooltip state without custom subclasses.
-- [ ] Define the event signatures as `on_pointer_enter(target, x, y)`, `on_pointer_update(target, x, y)`, and `on_pointer_leave(target)`, where `x` and `y` are local to the terminal target and the callback updates `target.tooltip` when needed.
-- [ ] Sample pointer state once per root render/update tick, before tooltip presentation, because DFHack does not provide a continuous hovered-widget event stream.
-- [ ] Emit `on_pointer_leave` and `on_pointer_enter` when the target changes, then emit `on_pointer_update` with current local coordinates for the selected target on every sample.
-- [ ] Resolve overlapping siblings in reverse render order so the last-rendered eligible widget wins; keyboard focus-owner priority must not override the mouse target.
-- [ ] Respect evaluated `visible` and `active` state across the complete ancestor chain.
-- [ ] Respect frame clipping so a widget cannot be targeted outside its visible clipped bounds.
-- [ ] Clear or replace the current target safely when it closes, becomes hidden, moves, or is removed.
-- [ ] Distinguish control body hit regions from blocking window-frame regions so window borders also occlude underlying controls.
-- [ ] Ensure an empty area inside any visible window returns `blocked` instead of exposing a widget behind the window.
-- [ ] Ensure pointer positions outside a window frame can continue to lower siblings when allowed by the surrounding root.
-- [ ] Support independently rendered roots for `gui.Screen` instances and `overlay.OverlayWidget` hosts without sharing pointer state.
-- [ ] Treat the supplied root as a traversal boundary with implicit `pass` behavior; the root itself is never returned as a terminal pointer target regardless of its inherited widget policy.
-- [ ] Update `soulsearch_env.lua` and `widget_harness.lua` to model pointer policies, tagged results, root-boundary behavior, clipping, and pointer-event callback signatures consistently with production.
-- [ ] Add focused dispatcher tests for nested controls, transparent panels, explicit panel targets, blocking windows, window borders, sibling overlap, clipping, visibility, target removal, and independently rendered roots.
-- [ ] Add nested-modal tests proving that the topmost picker blocks the filter window only within the picker's frame, while positions outside the picker can still target the containing filter window.
+- [x] Define `PointerContext` as per-root pointer state and `PointerDispatcher` as the service that resolves and updates that state.
+- [x] Return an explicit tagged result for `target`, `blocked`, or `miss`, including pointer coordinates local to a selected target.
+- [x] Add a common `pointer_policy` contract with `target`, `pass`, `block`, and `none` values.
+- [x] Audit the common pointer-policy and pointer-event attribute names for DFHack collisions before extending the shared widget classes.
+- [x] Make repeated pointer-attribute extension loads idempotent and preserve compatible DFHack-provided contracts.
+- [x] Define policy behavior: descend into eligible children first; `target` selects the widget if no child wins; `pass` falls through; `block` returns blocked; `none` excludes the widget and its complete subtree.
+- [x] Make pointer eligibility independent of `tooltip`; adding, changing, or clearing tooltip text must never alter which widget is targeted.
+- [x] Default terminal/leaf widgets to `target`.
+- [x] Default ordinary `widgets.Panel` layout containers to `pass`, while allowing an individual panel to opt into `target` or `block`.
+- [x] Default visible `widgets.Window` instances to `block`, preserving descendant targeting and blocking underlying siblings throughout the window frame when no descendant wins.
+- [x] Keep `ModalPanelWindow` on the `block` policy while it is open/visible; a closed/hidden modal does not participate in targeting.
+- [x] Add common `on_pointer_enter`, `on_pointer_update`, and `on_pointer_leave` event attributes so native widgets can update their own tooltip state without custom subclasses.
+- [x] Define the event signatures as `on_pointer_enter(target, x, y)`, `on_pointer_update(target, x, y)`, and `on_pointer_leave(target)`, where `x` and `y` are local to the terminal target and the callback updates `target.tooltip` when needed.
+- [x] Sample pointer state once per root render/update tick, before tooltip presentation, because DFHack does not provide a continuous hovered-widget event stream.
+- [x] Emit `on_pointer_leave` and `on_pointer_enter` when the target changes, then emit `on_pointer_update` with current local coordinates for the selected target on every sample.
+- [x] Resolve overlapping siblings in reverse render order so the last-rendered eligible widget wins; keyboard focus-owner priority must not override the mouse target.
+- [x] Respect evaluated `visible` and `active` state across the complete ancestor chain.
+- [x] Respect frame clipping so a widget cannot be targeted outside its visible clipped bounds.
+- [x] Clear or replace the current target safely when it closes, becomes hidden, moves, or is removed.
+- [x] Distinguish control body hit regions from blocking window-frame regions so window borders also occlude underlying controls.
+- [x] Ensure an empty area inside any visible window returns `blocked` instead of exposing a widget behind the window.
+- [x] Ensure pointer positions outside a window frame can continue to lower siblings when allowed by the surrounding root.
+- [x] Support independently rendered roots for `gui.Screen` instances and `overlay.OverlayWidget` hosts without sharing pointer state.
+- [x] Treat the supplied root as a traversal boundary with implicit `pass` behavior; the root itself is never returned as a terminal pointer target regardless of its inherited widget policy.
+- [x] Update `soulsearch_env.lua` and `widget_harness.lua` to model pointer policies, tagged results, root-boundary behavior, clipping, and pointer-event callback signatures consistently with production.
+- [x] Add focused dispatcher tests for nested controls, transparent panels, explicit panel targets, blocking windows, window borders, sibling overlap, clipping, visibility, target removal, and independently rendered roots.
+- [x] Add nested-modal tests proving that the topmost picker blocks the filter window only within the picker's frame, while positions outside the picker can still target the containing filter window.
+
+### Phase 2 implementation notes
+
+The active DFHack Lua API has no `pointer_policy`, `on_pointer_enter`, `on_pointer_update`, or `on_pointer_leave` members. SoulSearch therefore adds those attributes idempotently to the existing widget classes: `Widget` defaults to `target`, `Panel` to `pass`, and `Window` to `block`. The event attributes use `DEFAULT_NIL`, retaining ordinary Lua callback assignment on native widgets. An incompatible pre-existing contract fails instead of being replaced.
+
+`PointerDispatcher.sample(context)` obtains one mouse position from `dfhack.screen.getMousePos()` when coordinates are not supplied by a host. It resolves a supplied root's child tree in reverse render order, treating that root as an implicit `pass` boundary. `frame_body` provides the clip-aware target hit region; `Window` fallback blocking uses its full frame so borders and empty interiors occlude lower siblings. Each context stores only its own target and tagged result, permitting screen and overlay hosts to keep independent state. Host render/update wiring and tooltip presentation remain Phase 3 work.
 
 ### Phase 2 exit criteria
 
-- [ ] Each independently rendered root can identify exactly one current pointer target, or an explicit miss/blocked result, without tooltip-specific hierarchy traversal.
+- [x] Each independently rendered root can identify exactly one current pointer target, or an explicit miss/blocked result, without tooltip-specific hierarchy traversal.
 
 ## Phase 3 - Make tooltip presentation consume pointer state
 

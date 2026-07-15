@@ -46,6 +46,33 @@ return function(test, repo_root)
         test.assert_equal(false, widgets.Widget.ATTRS.tooltip)
     end)
 
+    test.case('widget extensions: pointer attributes use native class defaults and reload safely', function()
+        local default_nil = {}
+        local widgets = widget_harness.widgets(nil, default_nil)
+        local extension = load_extension(widgets, default_nil)
+
+        test.assert_equal('target', widgets.Widget.ATTRS.pointer_policy)
+        test.assert_equal('pass', widgets.Panel.ATTRS.pointer_policy)
+        test.assert_equal('block', widgets.Window.ATTRS.pointer_policy)
+        test.assert_equal(default_nil, widgets.Widget.ATTRS.on_pointer_enter)
+        test.assert_equal(default_nil, widgets.Widget.ATTRS.on_pointer_update)
+        test.assert_equal(default_nil, widgets.Widget.ATTRS.on_pointer_leave)
+        test.assert_equal('target', widgets.Label{}.pointer_policy)
+        test.assert_equal('pass', widgets.Panel{}.pointer_policy)
+        test.assert_equal('block', widgets.Window{}.pointer_policy)
+        test.assert_false(extension.install_pointer_attributes())
+    end)
+
+    test.case('widget extensions: incompatible pointer attribute fails clearly', function()
+        local default_nil = {}
+        local widgets = widget_harness.widgets(nil, default_nil)
+        widgets.Panel.ATTRS{pointer_policy='target'}
+        local ok, err = pcall(load_extension, widgets, default_nil)
+        test.assert_false(ok)
+        test.assert_true(tostring(err):find('incompatible contract', 1, true) ~= nil)
+        test.assert_equal('target', widgets.Panel.ATTRS.pointer_policy)
+    end)
+
     test.case('widget extensions: every native-widget host imports the extension', function()
         local sources = {
             'src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua',

@@ -585,6 +585,13 @@ function M.load_modal_panel(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/ui/modal_panel.lua')
 end
 
+function M.load_pointer_dispatcher(repo_root, dfhack_stub)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/pointer_dispatcher.lua', {
+            dfhack=dfhack_stub or {screen={getMousePos=function() return nil end}},
+        })
+end
+
 function M.load_filter_action_list(repo_root)
     return load_ui_leaf_module(
         repo_root,
