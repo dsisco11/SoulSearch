@@ -119,6 +119,8 @@ local function reload_modules()
             table.insert(old_modules, name)
         end
     end
+    -- Clear the old manifest first so definitions removed from the current
+    -- checkout cannot survive into the new generation.
     clear_script_environments(old_modules)
 
     dfhack.run_command('devel/clear-script-env', MODULE_REGISTRY_SCRIPT)
@@ -129,6 +131,10 @@ local function reload_modules()
     for _, spec in ipairs(fresh_registry.MODULES) do
         table.insert(fresh_modules, spec.name)
     end
+    -- Clear names newly added since the old manifest as well. They may have
+    -- been imported during development even though the previous manifest did
+    -- not list them; this is the only second clear pass the clean generation
+    -- needs.
     clear_script_environments(fresh_modules)
     for _, spec in ipairs(fresh_registry.MODULES) do
         dfhack.run_script(spec.name)
@@ -153,6 +159,8 @@ local function prepare_modules(modules)
 end
 
 ---Initializes the current SoulSearch runtime generation without opening a UI.
+---Ordinary changed-file reload is delegated to DFHack's reqscript() calls in
+---validate_modules(); this path deliberately does not clear environments.
 ---@return table<string, table>
 function initialize()
     return prepare_modules(validate_modules())

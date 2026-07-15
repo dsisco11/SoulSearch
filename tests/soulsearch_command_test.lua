@@ -12,7 +12,7 @@ return function(test, repo_root)
     local command_path = script_path(repo_root, 'src/scripts_modinstalled/soulsearch.lua')
     local gui_path = script_path(repo_root, 'src/scripts_modinstalled/gui/soulsearch.lua')
 
-    test.case('soulsearch command: normal invocation prepares without opening UI', function()
+    test.case('soulsearch command: normal invocation uses native imports without clearing or opening UI', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {}
@@ -29,9 +29,13 @@ return function(test, repo_root)
             end,
             get_script_names=function() return {} end,
         }
+        local reload_commands = 0
         local chunk = load_script(command_path, {
             dfhack_flags={},
-            dfhack={},
+            dfhack={
+                run_command=function() reload_commands = reload_commands + 1 end,
+                run_script=function() reload_commands = reload_commands + 1 end,
+            },
             reqscript=function(name)
                 assert(name == 'internal/soulsearch/module_registry')
                 return registry
@@ -42,6 +46,7 @@ return function(test, repo_root)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)
         test.assert_equal(0, ui.open_count)
+        test.assert_equal(0, reload_commands)
     end)
 
     test.case('soulsearch module load: bootstraps keybindings without loading the full runtime', function()

@@ -32,7 +32,7 @@ inspection alone.
       after evaluating applicable built-in DFHack widgets.
 - [x] UI tests use a small, consistent script/widget harness instead of many
       subtly different fake class implementations.
-- [ ] Clean reload adds only the behavior DFHack does not provide natively:
+- [x] Clean reload adds only the behavior DFHack does not provide natively:
       old-screen teardown, stale-definition cleanup, coherent reconstruction,
       contract validation, and overlay rescan.
 - [ ] Fortress/map availability policy has one implementation owner.
@@ -383,59 +383,73 @@ feature and live-behavior requirements are complete.
 
 ## Phase 7 - Simplify and validate clean reload
 
-- [ ] Record the native DFHack behavior this phase must not duplicate:
-  - [ ] `reqscript()` reloads an individual changed script on the next import;
-  - [ ] normal reload preserves the script environment, so changed and added
+- [x] Record the native DFHack behavior this phase must not duplicate:
+  - [x] `reqscript()` reloads an individual changed script on the next import;
+  - [x] normal reload preserves the script environment, so changed and added
         definitions update without clearing unrelated consumers; and
-  - [ ] `defclass()` updates an existing class table when the environment has
+  - [x] `defclass()` updates an existing class table when the environment has
         not been cleared.
-- [ ] Record the stronger clean-reload cases SoulSearch intentionally owns:
-  - [ ] removed or renamed globals/methods must not remain in an old script
+- [x] Record the stronger clean-reload cases SoulSearch intentionally owns:
+  - [x] removed or renamed globals/methods must not remain in an old script
         environment;
-  - [ ] open widget instances must be dismissed and reconstructed so `init()`
+  - [x] open widget instances must be dismissed and reconstructed so `init()`
         rebuilds their child trees and callbacks;
-  - [ ] direct cached dependency members must not mix old and new module
+  - [x] direct cached dependency members must not mix old and new module
         generations after an environment clear; and
-  - [ ] the overlay script must be rediscovered through `overlay.rescan()`.
-- [ ] Do not add `depends_on` metadata, topological sorting, cycle detection, or
+  - [x] the overlay script must be rediscovered through `overlay.rescan()`.
+- [x] Do not add `depends_on` metadata, topological sorting, cycle detection, or
       a general dependency-graph framework.
-- [ ] Retain a flat owned-module manifest only if it remains necessary to clear
+- [x] Retain a flat owned-module manifest only if it remains necessary to clear
       every SoulSearch script environment during a clean reload.
-- [ ] Keep the existing dependency-before-consumer order explicit in that flat
+- [x] Keep the existing dependency-before-consumer order explicit in that flat
       manifest while environment clearing requires deterministic forward
       reconstruction.
-- [ ] Keep contract name/type validation as a lightweight post-reconstruction
+- [x] Keep contract name/type validation as a lightweight post-reconstruction
       guard.
-- [ ] Ensure the reload coordinator has one implementation of each required
+- [x] Ensure the reload coordinator has one implementation of each required
       step:
-  - [ ] dismiss old SoulSearch screens;
-  - [ ] clear stale SoulSearch script environments;
-  - [ ] reconstruct the flat manifest in its documented order;
-  - [ ] invalidate/rescan the overlay through the required DFHack mechanism;
+  - [x] dismiss old SoulSearch screens;
+  - [x] clear stale SoulSearch script environments;
+  - [x] reconstruct the flat manifest in its documented order;
+  - [x] invalidate/rescan the overlay through the required DFHack mechanism;
         and
-  - [ ] prepare lifecycle caches and the claim-if-free keybinding afterward.
-- [ ] Remove redundant clearing, loading, or registry reconstruction passes if
+  - [x] prepare lifecycle caches and the claim-if-free keybinding afterward.
+- [x] Remove redundant clearing, loading, or registry reconstruction passes if
       focused tests demonstrate that fewer passes still produce one clean
       generation.
-- [ ] Exercise both native and clean reload scenarios:
-  - [ ] changed function body and added definition through native `reqscript()`;
-  - [ ] removed definition through `soulsearch reload`;
-  - [ ] changed component child tree with a window already open;
-  - [ ] changed dependency member cached by an unchanged consumer;
-  - [ ] reload with no open windows and with multiple open windows; and
-  - [ ] changed overlay definition followed by rescan.
+- [x] Exercise both native and clean reload scenarios:
+  - [x] changed function body and added definition through native `reqscript()`;
+  - [x] removed definition through `soulsearch reload`;
+  - [x] changed component child tree with a window already open;
+  - [x] changed dependency member cached by an unchanged consumer;
+  - [x] reload with no open windows and with multiple open windows; and
+  - [x] changed overlay definition followed by rescan.
+
+### Phase 7 design record - 2026-07-14
+
+- Normal `initialize()` intentionally calls only `reqscript()` through the
+  flat registry. DFHack reloads changed scripts while retaining an environment
+  for changed and added definitions; `defclass(Foo, ...)` preserves class
+  identity in that mode. See the [DFHack Lua API](https://docs.dfhack.org/en/53.10-r2/docs/dev/Lua%20API.html)
+  and [overlay development guide](https://docs.dfhack.org/en/53.02-r1/docs/dev/overlay-dev-guide.html).
+- `soulsearch reload` is deliberately stronger: it dismisses old UI instances,
+  clears the previous manifest to remove deleted globals, rebuilds the registry,
+  clears any newly listed previously imported module, then reconstructs in the
+  flat dependency-before-consumer order and rescans the overlay.
+- The two manifest clears have separate evidence-backed responsibilities; no
+  graph metadata or extra reconstruction pass is retained.
 
 ### Phase 7 gate
 
-- [ ] Ordinary changed-file reload relies on native DFHack behavior.
-- [ ] Clean reload dismisses old screens and reconstructs one coherent module
+- [x] Ordinary changed-file reload relies on native DFHack behavior.
+- [x] Clean reload dismisses old screens and reconstructs one coherent module
       generation without stale deleted definitions.
-- [ ] The reload coordinator uses no dependency graph or general-purpose
+- [x] The reload coordinator uses no dependency graph or general-purpose
       loader abstraction.
-- [ ] The flat manifest and explicit order contain only information required by
+- [x] The flat manifest and explicit order contain only information required by
       the retained clean-reload implementation.
-- [ ] Contract validation and overlay rescan still run after reconstruction.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] Contract validation and overlay rescan still run after reconstruction.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 8 - Perform integration-driven component decomposition
 
@@ -541,3 +555,4 @@ those feature items complete merely because component files exist.
 | 2026-07-14 | Phase 4 | Pure `SearchSession` extraction; direct transition, snapshot, sort, and selection-retention tests; broad UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 51 Lua files compile; 255 tests pass with 0 failures; Main Window retains widget, provider, persistence, and external-I/O coordination. |
 | 2026-07-14 | Phase 5 | Workspace/native-widget review; shared `sort_state`; native per-column `CycleHotkeyLabel` adapter; focused sort, Results, Stats, configuration, and UI-characterization coverage; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 52 Lua files compile; 255 tests pass with 0 failures; the obsolete Stats-only sort module and both duplicate header classes are removed. |
 | 2026-07-14 | Phase 6 | Explicit script harness; shared minimal widget/class harness migrated through touched UI loaders; centralized availability policy; direct harness and availability tests; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 53 Lua files compile; 258 tests pass with 0 failures; missing fake dependencies fail explicitly and map/fortress messages remain unchanged. |
+| 2026-07-14 | Phase 7 | Native `reqscript`/`defclass` and overlay behavior recorded from DFHack docs; clean-reload coordinator, registry order, removed-module, fresh-module, old-screen, overlay-rescan, lifecycle, and keybinding characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 53 Lua files compile; 258 tests pass with 0 failures; the flat manifest remains a clean-generation mechanism, not a dependency graph. |
