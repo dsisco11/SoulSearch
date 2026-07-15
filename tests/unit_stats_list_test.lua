@@ -18,7 +18,9 @@ return function(test, root)
         test.assert_equal(2, list.subviews.body.frame.t)
         test.assert_equal('Sort by stat name.', list.subviews.columns.tooltip)
         test.assert_equal('Sort by baseline difference.', list.subviews.value_column.tooltip)
-        list.subviews.body.mouse_x, list.subviews.body.mouse_y = 2, 0
-        test.assert_equal('trait:PATIENCE', list:get_tooltip_text())
+        list:update_body_tooltip(list.subviews.body, 2, 0)
+        test.assert_equal('trait:PATIENCE', list.subviews.body.tooltip)
+        list:update_body_tooltip(list.subviews.body, 99, 0)
+        test.assert_equal(nil, list.subviews.body.tooltip)
     end)
 end

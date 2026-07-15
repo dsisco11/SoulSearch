@@ -57,31 +57,6 @@ local function is_backspace_key(keys)
     return keys._BACKSPACE or keys.BACKSPACE or keys.KEYBOARD_BACKSPACE
 end
 
----@param view table|nil
----@return boolean
-local function is_visible(view)
-    while view do
-        if type(view.visible) == 'function' then
-            if not view.visible() then
-                return false
-            end
-        elseif not view.visible then
-            return false
-        end
-        view = view.parent_view
-    end
-    return true
-end
-
----@param view table|nil
----@return boolean
-local function is_mouse_over(view)
-    local rect = view and view.frame_body
-    local x, y = dfhack.screen.getMousePos()
-    return rect and x and is_visible(view) and rect:inClipGlobalXY(x, y)
-end
-
-
 ---@param target SoulSearchFilterDescriptor[]
 ---@param descriptors SoulSearchFilterDescriptor[]|nil
 local function append_descriptors(target, descriptors)
@@ -277,27 +252,6 @@ function SoulSearchWindow:persist_frame_if_needed()
         frame=ui_layout.copy_dimensions(self.frame),
     }
     return true
-end
-
----@return string|nil
-function SoulSearchWindow:get_filter_action_tooltip()
-    return self.subviews.filter_panel_window:get_filter_action_tooltip()
-end
-
-
----@return string|nil
----@return string|nil
-function SoulSearchWindow:get_filter_descriptor_tooltip()
-    return self.subviews.filter_panel_window:get_descriptor_tooltip()
-end
-
-
----@return string
-function SoulSearchWindow:get_tooltip_text()
-    local stats_tooltip = self.subviews.stats_panel and
-        self.subviews.stats_panel:get_tooltip_text() or nil
-    return self:get_filter_action_tooltip() or stats_tooltip or
-        self:get_filter_descriptor_tooltip() or ''
 end
 
 ---@return SoulSearchFilterDescriptor[]

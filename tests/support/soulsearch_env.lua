@@ -546,6 +546,8 @@ end
 
 local function load_ui_leaf_module(repo_root, relative_path)
     local layout = M.load_ui_layout(repo_root)
+    local descriptions = M.load_attribute_descriptions(repo_root)
+    local constants = M.load_filter_constants(repo_root)
     local widgets = widget_harness.widgets({
         Window={onInput=function(self)
                 self.super_input_calls = (self.super_input_calls or 0) + 1
@@ -569,6 +571,10 @@ local function load_ui_leaf_module(repo_root, relative_path)
     end
     globals.reqscript=function(name)
         if name == 'internal/soulsearch/ui_layout' then return layout end
+        if name == 'internal/soulsearch/attribute_descriptions' then
+            return descriptions
+        end
+        if name == 'internal/soulsearch/filter_constants' then return constants end
         if name == 'internal/soulsearch/ui/widget_extensions' then
             return extension
         end

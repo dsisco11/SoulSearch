@@ -3,6 +3,10 @@
 local widgets = require('gui.widgets')
 reqscript('internal/soulsearch/ui/widget_extensions')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
+local descriptions = reqscript('internal/soulsearch/attribute_descriptions')
+local filter_constants = reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
+
+local FILTER_KIND_RACE = filter_constants.kind.RACE
 
 ---List that snapshots filter choices and dispatches clicks in the fixed-width
 ---action zone for the row under the mouse.
@@ -21,16 +25,48 @@ function FilterActionList:setChoices(choices, selected)
 end
 
 ---@return integer|nil, table|nil, SoulSearchFilterActionMetadata|nil
+function FilterActionList:get_action_at(x, y)
+    local action = ui_layout.get_filter_action_at_x(x)
+    if y == nil then return nil end
+
+    local index = (self.start_line_num or 1) + y
+    return index, self.action_choices and self.action_choices[index], action
+end
+
+---@return integer|nil, table|nil, SoulSearchFilterActionMetadata|nil
 function FilterActionList:getActionUnderMouse()
     local x, y = self:getMousePos()
-    local action = ui_layout.get_filter_action_at_x(x)
-    if not action or not y then return nil end
+    return self:get_action_at(x, y)
+end
 
-    local index = self:getIdxUnderMouse()
-    if not index then
-        index = (self.start_line_num or 1) + y
+local function get_descriptor_tooltip(choice)
+    local descriptor = choice and choice.descriptor
+    if descriptor and descriptor.kind == FILTER_KIND_RACE then
+        return 'Filters by a creatures race.'
     end
-    return index, self.action_choices and self.action_choices[index], action
+    return descriptor and descriptions.get_tooltip(descriptor.kind, descriptor.key) or nil
+end
+
+function FilterActionList:on_pointer_update(target, x, y)
+    local _, choice, action = self:get_action_at(x, y)
+    if action then
+        local descriptor = choice and choice.descriptor
+        if descriptor and descriptor.kind == FILTER_KIND_RACE then
+            if action.callback == 'set_high' then
+                target.tooltip = 'Include in results.'
+                return
+            elseif action.callback == 'set_low' then
+                target.tooltip = 'Exclude from results.'
+                return
+            elseif action.callback == 'move_up' or action.callback == 'move_down' then
+                target.tooltip = nil
+                return
+            end
+        end
+        target.tooltip = choice and action.tooltip or nil
+        return
+    end
+    target.tooltip = get_descriptor_tooltip(choice)
 end
 
 ---@param keys table

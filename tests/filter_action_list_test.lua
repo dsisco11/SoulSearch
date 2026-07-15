@@ -72,5 +72,23 @@ return function(test, repo_root)
         test.assert_equal(0, calls)
         test.assert_equal(2, list.super_input_calls)
     end)
-end
 
+    test.case('filter action list: terminal pointer updates own action and descriptor text', function()
+        local list = make_list(function() end)
+        list:setChoices({{descriptor={kind='trait', key='PATIENCE'}}}, 1)
+        list:on_pointer_update(list, 0, 0)
+        test.assert_equal('A personality trait that shapes behavior and social interaction.',
+            list.tooltip)
+        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X, 0)
+        test.assert_equal('Prefer high', list.tooltip)
+
+        list:setChoices({{descriptor={kind='race', key='DWARF'}}}, 1)
+        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X, 0)
+        test.assert_equal('Include in results.', list.tooltip)
+        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X +
+            2 * layout.FILTER_ACTION_WIDTH, 0)
+        test.assert_equal(nil, list.tooltip)
+        list:on_pointer_update(list, 0, 3)
+        test.assert_equal(nil, list.tooltip)
+    end)
+end

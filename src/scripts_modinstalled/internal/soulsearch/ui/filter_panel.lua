@@ -4,10 +4,6 @@ local widgets = require('gui.widgets')
 reqscript('internal/soulsearch/ui/widget_extensions')
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
-local attribute_descriptions =
-    reqscript('internal/soulsearch/attribute_descriptions')
-local filter_constants =
-    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 local ModalPanelWindow =
     reqscript('internal/soulsearch/ui/modal_panel').ModalPanelWindow
 local FilterActionList =
@@ -17,23 +13,11 @@ local searchable_picker =
 local preset_picker = reqscript('internal/soulsearch/ui/preset_picker')
 local unit_scope_picker = reqscript('internal/soulsearch/ui/unit_scope_picker')
 
-local FILTER_KIND_RACE = filter_constants.kind.RACE
-
 local PICKER_VIEW_IDS = {
     attribute='available_filter_window', skill='available_skill_window',
     race='available_race_window', scope='unit_scope_picker_window',
     preset='preset_picker_window',
 }
-
-local function get_descriptor_tooltip(list, choices)
-    local index = list and list:getIdxUnderMouse()
-    local descriptor = index and choices and choices[index] and choices[index].descriptor
-    if descriptor and descriptor.kind == FILTER_KIND_RACE then
-        return 'Filters by a creatures race.'
-    end
-    return descriptor and attribute_descriptions.get_tooltip(
-        descriptor.kind, descriptor.key) or nil
-end
 
 local function get_subview(panel, id)
     return panel.subviews[id] or
@@ -42,8 +26,6 @@ end
 
 ---@class FilterPanel: ModalPanelWindow
 ---@field inputs SoulSearchFilterPanelInputs
----@field active_filter_choices table[]|nil
----@field picker_choices table<string, table[]>
 FilterPanel = defclass(FilterPanel, ModalPanelWindow)
 
 function FilterPanel:init(info)
@@ -56,7 +38,6 @@ function FilterPanel:init(info)
     end
     FilterPanel.super.init(self, info)
     self.inputs = info.inputs
-    self.picker_choices = {}
     local inputs = self.inputs
     local unit_scope_label
     for _, option in ipairs(inputs.unit_scope_options) do
@@ -191,7 +172,6 @@ end
 ---@param choices table[]
 ---@param selected integer|nil
 function FilterPanel:set_active_filter_choices(choices, selected)
-    self.active_filter_choices = choices
     get_subview(self, 'filter_list'):setChoices(choices, selected)
 end
 
@@ -199,12 +179,7 @@ end
 ---@param choices table[]
 ---@param selected integer|nil
 function FilterPanel:set_picker_choices(kind, choices, selected)
-    local ids = {
-        attribute='available_filter_list', skill='available_skill_list',
-        race='available_race_list',
-    }
-    self.picker_choices[kind] = choices
-    get_subview(self, ids[kind]):setChoices(choices, selected)
+    get_subview(self, PICKER_VIEW_IDS[kind]):set_choices(choices, selected)
 end
 
 ---@param choices table[]
@@ -219,47 +194,6 @@ function FilterPanel:set_unit_scope_choices(choices, selected, label)
     get_subview(self, 'unit_scope_picker_list'):setChoices(choices, selected)
     get_subview(self, 'unit_scope_label'):setText(
         ui_format.format_unit_scope_control(label))
-end
-
----@return string|nil
----@return string|nil
-function FilterPanel:get_filter_action_tooltip()
-    local inputs = self.inputs
-    if not self:is_open() or self:has_open_picker() then
-        return nil
-    end
-    local index, _, action = get_subview(self, 'filter_list'):getActionUnderMouse()
-    local choice = index and self.active_filter_choices and
-        self.active_filter_choices[index]
-    if not choice then return nil end
-    local descriptor = choice.descriptor
-    if descriptor and descriptor.kind == FILTER_KIND_RACE and action then
-        if action.callback == 'set_high' then return 'Include in results.' end
-        if action.callback == 'set_low' then return 'Exclude from results.' end
-        if action.callback == 'move_up' or action.callback == 'move_down' then
-            return nil
-        end
-    end
-    return action and action.tooltip or nil
-end
-
----@return string|nil
-function FilterPanel:get_descriptor_tooltip()
-    local inputs = self.inputs
-    if not self:is_open() or self:is_picker_open('preset') then return nil end
-    if self:is_picker_open('attribute') then
-        return get_descriptor_tooltip(get_subview(self, 'available_filter_list'),
-            self.picker_choices.attribute)
-    end
-    if self:is_picker_open('skill') then return nil end
-    if self:is_picker_open('race') then
-        return get_descriptor_tooltip(get_subview(self, 'available_race_list'),
-            self.picker_choices.race)
-    end
-    local list = get_subview(self, 'filter_list')
-    local x = list and list:getMousePos()
-    if ui_layout.get_filter_action_at_x(x) then return nil end
-    return get_descriptor_tooltip(list, self.active_filter_choices)
 end
 
 ---@class SoulSearchFilterPanelInputs

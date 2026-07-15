@@ -1,6 +1,6 @@
 local env = require('support.soulsearch_env')
 return function(test, root)
-    test.case('stats panel: host API, ownership, layout, and tooltips are isolated', function()
+    test.case('stats panel: host API and layout are isolated from terminal tooltip ownership', function()
         local Panel = env.load_stats_panel(root)
         local changes = {}
         local incoming = {key='label', reverse=false, phase=1}
@@ -30,7 +30,5 @@ return function(test, root)
         panel.on_layout({height=12})
         test.assert_equal(2, panel.subviews.header.frame.t)
         test.assert_equal(1, panel.subviews.stats_list.header_height)
-        panel.subviews.stats_list.tooltip_text='Stat tooltip'
-        test.assert_equal('Stat tooltip', panel:get_tooltip_text())
     end)
 end

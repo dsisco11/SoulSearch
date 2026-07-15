@@ -3,6 +3,8 @@
 local widgets = require('gui.widgets')
 reqscript('internal/soulsearch/ui/widget_extensions')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
+local descriptions = reqscript('internal/soulsearch/attribute_descriptions')
+local filter_constants = reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 local ModalPanelWindow =
     reqscript('internal/soulsearch/ui/modal_panel').ModalPanelWindow
 
@@ -25,6 +27,7 @@ local PICKER_CONFIGS = {
         list_id='available_race_list', key='CUSTOM_G',
     },
 }
+local FILTER_KIND_RACE = filter_constants.kind.RACE
 
 ---Popup widget shared by the attribute, skill, and race pickers. It owns its
 ---child views while the host retains query filtering and descriptor semantics.
@@ -55,7 +58,28 @@ function SearchablePicker:init(info)
             widgets.List{
                 view_id=config.list_id,
                 frame=ui_layout.get_frame('picker_list'),
+                on_pointer_update=function(target, _, y)
+                    local index = (target.start_line_num or 1) + y
+                    local choice = self.choices and self.choices[index]
+                    local descriptor = choice and choice.descriptor
+                    if descriptor and descriptor.kind == FILTER_KIND_RACE then
+                        target.tooltip = 'Filters by a creatures race.'
+                    elseif descriptor and self.kind == 'attribute' then
+                        target.tooltip = descriptions.get_tooltip(descriptor.kind, descriptor.key)
+                    else
+                        target.tooltip = nil
+                    end
+                end,
                 on_submit=function(_, choice) inputs.on_submit(choice) end,
             },
     }
+    self.kind = info.kind
+end
+
+---@param choices table[]
+---@param selected integer|nil
+function SearchablePicker:set_choices(choices, selected)
+    self.choices = choices or {}
+    local config = assert(PICKER_CONFIGS[self.kind], 'unknown searchable picker kind')
+    self.subviews[config.list_id]:setChoices(self.choices, selected)
 end

@@ -55,8 +55,4 @@ function SoulSearchStatsPanel:layout_contents(frame_body)
     self.subviews.stats_list.frame = {l=0, t=frames.columns.t, r=0, b=0}
     self.subviews.stats_list:set_header_height(frames.columns.h)
 end
-function SoulSearchStatsPanel:get_tooltip_text()
-    return self.subviews.stats_list:get_tooltip_text()
-end
-
 return SoulSearchStatsPanel

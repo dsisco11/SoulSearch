@@ -37,7 +37,10 @@ function UnitStatsList:init(info)
             frame={l=layout.VALUE_COLUMN_X, t=0, w=layout.VALUE_HEADER_WIDTH},
             tooltip='Sort by baseline difference.',
             label='Delta', on_cycle=function() self:cycle_sort('value') end},
-        widgets.Label{view_id='body', auto_height=false, text=''},
+        widgets.Label{view_id='body', auto_height=false, text='',
+            on_pointer_update=function(target, x, y)
+                self:update_body_tooltip(target, x, y)
+            end},
     }
     self:refresh()
 end
@@ -77,11 +80,15 @@ function UnitStatsList:set_header_height(height)
     self.subviews.body.frame = {l=0, t=self.header_height, r=0, b=0}
 end
 
-function UnitStatsList:get_tooltip_text()
-    local x, y = self.subviews.body:getMousePos()
-    if layout.is_value_cell(x, y) then return 'Difference from the attribute average.' end
+function UnitStatsList:update_body_tooltip(target, x, y)
+    if layout.is_value_cell(x, y) then
+        target.tooltip = 'Difference from the attribute average.'
+        return
+    end
     if layout.is_label_cell(x, y) then
         local record = self.stats_records[(self.subviews.body.start_line_num or 1) + y]
-        return record and descriptions.get_tooltip(record.kind, record.key) or nil
+        target.tooltip = record and descriptions.get_tooltip(record.kind, record.key) or nil
+        return
     end
+    target.tooltip = nil
 end

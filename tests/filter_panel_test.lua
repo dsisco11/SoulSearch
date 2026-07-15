@@ -193,21 +193,30 @@ return function(test, repo_root)
         test.assert_equal(13, #refreshes)
     end)
 
-    test.case('filter panel: open picker suppresses underlying filter-action tooltip', function()
+    test.case('filter panel: picker lists own dynamic descriptor tooltips', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)
         local panel = filter_panel.FilterPanel{
             view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
             on_open=inputs.on_open_filter_panel,
             on_close=inputs.on_close_filter_panel_state, inputs=inputs}
-        panel:set_active_filter_choices({{descriptor={kind='trait'}}}, 1)
-        panel.subviews.filter_list.getActionUnderMouse=function()
-            return 1, nil, {tooltip='Remove this filter.'}
-        end
+        panel:set_picker_choices('attribute', {
+            {descriptor={kind='trait', key='PATIENCE'}},
+        }, 1)
+        local attribute_list = by_id(panel.subviews,
+            'available_filter_window').subviews[3]
+        attribute_list.on_pointer_update(attribute_list, 0, 0)
+        test.assert_equal('A personality trait that shapes behavior and social interaction.',
+            attribute_list.tooltip)
 
-        test.assert_equal('Remove this filter.', panel:get_filter_action_tooltip())
-        panel:toggle_picker('attribute')
-        test.assert_true(panel:has_open_picker())
-        test.assert_equal(nil, panel:get_filter_action_tooltip())
+        panel:set_picker_choices('race', {
+            {descriptor={kind='race', key='DWARF'}},
+        }, 1)
+        local race_list = by_id(panel.subviews,
+            'available_race_window').subviews[3]
+        race_list.on_pointer_update(race_list, 0, 0)
+        test.assert_equal('Filters by a creatures race.', race_list.tooltip)
+        race_list.on_pointer_update(race_list, 0, 4)
+        test.assert_equal(nil, race_list.tooltip)
     end)
 end

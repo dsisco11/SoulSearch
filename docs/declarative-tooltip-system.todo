@@ -201,30 +201,36 @@ Static strings now live beside the native controls they describe: main and filte
 
 ## Phase 5 - Migrate dynamic tooltip ownership
 
-- [ ] Update `FilterActionList` to derive and assign its own `tooltip` during `on_pointer_update` and clear it when no action owns the local position.
-- [ ] Update searchable picker/list target widgets to assign existing descriptor tooltip text for their own hovered choices through `on_pointer_update`.
-- [ ] Migrate only dynamic descriptions found in the Phase 0 inventory; do not invent new skill, preset, or unit-scope tooltip content as part of the architecture change.
-- [ ] Keep existing attribute, race, active-filter, and stats description lookup in the terminal control that owns the displayed content.
-- [ ] Give each `UnitStatsList` header target its static tooltip directly and have its body-label target assign stat, delta, and row-description tooltip text from local pointer coordinates and current subject records.
-- [ ] Use the common pointer-event attributes when a native child widget needs dynamic behavior; do not create a tooltip-specific subclass solely to receive pointer updates.
-- [ ] Ensure dynamic controls refresh `tooltip` when backing data changes while the pointer remains over the same target.
-- [ ] Ensure blank rows, separators, padding, and non-descriptive regions explicitly clear dynamic tooltip text.
-- [ ] Remove tooltip forwarding methods from `StatsPanel`, picker parents, and other composite controls after their children own the text.
-- [ ] Add focused component tests for coordinate-to-text mapping and direct attribute updates without involving the tooltip renderer.
+- [x] Update `FilterActionList` to derive and assign its own `tooltip` during `on_pointer_update` and clear it when no action owns the local position.
+- [x] Update searchable picker/list target widgets to assign existing descriptor tooltip text for their own hovered choices through `on_pointer_update`.
+- [x] Migrate only dynamic descriptions found in the Phase 0 inventory; do not invent new skill, preset, or unit-scope tooltip content as part of the architecture change.
+- [x] Keep existing attribute, race, active-filter, and stats description lookup in the terminal control that owns the displayed content.
+- [x] Give each `UnitStatsList` header target its static tooltip directly and have its body-label target assign stat, delta, and row-description tooltip text from local pointer coordinates and current subject records.
+- [x] Use the common pointer-event attributes when a native child widget needs dynamic behavior; do not create a tooltip-specific subclass solely to receive pointer updates.
+- [x] Ensure dynamic controls refresh `tooltip` when backing data changes while the pointer remains over the same target.
+- [x] Ensure blank rows, separators, padding, and non-descriptive regions explicitly clear dynamic tooltip text.
+- [x] Remove tooltip forwarding methods from `StatsPanel`, picker parents, and other composite controls after their children own the text.
+- [x] Add focused component tests for coordinate-to-text mapping and direct attribute updates without involving the tooltip renderer.
+
+### Phase 5 implementation notes
+
+`FilterActionList` now maps terminal-local coordinates to its action zone or active descriptor and updates its own `tooltip`; race include/exclude wording remains the existing special case. Attribute and race picker lists use native `on_pointer_update` callbacks and retain only the prior descriptor text. Skill, preset, and unit-scope rows remain intentionally undescribed.
+
+`UnitStatsList` keeps static header attributes and assigns the body label's text from its local value/label cells and current display records. Every handler runs on each pointer sample, so changed choices or subject records are reflected while the same target remains hovered. Blank rows and non-descriptive regions clear the terminal field. The old parent getters and stats forwarding methods have been removed.
 
 ### Phase 5 exit criteria
 
-- [ ] Dynamic terminal controls own and maintain their current tooltip text; no ancestor is consulted for tooltip content.
+- [x] Dynamic terminal controls own and maintain their current tooltip text; no ancestor is consulted for tooltip content.
 
 ## Phase 6 - Remove legacy aggregation and wire every host
 
 - [x] Wire `SoulSearchScreen` to construct and update one pointer context and tooltip agent for its root widget tree.
 - [x] Wire the stats popover screen and stats overlay widget root to their own isolated pointer contexts and tooltip agents.
-- [ ] Remove `SoulSearchWindow:get_tooltip_text()` and its hard-coded precedence chain.
-- [ ] Remove `FilterPanel:get_control_tooltip()`, `get_filter_action_tooltip()`, `get_descriptor_tooltip()`, and superseded button helpers.
-- [ ] Remove `ResultsPanel:get_header_tooltip()`, `UnitStatsList:get_tooltip_text()`, and tooltip-only forwarding methods after their replacements are active.
+- [x] Remove `SoulSearchWindow:get_tooltip_text()` and its hard-coded precedence chain.
+- [x] Remove `FilterPanel:get_control_tooltip()`, `get_filter_action_tooltip()`, `get_descriptor_tooltip()`, and superseded button helpers.
+- [x] Remove `ResultsPanel:get_header_tooltip()`, `UnitStatsList:get_tooltip_text()`, and tooltip-only forwarding methods after their replacements are active.
 - [x] Remove `get_text` callback wiring from `SoulSearchTooltip` construction and rename the renderer/host types if their old names no longer describe their responsibilities.
-- [ ] Remove duplicated visibility and mouse-over helpers that are no longer used outside legacy tooltip discovery.
+- [x] Remove duplicated visibility and mouse-over helpers that are no longer used outside legacy tooltip discovery.
 - [ ] Update `module_registry.lua` contracts and reload ordering for the widget extension, pointer infrastructure, and tooltip host while retaining the normal-import guarantees established in Phase 1.
 - [ ] Search production code and tests for obsolete getter/provider callback APIs and parent-level tooltip precedence logic.
 - [ ] Replace legacy parent-precedence tests with pointer-target and control-ownership integration tests.
