@@ -1,0 +1,465 @@
+# Architecture hardening plan
+
+This checklist is the implementation source of truth for the architectural
+improvements identified after the UI component encapsulation work. The goal is
+to finish the ownership boundaries introduced by that refactor, reduce the
+responsibility of `ui/main_window.lua`, and make future reusable-widget and
+responsive-layout work safer.
+
+This is a behavior-preserving refactor. It must not redesign SoulSearch,
+silently change persistence, or complete unrelated feature items from
+`docs/project.todo`.
+
+Update this document as each phase lands. Record focused and full validation in
+the Execution evidence table instead of marking a gate complete from code
+inspection alone.
+
+## Target architecture
+
+- [ ] `FilterPanel` constructs and owns its complete widget subtree as an
+      actual `ModalPanelWindow`-derived class; no factory owns the class
+      implementation outside `FilterPanel:init()`.
+- [ ] Main Window communicates with Filter, Results, and Stats components only
+      through documented component APIs rather than republished descendant
+      views.
+- [ ] Filter-editor transient state cannot represent multiple simultaneously
+      active pickers.
+- [ ] Pure presenters build filter, preset, and result display models without
+      reading or mutating widgets.
+- [ ] A pure search-session boundary owns search/filter/scope/sort state while
+      Main Window remains the DFHack widget and I/O coordinator.
+- [ ] Results and Stats use one reusable sort-state/header/list architecture
+      after evaluating applicable built-in DFHack widgets.
+- [ ] UI tests use a small, consistent script/widget harness instead of many
+      subtly different fake class implementations.
+- [ ] Reload metadata describes actual dependency edges and validates cycles,
+      missing dependencies, forward load order, and reverse clear order.
+- [ ] Fortress/map availability policy has one implementation owner.
+- [ ] Feature-driven Unit Info and responsive-panel work builds on these
+      component boundaries instead of reopening them.
+
+## Architectural constraints
+
+- [ ] Preserve all public command, bootstrap, `ui.open()`, `ui.dismiss_all()`,
+      multi-window, scoped-window, reload, and control-panel contracts.
+- [ ] Preserve current default-hotkey behavior: claim `Ctrl-F` only when the
+      live binding is unoccupied and never replace another command's binding.
+- [ ] Preserve view behavior, geometry, focus order, keys, labels, colors,
+      hitboxes, tooltips, selection retention, refresh order, and lifecycle
+      semantics unless a separately approved feature explicitly changes one.
+- [ ] Keep session-only window settings session-only; do not introduce hidden
+      marker files or persistent opt-out state.
+- [ ] Keep dialogs, printing, filesystem access, DFHack map actions, and raw
+      game access outside pure state and presenter modules.
+- [ ] Keep functional value/policy modules functional. Do not turn
+      `filter_state`, sort-state helpers, candidate providers, catalogs, or
+      formatting utilities into classes without mutable identity or lifecycle.
+- [ ] Do not introduce a service locator, event bus, generic repository layer,
+      dependency-injection framework, or generic world-context container.
+- [ ] Prefer one cohesive module over many one-function files.
+- [ ] Add focused component or pure-module tests before migrating broad
+      characterization behavior.
+
+## Explicitly separate feature work
+
+- [ ] Do not add Animals scope, change picker selection/close behavior, alter
+      button copy/padding, or change tooltip chrome in this refactor.
+- [ ] Do not implement creatures-menu integration or new scoped-window launch
+      affordances in this refactor.
+- [ ] Do not implement Divider/ResizingPanel behavior until the responsive
+      integration phase explicitly begins.
+- [ ] Do not decompose Unit Info solely to increase file count; perform that
+      split when the Stats popover creates a concrete reuse boundary.
+- [ ] Do not mark corresponding `docs/project.todo` feature items complete
+      until their own behavior and live validation are finished.
+
+## Phase 0 - Baseline and ownership characterization
+
+- [ ] Record the clean/dirty worktree state and preserve unrelated changes.
+- [ ] Record current source size and responsibility baselines for:
+  - [ ] `ui/main_window.lua` imports, methods, and state fields;
+  - [ ] `ui/filter_panel.lua` constructor/factory responsibilities;
+  - [ ] `ui_format.lua` consumers and function groups;
+  - [ ] `tests/support/soulsearch_env.lua` loaders and widget stubs; and
+  - [ ] `module_registry.lua` entries and asserted dependency relationships.
+- [ ] Add or confirm focused characterization for:
+  - [ ] direct Filter Panel construction and child order;
+  - [ ] picker exclusivity and close transitions;
+  - [ ] Main Window use of component APIs;
+  - [ ] result and filter selection across refreshes;
+  - [ ] Results and Stats sort cycles, hitboxes, and persistence; and
+  - [ ] edited-module reload with open and dismissed windows.
+- [ ] Document the intended ownership boundary before moving code:
+  - [ ] widgets own their subviews and transient view state;
+  - [ ] presenters own display-model construction;
+  - [ ] the search session owns domain/search interaction state;
+  - [ ] Main Window binds widgets to the session and external adapters; and
+  - [ ] Main Screen owns screen registration and teardown.
+
+### Phase 0 gate
+
+- [ ] No production implementation has moved.
+- [ ] Focused characterization passes against the pre-refactor architecture.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 1 - Make Filter Panel fully class-owned
+
+- [ ] Move the widget-tree construction currently owned by
+      `filter_panel.create()` into `FilterPanel:init()`.
+- [ ] Instantiate the component directly as `FilterPanel{...}` from Main
+      Window.
+- [ ] Move constructor normalization such as initial unit-scope label
+      resolution into the class.
+- [ ] Remove the `create()` compatibility factory after every consumer and
+      test uses the class constructor.
+- [ ] Retain trivial one-purpose leaf factories for the external Edit button
+      and active-filter count unless they acquire independent state or
+      lifecycle behavior.
+- [ ] Tighten picker constructor contracts:
+  - [ ] remove duplicated or unused `window_id`, title, and visibility fields;
+  - [ ] put widget attributes on the widget rather than duplicating them in
+        callback/input tables; and
+  - [ ] keep only callbacks and domain payloads actually consumed by each
+        picker class.
+- [ ] Add focused tests proving that `FilterPanel:init()` owns the same child
+      IDs, order, frames, keys, callbacks, visibility, and paint order.
+- [ ] Update the module registry contract only if an obsolete factory contract
+      is currently asserted.
+
+### Phase 1 gate
+
+- [ ] `FilterPanel` is the only implementation owner of its composite tree.
+- [ ] No production or test consumer calls `filter_panel.create()`.
+- [ ] Trivial leaf factories remain stateless and local to their owning
+      module.
+- [ ] Filter Panel focused tests and broad UI characterization pass.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 2 - Enforce component APIs and consolidate transient UI state
+
+- [ ] Add narrow Filter Panel APIs for every remaining legitimate host action,
+      including selected-filter lookup, picker visibility/state transitions,
+      focus operations, choice updates, and tooltip resolution.
+- [ ] Migrate Main Window away from direct descendant access, including the
+      active `filter_list` selection path.
+- [ ] Migrate characterization tests that reach through Main Window into
+      Filter Panel focused tests or host-facing API assertions.
+- [ ] Delete recursive descendant republishing from Main Window once no
+      production consumer depends on it.
+- [ ] Replace the picker boolean matrix with one exclusive state:
+  - [ ] define the allowed picker values (`attribute`, `skill`, `race`,
+        `scope`, `preset`, or none);
+  - [ ] make open, toggle, close, and panel-dismiss transitions explicit;
+  - [ ] make invalid simultaneous-picker states unrepresentable; and
+  - [ ] preserve current query text and picker selection behavior.
+- [ ] Prefer Filter Panel ownership of transient picker state. Use a small
+      pure `filter_editor_state.lua` value module only if the transitions need
+      independent reuse or testing.
+- [ ] Remove `is_*_picker_open`, `on_toggle_*`, and `on_close_*` callback pairs
+      that exist only because Main Window currently owns component state.
+- [ ] Retain domain-changing callbacks for filters, scope, and presets.
+- [ ] Add a transition-table test covering every picker-to-picker,
+      picker-to-list, close, and panel-dismiss path.
+
+### Phase 2 gate
+
+- [ ] Main Window accesses only direct children and documented component APIs.
+- [ ] No recursive descendant aliases exist at the Main Window root.
+- [ ] At most one Filter Panel picker can be active.
+- [ ] The Filter Panel host contract is materially narrower than the previous
+      callback matrix.
+- [ ] Focus, mouse capture, tooltips, selection, and paint order match the
+      baseline.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 3 - Extract pure display-model presenters
+
+- [ ] Inventory `ui_format.lua` functions by actual consumer and ownership.
+- [ ] Extract cohesive pure presenters, using names based on final ownership:
+  - [ ] active-filter and attribute/skill/race picker choices;
+  - [ ] custom, role, combat, and skill preset sections;
+  - [ ] result choices, count/title, columns, and selection-independent header
+        text; and
+  - [ ] existing Stats presentation behavior where it already belongs in
+        `stats_presenter.lua`.
+- [ ] Keep presenters free of widgets, DFHack input/mouse state, persistence,
+      dialogs, printing, and mutable module-global state.
+- [ ] Pass explicit catalogs, filters, queries, sort values, and records into
+      presenter functions.
+- [ ] Return immutable-by-convention display snapshots containing only fields
+      consumed by components.
+- [ ] Split `ui_format.lua` only along cohesive presenter boundaries:
+  - [ ] retain genuinely shared text wrapping, truncation, glyph/token, and
+        pen helpers in a small common format module;
+  - [ ] avoid one module per formatting function; and
+  - [ ] remove cross-component dependencies that are no longer necessary.
+- [ ] Replace Main Window's choice-building loops with presenter calls.
+- [ ] Add direct presenter tests for empty, filtered, grouped, selected,
+      sorted, and no-match states.
+
+### Phase 3 gate
+
+- [ ] Main Window no longer constructs filter, picker, preset, or result text
+      tokens row by row.
+- [ ] Each display-model transformation has one pure implementation owner.
+- [ ] Components still receive the same choice payloads and visible text.
+- [ ] Presenter tests and UI characterization pass.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 4 - Extract the search-session application boundary
+
+- [ ] Define a pure `SearchSession` contract before implementation.
+- [ ] Move cohesive mutable search state out of Main Window:
+  - [ ] query text;
+  - [ ] validated filter state;
+  - [ ] unit scope;
+  - [ ] result-sort state;
+  - [ ] candidate row snapshots; and
+  - [ ] computed results and selected-result identity needed across refreshes.
+- [ ] Give the session explicit operations for filter add/remove/clear,
+      direction changes, priority movement, preset replacement, scope changes,
+      query changes, row replacement, result recomputation, and sort cycling.
+- [ ] Return change/effect information that lets Main Window request the
+      correct refresh and persistence actions without duplicating transition
+      logic.
+- [ ] Keep the session independent of:
+  - [ ] `gui.widgets` and component instances;
+  - [ ] dialogs and console output;
+  - [ ] filesystem preset storage;
+  - [ ] `dfhack.gui.revealInDwarfmodeMap()`; and
+  - [ ] direct world/unit collection.
+- [ ] Keep Main Window responsible for:
+  - [ ] binding component callbacks;
+  - [ ] candidate-provider execution and error presentation;
+  - [ ] preset load/save adapters and dialogs;
+  - [ ] window-settings writes;
+  - [ ] zoom/map actions;
+  - [ ] refresh dispatch into component APIs; and
+  - [ ] drag, resize, render, and global input behavior.
+- [ ] Preserve `ui_refresh.apply()` ordering or replace it only with a tested,
+      equally explicit effect/refresh pipeline.
+- [ ] Add direct SearchSession tests for every state transition, invalid input,
+      result recomputation, sort cycle, and selection-retention rule.
+- [ ] Reduce Main Window fields and methods after migration; do not leave
+      forwarding methods without a host/UI responsibility.
+
+### Phase 4 gate
+
+- [ ] Search/filter/scope/sort state can be exercised without constructing a
+      widget or faking DFHack GUI classes.
+- [ ] Main Window is primarily a widget adapter and orchestration boundary.
+- [ ] Session snapshots do not alias caller-owned tables.
+- [ ] Persistence and external I/O remain outside the session.
+- [ ] Direct session tests and broad UI characterization pass.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 5 - Unify sort state and sortable list/header behavior
+
+This phase implements the existing sortable-column-list architecture item from
+`docs/project.todo`. It must remain separately traceable there until its own
+feature and live-behavior requirements are complete.
+
+- [ ] Inspect the workspace DFHack widget implementations before designing a
+      custom component:
+  - [ ] `CycleHotkeyLabel`;
+  - [ ] applicable list/column widgets; and
+  - [ ] their mouse, focus, width, and resize contracts.
+- [ ] Record which built-in behavior can be reused and which SoulSearch
+      behavior still requires a custom composite.
+- [ ] Extract one configurable sort-state model supporting:
+  - [ ] allowed column keys;
+  - [ ] per-column initial direction;
+  - [ ] ascending, descending, and unsorted phases;
+  - [ ] normalization of persisted state;
+  - [ ] immutable snapshots; and
+  - [ ] deterministic next-state transitions.
+- [ ] Migrate both Results and Stats away from their separate normalization and
+      transition implementations.
+- [ ] Remove the result/stats `kind` branch from window configuration once the
+      shared model owns normalization.
+- [ ] Implement the reusable sortable header/list component only after the
+      state model is stable:
+  - [ ] model each column header as the approved built-in or custom leaf;
+  - [ ] preserve independent column boundaries and tooltips;
+  - [ ] preserve current Results and Stats rendering differences;
+  - [ ] preserve result submission, selection, and cursor behavior; and
+  - [ ] avoid coupling the reusable component to SoulSearch result/stat rows.
+- [ ] Migrate Results and Stats independently with focused tests after each
+      migration.
+
+### Phase 5 gate
+
+- [ ] Results and Stats use one sort-state transition implementation.
+- [ ] Persisted sort settings normalize through the same model used at
+      runtime.
+- [ ] Results and Stats no longer contain parallel sortable-header classes.
+- [ ] Sort cycles, exact column boundaries, tooltips, focus, selection, and
+      scrolling match the baseline.
+- [ ] The corresponding `docs/project.todo` item is updated only when its full
+      behavior is complete.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 6 - Consolidate test infrastructure and shared runtime policy
+
+- [ ] Introduce a small reusable script-loading test harness that accepts:
+  - [ ] a source path;
+  - [ ] an explicit `reqscript` dependency map;
+  - [ ] explicit `require` modules; and
+  - [ ] per-test global overrides.
+- [ ] Introduce one minimal widget/class stub with consistent support for:
+  - [ ] `defclass` inheritance and superclass dispatch;
+  - [ ] widget construction and `ATTRS` defaults needed by tested modules;
+  - [ ] `addviews` and subview indexing;
+  - [ ] focus, text, choices, selection, and cursor operations;
+  - [ ] mouse coordinates and input delegation; and
+  - [ ] only the layout methods exercised by tests.
+- [ ] Do not emulate all of DFHack or silently make every missing method a
+      no-op; unexpected dependencies should still fail clearly.
+- [ ] Migrate touched UI loaders incrementally, then remove duplicate local
+      class/constructor/widget implementations from
+      `tests/support/soulsearch_env.lua`.
+- [ ] Keep domain collaborators explicit so tests still reveal real module
+      boundaries.
+- [ ] Split the support file by responsibility only if the resulting modules
+      are cohesive, for example script loading, GUI stubs, and scenario
+      fixtures.
+- [ ] Extract one fortress/map availability policy module used by residents,
+      unit-scope providers, UI open guards, and other compatible entry points.
+- [ ] Preserve the existing exact user-facing availability messages.
+- [ ] Add focused availability tests for no map, wrong mode, valid fortress,
+      and downstream propagation.
+
+### Phase 6 gate
+
+- [ ] UI tests construct classes through one consistent minimal widget model.
+- [ ] No migrated loader carries a private incompatible class implementation.
+- [ ] Missing fake dependencies fail explicitly.
+- [ ] Fortress/map availability has one implementation owner.
+- [ ] The full pure-Lua suite passes without weakening assertions.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 7 - Make reload dependencies explicit
+
+- [ ] Add explicit dependency metadata to each registry entry, or introduce an
+      equivalently complete graph representation.
+- [ ] Validate that every dependency names a registered module unless it is an
+      explicitly documented external DFHack dependency.
+- [ ] Produce a stable topological load order that preserves deterministic
+      ordering among unrelated modules.
+- [ ] Detect and report dependency cycles with actionable module names.
+- [ ] Derive reverse clear order from the resolved forward order.
+- [ ] Keep contract name/type validation for every loaded module.
+- [ ] Replace selected index-comparison tests with complete edge assertions,
+      plus missing-node, cycle, stable-order, forward-load, and reverse-clear
+      tests.
+- [ ] Verify the command reload coordinator consumes only registry APIs and
+      does not duplicate graph knowledge.
+- [ ] Exercise reload after editing representative dependency, component,
+      Main Window, Main Screen, facade, and overlay modules.
+
+### Phase 7 gate
+
+- [ ] Every internal reload dependency is machine-checkable.
+- [ ] Forward load and reverse clear order are derived from one graph.
+- [ ] Missing dependencies and cycles fail before partial UI reconstruction.
+- [ ] Reload dismisses old screens and reconstructs one coherent module
+      generation.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 8 - Perform integration-driven component decomposition
+
+This phase coordinates existing `docs/project.todo` items. It must not mark
+those feature items complete merely because component files exist.
+
+- [ ] Begin Unit Info decomposition when the Stats popover needs a smaller
+      reusable component than the full current panel.
+- [ ] Confirm final naming and responsibility before renaming the existing
+      Stats panel to `UnitInfoPanel`.
+- [ ] Extract cohesive reusable widgets only where there is a real consumer:
+  - [ ] `UnitIdentity` for name/title/profession presentation;
+  - [ ] `MatchedFiltersPanel` for matched-filter title and rows; and
+  - [ ] `UnitStatsList` for stat columns, records, scrolling, sorting, and
+        tooltips.
+- [ ] Compose the full Unit Info panel from those widgets.
+- [ ] Make the popover consume `UnitStatsList` when it intentionally excludes
+      identity or matched-filter content.
+- [ ] Preserve shared Stats subject and presenter contracts rather than
+      copying row construction into each host.
+- [ ] Start Divider/ResizingPanel work only after hosts no longer depend on
+      descendant aliases or hard-coded component internals.
+- [ ] Keep responsive layout policy outside domain/session modules.
+- [ ] Add component-specific tests and perform live layout checks at minimum,
+      typical, and large window sizes.
+
+### Phase 8 gate
+
+- [ ] Each extracted Unit Info widget has at least two justified consumers or
+      one clear independent lifecycle/reuse boundary.
+- [ ] Main window and popover compose shared widgets without copied
+      implementations.
+- [ ] Responsive hosts use documented layout/component APIs.
+- [ ] Related `docs/project.todo` items reflect actual feature completion and
+      live validation.
+- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+
+## Phase 9 - Automated, packaged, reload, and live closure
+
+- [ ] Run separately and record:
+  - [ ] `tools/Build.ps1`;
+  - [ ] `tools/Test.ps1`;
+  - [ ] `tools/Publish.ps1`;
+  - [ ] `tools/VerifyPackage.ps1` against the produced archive; and
+  - [ ] `git diff --check`.
+- [ ] Verify the package contains every new runtime module and no deleted
+      compatibility module or duplicate implementation.
+- [ ] Run edited-module reload checks across every architectural layer.
+- [ ] Run a fortress-mode smoke pass covering:
+  - [ ] default and scoped window open/close/reopen;
+  - [ ] multiple independent windows;
+  - [ ] Filter Panel and every exclusive picker transition;
+  - [ ] filter add/remove/direction/priority/clear and preset workflows;
+  - [ ] unit-scope changes and candidate refresh;
+  - [ ] query, result selection retention, navigation, sorting, and zoom;
+  - [ ] Stats sorting, scrolling, and tooltips;
+  - [ ] window drag, resize, persistence, and teardown; and
+  - [ ] reload with windows open and after all windows are dismissed.
+- [ ] Confirm control-panel discoverability and claim-if-free `Ctrl-F`
+      bootstrap behavior remain intact.
+- [ ] Review `git diff -- docs/project.todo` and confirm only intentionally
+      completed feature items changed.
+
+### Phase 9 gate
+
+- [ ] Pure state, presenters, widgets, registry, package, reload, and live UI
+      behavior all validate their respective boundaries.
+- [ ] Automated, package, reload, and live observations are recorded
+      separately.
+- [ ] No compatibility alias, duplicate presenter, duplicate sort transition,
+      or parallel component implementation remains.
+
+## Definition of done
+
+- [ ] `FilterPanel` directly owns construction and transient state for its
+      widget subtree.
+- [ ] Main Window has no recursive descendant exposure and uses only component
+      APIs.
+- [ ] Main Window no longer owns display-model loops or pure search-session
+      transitions.
+- [ ] Results and Stats share one tested sort/list/header architecture.
+- [ ] `ui_format.lua` contains only genuinely cohesive shared formatting
+      behavior.
+- [ ] UI test environments use one consistent minimal class/widget harness.
+- [ ] Module dependency and reload order are derived from one validated graph.
+- [ ] Fortress/map availability has one owner.
+- [ ] Unit Info and responsive feature work composes these boundaries without
+      duplicated implementations.
+- [ ] Public behavior, lifecycle, persistence, bootstrap, and control-panel
+      integration remain intact.
+- [ ] Build, tests, package verification, whitespace checks, reload checks, and
+      live smoke validation are green with recorded evidence.
+
+## Execution evidence
+
+| Date | Phase/gate | Evidence | Result | Notes |
+| --- | --- | --- | --- | --- |
+
