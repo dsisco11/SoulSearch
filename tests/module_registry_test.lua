@@ -25,7 +25,7 @@ return function(test, repo_root)
         local stats_panel_index, tooltip_index, popover_index
         local race_filter_index, layout_index, modal_index, action_list_index
         local format_index, filter_panel_index, results_panel_index
-        local extensions_index
+        local extensions_index, pointer_index, tooltip_agent_index
         local main_window_index, main_screen_index, ui_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/filter_constants' then
@@ -72,6 +72,10 @@ return function(test, repo_root)
                 modal_index = index
             elseif name == 'internal/soulsearch/ui/widget_extensions' then
                 extensions_index = index
+            elseif name == 'internal/soulsearch/ui/pointer_dispatcher' then
+                pointer_index = index
+            elseif name == 'internal/soulsearch/ui/tooltip_agent' then
+                tooltip_agent_index = index
             elseif name == 'internal/soulsearch/ui/filter_action_list' then
                 action_list_index = index
             elseif name == 'internal/soulsearch/ui/filter_panel' then
@@ -110,6 +114,9 @@ return function(test, repo_root)
         test.assert_true(layout_index < format_index)
         test.assert_true(constants_index < format_index)
         test.assert_true(format_index < extensions_index)
+        test.assert_true(extensions_index < pointer_index)
+        test.assert_true(pointer_index < tooltip_agent_index)
+        test.assert_true(tooltip_agent_index < tooltip_index)
         test.assert_true(extensions_index < modal_index)
         test.assert_true(format_index < filter_panel_index)
         test.assert_true(format_index < results_panel_index)

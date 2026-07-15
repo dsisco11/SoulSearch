@@ -158,21 +158,27 @@ The active DFHack Lua API has no `pointer_policy`, `on_pointer_enter`, `on_point
 
 ## Phase 3 - Make tooltip presentation consume pointer state
 
-- [ ] Separate the existing tooltip renderer from tooltip discovery and component-specific content lookup.
-- [ ] Add one tooltip agent/host per independently rendered root context that observes its `PointerContext`.
-- [ ] Have the agent read only `pointer_context.target.tooltip` after pointer transition handling has completed.
-- [ ] Read the attribute on every update so direct control mutations are visible without callbacks or change subscriptions.
-- [ ] Validate the current tooltip value at read time and fail clearly for functions or other unsupported value types instead of invoking or silently accepting them.
-- [ ] Hide the tooltip immediately when there is no target, the target is blocked, or the current attribute is `nil`/empty.
-- [ ] Preserve the existing tooltip wrapping, screen-edge positioning, pens, and immediate hover timing.
-- [ ] Assign the tooltip renderer `pointer_policy='none'` so neither the renderer nor its label/subviews participate in target resolution.
-- [ ] Render the tooltip above ordinary root content without changing the pointer target selected beneath it.
-- [ ] Ensure tooltip rendering cannot leak pointer state or text between separate SoulSearch windows, popovers, or overlay instances.
-- [ ] Add focused tests for live text mutation, clearing text while hovered, target changes, renderer-subtree exclusion, window blocking, and per-root isolation.
+- [x] Separate the existing tooltip renderer from tooltip discovery and component-specific content lookup.
+- [x] Add one tooltip agent/host per independently rendered root context that observes its `PointerContext`.
+- [x] Have the agent read only `pointer_context.target.tooltip` after pointer transition handling has completed.
+- [x] Read the attribute on every update so direct control mutations are visible without callbacks or change subscriptions.
+- [x] Validate the current tooltip value at read time and fail clearly for functions or other unsupported value types instead of invoking or silently accepting them.
+- [x] Hide the tooltip immediately when there is no target, the target is blocked, or the current attribute is `nil`/empty.
+- [x] Preserve the existing tooltip wrapping, screen-edge positioning, pens, and immediate hover timing.
+- [x] Assign the tooltip renderer `pointer_policy='none'` so neither the renderer nor its label/subviews participate in target resolution.
+- [x] Render the tooltip above ordinary root content without changing the pointer target selected beneath it.
+- [x] Ensure tooltip rendering cannot leak pointer state or text between separate SoulSearch windows, popovers, or overlay instances.
+- [x] Add focused tests for live text mutation, clearing text while hovered, target changes, renderer-subtree exclusion, window blocking, and per-root isolation.
+
+### Phase 3 implementation notes
+
+`TooltipAgent` owns one `PointerContext` and one renderer for each root. It samples the mouse once, completes pointer transition handling, reads only the selected terminal target's current `tooltip` field, and passes the resulting text and sampled coordinates to `SoulSearchTooltip`. The renderer no longer accepts a getter callback or reads the mouse itself; it retains the existing formatting, placement, pens, and immediate rendering behavior.
+
+The main screen and stats popover update their agents before their root render pass; the stats overlay updates its agent during its normal overlay update. Each host constructs separate agent, context, and renderer instances. `SoulSearchTooltip` is explicitly `pointer_policy='none'`, so it remains topmost for rendering without becoming a target or obscuring the content below it.
 
 ### Phase 3 exit criteria
 
-- [ ] Tooltip presentation depends only on its root's current pointer target and that target's current `tooltip` attribute.
+- [x] Tooltip presentation depends only on its root's current pointer target and that target's current `tooltip` attribute.
 
 ## Phase 4 - Migrate static tooltip declarations
 
@@ -208,12 +214,12 @@ The active DFHack Lua API has no `pointer_policy`, `on_pointer_enter`, `on_point
 
 ## Phase 6 - Remove legacy aggregation and wire every host
 
-- [ ] Wire `SoulSearchScreen` to construct and update one pointer context and tooltip agent for its root widget tree.
-- [ ] Wire the stats popover screen and stats overlay widget root to their own isolated pointer contexts and tooltip agents.
+- [x] Wire `SoulSearchScreen` to construct and update one pointer context and tooltip agent for its root widget tree.
+- [x] Wire the stats popover screen and stats overlay widget root to their own isolated pointer contexts and tooltip agents.
 - [ ] Remove `SoulSearchWindow:get_tooltip_text()` and its hard-coded precedence chain.
 - [ ] Remove `FilterPanel:get_control_tooltip()`, `get_filter_action_tooltip()`, `get_descriptor_tooltip()`, and superseded button helpers.
 - [ ] Remove `ResultsPanel:get_header_tooltip()`, `UnitStatsList:get_tooltip_text()`, and tooltip-only forwarding methods after their replacements are active.
-- [ ] Remove `get_text` callback wiring from `SoulSearchTooltip` construction and rename the renderer/host types if their old names no longer describe their responsibilities.
+- [x] Remove `get_text` callback wiring from `SoulSearchTooltip` construction and rename the renderer/host types if their old names no longer describe their responsibilities.
 - [ ] Remove duplicated visibility and mouse-over helpers that are no longer used outside legacy tooltip discovery.
 - [ ] Update `module_registry.lua` contracts and reload ordering for the widget extension, pointer infrastructure, and tooltip host while retaining the normal-import guarantees established in Phase 1.
 - [ ] Search production code and tests for obsolete getter/provider callback APIs and parent-level tooltip precedence logic.

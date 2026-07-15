@@ -37,6 +37,10 @@ MODULES = {
         contract='PointerDispatcher', contract_type='table',
     },
     {
+        name='internal/soulsearch/ui/tooltip_agent',
+        contract='TooltipAgent', contract_type='table',
+    },
+    {
         name='internal/soulsearch/ui/modal_panel',
         contract='ModalPanelWindow', contract_type='table',
     },

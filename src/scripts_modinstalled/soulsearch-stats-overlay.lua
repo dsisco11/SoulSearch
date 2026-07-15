@@ -8,6 +8,7 @@ local config = reqscript('internal/soulsearch/stats_popover_config')
 local popover = reqscript('internal/soulsearch/stats_popover')
 local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList
 local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
+local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
 UNIT_CARD_FOCUS = 'dwarfmode/ViewSheets/UNIT'
 WIDGET_KEY = 'soulsearch_stats'
@@ -57,6 +58,7 @@ SoulSearchStatsOverlay.ATTRS{
 }
 
 function SoulSearchStatsOverlay:init()
+    self.tooltip = Tooltip{}
     self:addviews{
         widgets.Window{
             view_id='window', frame={l=0, t=0, r=0, b=0},
@@ -68,10 +70,9 @@ function SoulSearchStatsOverlay:init()
                 },
             },
         },
-        Tooltip{get_text=function()
-            return self.subviews.window.subviews.stats_panel:get_tooltip_text() or ''
-        end},
+        self.tooltip,
     }
+    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
 end
 
 function SoulSearchStatsOverlay:resolve_frame(width, height)
@@ -115,6 +116,7 @@ function SoulSearchStatsOverlay:overlay_onupdate()
     end
     local unit = get_unit_card_unit()
     if unit then self:update_subject(unit) end
+    self.tooltip_agent:update()
     return false
 end
 

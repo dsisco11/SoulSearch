@@ -44,11 +44,12 @@ return function(test, repo_root)
         return environment.SoulSearchTooltip
     end
 
-    test.case('Tooltip renderer: reads current text immediately and wraps it', function()
+    test.case('Tooltip renderer: renders supplied current text immediately and wraps it', function()
         local state = {mouse_x=1, mouse_y=1, width=22, height=10}
         local Tooltip = load_tooltip(state)
         local text = 'Difference from the attribute average.'
-        local tooltip = Tooltip{get_text=function() return text end}
+        local tooltip = Tooltip{}
+        tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
 
         tooltip:render('first')
         test.assert_equal('Difference from the\nattribute average.', tooltip.label.text)
@@ -59,6 +60,7 @@ return function(test, repo_root)
         test.assert_equal(1, tooltip.render_count)
 
         text = 'Updated immediately.'
+        tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
         tooltip:render('second')
         test.assert_equal('Updated immediately.', tooltip.label.text)
         test.assert_equal(2, tooltip.render_count)
@@ -68,7 +70,8 @@ return function(test, repo_root)
     test.case('Tooltip renderer: clamps placement and stays hidden without text', function()
         local state = {mouse_x=9, mouse_y=4, width=10, height=5}
         local Tooltip = load_tooltip(state)
-        local tooltip = Tooltip{get_text=function() return 'Tip' end}
+        local tooltip = Tooltip{}
+        tooltip:set_tooltip('Tip', state.mouse_x, state.mouse_y)
 
         tooltip:render('edge')
         test.assert_equal(5, tooltip.frame.l)
@@ -76,12 +79,12 @@ return function(test, repo_root)
         test.assert_equal(5, tooltip.frame.w)
         test.assert_equal(3, tooltip.frame.h)
 
-        tooltip.get_text=function() return '' end
+        tooltip:set_tooltip('', state.mouse_x, state.mouse_y)
         tooltip:render('empty')
         test.assert_equal(1, tooltip.render_count)
 
         state.mouse_x = nil
-        tooltip.get_text=function() return 'Hidden without a pointer' end
+        tooltip:set_tooltip('Hidden without a pointer', state.mouse_x, state.mouse_y)
         tooltip:render('no-pointer')
         test.assert_equal(1, tooltip.render_count)
     end)

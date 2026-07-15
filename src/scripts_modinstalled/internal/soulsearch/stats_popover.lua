@@ -8,6 +8,7 @@ local subject_factory = reqscript('internal/soulsearch/stats_subject')
 local config = reqscript('internal/soulsearch/stats_popover_config')
 local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList
 local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
+local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 local screen_registry = reqscript('internal/soulsearch/screen_registry')
 
 local singleton
@@ -72,12 +73,14 @@ function SoulSearchStatsPopoverScreen:init(info)
             },
         },
     }
-    self:addviews{
-        self.window,
-        Tooltip{get_text=function()
-            return self.window.subviews.stats_panel:get_tooltip_text() or ''
-        end},
-    }
+    self.tooltip = Tooltip{}
+    self:addviews{self.window, self.tooltip}
+    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
+end
+
+function SoulSearchStatsPopoverScreen:onRender()
+    self.tooltip_agent:update()
+    SoulSearchStatsPopoverScreen.super.onRender(self)
 end
 
 function SoulSearchStatsPopoverScreen:onShow()

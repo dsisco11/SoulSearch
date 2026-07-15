@@ -7,6 +7,7 @@ local SoulSearchWindow =
     reqscript('internal/soulsearch/ui/main_window').SoulSearchWindow
 local SoulSearchTooltip =
     reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
+local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
 ---@class SoulSearchScreen: gui.ZScreen
 ---@field window SoulSearchWindow
@@ -22,10 +23,14 @@ function SoulSearchScreen:init()
         settings_id=self.settings_id,
         settings=self.settings,
     }
-    self:addviews{
-        self.window,
-        SoulSearchTooltip{get_text=function() return self.window:get_tooltip_text() end},
-    }
+    self.tooltip = SoulSearchTooltip{}
+    self:addviews{self.window, self.tooltip}
+    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
+end
+
+function SoulSearchScreen:onRender()
+    self.tooltip_agent:update()
+    SoulSearchScreen.super.onRender(self)
 end
 
 function SoulSearchScreen:onShow()

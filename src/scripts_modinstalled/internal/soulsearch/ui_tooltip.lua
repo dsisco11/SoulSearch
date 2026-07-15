@@ -11,15 +11,28 @@ local TEXT = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
 SoulSearchTooltip = defclass(SoulSearchTooltip, widgets.Window)
 SoulSearchTooltip.ATTRS{frame={l=0,t=0,w=1,h=3}, frame_style=gui.FRAME_THIN,
     frame_background=BACKGROUND, frame_inset=0, draggable=false,
-    no_force_pause_badge=true, get_text=DEFAULT_NIL}
+    no_force_pause_badge=true, pointer_policy='none'}
 function SoulSearchTooltip:init()
+    self.tooltip_text = nil
+    self.mouse_x = nil
+    self.mouse_y = nil
     self.label = widgets.Label{frame={l=0,t=0,w=1,h=1}, auto_height=false,
         text_pen=TEXT, text=''}
     self:addviews{self.label}
 end
+
+---@param text string|nil
+---@param mouse_x integer|nil
+---@param mouse_y integer|nil
+function SoulSearchTooltip:set_tooltip(text, mouse_x, mouse_y)
+    self.tooltip_text = text
+    self.mouse_x = mouse_x
+    self.mouse_y = mouse_y
+end
+
 function SoulSearchTooltip:render(dc)
-    local mouse_x, mouse_y = dfhack.screen.getMousePos()
-    local text = self.get_text and self.get_text() or ''
+    local mouse_x, mouse_y = self.mouse_x, self.mouse_y
+    local text = self.tooltip_text or ''
     if not mouse_x or text == '' then return end
     local sw, sh = dfhack.screen.getWindowSize()
     local lines = ui_format.wrap_text(text, math.max(1, math.min(60, sw - 2)))

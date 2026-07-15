@@ -809,6 +809,9 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
         ['internal/soulsearch/ui_tooltip']={
             SoulSearchTooltip=function(info) return info end,
         },
+        ['internal/soulsearch/ui/tooltip_agent']={
+            TooltipAgent={new=function() return {update=function() end} end},
+        },
         ['internal/soulsearch/screen_registry']=screen_registry,
         ['internal/soulsearch/window_config']=window_config,
         ['internal/soulsearch/window_settings']=window_settings,
@@ -1046,6 +1049,9 @@ function M.load_ui_characterization(repo_root)
                 return info
             end,
         },
+        ['internal/soulsearch/ui/tooltip_agent']={
+            TooltipAgent={new=function() return {update=function() end} end},
+        },
         ['internal/soulsearch/ui_glyphs']={CP437_VERTICAL_LINE=179},
         ['internal/soulsearch/filter_constants']={FILTER_CONSTANTS={
             direction={HIGH='high', LOW='low'},
@@ -1198,6 +1204,9 @@ function M.load_stats_popover(repo_root, options)
         ['internal/soulsearch/ui/unit_stats_list']={UnitStatsList=panel},
         ['internal/soulsearch/ui/widget_extensions']={},
         ['internal/soulsearch/ui_tooltip']={SoulSearchTooltip=function(info) return info end},
+        ['internal/soulsearch/ui/tooltip_agent']={
+            TooltipAgent={new=function() return {update=function() end} end},
+        },
         ['internal/soulsearch/screen_registry']=registry,
     }
     local globals={
@@ -1333,6 +1342,9 @@ function M.load_stats_overlay(repo_root, options)
             end
             if name == 'internal/soulsearch/ui_tooltip' then
                 return {SoulSearchTooltip=function(info) return info end}
+            end
+            if name == 'internal/soulsearch/ui/tooltip_agent' then
+                return {TooltipAgent={new=function() return {update=function() end} end}}
             end
             error('unexpected reqscript: ' .. name)
         end,
