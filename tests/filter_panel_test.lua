@@ -61,9 +61,14 @@ return function(test, repo_root)
             'internal/soulsearch/ui/unit_scope_picker'].UnitScopePicker))
     end)
 
-    test.case('filter panel: owns picker hierarchy, stable IDs, and paint order', function()
-        local state, calls = {panel=true}, {}
-        local panel = filter_panel.create(make_inputs(state, calls))
+    test.case('filter panel: initializer owns picker hierarchy and paint order', function()
+        local state, calls = {panel=true, attribute=false, skill=false, race=false,
+            scope=false, preset=false}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
         test.assert_equal('filter_panel_window', panel.view_id)
         test.assert_sequence({
             'close_filter_panel_button', 'unit_scope_label', 'unit_scope_edit',
@@ -85,11 +90,24 @@ return function(test, repo_root)
             by_id(panel.subviews, 'available_skill_window').subviews[2].key)
         test.assert_equal('CUSTOM_G',
             by_id(panel.subviews, 'available_race_window').subviews[2].key)
+        test.assert_true(by_id(panel.subviews, 'filter_list').frame ~= nil)
+        test.assert_true(by_id(panel.subviews, 'available_filter_window').frame ~= nil)
+        test.assert_false(by_id(panel.subviews, 'available_filter_window').visible())
+        test.assert_true(by_id(panel.subviews, 'filter_list').visible())
+        test.assert_equal('Include: Residents',
+            by_id(panel.subviews, 'unit_scope_label').text)
+        state.attribute = true
+        test.assert_false(by_id(panel.subviews, 'filter_list').visible())
+        test.assert_true(by_id(panel.subviews, 'available_filter_window').visible())
     end)
 
     test.case('filter panel: picker submissions preserve descriptor and preset payloads', function()
         local state, calls = {panel=true}, {}
-        local panel = filter_panel.create(make_inputs(state, calls))
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
         by_id(panel.subviews, 'available_filter_window').subviews[3].on_submit(
             1, {descriptor={id='attribute:strength'}})
         by_id(panel.subviews, 'preset_picker_window').subviews[4].on_submit(
@@ -103,7 +121,11 @@ return function(test, repo_root)
 
     test.case('filter panel: narrow update APIs own child choice updates', function()
         local state, calls = {panel=true}, {}
-        local panel = filter_panel.create(make_inputs(state, calls))
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
         index_subviews(panel)
         local function choices(view, values, selected)
             view.last_choices, view.last_selected = values, selected

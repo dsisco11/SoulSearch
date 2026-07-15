@@ -75,6 +75,62 @@ function FilterPanel:init(info)
     FilterPanel.super.init(self, info)
     self.inputs = info.inputs
     self.picker_choices = {}
+    local inputs = self.inputs
+    local unit_scope_label
+    for _, option in ipairs(inputs.unit_scope_options) do
+        if option.value == inputs.unit_scope then unit_scope_label = option.label break end
+    end
+    self:addviews{
+        widgets.TextButton{view_id='close_filter_panel_button',
+            frame=ui_layout.get_frame('filter_panel_close'), label='X',
+            on_activate=inputs.on_close_filter_panel},
+        widgets.Label{view_id='unit_scope_label', frame=ui_layout.get_frame('unit_scope'),
+            text=ui_format.format_unit_scope_control(unit_scope_label)},
+        widgets.TextButton{view_id='unit_scope_edit', frame=ui_layout.get_frame('unit_scope_edit'),
+            label='Edit', on_activate=inputs.on_toggle_unit_scope_picker},
+        widgets.TextButton{view_id='add_filter_button', frame=ui_layout.get_frame('add_filter'),
+            key='CUSTOM_A', label='Add attribute filter', on_activate=inputs.on_toggle_attribute_picker},
+        widgets.TextButton{view_id='add_skill_button', frame=ui_layout.get_frame('add_skill'),
+            key='CUSTOM_S', label='Add skill filter', on_activate=inputs.on_toggle_skill_picker},
+        widgets.TextButton{view_id='add_race_button', frame=ui_layout.get_frame('add_race'),
+            key='CUSTOM_G', label='Add race filter', on_activate=inputs.on_toggle_race_picker},
+        widgets.TextButton{view_id='clear_filters_button', frame=ui_layout.get_frame('clear_filters'),
+            key='CUSTOM_C', label='Clear filters', on_activate=inputs.on_clear},
+        widgets.TextButton{view_id='preset_button', frame=ui_layout.get_frame('presets'),
+            key='CUSTOM_P', label='Filter presets', on_activate=inputs.on_toggle_preset_picker},
+        FilterActionList{view_id='filter_list', frame=ui_layout.get_frame('filter_list'),
+            visible=function()
+                return not inputs.is_attribute_picker_open() and not inputs.is_skill_picker_open() and
+                    not inputs.is_race_picker_open() and not inputs.is_unit_scope_picker_open() and
+                    not inputs.is_preset_picker_open()
+            end, on_filter_action=inputs.on_filter_action},
+        searchable_picker.SearchablePicker{view_id='available_filter_window',
+            frame=ui_layout.get_frame('picker'), frame_title='Select attribute/trait',
+            draggable=false, visible=inputs.is_attribute_picker_open, kind='attribute', inputs={
+            on_query=inputs.on_attribute_query, on_close=inputs.on_close_picker,
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
+        searchable_picker.SearchablePicker{view_id='available_race_window',
+            frame=ui_layout.get_frame('picker'), frame_title='Select race',
+            draggable=false, visible=inputs.is_race_picker_open, kind='race', inputs={
+            on_query=inputs.on_race_query, on_close=inputs.on_close_picker,
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
+        searchable_picker.SearchablePicker{view_id='available_skill_window',
+            frame=ui_layout.get_frame('picker'), frame_title='Select skill',
+            draggable=false, visible=inputs.is_skill_picker_open, kind='skill', inputs={
+            on_query=inputs.on_skill_query, on_close=inputs.on_close_picker,
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
+        preset_picker.PresetPicker{view_id='preset_picker_window',
+            frame=ui_layout.get_frame('preset_picker'), frame_title='Filter presets',
+            draggable=false, visible=inputs.is_preset_picker_open, inputs={
+            on_close=inputs.on_close_preset_picker, on_save=inputs.on_save_preset,
+            on_query=inputs.on_preset_query, on_load=inputs.on_load_preset,
+            on_load_default=inputs.on_load_default_preset, on_load_role=inputs.on_load_role_preset}},
+        unit_scope_picker.UnitScopePicker{view_id='unit_scope_picker_window',
+            frame=ui_layout.get_unit_scope_picker_frame(#inputs.unit_scope_options),
+            frame_title='Search scope', draggable=false,
+            visible=inputs.is_unit_scope_picker_open, inputs={
+            options=inputs.unit_scope_options, on_select=inputs.on_unit_scope_change}},
+    }
 end
 
 ---@param choices table[]
@@ -190,84 +246,6 @@ end
 ---@field on_race_query fun(text: string)
 ---@field on_add fun(filter_id: string)
 ---@field on_filter_action fun(filter_id: string, action: string)
-
----@param inputs SoulSearchFilterPanelInputs
----@return FilterPanel
-function create(inputs)
-    local unit_scope_label
-    for _, option in ipairs(inputs.unit_scope_options) do
-        if option.value == inputs.unit_scope then unit_scope_label = option.label break end
-    end
-    return FilterPanel{
-        view_id='filter_panel_window', frame=ui_layout.get_frame('filter_panel'),
-        frame_title='Search filters', draggable=false,
-        visible=inputs.is_filter_panel_open, is_open=inputs.is_filter_panel_open,
-        on_open=inputs.on_open_filter_panel, on_close=inputs.on_close_filter_panel_state,
-        inputs=inputs,
-        subviews={
-            widgets.TextButton{view_id='close_filter_panel_button',
-                frame=ui_layout.get_frame('filter_panel_close'), label='X',
-                on_activate=inputs.on_close_filter_panel},
-            widgets.Label{view_id='unit_scope_label', frame=ui_layout.get_frame('unit_scope'),
-                text=ui_format.format_unit_scope_control(unit_scope_label)},
-            widgets.TextButton{view_id='unit_scope_edit', frame=ui_layout.get_frame('unit_scope_edit'),
-                label='Edit', on_activate=inputs.on_toggle_unit_scope_picker},
-            widgets.TextButton{view_id='add_filter_button', frame=ui_layout.get_frame('add_filter'),
-                key='CUSTOM_A', label='Add attribute filter', on_activate=inputs.on_toggle_attribute_picker},
-            widgets.TextButton{view_id='add_skill_button', frame=ui_layout.get_frame('add_skill'),
-                key='CUSTOM_S', label='Add skill filter', on_activate=inputs.on_toggle_skill_picker},
-            widgets.TextButton{view_id='add_race_button', frame=ui_layout.get_frame('add_race'),
-                key='CUSTOM_G', label='Add race filter', on_activate=inputs.on_toggle_race_picker},
-            widgets.TextButton{view_id='clear_filters_button', frame=ui_layout.get_frame('clear_filters'),
-                key='CUSTOM_C', label='Clear filters', on_activate=inputs.on_clear},
-            widgets.TextButton{view_id='preset_button', frame=ui_layout.get_frame('presets'),
-                key='CUSTOM_P', label='Filter presets', on_activate=inputs.on_toggle_preset_picker},
-            FilterActionList{view_id='filter_list', frame=ui_layout.get_frame('filter_list'),
-                visible=function()
-                    return not inputs.is_attribute_picker_open() and not inputs.is_skill_picker_open() and
-                        not inputs.is_race_picker_open() and not inputs.is_unit_scope_picker_open() and
-                        not inputs.is_preset_picker_open()
-                end, on_filter_action=inputs.on_filter_action},
-            searchable_picker.SearchablePicker{view_id='available_filter_window',
-                frame=ui_layout.get_frame('picker'), frame_title='Select attribute/trait',
-                draggable=false, visible=inputs.is_attribute_picker_open, inputs={
-                window_id='available_filter_window', list_id='available_filter_list',
-                search_id='attribute_search_field', close_id='close_filter_picker_button',
-                title='Select attribute/trait', visible=inputs.is_attribute_picker_open, key='CUSTOM_T',
-                on_query=inputs.on_attribute_query, on_close=inputs.on_close_picker,
-                on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
-            searchable_picker.SearchablePicker{view_id='available_race_window',
-                frame=ui_layout.get_frame('picker'), frame_title='Select race',
-                draggable=false, visible=inputs.is_race_picker_open, inputs={
-                window_id='available_race_window', list_id='available_race_list',
-                search_id='race_search_field', close_id='close_race_picker_button', title='Select race',
-                visible=inputs.is_race_picker_open, key='CUSTOM_G', on_query=inputs.on_race_query,
-                on_close=inputs.on_close_picker,
-                on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
-            searchable_picker.SearchablePicker{view_id='available_skill_window',
-                frame=ui_layout.get_frame('picker'), frame_title='Select skill',
-                draggable=false, visible=inputs.is_skill_picker_open, inputs={
-                window_id='available_skill_window', list_id='available_skill_list',
-                search_id='skill_search_field', close_id='close_skill_picker_button', title='Select skill',
-                visible=inputs.is_skill_picker_open, key='CUSTOM_K', on_query=inputs.on_skill_query,
-                on_close=inputs.on_close_picker,
-                on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
-            preset_picker.PresetPicker{view_id='preset_picker_window',
-                frame=ui_layout.get_frame('preset_picker'), frame_title='Filter presets',
-                draggable=false, visible=inputs.is_preset_picker_open, inputs={
-                visible=inputs.is_preset_picker_open,
-                on_close=inputs.on_close_preset_picker, on_save=inputs.on_save_preset,
-                on_query=inputs.on_preset_query, on_load=inputs.on_load_preset,
-                on_load_default=inputs.on_load_default_preset, on_load_role=inputs.on_load_role_preset}},
-            unit_scope_picker.UnitScopePicker{view_id='unit_scope_picker_window',
-                frame=ui_layout.get_unit_scope_picker_frame(#inputs.unit_scope_options),
-                frame_title='Search scope', draggable=false,
-                visible=inputs.is_unit_scope_picker_open, inputs={
-                visible=inputs.is_unit_scope_picker_open,
-                options=inputs.unit_scope_options, on_select=inputs.on_unit_scope_change}},
-        },
-    }
-end
 
 ---@param on_activate fun()
 ---@return table

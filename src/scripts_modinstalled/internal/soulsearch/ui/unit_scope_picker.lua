@@ -4,7 +4,6 @@ local widgets = require('gui.widgets')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 ---@class SoulSearchUnitScopePickerInputs
----@field visible fun(): boolean
 ---@field options {label: string, value: SoulSearchUnitScope}[]
 ---@field on_select fun(scope: SoulSearchUnitScope)
 

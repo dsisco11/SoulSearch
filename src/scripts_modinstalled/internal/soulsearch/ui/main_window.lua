@@ -17,6 +17,7 @@ local filter_presets = reqscript('internal/soulsearch/filter_presets')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local text_match = reqscript('internal/soulsearch/text_match')
 local filter_panel = reqscript('internal/soulsearch/ui/filter_panel')
+local FilterPanel = filter_panel.FilterPanel
 local ResultsPanel = reqscript('internal/soulsearch/ui/results_panel').ResultsPanel
 local ui_format = reqscript('internal/soulsearch/ui_format')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
@@ -250,7 +251,14 @@ function SoulSearchWindow:init()
     table.insert(views, create_close_button(function()
         self.parent_view:dismiss()
     end))
-    table.insert(views, filter_panel.create{
+    table.insert(views, FilterPanel{
+        view_id='filter_panel_window', frame=ui_layout.get_frame('filter_panel'),
+        frame_title='Search filters', draggable=false,
+        visible=function() return self.filter_panel_open end,
+        is_open=function() return self.filter_panel_open end,
+        on_open=function() self:open_filter_panel() end,
+        on_close=function() self:close_filter_panel_state() end,
+        inputs={
         is_filter_panel_open=function() return self.filter_panel_open end,
         on_open_filter_panel=function() self:open_filter_panel() end,
         on_close_filter_panel_state=function()
@@ -301,6 +309,7 @@ function SoulSearchWindow:init()
         on_filter_action=function(filter_id, action)
             self:handle_filter_action(filter_id, action)
         end,
+        },
     })
     self:addviews(views)
     expose_descendant_subviews(self, self.subviews)

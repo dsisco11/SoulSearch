@@ -4,7 +4,6 @@ local widgets = require('gui.widgets')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 ---@class SoulSearchPresetPickerInputs
----@field visible fun(): boolean
 ---@field on_close fun()
 ---@field on_save fun()
 ---@field on_query fun(text: string)

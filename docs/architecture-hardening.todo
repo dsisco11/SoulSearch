@@ -136,36 +136,36 @@ inspection alone.
 
 ## Phase 1 - Make Filter Panel fully class-owned
 
-- [ ] Move the widget-tree construction currently owned by
+- [x] Move the widget-tree construction currently owned by
       `filter_panel.create()` into `FilterPanel:init()`.
-- [ ] Instantiate the component directly as `FilterPanel{...}` from Main
+- [x] Instantiate the component directly as `FilterPanel{...}` from Main
       Window.
-- [ ] Move constructor normalization such as initial unit-scope label
+- [x] Move constructor normalization such as initial unit-scope label
       resolution into the class.
-- [ ] Remove the `create()` compatibility factory after every consumer and
+- [x] Remove the `create()` compatibility factory after every consumer and
       test uses the class constructor.
-- [ ] Retain trivial one-purpose leaf factories for the external Edit button
+- [x] Retain trivial one-purpose leaf factories for the external Edit button
       and active-filter count unless they acquire independent state or
       lifecycle behavior.
-- [ ] Tighten picker constructor contracts:
-  - [ ] remove duplicated or unused `window_id`, title, and visibility fields;
-  - [ ] put widget attributes on the widget rather than duplicating them in
+- [x] Tighten picker constructor contracts:
+  - [x] remove duplicated or unused `window_id`, title, and visibility fields;
+  - [x] put widget attributes on the widget rather than duplicating them in
         callback/input tables; and
-  - [ ] keep only callbacks and domain payloads actually consumed by each
+  - [x] keep only callbacks and domain payloads actually consumed by each
         picker class.
-- [ ] Add focused tests proving that `FilterPanel:init()` owns the same child
+- [x] Add focused tests proving that `FilterPanel:init()` owns the same child
       IDs, order, frames, keys, callbacks, visibility, and paint order.
-- [ ] Update the module registry contract only if an obsolete factory contract
+- [x] Update the module registry contract only if an obsolete factory contract
       is currently asserted.
 
 ### Phase 1 gate
 
-- [ ] `FilterPanel` is the only implementation owner of its composite tree.
-- [ ] No production or test consumer calls `filter_panel.create()`.
-- [ ] Trivial leaf factories remain stateless and local to their owning
+- [x] `FilterPanel` is the only implementation owner of its composite tree.
+- [x] No production or test consumer calls `filter_panel.create()`.
+- [x] Trivial leaf factories remain stateless and local to their owning
       module.
-- [ ] Filter Panel focused tests and broad UI characterization pass.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] Filter Panel focused tests and broad UI characterization pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 2 - Enforce component APIs and consolidate transient UI state
 
@@ -524,3 +524,4 @@ those feature items complete merely because component files exist.
 | Date | Phase/gate | Evidence | Result | Notes |
 | --- | --- | --- | --- | --- |
 | 2026-07-14 | Phase 0 | Ownership baseline; picker-transition and Main Window component-delegation characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; no production implementation moved. |
+| 2026-07-14 | Phase 1 | `FilterPanel:init()` composite-tree ownership; direct class construction; picker input-contract cleanup; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; obsolete `filter_panel.create()` factory removed. |
