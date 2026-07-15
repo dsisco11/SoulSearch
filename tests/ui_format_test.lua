@@ -10,6 +10,58 @@ end
 
 return function(test, repo_root)
     local format = soulsearch_env.load_ui_format(repo_root)
+    local result_presenter = soulsearch_env.load_result_presenter(repo_root)
+    local filter_presenter = soulsearch_env.load_filter_presenter(repo_root)
+
+    test.case('Result presenter: snapshots empty and sorted result displays', function()
+        local empty = result_presenter.present({}, nil, false)
+        test.assert_equal('Results (0)', empty.title)
+        test.assert_sequence({}, empty.choices)
+        local display = result_presenter.present({{
+            name='Urist', profession='Miner', unit_id=7,
+        }}, 'name', true)
+        test.assert_equal('Results (1)', display.title)
+        test.assert_equal('Urist', display.choices[1].result.name)
+        test.assert_equal('Name ' .. string.char(25), display.columns:sub(1, 6))
+    end)
+
+    test.case('Filter presenter: selected, grouped, filtered, and empty choices', function()
+        local descriptors = {
+            {id='attribute:strength', label='Strength', kind='physical_attribute'},
+            {id='skill:mining', label='Mining', kind='skill', category='Labor'},
+            {id='race_group:humanoids', label='Humanoids', kind='race'},
+            {id='race:dwarf', label='Dwarves', kind='race'},
+        }
+        local filters = {{id='attribute:strength', direction='high'}}
+        local active = filter_presenter.present_active(descriptors, filters)
+        test.assert_equal('Strength', active[1].descriptor.label)
+        local available = filter_presenter.present_available(descriptors, filters,
+            'min', 'No matching attributes.')
+        test.assert_equal('Mining', available[1].descriptor.label)
+        local skills = filter_presenter.present_skills(descriptors, filters,
+            '', {'Labor'})
+        test.assert_equal('Labor', skills[1].search_key)
+        test.assert_equal('Mining', skills[2].descriptor.label)
+        local races = filter_presenter.present_races({descriptors[3], descriptors[4]}, filters, '')
+        test.assert_equal('', races[2].text)
+        test.assert_equal('No matching attributes.', filter_presenter.present_available(
+            descriptors, filters, 'zzz', 'No matching attributes.')[1].text)
+    end)
+
+    test.case('Filter presenter: preset sections and selected scope are stable', function()
+        local presets = filter_presenter.present_presets({'Saved'},
+            {{id='miner', label='Miner'}}, {{id='soldier', label='Soldier'}},
+            {{id='skill:mine', label='Mining'}}, '')
+        test.assert_sequence({'Custom presets', '  Saved', 'Role presets', '  Miner',
+            'Combat presets', '  Soldier', 'Skill presets', '  Mining'},
+            (function() local texts = {}; for _, choice in ipairs(presets) do
+                table.insert(texts, choice.text) end; return texts end)())
+        local _, selected, label = filter_presenter.present_scopes({
+            {label='Residents', value='residents'}, {label='Visitors', value='visitors'},
+        }, 'visitors')
+        test.assert_equal(2, selected)
+        test.assert_equal('Visitors', label)
+    end)
 
     test.case('UI format: result row snapshot preserves widths', function()
         local text = format.format_result_choice{

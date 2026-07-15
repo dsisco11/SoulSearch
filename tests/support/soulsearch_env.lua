@@ -367,6 +367,30 @@ function M.load_ui_format(repo_root)
         globals)
 end
 
+function M.load_result_presenter(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/result_presenter.lua', {
+        reqscript=function(name)
+            assert(name == 'internal/soulsearch/ui_format')
+            return ui_format
+        end,
+    })
+end
+
+function M.load_filter_presenter(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    local constants = M.load_filter_constants(repo_root)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/filter_presenter.lua', {
+        reqscript=function(name)
+            if name == 'internal/soulsearch/ui_format' then return ui_format end
+            if name == 'internal/soulsearch/filter_constants' then return constants end
+            error('unexpected reqscript: ' .. tostring(name))
+        end,
+    })
+end
+
 function M.load_stats_layout(repo_root)
     return module_loader.load(
         repo_root,
@@ -921,6 +945,31 @@ function M.load_ui_characterization(repo_root)
         ['internal/soulsearch/ui/filter_panel']=filter_panel,
         ['internal/soulsearch/ui/results_panel']=results_panel,
         ['internal/soulsearch/ui_format']=ui_format,
+        ['internal/soulsearch/filter_presenter']={
+            present_active=function() return {{text='Use Add attribute, Add skill, or Add race.'}} end,
+            present_available=function(_, _, _, text) return {{text=text}} end,
+            present_skills=function() return {{text='No matching skills.'}} end,
+            present_races=function() return {{text='No matching races.'}} end,
+            present_scopes=function(options, scope)
+                local choices, selected, label = {}, nil, nil
+                for index, option in ipairs(options) do
+                    if option.value == scope then selected, label = index, option.label end
+                    table.insert(choices, {text=ui_format.format_unit_scope_choice(option.label, option.value == scope), scope=option.value})
+                end
+                return choices, selected, label
+            end,
+            present_presets=function() return {{text='No matching presets.'}} end,
+        },
+        ['internal/soulsearch/result_presenter']={present=function(results, key, reverse)
+            local choices = {}
+            for _, result in ipairs(results) do table.insert(choices, {
+                text=ui_format.format_result_choice(result), result=result,
+                search_key=result.name}) end
+            local title = ('Results (%d)'):format(#choices)
+            return {choices=choices, title=title,
+                underline=ui_format.get_title_underline(title),
+                columns=ui_format.format_result_columns(key, reverse)}
+        end},
         ['internal/soulsearch/ui_layout']=ui_layout,
         ['internal/soulsearch/ui_refresh']=ui_refresh,
         ['internal/soulsearch/stats_panel']={

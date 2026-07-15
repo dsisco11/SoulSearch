@@ -20,6 +20,8 @@ local filter_panel = reqscript('internal/soulsearch/ui/filter_panel')
 local FilterPanel = filter_panel.FilterPanel
 local ResultsPanel = reqscript('internal/soulsearch/ui/results_panel').ResultsPanel
 local ui_format = reqscript('internal/soulsearch/ui_format')
+local result_presenter = reqscript('internal/soulsearch/result_presenter')
+local filter_presenter = reqscript('internal/soulsearch/filter_presenter')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
@@ -356,26 +358,8 @@ end
 
 ---@param selected integer|nil
 function SoulSearchWindow:refresh_active_filter_choices(selected)
-    local choices = {}
-    local ranking_priorities = {}
-    local ranking_filters = filter_state.get_ranking_filters(self.filter_state)
-    for index, filter in ipairs(ranking_filters) do
-        ranking_priorities[filter.id] = index
-    end
-    for _, descriptor in ipairs(self:get_active_filter_descriptors()) do
-        table.insert(choices, {
-            text=ui_format.format_active_filter_choice(
-                descriptor,
-                filter_state.get_direction(self.filter_state, descriptor.id),
-                ranking_priorities[descriptor.id],
-                #ranking_filters),
-            descriptor=descriptor,
-            search_key=descriptor.label,
-        })
-    end
-    if #choices == 0 then
-        table.insert(choices, {text='Use Add attribute, Add skill, or Add race.'})
-    end
+    local choices = filter_presenter.present_active(
+        self:get_active_filter_descriptors(), filter_state.get_filters(self.filter_state))
     self.subviews.filter_panel_window:set_active_filter_choices(choices, selected)
     self.subviews.active_filter_count:setText(
         'Filters: ' .. filter_state.count(self.filter_state))
@@ -390,74 +374,9 @@ end
 
 ---Refreshes the saved preset names displayed by the preset picker.
 function SoulSearchWindow:refresh_preset_choices()
-    local choices = {}
-    local defaults = filter_defaults.get_all()
-    local roles = role_presets.get_role_presets()
-    local combat = role_presets.get_combat_presets()
-    local saved = filter_presets.list()
-    local has_saved = false
-    for _, name in ipairs(saved) do
-        if text_match.contains(name, self.preset_query) then
-            has_saved = true
-            break
-        end
-    end
-
-    if has_saved then table.insert(choices, {text='Custom presets'}) end
-    for _, name in ipairs(saved) do
-        if text_match.contains(name, self.preset_query) then
-            table.insert(choices, {text='  ' .. name, name=name, search_key=name})
-        end
-    end
-
-    local has_roles = false
-    for _, preset in ipairs(roles) do
-        if text_match.contains(preset.label, self.preset_query) then
-            has_roles = true
-            break
-        end
-    end
-    if has_roles then table.insert(choices, {text='Role presets'}) end
-    for _, preset in ipairs(roles) do
-        if text_match.contains(preset.label, self.preset_query) then
-            table.insert(choices, {text='  ' .. preset.label, role_id=preset.id,
-                search_key=preset.label})
-        end
-    end
-
-    local has_combat = false
-    for _, preset in ipairs(combat) do
-        if text_match.contains(preset.label, self.preset_query) then
-            has_combat = true
-            break
-        end
-    end
-    if has_combat then table.insert(choices, {text='Combat presets'}) end
-    for _, preset in ipairs(combat) do
-        if text_match.contains(preset.label, self.preset_query) then
-            table.insert(choices, {text='  ' .. preset.label, role_id=preset.id,
-                search_key=preset.label})
-        end
-    end
-
-    local has_defaults = false
-    for _, preset in ipairs(defaults) do
-        if text_match.contains(preset.label, self.preset_query) then
-            has_defaults = true
-            break
-        end
-    end
-    if has_defaults then table.insert(choices, {text='Skill presets'}) end
-    for _, preset in ipairs(defaults) do
-        if text_match.contains(preset.label, self.preset_query) then
-            table.insert(choices, {
-                text='  ' .. preset.label,
-                default_id=preset.id,
-                search_key=preset.label,
-            })
-        end
-    end
-    if #choices == 0 then table.insert(choices, {text='No matching presets.'}) end
+    local choices = filter_presenter.present_presets(filter_presets.list(),
+        role_presets.get_role_presets(), role_presets.get_combat_presets(),
+        filter_defaults.get_all(), self.preset_query)
     self.subviews.filter_panel_window:set_preset_choices(choices)
 end
 
@@ -489,55 +408,16 @@ end
 
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_filter_choices(selected)
-    local choices = {}
-    for _, descriptor in ipairs(self.attribute_filter_descriptors) do
-        if not filter_state.contains(self.filter_state, descriptor.id) and
-                text_match.contains(descriptor.label, self.attribute_query) then
-            table.insert(choices, {
-                text=ui_format.format_available_filter_choice(descriptor),
-                descriptor=descriptor,
-                search_key=descriptor.label,
-            })
-        end
-    end
-    if #choices == 0 then
-        table.insert(choices, {text='No matching attributes.'})
-    end
+    local choices = filter_presenter.present_available(self.attribute_filter_descriptors,
+        filter_state.get_filters(self.filter_state), self.attribute_query, 'No matching attributes.')
     self.subviews.filter_panel_window:set_picker_choices(
         'attribute', choices, selected)
 end
 
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_skill_choices(selected)
-    local choices = {}
-    local choices_by_category = {}
-    for _, descriptor in ipairs(self.skill_filter_descriptors) do
-        if not filter_state.contains(self.filter_state, descriptor.id) and
-                text_match.contains(descriptor.label, self.skill_query) then
-            local category = descriptor.category or 'Other Skills'
-            choices_by_category[category] = choices_by_category[category] or {}
-            table.insert(choices_by_category[category], {
-                text=ui_format.format_available_skill_choice(descriptor),
-                descriptor=descriptor,
-                search_key=descriptor.label,
-            })
-        end
-    end
-    for _, category in ipairs(skill_categories.get_order()) do
-        local category_choices = choices_by_category[category]
-        if category_choices and #category_choices > 0 then
-            table.insert(choices, {
-                text=ui_format.format_skill_category_choice(category),
-                search_key=category,
-            })
-            for _, choice in ipairs(category_choices) do
-                table.insert(choices, choice)
-            end
-        end
-    end
-    if #choices == 0 then
-        table.insert(choices, {text='No matching skills.'})
-    end
+    local choices = filter_presenter.present_skills(self.skill_filter_descriptors,
+        filter_state.get_filters(self.filter_state), self.skill_query, skill_categories.get_order())
     self.subviews.filter_panel_window:set_picker_choices('skill', choices, selected)
 end
 
@@ -560,20 +440,9 @@ function SoulSearchWindow:recompute_results()
         self.result_sort_key,
         self.result_sort_reverse)
 
-    local choices = {}
-    for _, result in ipairs(self.results) do
-        table.insert(choices, {
-            text=ui_format.format_result_choice(result),
-            result=result,
-            search_key=result.name,
-        })
-    end
-
-    local result_header = ('Results (%d)'):format(#choices)
-    results_panel:set_header_text(result_header,
-        ui_format.get_title_underline(result_header),
-        ui_format.format_result_columns(self.result_sort_key,
-            self.result_sort_reverse))
+    local display = result_presenter.present(self.results, self.result_sort_key,
+        self.result_sort_reverse)
+    results_panel:set_header_text(display.title, display.underline, display.columns)
 
     local selected = ui_refresh.get_result_selection(
         self.results,
@@ -582,7 +451,7 @@ function SoulSearchWindow:recompute_results()
     -- DFHack List:setChoices() force-fires on_select. Suppress that nested view
     -- refresh so the dispatcher remains the single owner of the Stats update.
     self.suppress_result_select_refresh = true
-    results_panel:set_choices(choices, selected)
+    results_panel:set_choices(display.choices, selected)
     self.suppress_result_select_refresh = false
     return results_panel:get_selected_result()
 end
@@ -882,20 +751,8 @@ end
 ---Builds the unit-scope selector rows and reflects the active scope on its
 ---control. The popup is intentionally a short modal directly below Search.
 function SoulSearchWindow:update_unit_scope_picker()
-    local choices = {}
-    local selected
-    local selected_label
-    for index, option in ipairs(unit_scope_provider.get_options()) do
-        local is_selected = option.value == self.unit_scope
-        if is_selected then
-            selected = index
-            selected_label = option.label
-        end
-        table.insert(choices, {
-            text=ui_format.format_unit_scope_choice(option.label, is_selected),
-            scope=option.value,
-        })
-    end
+    local choices, selected, selected_label = filter_presenter.present_scopes(
+        unit_scope_provider.get_options(), self.unit_scope)
     self.subviews.filter_panel_window:set_unit_scope_choices(
         choices, selected, selected_label)
 end
@@ -918,29 +775,8 @@ end
 
 ---@param selected integer|nil
 function SoulSearchWindow:update_available_race_choices(selected)
-    local choices = {}
-    local has_group_choice = false
-    local inserted_group_gap = false
-    for _, descriptor in ipairs(self.race_filter_descriptors) do
-        if not filter_state.contains(self.filter_state, descriptor.id) and
-                text_match.contains(descriptor.label, self.race_query) then
-            local is_group = descriptor.id:sub(1, #RACE_GROUP_ID_PREFIX) ==
-                RACE_GROUP_ID_PREFIX
-            if not is_group and has_group_choice and not inserted_group_gap then
-                table.insert(choices, {text=''})
-                inserted_group_gap = true
-            end
-            table.insert(choices, {
-                text=ui_format.format_available_filter_choice(descriptor),
-                descriptor=descriptor,
-                search_key=descriptor.label,
-            })
-            has_group_choice = has_group_choice or is_group
-        end
-    end
-    if #choices == 0 then
-        table.insert(choices, {text='No matching races.'})
-    end
+    local choices = filter_presenter.present_races(self.race_filter_descriptors,
+        filter_state.get_filters(self.filter_state), self.race_query)
     self.subviews.filter_panel_window:set_picker_choices('race', choices, selected)
 end
 

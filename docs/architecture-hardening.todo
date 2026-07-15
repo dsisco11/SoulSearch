@@ -206,37 +206,37 @@ inspection alone.
 
 ## Phase 3 - Extract pure display-model presenters
 
-- [ ] Inventory `ui_format.lua` functions by actual consumer and ownership.
-- [ ] Extract cohesive pure presenters, using names based on final ownership:
-  - [ ] active-filter and attribute/skill/race picker choices;
-  - [ ] custom, role, combat, and skill preset sections;
-  - [ ] result choices, count/title, columns, and selection-independent header
+- [x] Inventory `ui_format.lua` functions by actual consumer and ownership.
+- [x] Extract cohesive pure presenters, using names based on final ownership:
+  - [x] active-filter and attribute/skill/race picker choices;
+  - [x] custom, role, combat, and skill preset sections;
+  - [x] result choices, count/title, columns, and selection-independent header
         text; and
-  - [ ] existing Stats presentation behavior where it already belongs in
+  - [x] existing Stats presentation behavior where it already belongs in
         `stats_presenter.lua`.
-- [ ] Keep presenters free of widgets, DFHack input/mouse state, persistence,
+- [x] Keep presenters free of widgets, DFHack input/mouse state, persistence,
       dialogs, printing, and mutable module-global state.
-- [ ] Pass explicit catalogs, filters, queries, sort values, and records into
+- [x] Pass explicit catalogs, filters, queries, sort values, and records into
       presenter functions.
-- [ ] Return immutable-by-convention display snapshots containing only fields
+- [x] Return immutable-by-convention display snapshots containing only fields
       consumed by components.
-- [ ] Split `ui_format.lua` only along cohesive presenter boundaries:
-  - [ ] retain genuinely shared text wrapping, truncation, glyph/token, and
+- [x] Split `ui_format.lua` only along cohesive presenter boundaries:
+  - [x] retain genuinely shared text wrapping, truncation, glyph/token, and
         pen helpers in a small common format module;
-  - [ ] avoid one module per formatting function; and
-  - [ ] remove cross-component dependencies that are no longer necessary.
-- [ ] Replace Main Window's choice-building loops with presenter calls.
-- [ ] Add direct presenter tests for empty, filtered, grouped, selected,
+  - [x] avoid one module per formatting function; and
+  - [x] remove cross-component dependencies that are no longer necessary.
+- [x] Replace Main Window's choice-building loops with presenter calls.
+- [x] Add direct presenter tests for empty, filtered, grouped, selected,
       sorted, and no-match states.
 
 ### Phase 3 gate
 
-- [ ] Main Window no longer constructs filter, picker, preset, or result text
+- [x] Main Window no longer constructs filter, picker, preset, or result text
       tokens row by row.
-- [ ] Each display-model transformation has one pure implementation owner.
-- [ ] Components still receive the same choice payloads and visible text.
-- [ ] Presenter tests and UI characterization pass.
-- [ ] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
+- [x] Each display-model transformation has one pure implementation owner.
+- [x] Components still receive the same choice payloads and visible text.
+- [x] Presenter tests and UI characterization pass.
+- [x] `tools/Build.ps1`, `tools/Test.ps1`, and `git diff --check` pass.
 
 ## Phase 4 - Extract the search-session application boundary
 
@@ -526,3 +526,4 @@ those feature items complete merely because component files exist.
 | 2026-07-14 | Phase 0 | Ownership baseline; picker-transition and Main Window component-delegation characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; no production implementation moved. |
 | 2026-07-14 | Phase 1 | `FilterPanel:init()` composite-tree ownership; direct class construction; picker input-contract cleanup; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 247 tests pass with 0 failures; obsolete `filter_panel.create()` factory removed. |
 | 2026-07-14 | Phase 2 | Filter Panel-owned exclusive picker state; direct-child host APIs; transition table; focused Filter Panel and UI characterization; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 48 Lua files compile; 248 tests pass with 0 failures; Main Window no longer owns picker booleans or republishes descendants. |
+| 2026-07-14 | Phase 3 | Filter and result display presenters; direct presenter tests; Main Window choice-loop migration; `tools/Build.ps1`; `tools/Test.ps1`; `git diff --check` | Pass | 50 Lua files compile; 251 tests pass with 0 failures. |
