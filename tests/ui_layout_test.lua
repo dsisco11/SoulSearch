@@ -54,6 +54,8 @@ return function(test, repo_root)
         test.assert_equal(1, layout.get_frame('add_skill').t)
         test.assert_equal(2, layout.get_frame('add_race').t)
         test.assert_equal(3, layout.get_frame('clear_filters').t)
+        test.assert_equal(layout.get_frame('add_filter').w,
+            layout.get_frame('clear_filters').w)
         test.assert_equal(4, layout.get_frame('presets').t)
         test.assert_equal(7, layout.get_frame('filter_list').t)
     end)

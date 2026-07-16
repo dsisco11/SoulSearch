@@ -81,7 +81,7 @@ FRAMES = {
     add_filter={l=0, t=0, w=25, h=1},
     add_skill={l=0, t=1, w=25, h=1},
     add_race={l=0, t=2, w=25, h=1},
-    clear_filters={l=0, t=3, w=20, h=1},
+    clear_filters={l=0, t=3, w=25, h=1},
     presets={l=0, t=4, w=25, h=1},
     filter_list={l=0, t=7, r=0, b=0},
     picker={l=0, t=0, r=0, b=0},
