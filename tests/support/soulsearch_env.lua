@@ -466,6 +466,21 @@ function M.load_unit_stats_list(repo_root)
     return loaded.UnitStatsList
 end
 
+function M.load_unit_identity(repo_root)
+    local widgets = widget_harness.widgets()
+    local globals={COLOR_WHITE='white', COLOR_DARKGREY='darkgrey', DEFAULT_NIL=nil,
+        defclass=widget_harness.defclass}
+    globals.require=function() return widgets end
+    globals.reqscript=function(name)
+        assert(name == 'internal/soulsearch/ui/widget_extensions',
+            'unexpected reqscript: ' .. tostring(name))
+        return {}
+    end
+    local loaded = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/unit_identity.lua', globals)
+    return loaded.UnitIdentity
+end
+
 function M.load_stats_panel(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
     local sort_state = M.load_sort_state(repo_root)
@@ -477,6 +492,22 @@ function M.load_stats_panel(repo_root)
         if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         if name == 'internal/soulsearch/sort_state' then return sort_state end
+        if name == 'internal/soulsearch/ui_format' then return {
+            append_selected_filter_section_tokens=function(tokens, criteria)
+                if criteria and #criteria > 0 then table.insert(tokens, 'filters') end
+            end,
+        } end
+        if name == 'internal/soulsearch/ui/unit_identity' then return {
+            UnitIdentity=function(info)
+                function info:set_subject(subject)
+                    self.subject = subject
+                    self.has_subject = subject and subject.row and true or false
+                end
+                function info:get_height() return self.has_subject and 3 or 1 end
+                info:set_subject(info.subject)
+                return info
+            end,
+        } end
         if name == 'internal/soulsearch/ui/unit_stats_list' then return {
             UnitStatsList=function(info)
                 info.subviews = {body={start_line_num=1}, columns={}, value_column={}}
@@ -513,11 +544,6 @@ function M.load_stats_panel(repo_root)
         if name == 'internal/soulsearch/attribute_descriptions' then
             return {get_tooltip=function(kind, key) return kind .. ':' .. key end}
         end
-        if name == 'internal/soulsearch/stats_presenter' then return {
-            header=function() return 'header' end, column_header=function() return 'columns' end,
-            body=function() return 'one\ntwo' end,
-            get_display_records=function() return {{kind='trait', key='PATIENCE'}} end,
-        } end
         error('unexpected reqscript: ' .. name)
     end
     local loaded = module_loader.load(repo_root,
