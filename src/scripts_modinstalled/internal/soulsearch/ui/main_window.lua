@@ -213,7 +213,7 @@ function SoulSearchWindow:init()
                 self:refresh_views{pickers=true}
             end
         end,
-        on_add=function(filter_id) self:add_filter(filter_id) end,
+        on_toggle_filter=function(filter_id) self:toggle_filter(filter_id) end,
         on_filter_action=function(filter_id, action)
             self:handle_filter_action(filter_id, action)
         end,
@@ -407,6 +407,16 @@ function SoulSearchWindow:add_filter(filter_id)
     end
     self:on_filter_state_changed(self:get_filter_choice_index(filter_id))
     return true
+end
+
+---Adds an inactive filter or removes an active one without closing its picker.
+---@param filter_id string
+---@return boolean
+function SoulSearchWindow:toggle_filter(filter_id)
+    if self.session:contains_filter(filter_id) then
+        return self:remove_filter(filter_id)
+    end
+    return self:add_filter(filter_id)
 end
 
 ---@param filter_id string

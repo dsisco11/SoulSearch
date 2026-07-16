@@ -47,7 +47,7 @@ return function(test, repo_root)
             on_attribute_query=function(text) calls.attribute_query = text end,
             on_skill_query=function(text) calls.skill_query = text end,
             on_race_query=function(text) calls.race_query = text end,
-            on_add=function(id) calls.added = id end,
+            on_toggle_filter=function(id) calls.toggled = id end,
             on_filter_action=function(id, action) calls.action = {id, action} end,
         }
     end
@@ -131,7 +131,7 @@ return function(test, repo_root)
             1, {role_id='miner'})
         by_id(panel.subviews, 'unit_scope_picker_window').subviews[1].on_submit(
             1, {scope='visitors'})
-        test.assert_equal('attribute:strength', calls.added)
+        test.assert_equal('attribute:strength', calls.toggled)
         test.assert_equal('miner', calls.role)
         test.assert_equal('visitors', calls.scope)
     end)

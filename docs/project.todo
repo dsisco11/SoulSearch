@@ -73,7 +73,7 @@
 ✔ [Stats View Popout]: Add a compact CP437-triangle collapse/expand icon, docked to the unit card's left edge, that removes the popout until expanded. @done(26-07-15)
 ✔ [SoulSearch Menu]: Remove the "Stats" title from the stats panel when its in the primary soul search window. @done(26-07-15)
 ✔ [Filters->Drowdowns]: Keep menu open after a selection is made, so that users can quickly select multiple filters without having to reopen the menu each time. @done(26-07-15)
-☐ [Filters->Drowdowns]: Show items that are already selected in the dropdown menu, so that users can see what filters are already active and can quickly deselect them if needed.
+✔ [Filters->Drowdowns]: Show items that are already selected in the dropdown menu, so that users can see what filters are already active and can quickly deselect them if needed. @done(26-07-15)
 ☐ [Filters]: padd the "Clear filters" button so it is the same size as all the other buttons in the panel, so that it looks more visually consistent.
 ☐ [Filters]: Rename "Include: <scope>" to "Search for: <scope>" to make it more clear what the control does.
 ☐ Replace parent-aggregated tooltip handling with declarative widget tooltip attributes and generic per-screen pointer targeting. See `docs/declarative-tooltip-system.todo`.

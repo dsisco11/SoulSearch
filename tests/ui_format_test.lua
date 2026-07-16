@@ -32,18 +32,29 @@ return function(test, repo_root)
             {id='race_group:humanoids', label='Humanoids', kind='race'},
             {id='race:dwarf', label='Dwarves', kind='race'},
         }
-        local filters = {{id='attribute:strength', direction='high'}}
+        local filters = {
+            {id='attribute:strength', direction='high'},
+            {id='skill:mining', direction='high'},
+            {id='race:dwarf', direction='high'},
+        }
         local active = filter_presenter.present_active(descriptors, filters)
         test.assert_equal('Strength', active[1].descriptor.label)
         local available = filter_presenter.present_available(descriptors, filters,
             'min', 'No matching attributes.')
         test.assert_equal('Mining', available[1].descriptor.label)
+        local selected = filter_presenter.present_available(descriptors, filters,
+            'str', 'No matching attributes.')
+        test.assert_true(selected[1].selected)
+        test.assert_sequence({string.char(16) .. '  ', 'Strength'},
+            token_texts(selected[1].text))
         local skills = filter_presenter.present_skills(descriptors, filters,
             '', {'Labor'})
         test.assert_equal('Labor', skills[1].search_key)
         test.assert_equal('Mining', skills[2].descriptor.label)
+        test.assert_true(skills[2].selected)
         local races = filter_presenter.present_races({descriptors[3], descriptors[4]}, filters, '')
         test.assert_equal('', races[2].text)
+        test.assert_true(races[3].selected)
         test.assert_equal('No matching attributes.', filter_presenter.present_available(
             descriptors, filters, 'zzz', 'No matching attributes.')[1].text)
     end)
@@ -116,11 +127,16 @@ return function(test, repo_root)
         local skill = format.format_available_skill_choice{
             label='Mining', kind='skill'}
         local category = format.format_skill_category_choice('Mining Skills')
-        test.assert_sequence({'Strength'}, token_texts(filter))
-        test.assert_sequence({string.char(16) .. ' ', 'Mining'}, token_texts(skill))
+        test.assert_sequence({'   ', 'Strength'}, token_texts(filter))
+        test.assert_sequence({'   ', 'Mining'}, token_texts(skill))
         test.assert_sequence({'Mining Skills'}, token_texts(category))
-        test.assert_equal('lightgreen', filter[1].pen)
+        test.assert_equal('darkgrey', filter[1].pen)
         test.assert_equal('yellow', skill[2].pen)
+        local selected_filter = format.format_available_filter_choice({
+            label='Strength', kind='physical_attribute'}, true)
+        test.assert_sequence({string.char(16) .. '  ', 'Strength'},
+            token_texts(selected_filter))
+        test.assert_equal('lightgreen', selected_filter[1].pen)
     end)
 
     test.case('UI format: race rows reuse plus and minus without movement', function()

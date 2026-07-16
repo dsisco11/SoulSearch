@@ -81,21 +81,21 @@ function FilterPanel:init(info)
             on_open=function() self:on_picker_open('attribute') end,
             on_close=function() self:on_picker_close('attribute') end, inputs={
             on_query=inputs.on_attribute_query,
-            on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_toggle_filter(choice.descriptor.id) end end}},
         searchable_picker.SearchablePicker{view_id='available_race_window',
             frame=ui_layout.get_frame('picker'), frame_title='Select race',
             draggable=false, kind='race',
             on_open=function() self:on_picker_open('race') end,
             on_close=function() self:on_picker_close('race') end, inputs={
             on_query=inputs.on_race_query,
-            on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_toggle_filter(choice.descriptor.id) end end}},
         searchable_picker.SearchablePicker{view_id='available_skill_window',
             frame=ui_layout.get_frame('picker'), frame_title='Select skill',
             draggable=false, kind='skill',
             on_open=function() self:on_picker_open('skill') end,
             on_close=function() self:on_picker_close('skill') end, inputs={
             on_query=inputs.on_skill_query,
-            on_submit=function(choice) if choice and choice.descriptor then inputs.on_add(choice.descriptor.id) end end}},
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_toggle_filter(choice.descriptor.id) end end}},
         preset_picker.PresetPicker{view_id='preset_picker_window',
             frame=ui_layout.get_frame('preset_picker'), frame_title='Filter presets',
             draggable=false, on_open=function() self:on_picker_open('preset') end,
@@ -210,7 +210,7 @@ end
 ---@field on_attribute_query fun(text: string)
 ---@field on_skill_query fun(text: string)
 ---@field on_race_query fun(text: string)
----@field on_add fun(filter_id: string)
+---@field on_toggle_filter fun(filter_id: string)
 ---@field on_filter_action fun(filter_id: string, action: string)
 
 ---@param on_activate fun()

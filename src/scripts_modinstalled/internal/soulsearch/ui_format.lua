@@ -197,16 +197,23 @@ function format_active_filter_choice(
 end
 
 ---@param descriptor SoulSearchFilterDescriptor
+---@param selected boolean|nil
 ---@return table[]
-function format_available_filter_choice(descriptor)
-    return {{text=descriptor.label, pen=get_category_pen(descriptor)}}
+function format_available_filter_choice(descriptor, selected)
+    return {
+        {text=(selected and glyphs.CP437_ARROW_RIGHT or ' ') .. '  ',
+            pen=selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
+        {text=descriptor.label, pen=get_category_pen(descriptor)},
+    }
 end
 
 ---@param descriptor SoulSearchFilterDescriptor
+---@param selected boolean|nil
 ---@return table[]
-function format_available_skill_choice(descriptor)
+function format_available_skill_choice(descriptor, selected)
     return {
-        {text=glyphs.CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
+        {text=(selected and glyphs.CP437_ARROW_RIGHT or ' ') .. '  ',
+            pen=selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
         {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
 end

@@ -48,9 +48,11 @@ function present_available(descriptors, filters, query, empty_text)
     local selected = selected_by_id(filters)
     local choices = {}
     for _, descriptor in ipairs(descriptors) do
-        if not selected[descriptor.id] and matches(descriptor.label, query) then
-            table.insert(choices, {text=ui_format.format_available_filter_choice(descriptor),
-                descriptor=descriptor, search_key=descriptor.label})
+        if matches(descriptor.label, query) then
+            local is_selected = selected[descriptor.id] ~= nil
+            table.insert(choices, {text=ui_format.format_available_filter_choice(
+                descriptor, is_selected), descriptor=descriptor,
+                selected=is_selected, search_key=descriptor.label})
         end
     end
     if #choices == 0 then table.insert(choices, {text=empty_text}) end
@@ -66,11 +68,13 @@ function present_skills(descriptors, filters, query, categories)
     local selected = selected_by_id(filters)
     local groups = {}
     for _, descriptor in ipairs(descriptors) do
-        if not selected[descriptor.id] and matches(descriptor.label, query) then
+        if matches(descriptor.label, query) then
+            local is_selected = selected[descriptor.id] ~= nil
             local category = descriptor.category or 'Other Skills'
             groups[category] = groups[category] or {}
-            table.insert(groups[category], {text=ui_format.format_available_skill_choice(descriptor),
-                descriptor=descriptor, search_key=descriptor.label})
+            table.insert(groups[category], {text=ui_format.format_available_skill_choice(
+                descriptor, is_selected), descriptor=descriptor,
+                selected=is_selected, search_key=descriptor.label})
         end
     end
     local choices = {}
@@ -92,11 +96,13 @@ function present_races(descriptors, filters, query)
     local choices, selected = {}, selected_by_id(filters)
     local saw_group, gap = false, false
     for _, descriptor in ipairs(descriptors) do
-        if not selected[descriptor.id] and matches(descriptor.label, query) then
+        if matches(descriptor.label, query) then
+            local is_selected = selected[descriptor.id] ~= nil
             local group = descriptor.id:sub(1, #RACE_GROUP_ID_PREFIX) == RACE_GROUP_ID_PREFIX
             if not group and saw_group and not gap then table.insert(choices, {text=''}); gap = true end
-            table.insert(choices, {text=ui_format.format_available_filter_choice(descriptor),
-                descriptor=descriptor, search_key=descriptor.label})
+            table.insert(choices, {text=ui_format.format_available_filter_choice(
+                descriptor, is_selected), descriptor=descriptor,
+                selected=is_selected, search_key=descriptor.label})
             saw_group = saw_group or group
         end
     end

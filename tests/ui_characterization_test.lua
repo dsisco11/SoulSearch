@@ -156,9 +156,24 @@ return function(test, repo_root)
     end)
 
     test.case('UI characterization: adding a filter keeps its picker open', function()
-        local close_calls, state_changes = 0, 0
+        local close_calls, state_changes = 0, {}
         local window = setmetatable({
-            session={add_filter=function(_, id) return id == 'skill:MINING' end},
+            session={
+                active=false,
+                contains_filter=function(self) return self.active end,
+                add_filter=function(self, id)
+                    if id ~= 'skill:MINING' or self.active then return false end
+                    self.active = true
+                    return true
+                end,
+                remove_filter=function(self, id)
+                    if id ~= 'skill:MINING' or not self.active then return false end
+                    self.active = false
+                    return true
+                end,
+                get_filter_priority=function() return 2 end,
+                filter_count=function() return 0 end,
+            },
             subviews={filter_panel_window={
                 close_picker=function() close_calls = close_calls + 1 end,
             }},
@@ -167,14 +182,14 @@ return function(test, repo_root)
                 return 2
             end,
             on_filter_state_changed=function(_, index)
-                state_changes = state_changes + 1
-                test.assert_equal(2, index)
+                table.insert(state_changes, index)
             end,
         }, {__index=main_window.SoulSearchWindow})
 
-        test.assert_true(window:add_filter('skill:MINING'))
+        test.assert_true(window:toggle_filter('skill:MINING'))
+        test.assert_true(window:toggle_filter('skill:MINING'))
         test.assert_equal(0, close_calls)
-        test.assert_equal(1, state_changes)
+        test.assert_sequence({2, 1}, state_changes)
     end)
 
     test.case('UI characterization: Main Window delegates through component APIs', function()
