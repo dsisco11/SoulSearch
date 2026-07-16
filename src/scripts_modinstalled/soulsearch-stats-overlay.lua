@@ -96,7 +96,7 @@ function SoulSearchStatsOverlay:init()
             subviews={
                 UnitStatsList{
                     view_id='stats_panel', frame={l=0, t=0, r=0, b=0},
-                    subject=nil, sort=config.DEFAULT_SORT, adaptive_columns=true,
+                    subject=nil, sort=config.OVERLAY_DEFAULT_SORT, adaptive_columns=true,
                 },
             },
         },

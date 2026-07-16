@@ -1332,6 +1332,7 @@ function M.load_stats_overlay(repo_root, options)
     local config = {
         COLLAPSE_BUTTON_WIDTH=3,
         DEFAULT_SORT={key=nil, reverse=false, phase=0},
+        OVERLAY_DEFAULT_SORT={key='value', reverse=true, phase=1},
         LOG_POSITIONING=false,
         resolve=function(width, height, rect, side)
             state.placement_side=side

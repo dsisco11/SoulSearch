@@ -12,6 +12,9 @@ DEFAULT_HEIGHT = math.max(layout.MIN_CONTENT_HEIGHT + FRAME_INSET * 2, 20)
 MIN_WIDTH = math.max(layout.MIN_CONTENT_WIDTH + FRAME_INSET * 2, CLOSE_WIDTH + 8)
 MIN_HEIGHT = layout.MIN_CONTENT_HEIGHT + FRAME_INSET * 2
 DEFAULT_SORT = {key=nil, reverse=false, phase=0}
+-- The attached popout opens on the first Delta sort mode (descending), while
+-- reusable lists retain their caller-provided default sort state.
+OVERLAY_DEFAULT_SORT = {key='value', reverse=true, phase=1}
 ---@return table
 function get_minimum()
     return {w=MIN_WIDTH, h=MIN_HEIGHT}
