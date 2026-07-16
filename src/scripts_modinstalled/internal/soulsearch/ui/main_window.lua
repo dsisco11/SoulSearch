@@ -405,7 +405,6 @@ function SoulSearchWindow:add_filter(filter_id)
     if not self.session:add_filter(filter_id) then
         return false
     end
-    self.subviews.filter_panel_window:close_picker()
     self:on_filter_state_changed(self:get_filter_choice_index(filter_id))
     return true
 end

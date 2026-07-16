@@ -18,7 +18,7 @@ local function recursive_ids(view, result)
 end
 
 return function(test, repo_root)
-    local ui, new_window, state, _, main_screen =
+    local ui, new_window, state, main_window, main_screen =
         soulsearch_env.load_ui_characterization(repo_root)
 
     test.case('UI characterization: root and recursive child order is exact', function()
@@ -153,6 +153,28 @@ return function(test, repo_root)
         test.assert_true(window:close_filter_panel_state())
         test.assert_false(panel:is_open())
         test.assert_false(panel:has_open_picker())
+    end)
+
+    test.case('UI characterization: adding a filter keeps its picker open', function()
+        local close_calls, state_changes = 0, 0
+        local window = setmetatable({
+            session={add_filter=function(_, id) return id == 'skill:MINING' end},
+            subviews={filter_panel_window={
+                close_picker=function() close_calls = close_calls + 1 end,
+            }},
+            get_filter_choice_index=function(_, id)
+                test.assert_equal('skill:MINING', id)
+                return 2
+            end,
+            on_filter_state_changed=function(_, index)
+                state_changes = state_changes + 1
+                test.assert_equal(2, index)
+            end,
+        }, {__index=main_window.SoulSearchWindow})
+
+        test.assert_true(window:add_filter('skill:MINING'))
+        test.assert_equal(0, close_calls)
+        test.assert_equal(1, state_changes)
     end)
 
     test.case('UI characterization: Main Window delegates through component APIs', function()
