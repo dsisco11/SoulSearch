@@ -1,4 +1,5 @@
 local soulsearch_env = require('support.soulsearch_env')
+local widget_harness = require('support.widget_harness')
 
 return function(test, repo_root)
     local FilterActionList = soulsearch_env.load_filter_action_list(
@@ -68,7 +69,7 @@ return function(test, repo_root)
             {descriptor={id='attribute:toughness'}},
         }, 1)
         list.page_top = 3
-        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X, 0)
+        list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
 
         test.assert_equal('Prefer high', list.tooltip)
     end)
@@ -89,19 +90,45 @@ return function(test, repo_root)
     test.case('filter action list: terminal pointer updates own action and descriptor text', function()
         local list = make_list(function() end)
         list:setChoices({{descriptor={kind='trait', key='PATIENCE'}}}, 1)
-        list:on_pointer_update(list, 0, 0)
+        list:on_pointer_update(0, 0)
         test.assert_equal('A personality trait that shapes behavior and social interaction.',
             list.tooltip)
-        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X, 0)
+        list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
         test.assert_equal('Prefer high', list.tooltip)
 
         list:setChoices({{descriptor={kind='race', key='DWARF'}}}, 1)
-        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X, 0)
+        list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
         test.assert_equal('Include in results.', list.tooltip)
-        list:on_pointer_update(list, layout.ACTIVE_FILTER_BUTTON_START_X +
+        list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X +
             2 * layout.FILTER_ACTION_WIDTH, 0)
         test.assert_equal(nil, list.tooltip)
-        list:on_pointer_update(list, 0, 3)
+        list:on_pointer_update(0, 3)
         test.assert_equal(nil, list.tooltip)
+    end)
+
+    test.case('filter action list: dispatcher invokes class pointer method with local coordinates',
+            function()
+        local dispatcher = soulsearch_env.load_pointer_dispatcher(repo_root)
+        local list = make_list(function() end)
+        list:setChoices({{descriptor={kind='trait', key='PATIENCE'}}}, 1)
+        list.visible, list.active, list.pointer_policy = true, true, 'target'
+        list.subviews = {}
+        widget_harness.set_frame(list, 3, 2, 40, 4)
+        local root = {
+            visible=true,
+            active=true,
+            pointer_policy='target',
+            subviews={list},
+        }
+        widget_harness.set_frame(root, 0, 0, 50, 10)
+
+        local context = dispatcher.PointerContext.new(root)
+        local result = dispatcher.PointerDispatcher.sample(context,
+            3 + layout.ACTIVE_FILTER_BUTTON_START_X, 2)
+
+        test.assert_equal(list, result.target)
+        test.assert_equal(layout.ACTIVE_FILTER_BUTTON_START_X, result.x)
+        test.assert_equal(0, result.y)
+        test.assert_equal('Prefer high', list.tooltip)
     end)
 end

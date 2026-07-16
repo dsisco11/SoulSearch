@@ -49,26 +49,26 @@ local function describe_choice(choice)
     return descriptor and descriptions.get_tooltip(descriptor.kind, descriptor.key) or nil
 end
 
-function FilterActionList:on_pointer_update(target, x, y)
+function FilterActionList:on_pointer_update(x, y)
     local _, choice, action = self:get_action_at(x, y)
     if action then
         local descriptor = choice and choice.descriptor
         if descriptor and descriptor.kind == FILTER_KIND_RACE then
             if action.callback == 'set_high' then
-                target.tooltip = 'Include in results.'
+                self.tooltip = 'Include in results.'
                 return
             elseif action.callback == 'set_low' then
-                target.tooltip = 'Exclude from results.'
+                self.tooltip = 'Exclude from results.'
                 return
             elseif action.callback == 'move_up' or action.callback == 'move_down' then
-                target.tooltip = nil
+                self.tooltip = nil
                 return
             end
         end
-        target.tooltip = choice and action.tooltip or nil
+        self.tooltip = choice and action.tooltip or nil
         return
     end
-    target.tooltip = describe_choice(choice)
+    self.tooltip = describe_choice(choice)
 end
 
 ---@param keys table
