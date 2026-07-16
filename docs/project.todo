@@ -82,5 +82,8 @@
 ✔ [Matched Filters Panel]: Encapsulate the matched filters display out of the unit-stats-display into its own component. Specifically the matched filters list and the "Matched Filters" title label are what should be isolated. @done(26-07-15)
 ✔ Evaluate whether any of the projects ui elements/patterns can be replaced with built-in dfhack ui widgets which provide the same functionality. See `docs/dfhack-widget-audit.md`. @done(26-07-16)
 ✔ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Supports Residents, Pets/Livestock, and Other (visitor/humanoid scope) with explicit candidate presets; the scope resolver remains extensible for profession and location contexts. @done(26-07-16)
-☐ Make soul search window panels resizeable with a custom draggable splitter; the native DFHack `Divider` widget is visual-only.
+☐ [Stats Overlay]: remove indentation on stats list items.
+☐ [Stats Overlay]: Make collapse button arrow direction point toward the unit card for expanding, and away for collapsing.
+☐ [Stats Overlay]: Increase hit box of collapse button.
 ☐ Make soul search panels size to fit available window space with parent layout callbacks; DFHack `ResizingPanel` grows to fit children rather than filling a resized parent.
+☐ Make soul search window panels resizeable with a custom draggable splitter; the native DFHack `Divider` widget is visual-only.
