@@ -2,9 +2,10 @@
 
 local widgets = require('gui.widgets')
 reqscript('internal/soulsearch/ui/widget_extensions')
-local ui_format = reqscript('internal/soulsearch/ui_format')
 local layout = reqscript('internal/soulsearch/stats_layout')
 local UnitIdentity = reqscript('internal/soulsearch/ui/unit_identity').UnitIdentity
+local MatchedFiltersPanel = reqscript(
+    'internal/soulsearch/ui/matched_filters_panel').MatchedFiltersPanel
 local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList
 
 ---Main-window unit information panel that composes its identity, matched-filter,
@@ -22,7 +23,8 @@ function UnitInfoPanel:init(info)
     self:addviews{
         UnitIdentity{view_id='unit_identity', frame={l=0, t=0, r=0, h=1},
             subject=self.subject},
-        widgets.Label{view_id='matched_filters', auto_height=false, text=''},
+        MatchedFiltersPanel{view_id='matched_filters', frame={l=0, t=1, r=0, h=0},
+            subject=self.subject},
         UnitStatsList{view_id='stats_list', frame={l=0,t=1,r=0,b=0},
             subject=self.subject, sort=self.sort,
             on_sort_change=function(sort)
@@ -46,18 +48,13 @@ end
 function UnitInfoPanel:cycle_sort(column) self.subviews.stats_list:cycle_sort(column) end
 function UnitInfoPanel:refresh()
     self.subviews.unit_identity:set_subject(self.subject)
-    local criteria = self.subject and self.subject.filter_criteria
-    self.has_matched_filters = criteria and #criteria > 0 or false
-    local tokens = {}
-    ui_format.append_selected_filter_section_tokens(tokens, criteria)
-    self.subviews.matched_filters:setText(tokens)
+    self.subviews.matched_filters:set_subject(self.subject)
     self.subviews.stats_list:set_subject(self.subject)
     if self.frame_parent_rect then self:updateLayout() end
 end
 function UnitInfoPanel:layout_contents(frame_body)
     local identity_height = self.subviews.unit_identity:get_height()
-    local matched_filters_height = self.has_matched_filters and
-        self.subviews.matched_filters:getTextHeight() or 0
+    local matched_filters_height = self.subviews.matched_filters:get_height()
     local frames = layout.get_content_frames(frame_body.height,
         identity_height + matched_filters_height, 1)
     self.subviews.unit_identity.frame = {l=0, t=frames.header.t, r=0, h=identity_height}

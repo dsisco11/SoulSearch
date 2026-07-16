@@ -481,6 +481,21 @@ function M.load_unit_identity(repo_root)
     return loaded.UnitIdentity
 end
 
+function M.load_matched_filters_panel(repo_root)
+    local ui_format = M.load_ui_format(repo_root)
+    local widgets = widget_harness.widgets()
+    local globals={DEFAULT_NIL=nil, defclass=widget_harness.defclass}
+    globals.require=function() return widgets end
+    globals.reqscript=function(name)
+        if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
+        if name == 'internal/soulsearch/ui_format' then return ui_format end
+        error('unexpected reqscript: ' .. tostring(name))
+    end
+    local loaded = module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/ui/matched_filters_panel.lua', globals)
+    return loaded.MatchedFiltersPanel
+end
+
 function M.load_stats_panel(repo_root)
     local stats_layout = M.load_stats_layout(repo_root)
     local sort_state = M.load_sort_state(repo_root)
@@ -492,11 +507,6 @@ function M.load_stats_panel(repo_root)
         if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
         if name == 'internal/soulsearch/stats_layout' then return stats_layout end
         if name == 'internal/soulsearch/sort_state' then return sort_state end
-        if name == 'internal/soulsearch/ui_format' then return {
-            append_selected_filter_section_tokens=function(tokens, criteria)
-                if criteria and #criteria > 0 then table.insert(tokens, 'filters') end
-            end,
-        } end
         if name == 'internal/soulsearch/ui/unit_identity' then return {
             UnitIdentity=function(info)
                 function info:set_subject(subject)
@@ -504,6 +514,18 @@ function M.load_stats_panel(repo_root)
                     self.has_subject = subject and subject.row and true or false
                 end
                 function info:get_height() return self.has_subject and 3 or 1 end
+                info:set_subject(info.subject)
+                return info
+            end,
+        } end
+        if name == 'internal/soulsearch/ui/matched_filters_panel' then return {
+            MatchedFiltersPanel=function(info)
+                function info:set_subject(subject)
+                    self.subject = subject
+                    self.has_filters = subject and subject.filter_criteria and
+                        #subject.filter_criteria > 0 or false
+                end
+                function info:get_height() return self.has_filters and 1 or 0 end
                 info:set_subject(info.subject)
                 return info
             end,

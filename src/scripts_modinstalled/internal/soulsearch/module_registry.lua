@@ -75,6 +75,10 @@ MODULES = {
         contract='UnitIdentity', contract_type='table',
     },
     {
+        name='internal/soulsearch/ui/matched_filters_panel',
+        contract='MatchedFiltersPanel', contract_type='table',
+    },
+    {
         name='internal/soulsearch/stats_panel',
         contract='UnitInfoPanel', contract_type='table',
     },
