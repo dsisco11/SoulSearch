@@ -28,7 +28,9 @@ return function(test, root)
         -- widgets.Panel invokes its on_layout attribute with dot syntax after
         -- it computes the panel body frame.
         panel.on_layout({height=12})
-        test.assert_equal(2, panel.subviews.header.frame.t)
+        test.assert_nil(panel.subviews.title)
+        test.assert_nil(panel.subviews.underline)
+        test.assert_equal(0, panel.subviews.header.frame.t)
         test.assert_equal(1, panel.subviews.stats_list.header_height)
     end)
 end

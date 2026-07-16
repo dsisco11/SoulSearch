@@ -19,10 +19,8 @@ function SoulSearchStatsPanel:init(info)
     self.subject, self.sort, self.on_sort_change = info.subject, info.sort, info.on_sort_change
     self.on_layout = function(frame_body) self:layout_contents(frame_body) end
     self:addviews{
-        widgets.Label{view_id='title', frame={l=0,t=0,h=1}, text='Stats', text_pen=COLOR_WHITE},
-        widgets.Label{view_id='underline', frame={l=0,t=1,h=1}, text='-----', text_pen=COLOR_GREY},
         widgets.Label{view_id='header', auto_height=false, text='No unit selected.'},
-        UnitStatsList{view_id='stats_list', frame={l=0,t=3,r=0,b=0},
+        UnitStatsList{view_id='stats_list', frame={l=0,t=1,r=0,b=0},
             subject=self.subject, sort=self.sort,
             on_sort_change=function(sort)
                 self.sort = sort

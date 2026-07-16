@@ -5,9 +5,9 @@
 LABEL_WIDTH = 23
 VALUE_COLUMN_X = 26
 VALUE_HEADER_WIDTH = 7
-CONTENT_TOP = 2
+CONTENT_TOP = 0
 MIN_CONTENT_WIDTH = VALUE_COLUMN_X + VALUE_HEADER_WIDTH
-MIN_CONTENT_HEIGHT = 4 -- header, two column-header rows, and one body row
+MIN_CONTENT_HEIGHT = 3 -- header, column-header row, and one body row
 
 -- The overlay list has room for a wider label column when all records fit.
 -- With the native scrollbar visible, leave one tile between Delta and it.
