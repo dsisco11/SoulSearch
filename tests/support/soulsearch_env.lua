@@ -1336,17 +1336,23 @@ function M.load_stats_overlay(repo_root, options)
         COLLAPSE_BUTTON_WIDTH=3,
         DEFAULT_SORT={key=nil, reverse=false, phase=0},
         OVERLAY_DEFAULT_SORT={key='value', reverse=true, phase=1},
-        PLACEMENT={
+        BUTTON_PLACEMENT={
             OUTSIDE_LEFT='outside-left',
             OUTSIDE_RIGHT='outside-right',
             INSIDE_LEFT='inside-left',
             INSIDE_RIGHT='inside-right',
         },
+        DIRECTION={LEFT='left', RIGHT='right', UP='up', DOWN='down'},
         LOG_POSITIONING=false,
-        resolve=function(width, height, rect, placements)
+        resolve=function(width, height, rect, placements, repositioned_panel)
             state.placements=placements
             state.unit_card_rect=rect
-            return options.frame or {l=40, t=6, w=32, h=12}
+            state.repositioned_panel=repositioned_panel
+            return options.layout or {
+                panel={l=43, t=12, w=32, h=12},
+                button={l=72, t=11, w=3, h=1},
+                direction=placements[1].direction,
+            }
         end,
     }
     local popover = {get_subject=function(unit)

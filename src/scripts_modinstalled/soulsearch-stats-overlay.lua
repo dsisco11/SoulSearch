@@ -74,17 +74,54 @@ local function frame_key(frame, source)
         frame.l, frame.t, frame.w, frame.h)
 end
 
+local function union_frames(a, b)
+    local l, t = math.min(a.l, b.l), math.min(a.t, b.t)
+    local r = math.max(a.l + a.w, b.l + b.w)
+    local bottom = math.max(a.t + a.h, b.t + b.h)
+    return {l=l, t=t, w=r - l, h=bottom - t}
+end
+
+local function relative_frame(frame, parent)
+    return {l=frame.l - parent.l, t=frame.t - parent.t, w=frame.w, h=frame.h}
+end
+
+local function absolute_origin(frame, parent_rect)
+    if not frame or not parent_rect or not frame.w or not frame.h then return nil end
+    local l = frame.l
+    local t = frame.t
+    if l == nil and frame.r ~= nil then
+        l = parent_rect.width - frame.r - frame.w
+    end
+    if t == nil and frame.b ~= nil then
+        t = parent_rect.height - frame.b - frame.h
+    end
+    if type(l) ~= 'number' or type(t) ~= 'number' then return nil end
+    return {l=l, t=t}
+end
+
+local function same_origin(a, b)
+    return a and b and a.l == b.l and a.t == b.t
+end
+
+StatsDeploymentButton = defclass(StatsDeploymentButton, widgets.TextButton)
+StatsDeploymentButton.ATTRS{
+    direction=DEFAULT_NIL,
+}
+
 SoulSearchStatsOverlay = defclass(SoulSearchStatsOverlay, overlay.OverlayWidget)
 SoulSearchStatsOverlay.ATTRS{
     desc='Display SoulSearch Stats beside the selected unit card.',
-    version=13,
+    version=18,
     default_enabled=true,
     default_pos={x=1, y=1}, -- replaced by resolve_frame() during layout
     hotspot=true,
     viewscreens=UNIT_CARD_FOCUS,
     frame={w=1, h=1},
-    -- Edit this ordered list to choose the preferred docking side and its fallbacks.
-    placement={config.PLACEMENT.OUTSIDE_LEFT, config.PLACEMENT.INSIDE_RIGHT},
+    -- The button is anchored first; its direction deploys the panel away from the card.
+    placement={
+        {button=config.BUTTON_PLACEMENT.OUTSIDE_LEFT, direction=config.DIRECTION.LEFT},
+        {button=config.BUTTON_PLACEMENT.OUTSIDE_RIGHT, direction=config.DIRECTION.RIGHT},
+    },
     overlay_onupdate_max_freq_seconds=0,
 }
 
@@ -102,11 +139,11 @@ function SoulSearchStatsOverlay:init()
                 },
             },
         },
-        widgets.TextButton{view_id='collapse_button', frame={r=0, t=0,
+        StatsDeploymentButton{view_id='collapse_button', frame={l=0, t=0,
             w=config.COLLAPSE_BUTTON_WIDTH, h=1}, label=glyphs.CP437_TRIANGLE_UP,
             tooltip='Collapse the SoulSearch stats view.',
             on_activate=function() self:set_collapsed(true) end},
-        widgets.TextButton{view_id='expand_button', frame={r=0, t=0,
+        StatsDeploymentButton{view_id='expand_button', frame={l=0, t=0,
             w=config.COLLAPSE_BUTTON_WIDTH, h=1}, label=glyphs.CP437_TRIANGLE_DOWN,
             tooltip='Expand the SoulSearch stats view.', visible=false,
             on_activate=function() self:set_collapsed(false) end},
@@ -131,9 +168,9 @@ function SoulSearchStatsOverlay:set_collapsed(collapsed)
 end
 
 function SoulSearchStatsOverlay:resolve_frame(width, height)
-    local panel_frame, err, source = config.resolve(
-        width, height, get_unit_card_rect(), self.placement)
-    if not panel_frame then
+    local resolved, err, source = config.resolve(
+        width, height, get_unit_card_rect(), self.placement, self.repositioned_panel)
+    if not resolved then
         if self.layout_error ~= err then
             self.layout_error = err
             dfhack.printerr(err)
@@ -141,15 +178,19 @@ function SoulSearchStatsOverlay:resolve_frame(width, height)
         return nil, err
     end
     self.layout_error = nil
-    local frame = {
-        l=self.collapsed and panel_frame.l + panel_frame.w - config.COLLAPSE_BUTTON_WIDTH or
-            panel_frame.l,
-        t=panel_frame.t,
-        w=self.collapsed and config.COLLAPSE_BUTTON_WIDTH or panel_frame.w,
-        h=self.collapsed and 1 or panel_frame.h,
-    }
+    local frame = self.collapsed and {
+        l=resolved.button.l, t=resolved.button.t,
+        w=resolved.button.w, h=resolved.button.h,
+    } or union_frames(resolved.panel, resolved.button)
+    self.subviews.window.frame = relative_frame(resolved.panel, frame)
+    local button_frame = relative_frame(resolved.button, frame)
+    self.subviews.collapse_button.frame = button_frame
+    self.subviews.expand_button.frame = button_frame
+    self.subviews.collapse_button.direction = resolved.direction
+    self.subviews.expand_button.direction = resolved.direction
     local key = frame_key(frame, source)
     self.frame = frame
+    self.managed_origin = {l=frame.l, t=frame.t}
     if key ~= self.frame_key then
         self.frame_key = key
     end
@@ -161,6 +202,24 @@ function SoulSearchStatsOverlay:preUpdateLayout(parent_rect)
     -- unit card is closed. There is no card to measure in that state, so do
     -- not surface a geometry error to the player.
     if not has_unit_card_focus() then return end
+    local incoming_origin = absolute_origin(self.frame, parent_rect)
+    if incoming_origin and self.managed_origin and
+            not same_origin(incoming_origin, self.managed_origin) then
+        if incoming_origin.l == 0 and incoming_origin.t == 0 then
+            self.repositioned_panel = nil
+        else
+            local window_frame = self.subviews.window.frame
+            self.repositioned_panel = {
+                l=incoming_origin.l + (window_frame.l or 0),
+                t=incoming_origin.t + (window_frame.t or 0),
+            }
+        end
+    elseif incoming_origin and not self.managed_origin and
+            (incoming_origin.l ~= 0 or incoming_origin.t ~= 0) then
+        self.repositioned_panel = {
+            l=incoming_origin.l, t=incoming_origin.t,
+        }
+    end
     self:resolve_frame(parent_rect.width, parent_rect.height)
 end
 
