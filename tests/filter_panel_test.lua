@@ -85,6 +85,8 @@ return function(test, repo_root)
         test.assert_equal('unit_scope_picker_window',
             panel.subviews[#panel.subviews].view_id)
         test.assert_equal('Close', panel.subviews.close_filter_panel_button.tooltip)
+        test.assert_equal('Shows the unit scope used when searching.',
+            panel.subviews.unit_scope_label.tooltip)
         test.assert_equal('Choose which units are included in the results.',
             panel.subviews.unit_scope_edit.tooltip)
         test.assert_equal('Add an attribute or trait to the ranking criteria.',
