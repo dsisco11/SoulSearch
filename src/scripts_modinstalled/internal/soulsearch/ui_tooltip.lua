@@ -13,7 +13,7 @@ local TEXT = dfhack.pen.parse{fg=COLOR_WHITE, bg=COLOR_BLACK}
 -- screen refresh. A moving tooltip must not trigger that window lifecycle from
 -- inside the render pass.
 SoulSearchTooltip = defclass(SoulSearchTooltip, widgets.Widget)
-SoulSearchTooltip.ATTRS{frame={l=0,t=0,w=1,h=3}, frame_style=gui.FRAME_THIN,
+SoulSearchTooltip.ATTRS{frame={l=0,t=0,w=1,h=3}, frame_style=gui.FRAME_INTERIOR,
     frame_background=BACKGROUND, frame_inset=1, draggable=false,
     no_force_pause_badge=true, pointer_policy='none', visible=false}
 function SoulSearchTooltip:init()

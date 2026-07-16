@@ -29,7 +29,12 @@ return function(test, repo_root)
                     },
                 },
                 require=function(name)
-                    if name == 'gui' then return {FRAME_THIN='thin'} end
+                    if name == 'gui' then
+                        return {FRAME_INTERIOR='interior', paint_frame=function(_, _, style)
+                            state.frame_paint_count = (state.frame_paint_count or 0) + 1
+                            state.frame_style = style
+                        end}
+                    end
                     if name == 'gui.widgets' then return widgets end
                     error('unexpected require: ' .. tostring(name))
                 end,
@@ -50,6 +55,7 @@ return function(test, repo_root)
         local text = 'Difference from the attribute average.'
         local tooltip = Tooltip{}
         test.assert_equal('Widget', tooltip.widget_kind)
+        tooltip.frame_style = 'interior'
         local parent = {invalidate=function(self)
             self.invalidations = (self.invalidations or 0) + 1
         end}
@@ -67,6 +73,13 @@ return function(test, repo_root)
         test.assert_equal(4, tooltip.frame.h)
         test.assert_equal(1, tooltip.render_count)
         test.assert_equal(1, tooltip.layout_update_count)
+        local dc = {fill=function(self, rect, pen)
+            self.fills = (self.fills or 0) + 1
+            self.rect, self.pen = rect, pen
+        end}
+        tooltip:onRenderFrame(dc, 'tooltip-frame')
+        test.assert_equal(1, state.frame_paint_count)
+        test.assert_equal('interior', state.frame_style)
 
         text = 'Updated immediately.'
         tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
