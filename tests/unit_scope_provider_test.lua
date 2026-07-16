@@ -107,8 +107,9 @@ return function(test, repo_root)
         local scopes = soulsearch_env.load_unit_scope_provider(
             repo_root, env.df, env.dfhack)
         local options = scopes.get_options()
-        test.assert_sequence({'Citizens', 'Residents', 'Visitors', 'All units'},
-            {options[1].label, options[2].label, options[3].label, options[4].label})
+        test.assert_sequence({'Citizens', 'Residents', 'Citizens and pets', 'Visitors', 'All units'},
+            {options[1].label, options[2].label, options[3].label, options[4].label,
+                options[5].label})
         options[1].label = 'Changed'
         test.assert_equal('Citizens', scopes.get_options()[1].label)
     end)

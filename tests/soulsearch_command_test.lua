@@ -361,6 +361,7 @@ return function(test, repo_root)
                     ['/scripts/internal/soulsearch/lifecycle.lua']={stale=true},
                     ['/scripts/internal/soulsearch/new_module.lua']={stale=true},
                     ['/scripts/soulsearch-stats-overlay.lua']={stale=true},
+                    ['/scripts/soulsearch-creatures-overlay.lua']={stale=true},
                 }},
             },
             reqscript=function(name)
@@ -416,6 +417,8 @@ return function(test, repo_root)
         test.assert_sequence({'overlay_rescan'}, events[11])
         test.assert_nil(environment.dfhack.internal.scripts[
             '/scripts/soulsearch-stats-overlay.lua'])
+        test.assert_nil(environment.dfhack.internal.scripts[
+            '/scripts/soulsearch-creatures-overlay.lua'])
         test.assert_sequence({'keybindings'}, events[12])
         test.assert_sequence({'prepare'}, events[13])
         test.assert_equal(1, old_ui.dismiss_count)

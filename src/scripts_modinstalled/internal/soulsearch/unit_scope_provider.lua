@@ -17,6 +17,7 @@ local DEFAULT_SCOPE = filter_constants.default_unit_scope
 local SCOPE_OPTIONS = {
     {label='Citizens', value=UNIT_SCOPE.CITIZENS},
     {label='Residents', value=UNIT_SCOPE.FORT_RESIDENTS},
+    {label='Citizens and pets', value=UNIT_SCOPE.CITIZENS_AND_PETS},
     {label='Visitors', value=UNIT_SCOPE.VISITORS},
     {label='All units', value=UNIT_SCOPE.ALL_ACTIVE},
 }

@@ -168,16 +168,16 @@ binding. If you want a different SoulSearch hotkey, configure it with
 `disable soulsearch` does not delete bindings, close existing SoulSearch
 windows, or block explicit `soulsearch` and `gui/soulsearch` commands. Its
 state is session-only; the automatic bootstrap is active again after a cold
-DFHack restart. SoulSearch does not enable, disable, place, or otherwise alter
-DFHack overlay widgets. A future Stats-popover overlay has separate global
-overlay-framework and saved widget-state ownership.
+DFHack restart. SoulSearch overlays have separate global overlay-framework and
+saved widget-state ownership; manage their enablement and position with
+`gui/control-panel` or `gui/overlay`.
 
 `gui/soulsearch` opens a new SoulSearch panel in fortress mode. Repeated GUI
 command or `Ctrl-F` invocations create additional windows; only one DFHack
 `ZScreen` has keyboard focus at a time. By default, each new panel's unit scope is
 **Citizens** and its candidate race scope is **Humanoids**.
 Click **Edit filters** to open the filter panel. Use its **Search** dropdown
-to choose between Citizens, Residents, Visitors, and All units. The active
+to choose between Citizens, Residents, Citizens and pets, Visitors, and All units. The active
 scope is marked in the dropdown list. Use **Add race filter** to
 include another race or creature type, or
 exclude a race from the included candidates. Race filters use `[+]` to Include
@@ -204,6 +204,15 @@ Dwarf Fortress Wiki's primary (A), secondary (B), and tertiary (C)
 associated-attribute table; see
 [`docs/preset-defaults.md`](docs/preset-defaults.md) for the mappings.
 Use the preset menu's Search field to find a built-in skill or saved preset.
+
+When the vanilla **Creatures** menu is open, the **Open SoulSearch** overlay
+button is docked at the menu's bottom center. It opens a separate scoped
+window for the active **Residents**, **Pets/Livestock**, or **Other** tab. The
+Other tab uses the visitor/humanoid scope. The presets apply the matching unit
+scope and race candidate filter before ranking; for example, Pets/Livestock
+searches fort-controlled tameable animals.
+The overlay is enabled by default and can be disabled independently through
+DFHack's overlay controls.
 
 See [`docs/race-filtering.md`](docs/race-filtering.md) for the compound creature
 types and implementation notes on candidate scope.

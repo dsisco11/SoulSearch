@@ -27,7 +27,10 @@ also attempts default-keybinding setup, but never replaces another command's
 
 local MODULE_REGISTRY_SCRIPT = 'internal/soulsearch/module_registry'
 local KEYBINDINGS_SCRIPT = 'internal/soulsearch/keybindings'
-local OVERLAY_SCRIPT = 'soulsearch-stats-overlay'
+local OVERLAY_SCRIPTS = {
+    'soulsearch-stats-overlay',
+    'soulsearch-creatures-overlay',
+}
 
 ---@return boolean
 function isEnabled()
@@ -143,9 +146,11 @@ local function reload_modules()
     -- clear-script-env only empties the cached module table. Remove the
     -- cache entry instead, so overlay.rescan() re-executes the script and can
     -- discover its fresh OVERLAY_WIDGETS table.
-    local overlay_path = assert(dfhack.findScript(OVERLAY_SCRIPT),
-        'SoulSearch stats overlay script could not be found.')
-    dfhack.internal.scripts[overlay_path] = nil
+    for _, script in ipairs(OVERLAY_SCRIPTS) do
+        local overlay_path = assert(dfhack.findScript(script),
+            'SoulSearch overlay script could not be found: ' .. script)
+        dfhack.internal.scripts[overlay_path] = nil
+    end
     require('plugins.overlay').rescan()
     return fresh_registry.load_all(reqscript)
 end
