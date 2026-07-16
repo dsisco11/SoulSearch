@@ -31,6 +31,12 @@ return function(test, root)
         test.assert_equal(0, state.lookups)
     end)
 
+    test.case('stats overlay: uses a thin frame without the DFHack footer', function()
+        local overlay = env.load_stats_overlay(root)
+        local widget = overlay.SoulSearchStatsOverlay{}
+        test.assert_equal('thin', widget.subviews.window.frame_style)
+    end)
+
     test.case('stats overlay: does not measure or report a closed unit card during layout', function()
         local overlay, state = env.load_stats_overlay(root)
         overlay.SoulSearchStatsOverlay{}:preUpdateLayout({width=120, height=40})

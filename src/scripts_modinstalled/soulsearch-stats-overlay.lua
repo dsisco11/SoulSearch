@@ -92,7 +92,7 @@ function SoulSearchStatsOverlay:init()
     self:addviews{
         widgets.Window{
             view_id='window', frame={l=0, t=0, r=0, b=0},
-            frame_style=gui.FRAME_BOLD, draggable=false, resizable=false,
+            frame_style=gui.FRAME_THIN, draggable=false, resizable=false,
             subviews={
                 UnitStatsList{
                     view_id='stats_panel', frame={l=0, t=0, r=0, b=0},
