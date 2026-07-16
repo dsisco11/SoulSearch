@@ -111,7 +111,7 @@ return function(test, repo_root)
         test.assert_true(by_id(panel.subviews, 'available_filter_window').frame ~= nil)
         test.assert_false(by_id(panel.subviews, 'available_filter_window').visible)
         test.assert_true(by_id(panel.subviews, 'filter_list').visible())
-        test.assert_equal('Include: Residents',
+        test.assert_equal('Search for: Residents',
             by_id(panel.subviews, 'unit_scope_label').text)
         panel:toggle_picker('attribute')
         test.assert_false(by_id(panel.subviews, 'filter_list').visible())
@@ -162,7 +162,7 @@ return function(test, repo_root)
         test.assert_sequence({'active'}, panel.subviews.filter_list.last_choices)
         test.assert_sequence({'race'}, panel.subviews.available_race_list.last_choices)
         test.assert_sequence({'preset'}, panel.subviews.preset_list.last_choices)
-        test.assert_equal('Include: Residents', panel.subviews.unit_scope_label.text)
+        test.assert_equal('Search for: Residents', panel.subviews.unit_scope_label.text)
     end)
 
     test.case('filter panel: picker transition table is exclusive and closes cleanly', function()

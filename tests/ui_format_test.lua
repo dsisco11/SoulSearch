@@ -90,7 +90,7 @@ return function(test, repo_root)
             format.format_result_columns('name', false):sub(1, 6))
         test.assert_equal('Unit ID ' .. string.char(25),
             format.format_result_columns('unit_id', true):sub(56, 64))
-        test.assert_equal('Include: Visitors',
+        test.assert_equal('Search for: Visitors',
             format.format_unit_scope_control('Visitors'))
         test.assert_equal(string.char(16) .. ' Residents',
             format.format_unit_scope_choice('Residents', true))
