@@ -76,7 +76,6 @@
 ✔ [Filters->Drowdowns]: Show items that are already selected in the dropdown menu, so that users can see what filters are already active and can quickly deselect them if needed. @done(26-07-15)
 ✔ [Filters]: pad the "Clear filters" button so it is the same size as all the other buttons in the panel, so that it looks more visually consistent. @done(26-07-15)
 ✔ [Filters]: Rename "Include: <scope>" to "Search for: <scope>" to make it more clear what the control does. @done(26-07-15)
-☐ Replace parent-aggregated tooltip handling with declarative widget tooltip attributes and generic per-screen pointer targeting. See `docs/declarative-tooltip-system.todo`.
 ☐ [TooltipsWidget]: Remove the frame around the panel and the "DFHack" text from the bottom right.
 ☐ [UnitStats Panel]: rename the unit stats panel widget to `UnitInfoPanel` to better reflect its purpose.
 ☐ [UnitStatsList]: Encapsulate the stats list out of the unit-stats-display into its own component.
