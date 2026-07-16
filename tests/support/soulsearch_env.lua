@@ -1259,6 +1259,8 @@ function M.load_stats_overlay(repo_root, options)
             end
         end,
         onInput=function() return false end,
+        onRenderFrame=function() end,
+        render=function() end,
         updateLayout=function() end,
     }
     local function class(parent)
@@ -1278,10 +1280,14 @@ function M.load_stats_overlay(repo_root, options)
     end
     local active_unit_id = options.active_unit_id or
         (options.unit and options.unit.id) or -1
+    local view_sheets = {active_id=active_unit_id}
     local config = {
+        COLLAPSE_BUTTON_WIDTH=3,
         DEFAULT_SORT={key=nil, reverse=false, phase=0},
         LOG_POSITIONING=false,
-        resolve=function(width, height)
+        resolve=function(width, height, rect, side)
+            state.placement_side=side
+            state.unit_card_rect=rect
             return options.frame or {l=40, t=6, w=32, h=12}
         end,
     }
@@ -1307,7 +1313,7 @@ function M.load_stats_overlay(repo_root, options)
         DEFAULT_NIL=nil,
         defclass=function(_, parent) return class(parent) end,
         df={
-            global={game={main_interface={view_sheets={active_id=active_unit_id}}}},
+            global={game={main_interface={view_sheets=view_sheets}}},
             unit={find=function(id)
                 if options.unit and id == options.unit.id then return options.unit end
                 return nil
@@ -1316,14 +1322,26 @@ function M.load_stats_overlay(repo_root, options)
         dfhack={
             gui={
                 getCurViewscreen=function() return options.screen or {} end,
-                getFocusStrings=function() return options.focuses or {} end,
+                getFocusStrings=function(screen)
+                    return (options.focuses_by_screen or {})[screen] or options.focuses or {}
+                end,
                 getWidget=function(_, name)
                     if name == 'Tabs' and options.unit_card_rect then
                         return {rect=options.unit_card_rect}
                     end
                 end,
+                getWidgetChildren=function(container)
+                    if container == view_sheets then return options.unit_card_children or {} end
+                    return (options.nested_widget_children or {})[container] or {}
+                end,
             },
-            screen={getWindowSize=function() return options.width or 120, options.height or 40 end},
+            screen={
+                getWindowSize=function() return options.width or 120, options.height or 40 end,
+                readTile=function(x, y)
+                    local row = (options.screen_rows or {})[y] or ''
+                    return {ch=row:byte(x + 1) or 32}
+                end,
+            },
             printerr=function(error) table.insert(state.errors, error) end,
             println=function(text) table.insert(state.position_logs or {}, text) end,
         },
@@ -1332,6 +1350,8 @@ function M.load_stats_overlay(repo_root, options)
             if name == 'gui' then return {FRAME_BOLD='bold'} end
             if name == 'gui.widgets' then return {
                 Window=setmetatable({}, {__call=function(_, info) return window(info) end}),
+                Label=setmetatable({}, {__call=function(_, info) return info end}),
+                TextButton=setmetatable({}, {__call=function(_, info) return info end}),
             } end
             error('unexpected require: ' .. name)
         end,
@@ -1339,6 +1359,9 @@ function M.load_stats_overlay(repo_root, options)
             if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
             if name == 'internal/soulsearch/stats_popover_config' then return config end
             if name == 'internal/soulsearch/stats_popover' then return popover end
+            if name == 'internal/soulsearch/ui_glyphs' then
+                return {CP437_TRIANGLE_UP=string.char(30), CP437_TRIANGLE_DOWN=string.char(31)}
+            end
             if name == 'internal/soulsearch/ui/unit_stats_list' then
                 return {UnitStatsList=stats_panel}
             end
@@ -1346,7 +1369,9 @@ function M.load_stats_overlay(repo_root, options)
                 return {SoulSearchTooltip=function(info) return info end}
             end
             if name == 'internal/soulsearch/ui/tooltip_agent' then
-                return {TooltipAgent={new=function() return {update=function() end} end}}
+                return {TooltipAgent={new=function() return {update=function()
+                    state.tooltip_updates=(state.tooltip_updates or 0)+1
+                end} end}}
             end
             error('unexpected reqscript: ' .. name)
         end,

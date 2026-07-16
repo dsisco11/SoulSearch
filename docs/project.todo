@@ -71,6 +71,7 @@
 ✔ Encapsulate the columned-list-with-sortable-headers widget into a reusable class, so that it can be used in other parts of the project. Results and Stats must use native `CycleHotkeyLabel` header elements while preserving their layout-specific geometry. @done(26-07-14)
 ☐ Add soul-search "stats view" modal window popover to the base games "unit card" window, so that users can quickly see the stats of a unit without having to open the full SoulSearch window.
 ☐ [Stats View Popout]: the stats list headers are clipped and trapped behind the top of the list, so that they are not visible when the list is scrolled down. Fix this so that the headers are always visible at the top of the panel, even when the list is scrolled down.
+✔ [Stats View Popout]: Add a compact CP437-triangle collapse/expand icon, docked to the unit card's left edge, that removes the popout until expanded. @done(26-07-15)
 ☐ [SoulSearch Menu]: Remove the "Stats" title from the stats panel when its in the primary sould search window.
 ☐ [Filters->Unit Scope]: Add an "Animals" option to the unit scope dropdown, so that users can search for all animals in the fort, or all animals of a specific type (e.g. dogs, cats, etc.). This will allow users to quickly find animals with specific attributes or skills.
 ☐ [Filters->Drowdowns]: Keep menu open after a selection is made, so that users can quickly select multiple filters without having to reopen the menu each time.

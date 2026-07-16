@@ -143,13 +143,14 @@ end
 ---@param result SoulSearchResult|nil
 ---@param sort_key string|nil
 ---@param sort_reverse boolean
+---@param columns table|nil
 ---@return table[]|string
-function body(result, sort_key, sort_reverse)
+function body(result, sort_key, sort_reverse, columns)
     if not result or not result.row then return '' end
     local tokens = {}
     for _, record in ipairs(get_display_records(result, sort_key, sort_reverse)) do
         if record then
-            ui_format.append_attribute_record_tokens(tokens, record)
+            ui_format.append_attribute_record_tokens(tokens, record, columns)
         else
             table.insert(tokens, NEWLINE)
         end

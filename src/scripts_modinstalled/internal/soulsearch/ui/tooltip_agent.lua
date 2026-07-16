@@ -110,7 +110,8 @@ function TooltipAgent:update()
     local result = pointer.PointerDispatcher.sample(self.pointer_context, x, y)
     local text = result.kind == 'target' and get_tooltip(result.target) or nil
     emit_debug(self, x, y, result, text, previous)
-    self.renderer:set_tooltip(text, x, y)
+    self.renderer:set_tooltip(
+        text, x, y, self.pointer_context.root.frame_parent_rect)
     return result
 end
 

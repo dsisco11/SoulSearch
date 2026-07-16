@@ -68,6 +68,18 @@ return function(test, repo_root)
         test.assert_equal(3, mouse.samples)
     end)
 
+    test.case('tooltip agent: supplies the root parent rectangle to the renderer', function()
+        local mouse = {x=2, y=2, samples=0}
+        local TooltipAgent = load_agent(mouse).TooltipAgent
+        local renderer = {set_tooltip=function(self, _, _, _, parent_rect)
+            self.parent_rect = parent_rect
+        end}
+        local view = root({target(1, 1, 'Tip')})
+        view.frame_parent_rect = {x1=0, y1=0, width=20, height=20}
+        TooltipAgent.new(view, renderer):update()
+        test.assert_equal(view.frame_parent_rect, renderer.parent_rect)
+    end)
+
     test.case('tooltip agent: targets a native widget declared with static text', function()
         local mouse = {x=2, y=2, samples=0}
         local TooltipAgent = load_agent(mouse).TooltipAgent

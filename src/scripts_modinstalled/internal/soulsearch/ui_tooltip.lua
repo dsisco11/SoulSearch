@@ -29,7 +29,8 @@ end
 ---@param text string|nil
 ---@param mouse_x integer|nil
 ---@param mouse_y integer|nil
-function SoulSearchTooltip:set_tooltip(text, mouse_x, mouse_y)
+---@param layout_parent_rect gui.ViewRect|nil
+function SoulSearchTooltip:set_tooltip(text, mouse_x, mouse_y, layout_parent_rect)
     local has_text = text ~= nil and text ~= ''
     local has_pointer = mouse_x ~= nil and mouse_y ~= nil
     local visible = has_text and has_pointer
@@ -51,7 +52,7 @@ function SoulSearchTooltip:set_tooltip(text, mouse_x, mouse_y)
             t=math.max(0, math.min(mouse_y + 1, sh - height)), w=width, h=height}
         self.label.frame={l=0,t=0,w=width-2,h=height-2}
         self.label:setText(table.concat(lines, '\n'))
-        self:updateLayout()
+        self:updateLayout(layout_parent_rect)
     else
         self.label:setText('')
     end

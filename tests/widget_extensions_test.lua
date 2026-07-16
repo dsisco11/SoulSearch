@@ -79,7 +79,6 @@ return function(test, repo_root)
         local sources = {
             'src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua',
             'src/scripts_modinstalled/internal/soulsearch/stats_panel.lua',
-            'src/scripts_modinstalled/internal/soulsearch/stats_popover.lua',
             'src/scripts_modinstalled/soulsearch-stats-overlay.lua',
             'src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua',
             'src/scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua',
@@ -109,7 +108,6 @@ return function(test, repo_root)
             'tooltip renderer must exclude its subtree from pointer targeting')
         for _, relative_path in ipairs({
                 'src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua',
-                'src/scripts_modinstalled/internal/soulsearch/stats_popover.lua',
                 'src/scripts_modinstalled/soulsearch-stats-overlay.lua',
             }) do
             local file = assert(io.open(repo_root .. '/' .. relative_path, 'r'))

@@ -20,24 +20,34 @@ UnitStatsList.ATTRS{
     subject=DEFAULT_NIL,
     sort=DEFAULT_NIL,
     on_sort_change=DEFAULT_NIL,
+    adaptive_columns=false,
 }
 
 function UnitStatsList:init(info)
     self.subject = info.subject
     self.sort = sort_state.normalize(info.sort, SORT_SPEC)
     self.on_sort_change = info.on_sort_change
+    self.adaptive_columns = info.adaptive_columns
     self.stats_records = {}
     self.header_height = 1
+    self.columns_layout = self.adaptive_columns and layout.get_overlay_columns(false) or {
+        value_column_x=layout.VALUE_COLUMN_X,
+        label_width=layout.LABEL_WIDTH,
+    }
     self:addviews{
         sortable_header.new{view_id='columns', auto_height=false,
-            frame={l=0, t=0, w=layout.LABEL_WIDTH}, label='Stat',
+            frame={l=0, t=0, w=self.columns_layout.label_width}, label='Stat',
             tooltip='Sort by stat name.',
             on_cycle=function() self:cycle_sort('label') end},
         sortable_header.new{view_id='value_column', auto_height=false,
-            frame={l=layout.VALUE_COLUMN_X, t=0, w=layout.VALUE_HEADER_WIDTH},
+            frame={l=self.columns_layout.value_column_x, t=0,
+                w=layout.VALUE_HEADER_WIDTH},
             tooltip='Sort by baseline difference.',
             label='Delta', on_cycle=function() self:cycle_sort('value') end},
-        widgets.Label{view_id='body', auto_height=false, text='',
+        -- A parent can reserve additional header rows during layout, but the
+        -- list must remain visible before that callback has run (as it does
+        -- when hosted by an overlay).
+        widgets.Label{view_id='body', frame={l=0, t=1, r=0, b=0}, auto_height=false, text='',
             on_pointer_update=function(target, x, y)
                 self:update_body_tooltip(target, x, y)
             end},
@@ -63,8 +73,29 @@ function UnitStatsList:refresh()
     local sort = self.sort
     sortable_header.set_sort(self.subviews.columns, sort.key == 'label', sort.reverse)
     sortable_header.set_sort(self.subviews.value_column, sort.key == 'value', sort.reverse)
-    self.subviews.body:setText(presenter.body(self.subject, sort.key, sort.reverse))
     self.stats_records = presenter.get_display_records(self.subject, sort.key, sort.reverse)
+    self:refresh_body()
+    if self.frame_parent_rect then self:updateLayout() end
+    self:update_columns_for_scrollbar()
+end
+
+function UnitStatsList:refresh_body()
+    local sort = self.sort
+    self.subviews.body:setText(presenter.body(
+        self.subject, sort.key, sort.reverse, self.columns_layout))
+end
+
+function UnitStatsList:update_columns_for_scrollbar()
+    if not self.adaptive_columns then return end
+    local scrollbar = self.subviews.body.scrollbar
+    local has_scrollbar = scrollbar and scrollbar.elems_per_page < scrollbar.num_elems
+    local columns_layout = layout.get_overlay_columns(has_scrollbar)
+    if columns_layout.value_column_x == self.columns_layout.value_column_x then
+        return
+    end
+    self.columns_layout = columns_layout
+    self:set_header_height(self.header_height)
+    self:refresh_body()
     if self.frame_parent_rect then self:updateLayout() end
 end
 
@@ -74,18 +105,18 @@ function UnitStatsList:set_header_height(height)
     self.header_height = math.max(1, height or 1)
     self.subviews.columns.frame = {l=0, t=0, r=0, h=self.header_height}
     self.subviews.value_column.frame = {
-        l=layout.VALUE_COLUMN_X, t=0, w=layout.VALUE_HEADER_WIDTH,
+        l=self.columns_layout.value_column_x, t=0, w=layout.VALUE_HEADER_WIDTH,
         h=self.header_height,
     }
     self.subviews.body.frame = {l=0, t=self.header_height, r=0, b=0}
 end
 
 function UnitStatsList:update_body_tooltip(target, x, y)
-    if layout.is_value_cell(x, y) then
+    if layout.is_value_cell(x, y, self.columns_layout) then
         target.tooltip = 'Difference from the attribute average.'
         return
     end
-    if layout.is_label_cell(x, y) then
+    if layout.is_label_cell(x, y, self.columns_layout) then
         local record = self.stats_records[(self.subviews.body.start_line_num or 1) + y]
         target.tooltip = record and descriptions.get_tooltip(record.kind, record.key) or nil
         return

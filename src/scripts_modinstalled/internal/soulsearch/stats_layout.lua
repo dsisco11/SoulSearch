@@ -2,12 +2,17 @@
 
 -- Geometry owned by the reusable Stats panel. These coordinates are relative
 -- to the panel, never to the main SoulSearch window.
-LABEL_WIDTH = 24
-VALUE_COLUMN_X = 27
+LABEL_WIDTH = 23
+VALUE_COLUMN_X = 26
 VALUE_HEADER_WIDTH = 7
 CONTENT_TOP = 2
 MIN_CONTENT_WIDTH = VALUE_COLUMN_X + VALUE_HEADER_WIDTH
 MIN_CONTENT_HEIGHT = 4 -- header, two column-header rows, and one body row
+
+-- The overlay list has room for a wider label column when all records fit.
+-- With the native scrollbar visible, leave one tile between Delta and it.
+OVERLAY_VALUE_COLUMN_X = 27
+OVERLAY_SCROLLING_VALUE_COLUMN_X = 25
 
 ---@param source table
 ---@return table
@@ -15,6 +20,23 @@ function copy_frame(source)
     local copy = {}
     for key, value in pairs(source or {}) do copy[key] = value end
     return copy
+end
+
+---@param has_scrollbar boolean
+---@return table
+function get_overlay_columns(has_scrollbar)
+    local value_column_x = has_scrollbar and OVERLAY_SCROLLING_VALUE_COLUMN_X or
+        OVERLAY_VALUE_COLUMN_X
+    return {
+        value_column_x=value_column_x,
+        label_width=value_column_x - 3, -- two-space row inset and trailing gap
+    }
+end
+
+---@param columns table|nil
+---@return integer
+local function get_value_column_x(columns)
+    return columns and columns.value_column_x or VALUE_COLUMN_X
 end
 
 ---@param x integer|nil
@@ -32,16 +54,17 @@ end
 ---@param x integer|nil
 ---@param y integer|nil
 ---@return boolean
-function is_value_cell(x, y)
-    return x and y and y >= 0 and x >= VALUE_COLUMN_X and
-        x < VALUE_COLUMN_X + VALUE_HEADER_WIDTH
+function is_value_cell(x, y, columns)
+    local value_column_x = get_value_column_x(columns)
+    return x and y and y >= 0 and x >= value_column_x and
+        x < value_column_x + VALUE_HEADER_WIDTH
 end
 
 ---@param x integer|nil
 ---@param y integer|nil
 ---@return boolean
-function is_label_cell(x, y)
-    return x and y and y >= 0 and x >= 2 and x < VALUE_COLUMN_X
+function is_label_cell(x, y, columns)
+    return x and y and y >= 0 and x >= 2 and x < get_value_column_x(columns)
 end
 
 ---@param content_height integer|nil

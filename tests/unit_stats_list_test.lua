@@ -7,6 +7,8 @@ return function(test, root)
         local list = UnitStatsList{subject={row={}, unit={}},
             sort={key='label', reverse=false, phase=1},
             on_sort_change=function(sort) table.insert(changes, sort) end}
+        test.assert_equal(26, list.columns_layout.value_column_x)
+        test.assert_equal(1, list.subviews.body.frame.t)
         list.subviews.body.start_line_num = 9
         list:reset_view_state({key='value', reverse=true, phase=1})
         test.assert_equal(1, list.subviews.body.start_line_num)

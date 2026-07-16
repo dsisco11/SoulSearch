@@ -95,7 +95,7 @@ MODULES = {
     {name='internal/soulsearch/residents', contract='collect_from_provider'},
     {
         name='internal/soulsearch/stats_popover',
-        contract='open',
+        contract='get_subject',
     },
     {name='internal/soulsearch/keybindings', contract='ensure_default'},
     {name='internal/soulsearch/lifecycle', contract='prepare_for_world'},

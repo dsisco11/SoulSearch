@@ -249,9 +249,11 @@ end
 
 ---@param tokens table[]
 ---@param record SoulSearchStatsRecord
-function append_attribute_record_tokens(tokens, record)
+---@param columns table|nil
+function append_attribute_record_tokens(tokens, record, columns)
+    local label_width = columns and columns.label_width or stats_layout.LABEL_WIDTH
     table.insert(tokens, {
-        text=('  %-' .. stats_layout.LABEL_WIDTH .. 's '):format(record.label),
+        text=('  %-' .. label_width .. 's '):format(record.label),
         pen=record.pen,
     })
     table.insert(tokens, {

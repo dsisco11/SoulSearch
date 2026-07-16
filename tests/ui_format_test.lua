@@ -141,16 +141,26 @@ return function(test, repo_root)
     test.case('UI format: stats header and values preserve glyphs and padding', function()
         local tokens = {}
         format.append_stats_column_header_tokens(tokens, 'value', true)
-        test.assert_equal('Stat                       ', tokens[1].text)
+        test.assert_equal('Stat' .. (' '):rep(22), tokens[1].text)
         test.assert_equal('Delta ' .. string.char(25), tokens[2].text)
-        test.assert_equal(string.char(196):rep(24), tokens[4].text)
+        test.assert_equal(string.char(196):rep(23), tokens[4].text)
         test.assert_equal(string.char(196):rep(5), tokens[6].text)
         local record_tokens = {}
         format.append_attribute_record_tokens(record_tokens, {
             label='Strength', deviation=250, tier_distance=2, pen='physical'})
-        test.assert_equal('  Strength                 ', record_tokens[1].text)
+        test.assert_equal('  Strength' .. (' '):rep(16), record_tokens[1].text)
         test.assert_equal('+250', record_tokens[2].text)
         test.assert_equal('lightgreen', record_tokens[2].pen)
+        local compact_tokens = {}
+        format.append_attribute_record_tokens(compact_tokens, {
+            label='Strength', deviation=250, tier_distance=2, pen='physical'},
+            {label_width=24})
+        test.assert_equal('  Strength' .. (' '):rep(17), compact_tokens[1].text)
+        local scrolling_tokens = {}
+        format.append_attribute_record_tokens(scrolling_tokens, {
+            label='Strength', deviation=250, tier_distance=2, pen='physical'},
+            {label_width=22})
+        test.assert_equal('  Strength' .. (' '):rep(15), scrolling_tokens[1].text)
     end)
 
     test.case('UI format: panel title rules use CP437 horizontal lines', function()

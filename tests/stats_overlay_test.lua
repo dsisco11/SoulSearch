@@ -10,7 +10,7 @@ return function(test, root)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)
         test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(3, attrs.version)
+        test.assert_equal(12, attrs.version)
         test.assert_equal(nil, overlay.SoulSearchStatsOverlay.overlay_trigger)
     end)
 
@@ -28,6 +28,26 @@ return function(test, root)
         test.assert_equal(0, state.lookups)
     end)
 
+    test.case('stats overlay: does not measure or report a closed unit card during layout', function()
+        local overlay, state = env.load_stats_overlay(root)
+        overlay.SoulSearchStatsOverlay{}:preUpdateLayout({width=120, height=40})
+        test.assert_equal(0, #state.errors)
+        test.assert_equal(nil, state.placement_side)
+    end)
+
+    test.case('stats overlay: recognizes a unit card beneath a launcher screen', function()
+        local unit={id=7}
+        local unit_card_screen={}
+        local launcher_screen={parent=unit_card_screen}
+        local overlay, state = env.load_stats_overlay(root, {screen=launcher_screen, unit=unit,
+            focuses_by_screen={[launcher_screen]={'dfhack/lua/launcher'},
+                [unit_card_screen]={'dwarfmode/ViewSheets/UNIT/Overview'}}})
+        local widget = overlay.SoulSearchStatsOverlay{}
+        test.assert_false(widget:overlay_onupdate())
+        test.assert_equal(unit, widget.subviews.window.subviews.stats_panel.subject.unit)
+        test.assert_equal(1, state.lookups)
+    end)
+
     test.case('stats overlay: only reports a subject error once', function()
         local overlay, state = env.load_stats_overlay(root, {unit={id=1}})
         test.assert_false(overlay.SoulSearchStatsOverlay{}:overlay_onupdate())
@@ -39,5 +59,66 @@ return function(test, root)
         widget:overlay_onupdate()
         test.assert_equal('bad unit', state.errors[1])
         test.assert_equal(1, #state.errors)
+    end)
+
+    test.case('stats overlay: resolves tooltips while rendering', function()
+        local overlay, state = env.load_stats_overlay(root,
+            {focuses={'dwarfmode/ViewSheets/UNIT'}})
+        local widget = overlay.SoulSearchStatsOverlay{}
+        widget:onRenderFrame(nil, nil)
+        test.assert_equal(1, state.tooltip_updates)
+    end)
+
+    test.case('stats overlay: renders its tooltip above the clipped popout', function()
+        local overlay = env.load_stats_overlay(root,
+            {focuses={'dwarfmode/ViewSheets/UNIT'}})
+        local widget = overlay.SoulSearchStatsOverlay{}
+        widget.tooltip.visible = true
+        widget.tooltip.render = function() widget.tooltip_rendered = true end
+        widget:render('screen')
+        test.assert_true(widget.tooltip_rendered)
+        test.assert_equal(widget, widget.tooltip.parent_view)
+    end)
+
+    test.case('stats overlay: collapse button shrinks and restores the popout', function()
+        local overlay, state = env.load_stats_overlay(root,
+            {focuses={'dwarfmode/ViewSheets/UNIT'}})
+        local widget = overlay.SoulSearchStatsOverlay{}
+        local window = widget.subviews.window
+        local panel = window.subviews.stats_panel
+        test.assert_equal(string.char(30), widget.subviews.collapse_button.label)
+        test.assert_equal('Collapse the SoulSearch stats view.',
+            widget.subviews.collapse_button.tooltip)
+        test.assert_equal('Expand the SoulSearch stats view.',
+            widget.subviews.expand_button.tooltip)
+        test.assert_equal(0, window.frame.l)
+        widget.subviews.collapse_button.on_activate()
+        test.assert_true(widget.collapsed)
+        test.assert_false(window.visible)
+        test.assert_false(widget.subviews.collapse_button.visible)
+        test.assert_true(widget.subviews.expand_button.visible)
+        test.assert_equal(3, widget.frame.w)
+        test.assert_equal(1, widget.frame.h)
+        test.assert_equal('left', state.placement_side)
+        test.assert_equal(69, widget.frame.l)
+        widget.subviews.expand_button.on_activate()
+        test.assert_false(widget.collapsed)
+        test.assert_true(window.visible)
+        test.assert_equal(string.char(31), widget.subviews.expand_button.label)
+        test.assert_equal(32, widget.frame.w)
+        test.assert_equal(12, widget.frame.h)
+        test.assert_equal(nil, panel.visible)
+    end)
+
+    test.case('stats overlay: measures the vanilla unit-card tab strip', function()
+        local overlay, state = env.load_stats_overlay(root, {
+            focuses={'dwarfmode/ViewSheets/UNIT'}, unit={id=4}, width=264, height=75,
+            screen_rows={[15]=string.rep(' ', 169) .. 'Overview   Items   Health'},
+        })
+        overlay.SoulSearchStatsOverlay{}:overlay_onupdate()
+        test.assert_equal(167, state.unit_card_rect.x1)
+        test.assert_equal(13, state.unit_card_rect.y1)
+        test.assert_equal(263, state.unit_card_rect.x2)
+        test.assert_equal(74, state.unit_card_rect.y2)
     end)
 end
