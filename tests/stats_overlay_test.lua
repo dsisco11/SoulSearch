@@ -2,7 +2,7 @@ local env = require('support.soulsearch_env')
 
 return function(test, root)
     test.case('stats overlay: registration has stable static identity', function()
-        local overlay, state = env.load_stats_overlay(root)
+        local overlay, state, config = env.load_stats_overlay(root)
         test.assert_equal(0, state.lookups)
         test.assert_true(overlay.OVERLAY_WIDGETS.soulsearch_stats ~= nil)
         local attrs = overlay.SoulSearchStatsOverlay.attrs
@@ -10,7 +10,9 @@ return function(test, root)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)
         test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(12, attrs.version)
+        test.assert_equal(13, attrs.version)
+        test.assert_equal(config.PLACEMENT.OUTSIDE_LEFT, attrs.placement[1])
+        test.assert_equal(config.PLACEMENT.INSIDE_RIGHT, attrs.placement[2])
         test.assert_equal(nil, overlay.SoulSearchStatsOverlay.overlay_trigger)
     end)
 
@@ -37,11 +39,21 @@ return function(test, root)
         test.assert_equal('thin', widget.subviews.window.frame_style)
     end)
 
+    test.case('stats overlay: forwards per-instance placement fallbacks in order', function()
+        local overlay, state, config = env.load_stats_overlay(root)
+        local widget = overlay.SoulSearchStatsOverlay{
+            placement={config.PLACEMENT.INSIDE_LEFT, config.PLACEMENT.OUTSIDE_RIGHT},
+        }
+        widget:resolve_frame(120, 40)
+        test.assert_equal(config.PLACEMENT.INSIDE_LEFT, state.placements[1])
+        test.assert_equal(config.PLACEMENT.OUTSIDE_RIGHT, state.placements[2])
+    end)
+
     test.case('stats overlay: does not measure or report a closed unit card during layout', function()
         local overlay, state = env.load_stats_overlay(root)
         overlay.SoulSearchStatsOverlay{}:preUpdateLayout({width=120, height=40})
         test.assert_equal(0, #state.errors)
-        test.assert_equal(nil, state.placement_side)
+        test.assert_equal(nil, state.placements)
     end)
 
     test.case('stats overlay: recognizes a unit card beneath a launcher screen', function()
@@ -90,7 +102,7 @@ return function(test, root)
     end)
 
     test.case('stats overlay: collapse button shrinks and restores the popout', function()
-        local overlay, state = env.load_stats_overlay(root,
+        local overlay, state, config = env.load_stats_overlay(root,
             {focuses={'dwarfmode/ViewSheets/UNIT'}})
         local widget = overlay.SoulSearchStatsOverlay{}
         local window = widget.subviews.window
@@ -108,7 +120,8 @@ return function(test, root)
         test.assert_true(widget.subviews.expand_button.visible)
         test.assert_equal(3, widget.frame.w)
         test.assert_equal(1, widget.frame.h)
-        test.assert_equal('left', state.placement_side)
+        test.assert_equal(config.PLACEMENT.OUTSIDE_LEFT, state.placements[1])
+        test.assert_equal(config.PLACEMENT.INSIDE_RIGHT, state.placements[2])
         test.assert_equal(69, widget.frame.l)
         widget.subviews.expand_button.on_activate()
         test.assert_false(widget.collapsed)

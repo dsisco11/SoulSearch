@@ -77,12 +77,14 @@ end
 SoulSearchStatsOverlay = defclass(SoulSearchStatsOverlay, overlay.OverlayWidget)
 SoulSearchStatsOverlay.ATTRS{
     desc='Display SoulSearch Stats beside the selected unit card.',
-    version=12,
+    version=13,
     default_enabled=true,
     default_pos={x=1, y=1}, -- replaced by resolve_frame() during layout
     hotspot=true,
     viewscreens=UNIT_CARD_FOCUS,
     frame={w=1, h=1},
+    -- Edit this ordered list to choose the preferred docking side and its fallbacks.
+    placement={config.PLACEMENT.OUTSIDE_LEFT, config.PLACEMENT.INSIDE_RIGHT},
     overlay_onupdate_max_freq_seconds=0,
 }
 
@@ -130,7 +132,7 @@ end
 
 function SoulSearchStatsOverlay:resolve_frame(width, height)
     local panel_frame, err, source = config.resolve(
-        width, height, get_unit_card_rect(), 'left')
+        width, height, get_unit_card_rect(), self.placement)
     if not panel_frame then
         if self.layout_error ~= err then
             self.layout_error = err

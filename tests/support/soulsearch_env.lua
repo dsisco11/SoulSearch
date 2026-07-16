@@ -1320,6 +1320,9 @@ function M.load_stats_overlay(repo_root, options)
             __index=parent or base,
             __call=function(cls, info)
                 local instance=info or {}
+                for key, value in pairs(cls.attrs) do
+                    if instance[key] == nil then instance[key] = value end
+                end
                 setmetatable(instance, {__index=cls})
                 if cls.init then cls.init(instance, info or {}) end
                 return instance
@@ -1333,9 +1336,15 @@ function M.load_stats_overlay(repo_root, options)
         COLLAPSE_BUTTON_WIDTH=3,
         DEFAULT_SORT={key=nil, reverse=false, phase=0},
         OVERLAY_DEFAULT_SORT={key='value', reverse=true, phase=1},
+        PLACEMENT={
+            OUTSIDE_LEFT='outside-left',
+            OUTSIDE_RIGHT='outside-right',
+            INSIDE_LEFT='inside-left',
+            INSIDE_RIGHT='inside-right',
+        },
         LOG_POSITIONING=false,
-        resolve=function(width, height, rect, side)
-            state.placement_side=side
+        resolve=function(width, height, rect, placements)
+            state.placements=placements
             state.unit_card_rect=rect
             return options.frame or {l=40, t=6, w=32, h=12}
         end,
@@ -1426,7 +1435,7 @@ function M.load_stats_overlay(repo_root, options)
         end,
     }
     return module_loader.load(repo_root,
-        'src/scripts_modinstalled/soulsearch-stats-overlay.lua', globals), state
+        'src/scripts_modinstalled/soulsearch-stats-overlay.lua', globals), state, config
 end
 
 return M
