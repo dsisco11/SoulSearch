@@ -80,8 +80,7 @@
 ✔ [UnitStats Panel]: rename the unit stats panel widget to `UnitInfoPanel` to better reflect its purpose. @done(26-07-15)
 ✔ [UnitIdentity]: Encapsulate the unit identity header out of the unit-stats-display into its own component. Specifically the unit name and title labels are what should be isolated. @done(26-07-15 23:56)
 ✔ [Matched Filters Panel]: Encapsulate the matched filters display out of the unit-stats-display into its own component. Specifically the matched filters list and the "Matched Filters" title label are what should be isolated. @done(26-07-15)
-☐ [UnitStatsPopout]: use the unit-stats-list widget to display the stats in the popout window, rather than the full unit-stats-display panel.
-☐ Evaluate whether any of the projects ui elements/patterns can be replaced with built-in dfhack ui widgets which provide the same functionality.
+✔ Evaluate whether any of the projects ui elements/patterns can be replaced with built-in dfhack ui widgets which provide the same functionality. See `docs/dfhack-widget-audit.md`. @done(26-07-16)
 ☐ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Scoped means the relevant specific creature type already selected as a filter. (e.g. "Residents" tab will filter to humanoids, and "Pets/Livestock" tab will filter to animals, etc.) (but 'scoped' doesnt specifically mean "scoped to a creature type", it could also be scoped to a specific profession, or a specific location, etc.)
-☐ Make soul search window panels resizeable via the use of the native dfhack 'Divider' widget.
-☐ Make soul search panels size to fit available window space (via using the dfhack `ResizingPanel` widget), so that the user can resize the window and the panels will automatically resize to fit the new window size.
+☐ Make soul search window panels resizeable with a custom draggable splitter; the native DFHack `Divider` widget is visual-only.
+☐ Make soul search panels size to fit available window space with parent layout callbacks; DFHack `ResizingPanel` grows to fit children rather than filling a resized parent.
