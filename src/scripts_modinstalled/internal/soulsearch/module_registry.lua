@@ -72,7 +72,7 @@ MODULES = {
     },
     {
         name='internal/soulsearch/stats_panel',
-        contract='SoulSearchStatsPanel', contract_type='table',
+        contract='UnitInfoPanel', contract_type='table',
     },
     {name='internal/soulsearch/race_catalog', contract='get_descriptors'},
     {name='internal/soulsearch/descriptors', contract='get_catalog'},

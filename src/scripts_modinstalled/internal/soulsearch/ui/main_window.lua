@@ -24,7 +24,7 @@ local result_presenter = reqscript('internal/soulsearch/result_presenter')
 local filter_presenter = reqscript('internal/soulsearch/filter_presenter')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
-local StatsPanel = reqscript('internal/soulsearch/stats_panel').SoulSearchStatsPanel
+local UnitInfoPanel = reqscript('internal/soulsearch/stats_panel').UnitInfoPanel
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
@@ -164,7 +164,7 @@ function SoulSearchWindow:init()
         self:toggle_filter_panel()
     end))
     table.insert(views, filter_panel.create_active_filter_count())
-    table.insert(views, StatsPanel{
+    table.insert(views, UnitInfoPanel{
         view_id='stats_panel',
         frame={l=ui_layout.STATS_LEFT, t=ui_layout.HEADER_ROW, r=1, b=0},
         subject=nil,

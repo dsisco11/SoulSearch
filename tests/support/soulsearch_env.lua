@@ -522,7 +522,7 @@ function M.load_stats_panel(repo_root)
     end
     local loaded = module_loader.load(repo_root,
         'src/scripts_modinstalled/internal/soulsearch/stats_panel.lua', globals)
-    return loaded.SoulSearchStatsPanel
+    return loaded.UnitInfoPanel
 end
 
 function M.load_stats_presenter(repo_root, attributes)
@@ -1041,8 +1041,8 @@ function M.load_ui_characterization(repo_root)
         ['internal/soulsearch/ui_layout']=ui_layout,
         ['internal/soulsearch/ui_refresh']=ui_refresh,
         ['internal/soulsearch/stats_panel']={
-            SoulSearchStatsPanel=function(info)
-                info.widget_kind = 'SoulSearchStatsPanel'
+            UnitInfoPanel=function(info)
+                info.widget_kind = 'UnitInfoPanel'
                 function info:set_subject(subject) self.subject = subject end
                 return info
             end,
