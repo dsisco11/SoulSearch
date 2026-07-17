@@ -6,7 +6,8 @@ local CONSTANTS = {
         id_prefix='unit_scope:',
         CITIZENS='citizens',
         FORT_RESIDENTS='fort_residents',
-        CITIZENS_AND_PETS='citizens_and_pets',
+        LIVESTOCK='livestock',
+        PETS='pets',
         VISITORS='visitors',
     },
     race={
@@ -57,8 +58,9 @@ return function(test, repo_root)
         local pets = scope.get_active()
         test.assert_equal('Pets/Livestock', pets.label)
         test.assert_equal('creatures:pets-livestock', pets.options.settings_id)
-        test.assert_equal('unit_scope:citizens_and_pets', pets.options.filters[1].id)
-        test.assert_equal('race:group:TAMEABLE_ANIMALS', pets.options.filters[2].id)
+        test.assert_equal('unit_scope:pets', pets.options.filters[1].id)
+        test.assert_equal('unit_scope:livestock', pets.options.filters[2].id)
+        test.assert_equal('race:group:TAMEABLE_ANIMALS', pets.options.filters[3].id)
         test.assert_equal('high', pets.options.filters[1].direction)
 
         focuses[screen] = {'dwarfmode/Info/CREATURES/Visitors'}
@@ -97,8 +99,8 @@ return function(test, repo_root)
         }, launcher)
 
         local first = scope.get_active()
-        first.options.filters[2].id = 'changed'
+        first.options.filters[3].id = 'changed'
         local second = scope.get_active()
-        test.assert_equal('race:group:TAMEABLE_ANIMALS', second.options.filters[2].id)
+        test.assert_equal('race:group:TAMEABLE_ANIMALS', second.options.filters[3].id)
     end)
 end

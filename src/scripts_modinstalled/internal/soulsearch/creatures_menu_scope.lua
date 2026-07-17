@@ -32,7 +32,7 @@ local TAB_SCOPES = {
         focus_tokens={'pet', 'livestock', 'work_animal'},
         tab_labels={'pets/livestock'},
         settings_id='creatures:pets-livestock', label='Pets/Livestock',
-        unit_scope_key=SCOPE.CITIZENS_AND_PETS,
+        unit_scope_keys={SCOPE.PETS, SCOPE.LIVESTOCK},
         race_group=RACE.group.TAMEABLE_ANIMALS,
     },
     {

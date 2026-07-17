@@ -35,9 +35,6 @@ local DEFINITIONS = {
     {key=UNIT_SCOPE.FORT_RESIDENTS, label='Residents', matches=function(unit)
         return dfhack.units.isResident(unit, true)
     end},
-    {key=UNIT_SCOPE.CITIZENS_AND_PETS, label='Citizens and pets', matches=function(unit)
-        return dfhack.units.isFortControlled(unit)
-    end},
     {key=UNIT_SCOPE.LIVESTOCK, label='Livestock', matches=is_livestock},
     {key=UNIT_SCOPE.PETS, label='Pets', matches=function(unit)
         return dfhack.units.isPet(unit)

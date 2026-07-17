@@ -18,12 +18,11 @@ return function(test, repo_root)
         }})
         local descriptors = catalog.get_descriptors()
         test.assert_sequence({'unit_scope:citizens', 'unit_scope:fort_residents',
-            'unit_scope:citizens_and_pets', 'unit_scope:livestock', 'unit_scope:pets', 'unit_scope:visitors',
+            'unit_scope:livestock', 'unit_scope:pets', 'unit_scope:visitors',
             'unit_scope:wildlife'}, ids(descriptors))
-        test.assert_sequence({'Citizens', 'Residents', 'Citizens and pets', 'Livestock', 'Pets', 'Visitors', 'Wildlife'}, {
+        test.assert_sequence({'Citizens', 'Residents', 'Livestock', 'Pets', 'Visitors', 'Wildlife'}, {
             descriptors[1].label, descriptors[2].label, descriptors[3].label,
             descriptors[4].label, descriptors[5].label, descriptors[6].label,
-            descriptors[7].label,
         })
         for _, descriptor in ipairs(descriptors) do
             test.assert_equal('unit_scope', descriptor.kind)
@@ -59,7 +58,11 @@ return function(test, repo_root)
                 test.assert_true(catalog.matches_unit(descriptor, unit))
             end
         end
-        test.assert_false(catalog.matches_unit(descriptors[5], unit))
+        local pets
+        for _, descriptor in ipairs(descriptors) do
+            if descriptor.id == 'unit_scope:pets' then pets = descriptor end
+        end
+        test.assert_false(catalog.matches_unit(pets, unit))
         test.assert_true(calls.citizen)
         test.assert_true(calls.resident)
         test.assert_false(catalog.matches_unit({id='unit_scope:unknown'}, unit))

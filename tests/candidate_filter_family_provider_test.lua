@@ -15,7 +15,7 @@ return function(test, repo_root)
     local candidates = soulsearch_env.load_candidate_provider(repo_root)
     local source = {
         {id=1, scopes={citizens=true, fort_residents=true}},
-        {id=2, scopes={citizens_and_pets=true}},
+        {id=2, scopes={livestock=true}},
         {id=3, scopes={visitors=true}},
         {id=4, scopes={fort_residents=true}},
         {id=1, scopes={citizens=true, fort_residents=true}},
@@ -30,7 +30,7 @@ return function(test, repo_root)
         test.assert_sequence({1, 2, 3, 4}, ids(run({})))
         test.assert_sequence({1}, ids(run({filter('citizens')})))
         test.assert_sequence({1, 3}, ids(run({filter('citizens'), filter('visitors')})))
-        test.assert_sequence({1, 3, 4}, ids(run({filter('citizens_and_pets', 'low')})))
+        test.assert_sequence({1, 3, 4}, ids(run({filter('livestock', 'low')})))
         test.assert_sequence({4}, ids(run({filter('fort_residents'), filter('citizens', 'low')})))
     end)
 

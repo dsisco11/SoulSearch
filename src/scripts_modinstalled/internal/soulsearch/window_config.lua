@@ -84,7 +84,8 @@ local function get_scope_filter_id(scope)
     if scope == LEGACY_ALL_ACTIVE then return nil end
     for _, key in ipairs{
         UNIT_SCOPE.CITIZENS, UNIT_SCOPE.FORT_RESIDENTS,
-        UNIT_SCOPE.CITIZENS_AND_PETS, UNIT_SCOPE.VISITORS,
+        UNIT_SCOPE.LIVESTOCK, UNIT_SCOPE.PETS, UNIT_SCOPE.VISITORS,
+        UNIT_SCOPE.WILDLIFE,
     } do
         if scope == key then return UNIT_SCOPE.id_prefix .. key end
     end

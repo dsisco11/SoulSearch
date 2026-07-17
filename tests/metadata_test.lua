@@ -77,7 +77,7 @@ return function(test, repo_root)
         local first = descriptors.get_catalog()
         local second = descriptors.get_catalog()
         test.assert_true(first == second)
-        test.assert_equal(26, #first.flat)
+        test.assert_equal(25, #first.flat)
 
         local seen = {}
         for _, descriptor in ipairs(first.flat) do
@@ -93,7 +93,6 @@ return function(test, repo_root)
         test.assert_sequence({
             'unit_scope:citizens',
             'unit_scope:fort_residents',
-            'unit_scope:citizens_and_pets',
             'unit_scope:livestock',
             'unit_scope:pets',
             'unit_scope:visitors',
@@ -143,7 +142,6 @@ return function(test, repo_root)
             'trait:PATIENCE',
             'unit_scope:citizens',
             'unit_scope:fort_residents',
-            'unit_scope:citizens_and_pets',
             'unit_scope:livestock',
             'unit_scope:pets',
             'unit_scope:visitors',

@@ -88,7 +88,8 @@ return function(test, repo_root)
         local cases = {
             {label='Residents', filters={'unit_scope:fort_residents', 'unit_scope:citizens',
                 'race:group:HUMANOIDS'}},
-            {label='Pets/Livestock', filters={'unit_scope:citizens_and_pets', 'race:group:TAMEABLE_ANIMALS'}},
+            {label='Pets/Livestock', filters={'unit_scope:pets', 'unit_scope:livestock',
+                'race:group:TAMEABLE_ANIMALS'}},
             {label='Visitors', filters={'unit_scope:visitors'}},
         }
         for _, case in ipairs(cases) do
