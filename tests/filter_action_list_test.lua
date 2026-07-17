@@ -5,6 +5,7 @@ return function(test, repo_root)
     local FilterActionList = soulsearch_env.load_filter_action_list(
         repo_root).FilterActionList
     local layout = soulsearch_env.load_ui_layout(repo_root)
+    local action = layout.FILTER_ACTION
 
     local function make_list(callback)
         local list = FilterActionList{on_filter_action=callback}
@@ -58,7 +59,7 @@ return function(test, repo_root)
         list.mouse_y = 2
         test.assert_true(list:onInput{_MOUSE_L=true})
         test.assert_equal(6, list.selected)
-        test.assert_sequence({'attribute:agility', 'set_high'}, dispatched)
+        test.assert_sequence({'attribute:agility', action.SET_HIGH}, dispatched)
     end)
 
     test.case('filter action list: native page top identifies the hovered action row', function()
@@ -104,6 +105,36 @@ return function(test, repo_root)
         test.assert_equal(nil, list.tooltip)
         list:on_pointer_update(0, 3)
         test.assert_equal(nil, list.tooltip)
+
+        list:setChoices({{descriptor={kind='unit_scope', key='visitors',
+            behavior='candidate'}}}, 1)
+        list:on_pointer_update(0, 0)
+        test.assert_equal('Filters which active units are considered.', list.tooltip)
+    end)
+
+    test.case('filter action list: candidate move hit zones cannot dispatch', function()
+        local calls = {}
+        local list = make_list(function(id, action)
+            table.insert(calls, id .. ':' .. action)
+        end)
+        list:setChoices({{descriptor={id='unit_scope:visitors', kind='unit_scope',
+            behavior='candidate'}}}, 1)
+        list.mouse_index, list.mouse_y = 1, 0
+        local action_x = layout.ACTIVE_FILTER_BUTTON_START_X
+        for _, index in ipairs({1, 2, 5}) do
+            list.mouse_x = action_x + (index - 1) * layout.FILTER_ACTION_WIDTH
+            test.assert_true(list:onInput{_MOUSE_L=true})
+        end
+        test.assert_sequence({
+            'unit_scope:visitors:' .. action.SET_HIGH,
+            'unit_scope:visitors:' .. action.SET_LOW,
+            'unit_scope:visitors:' .. action.REMOVE,
+        }, calls)
+        for _, index in ipairs({3, 4}) do
+            list.mouse_x = action_x + (index - 1) * layout.FILTER_ACTION_WIDTH
+            test.assert_false(list:onInput{_MOUSE_L=true})
+        end
+        test.assert_equal(2, list.super_input_calls)
     end)
 
     test.case('filter action list: dispatcher invokes class pointer method with local coordinates',

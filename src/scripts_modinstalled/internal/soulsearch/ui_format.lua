@@ -167,7 +167,8 @@ function format_active_filter_choice(
         local pen = COLOR_DARKGREY
         local label = action.label
         if is_candidate then
-            if action.callback == 'move_up' or action.callback == 'move_down' then
+            if action.callback == layout.FILTER_ACTION.MOVE_UP or
+                    action.callback == layout.FILTER_ACTION.MOVE_DOWN then
                 label = '   '
             end
         end

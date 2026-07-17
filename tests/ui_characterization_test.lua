@@ -193,6 +193,53 @@ return function(test, repo_root)
         test.assert_sequence({2, 1}, state_changes)
     end)
 
+    test.case('UI characterization: clear and scope-free presets refresh unified state once', function()
+        local requests, picker_closes = {}, 0
+        local session = {
+            filters={{id='unit_scope:citizens', direction='high'}},
+            clear_filters=function(self)
+                if #self.filters == 0 then return false end
+                self.filters = {}
+                return true
+            end,
+            replace_filters=function(self, filters)
+                self.filters = filters
+                return true
+            end,
+            get_filters=function(self) return self.filters end,
+        }
+        local window = setmetatable({
+            session=session,
+            subviews={filter_panel_window={close_picker=function()
+                picker_closes = picker_closes + 1
+            end}},
+            update_session_settings=function(_, settings)
+                test.assert_true(settings.filters == session.filters)
+            end,
+            refresh_views=function(_, request)
+                table.insert(requests, request)
+            end,
+        }, {__index=main_window.SoulSearchWindow})
+        test.assert_true(window:clear_filters())
+        test.assert_equal(1, picker_closes)
+        test.assert_equal(1, #requests)
+        test.assert_equal(0, #session.filters)
+        test.assert_true(requests[1].active_filters)
+        test.assert_true(requests[1].pickers)
+        test.assert_true(requests[1].candidates)
+        test.assert_true(requests[1].results)
+        test.assert_true(window:apply_loaded_filter_preset({
+            {id='skill:MINING', direction='high'},
+        }) == nil)
+        test.assert_equal(2, picker_closes)
+        test.assert_equal(2, #requests)
+        test.assert_equal('skill:MINING', session.filters[1].id)
+        test.assert_true(requests[2].active_filters)
+        test.assert_true(requests[2].pickers)
+        test.assert_true(requests[2].candidates)
+        test.assert_true(requests[2].results)
+    end)
+
     test.case('UI characterization: Main Window delegates through component APIs', function()
         local window = new_window()
         local calls = {}

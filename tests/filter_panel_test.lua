@@ -126,6 +126,23 @@ return function(test, repo_root)
         test.assert_equal('miner', calls.role)
     end)
 
+    test.case('filter panel: unit-scope picker query and repeated toggles retain its open state', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        panel:toggle_picker('unit_scope')
+        local picker = by_id(panel.subviews, 'available_unit_scope_window')
+        picker.subviews[2].on_change('visit')
+        picker.subviews[3].on_submit(1, {descriptor={id='unit_scope:visitors'}})
+        picker.subviews[3].on_submit(1, {descriptor={id='unit_scope:visitors'}})
+        test.assert_equal('visit', calls.unit_scope_query)
+        test.assert_sequence({'unit_scope:visitors', 'unit_scope:visitors'}, calls.toggled)
+        test.assert_true(panel:is_picker_open('unit_scope'))
+    end)
+
     test.case('filter panel: narrow update APIs own child choice updates', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)

@@ -59,6 +59,32 @@ return function(test, repo_root)
             descriptors, filters, 'zzz', 'No matching attributes.')[1].text)
     end)
 
+    test.case('Filter presenter: candidate filters do not consume ranking priority', function()
+        local descriptors = {
+            {id='unit_scope:citizens', label='Citizens', kind='unit_scope', behavior='candidate'},
+            {id='race_group:humanoids', label='Humanoids', kind='race', behavior='candidate'},
+            {id='skill:mining', label='Mining', kind='skill', behavior='ranking'},
+        }
+        local active = filter_presenter.present_active(descriptors, {
+            {id='unit_scope:citizens', direction='high'},
+            {id='race_group:humanoids', direction='low'},
+            {id='skill:mining', direction='high'},
+        })
+        test.assert_sequence({'   ', '   '}, {
+            token_texts(active[1].text)[5], token_texts(active[1].text)[6],
+        })
+        test.assert_sequence({'   ', '   '}, {
+            token_texts(active[2].text)[5], token_texts(active[2].text)[6],
+        })
+        test.assert_false(token_texts(active[3].text)[5] == '   ')
+        test.assert_false(token_texts(active[3].text)[6] == '   ')
+        local scopes = filter_presenter.present_available({descriptors[1]}, {
+            {id='unit_scope:citizens', direction='high'},
+        }, 'cit', 'No matching unit scopes.')
+        test.assert_true(scopes[1].selected)
+        test.assert_equal(string.char(16) .. '  ', token_texts(scopes[1].text)[1])
+    end)
+
     test.case('Filter presenter: preset sections are stable', function()
         local presets = filter_presenter.present_presets({'Saved'},
             {{id='miner', label='Miner'}}, {{id='soldier', label='Soldier'}},
@@ -141,6 +167,18 @@ return function(test, repo_root)
         test.assert_equal('lightred', tokens[4].pen)
         test.assert_equal('darkgrey', tokens[5].pen)
         test.assert_equal('darkgrey', tokens[6].pen)
+    end)
+
+    test.case('UI format: unit scopes use the candidate color and action model', function()
+        local available = format.format_available_filter_choice({
+            label='Visitors', kind='unit_scope', behavior='candidate',
+        }, true)
+        test.assert_equal('cyan', available[2].pen)
+        local active = format.format_active_filter_choice({
+            label='Visitors', kind='unit_scope', behavior='candidate',
+        }, 'high', nil, 0)
+        test.assert_sequence({'Visitors', (' '):rep(13), '[+]', '[-]', '   ', '   ', '[x]'},
+            token_texts(active))
     end)
 
     test.case('UI format: stats header and values preserve glyphs and padding', function()

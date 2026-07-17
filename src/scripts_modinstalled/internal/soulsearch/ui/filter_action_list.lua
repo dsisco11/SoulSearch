@@ -7,6 +7,7 @@ local descriptions = reqscript('internal/soulsearch/attribute_descriptions')
 local filter_constants = reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
 local CANDIDATE = filter_constants.behavior.CANDIDATE
+local ACTION = ui_layout.FILTER_ACTION
 
 ---List that snapshots filter choices and dispatches clicks in the fixed-width
 ---action zone for the row under the mouse.
@@ -51,23 +52,30 @@ local function describe_choice(choice)
     return descriptor and descriptions.get_tooltip(descriptor.kind, descriptor.key) or nil
 end
 
+local function is_action_enabled(choice, action)
+    local descriptor = choice and choice.descriptor
+    return not (descriptor and descriptor.behavior == CANDIDATE and
+        (action.callback == ACTION.MOVE_UP or action.callback == ACTION.MOVE_DOWN))
+end
+
 function FilterActionList:on_pointer_update(x, y)
     local _, choice, action = self:get_action_at(x, y)
     if action then
         local descriptor = choice and choice.descriptor
         if descriptor and descriptor.behavior == CANDIDATE then
-            if action.callback == 'set_high' then
+            if action.callback == ACTION.SET_HIGH then
                 self.tooltip = 'Include in results.'
                 return
-            elseif action.callback == 'set_low' then
+            elseif action.callback == ACTION.SET_LOW then
                 self.tooltip = 'Exclude from results.'
                 return
-            elseif action.callback == 'move_up' or action.callback == 'move_down' then
+            elseif action.callback == ACTION.MOVE_UP or action.callback == ACTION.MOVE_DOWN then
                 self.tooltip = nil
                 return
             end
         end
-        self.tooltip = choice and action.tooltip or nil
+        self.tooltip = choice and is_action_enabled(choice, action) and
+            action.tooltip or nil
         return
     end
     self.tooltip = describe_choice(choice)
@@ -78,7 +86,7 @@ end
 function FilterActionList:onInput(keys)
     if keys._MOUSE_L then
         local index, choice, action = self:getActionUnderMouse()
-        if choice and action then
+        if choice and action and is_action_enabled(choice, action) then
             self:setSelected(index)
             local descriptor = choice.descriptor
             if descriptor then

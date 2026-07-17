@@ -55,6 +55,26 @@ return function(test, repo_root)
         test.assert_false(session:clear_filters())
     end)
 
+    test.case('Search session: multiple unit scopes remain candidate filters', function()
+        local session = new()
+        test.assert_true(session:add_filter('unit_scope:citizens'))
+        test.assert_true(session:add_filter('unit_scope:visitors'))
+        test.assert_true(session:add_filter('race:group:HUMANOIDS'))
+        test.assert_true(session:add_filter('skill:MINING'))
+        local candidates = session:get_candidate_filters()
+        test.assert_sequence({'unit_scope:citizens', 'unit_scope:visitors',
+            'race:group:HUMANOIDS'}, (function()
+                local ids = {}
+                for _, filter in ipairs(candidates) do table.insert(ids, filter.id) end
+                return ids
+            end)())
+        test.assert_sequence({'skill:MINING'}, (function()
+            local ids = {}
+            for _, filter in ipairs(session:get_ranking_filters()) do table.insert(ids, filter.id) end
+            return ids
+        end)())
+    end)
+
     test.case('Search session: candidate rows do not alias caller snapshots', function()
         local session = new()
         local rows = {{unit_id=1, name='Urist', profession='Miner'}}

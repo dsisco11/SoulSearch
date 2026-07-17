@@ -59,6 +59,19 @@ return function(test, repo_root)
             test.assert_equal(3, action.width)
             test.assert_equal(3, #action.label)
         end
+        test.assert_sequence({
+            layout.FILTER_ACTION.SET_HIGH,
+            layout.FILTER_ACTION.SET_LOW,
+            layout.FILTER_ACTION.MOVE_UP,
+            layout.FILTER_ACTION.MOVE_DOWN,
+            layout.FILTER_ACTION.REMOVE,
+        }, (function()
+            local callbacks = {}
+            for _, action in ipairs(layout.FILTER_ACTIONS) do
+                table.insert(callbacks, action.callback)
+            end
+            return callbacks
+        end)())
     end)
 
     test.case('UI layout: every filter action boundary maps from metadata', function()

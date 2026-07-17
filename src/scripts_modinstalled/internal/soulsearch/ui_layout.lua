@@ -24,6 +24,15 @@ WINDOW_CONTENT_INSET = 1
 ACTIVE_FILTER_BUTTON_START_X = 21
 FILTER_ACTION_WIDTH = 3
 
+---@enum SoulSearchFilterAction
+FILTER_ACTION = {
+    SET_HIGH='set_high',
+    SET_LOW='set_low',
+    MOVE_UP='move_up',
+    MOVE_DOWN='move_down',
+    REMOVE='remove',
+}
+
 ---@class SoulSearchFilterActionMetadata
 ---@field id string
 ---@field label string
@@ -31,34 +40,34 @@ FILTER_ACTION_WIDTH = 3
 ---@field tooltip string
 ---@field pen_rule string
 ---@field enabled_rule string
----@field callback string
+---@field callback SoulSearchFilterAction
 
 ---@type SoulSearchFilterActionMetadata[]
 FILTER_ACTIONS = {
     {
         id='plus', label='[+]', width=FILTER_ACTION_WIDTH,
         tooltip='Prefer high', pen_rule='high_selected',
-        enabled_rule='always', callback='set_high',
+        enabled_rule='always', callback=FILTER_ACTION.SET_HIGH,
     },
     {
         id='minus', label='[-]', width=FILTER_ACTION_WIDTH,
         tooltip='Prefer low', pen_rule='low_selected',
-        enabled_rule='always', callback='set_low',
+        enabled_rule='always', callback=FILTER_ACTION.SET_LOW,
     },
     {
         id='up', label='[' .. glyphs.CP437_TRIANGLE_UP .. ']', width=FILTER_ACTION_WIDTH,
         tooltip='Move up', pen_rule='enabled',
-        enabled_rule='can_move_up', callback='move_up',
+        enabled_rule='can_move_up', callback=FILTER_ACTION.MOVE_UP,
     },
     {
         id='down', label='[' .. glyphs.CP437_TRIANGLE_DOWN .. ']', width=FILTER_ACTION_WIDTH,
         tooltip='Move down', pen_rule='enabled',
-        enabled_rule='can_move_down', callback='move_down',
+        enabled_rule='can_move_down', callback=FILTER_ACTION.MOVE_DOWN,
     },
     {
         id='remove', label='[x]', width=FILTER_ACTION_WIDTH,
         tooltip='Remove', pen_rule='remove',
-        enabled_rule='always', callback='remove',
+        enabled_rule='always', callback=FILTER_ACTION.REMOVE,
     },
 }
 

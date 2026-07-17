@@ -31,6 +31,7 @@ local filter_constants =
 
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
+local FILTER_ACTION = ui_layout.FILTER_ACTION
 
 ---@class SoulSearchPosition
 ---@field x integer
@@ -611,15 +612,15 @@ end
 ---@param filter_id string
 ---@param action string
 function SoulSearchWindow:handle_filter_action(filter_id, action)
-    if action == 'set_high' then
+    if action == FILTER_ACTION.SET_HIGH then
         self:set_filter_direction(filter_id, FILTER_HIGH)
-    elseif action == 'set_low' then
+    elseif action == FILTER_ACTION.SET_LOW then
         self:set_filter_direction(filter_id, FILTER_LOW)
-    elseif action == 'remove' then
+    elseif action == FILTER_ACTION.REMOVE then
         self:remove_filter(filter_id)
-    elseif action == 'move_up' then
+    elseif action == FILTER_ACTION.MOVE_UP then
         self:move_filter_priority(filter_id, -1)
-    elseif action == 'move_down' then
+    elseif action == FILTER_ACTION.MOVE_DOWN then
         self:move_filter_priority(filter_id, 1)
     end
 end
