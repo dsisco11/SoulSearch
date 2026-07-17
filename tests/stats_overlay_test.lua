@@ -66,9 +66,9 @@ return function(test, root)
         test.assert_equal(config.DIRECTION.UP, state.placements[1].direction)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_RIGHT,
             state.placements[2].button)
-        test.assert_equal('[' .. string.char(25) .. ']',
+        test.assert_equal('[' .. string.char(31) .. ']',
             widget.subviews.collapse_button.text)
-        test.assert_equal('[' .. string.char(24) .. ']',
+        test.assert_equal('[' .. string.char(30) .. ']',
             widget.subviews.expand_button.text)
         test.assert_equal(1, widget.subviews.window.frame.t)
         test.assert_equal(0, widget.subviews.collapse_button.frame.t)

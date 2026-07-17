@@ -111,8 +111,8 @@ StatsDeploymentLabel.ATTRS{
 local ARROW_BY_DIRECTION = {
     [config.DIRECTION.LEFT]=glyphs.CP437_ARROW_LEFT,
     [config.DIRECTION.RIGHT]=glyphs.CP437_ARROW_RIGHT,
-    [config.DIRECTION.UP]=glyphs.CP437_ARROW_UP,
-    [config.DIRECTION.DOWN]=glyphs.CP437_ARROW_DOWN,
+    [config.DIRECTION.UP]=glyphs.CP437_TRIANGLE_UP,
+    [config.DIRECTION.DOWN]=glyphs.CP437_TRIANGLE_DOWN,
 }
 
 local function bracketed_arrow(direction)
