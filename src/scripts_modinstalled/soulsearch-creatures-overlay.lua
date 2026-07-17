@@ -6,8 +6,10 @@ local creatures_scope = reqscript('internal/soulsearch/creatures_menu_scope')
 
 local SOULSEARCH_COMMAND = 'soulsearch'
 local UI_MODULE = 'internal/soulsearch/ui'
-local BUTTON_WIDTH = 22
-local BUTTON_BOTTOM_INSET = 3
+local BUTTON_LABEL = 'Open SoulSearch'
+local BUTTON_WIDTH = #BUTTON_LABEL + 2 -- TextButton adds the surrounding brackets.
+local BUTTON_LEFT_INSET = 2
+local BUTTON_TOP_INSET = 3
 local CREATURES_FOCUS = 'dwarfmode/Info/CREATURES'
 
 local function get_creatures_menu_rect()
@@ -34,7 +36,7 @@ SoulSearchCreaturesOverlay = defclass(
     SoulSearchCreaturesOverlay, overlay.OverlayWidget)
 SoulSearchCreaturesOverlay.ATTRS{
     desc='Open SoulSearch scoped to the active Creatures tab.',
-    version=7,
+    version=9,
     default_enabled=true,
     default_pos={x=-2, y=2},
     frame={w=BUTTON_WIDTH, h=1},
@@ -50,7 +52,7 @@ function SoulSearchCreaturesOverlay:init()
     self:addviews{
         widgets.TextButton{
             view_id='open_scoped_search', frame={l=0, t=0, r=0, h=1},
-            label='Open SoulSearch',
+            label=BUTTON_LABEL,
             tooltip='Open SoulSearch scoped to the active Creatures tab.',
             on_activate=function() self:open_scoped_search() end,
         },
@@ -61,15 +63,14 @@ function SoulSearchCreaturesOverlay:resolve_frame(width, height)
     if type(width) ~= 'number' or type(height) ~= 'number' then return nil end
     width, height = math.floor(width), math.floor(height)
     local menu_rect = get_creatures_menu_rect()
-    local menu_width = menu_rect and menu_rect.x2 - menu_rect.x1 + 1
     local frame = {
         l=menu_rect and math.max(0,
             math.min(width - BUTTON_WIDTH,
-                menu_rect.x1 + math.floor((menu_width - BUTTON_WIDTH) / 2))) or
-            math.max(0, math.floor((width - BUTTON_WIDTH) / 2)),
+                menu_rect.x1 + BUTTON_LEFT_INSET)) or
+            math.max(0, math.min(width - BUTTON_WIDTH, BUTTON_LEFT_INSET)),
         t=menu_rect and math.max(0, math.min(height - 1,
-            menu_rect.y2 - BUTTON_BOTTOM_INSET)) or
-            math.max(0, height - 2 - BUTTON_BOTTOM_INSET),
+            menu_rect.y1 + BUTTON_TOP_INSET)) or
+            math.max(0, math.min(height - 1, BUTTON_TOP_INSET)),
         w=BUTTON_WIDTH,
         h=1,
     }
