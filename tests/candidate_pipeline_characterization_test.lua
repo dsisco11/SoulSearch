@@ -18,16 +18,17 @@ return function(test, repo_root)
 
     local citizen_dwarf = {id=1, race=1, caste=0, status={}}
     local resident_dwarf = {id=2, race=1, caste=0, status={}}
-    local citizen_dog = {id=3, race=2, caste=0, status={}}
+    local pet_dog = {id=3, race=2, caste=0, status={}}
     local visitor_dwarf = {id=4, race=1, caste=0, status={}}
     local visitor_dog = {id=5, race=2, caste=0, status={}}
     local inactive_dwarf = {id=6, race=1, caste=0, status={}}
     local wild_dog = {id=7, race=2, caste=0, status={}}
-    local active = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [7]=true}
+    local livestock_dog = {id=8, race=2, caste=0, status={}}
+    local active = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [7]=true, [8]=true}
     local df = soulsearch_env.make_df_stub()
     df.global.world.units = {active={
-        citizen_dwarf, resident_dwarf, citizen_dog, visitor_dwarf,
-        visitor_dog, inactive_dwarf, wild_dog, citizen_dwarf,
+        citizen_dwarf, resident_dwarf, pet_dog, visitor_dwarf,
+        visitor_dog, inactive_dwarf, wild_dog, livestock_dog, citizen_dwarf,
     }}
     df.global.world.raws.creatures.all = {
         raw('DWARF', {CAN_LEARN=true, CAN_SPEAK=true}),
@@ -38,15 +39,15 @@ return function(test, repo_root)
         world={isFortressMode=function() return true end},
         units={
             isActive=function(unit) return active[unit.id] or false end,
-            isCitizen=function(unit) return unit == citizen_dwarf or unit == citizen_dog end,
+            isCitizen=function(unit) return unit == citizen_dwarf end,
             isResident=function(unit) return unit == resident_dwarf end,
             isFortControlled=function(unit)
-                return unit == citizen_dwarf or unit == citizen_dog
+                return unit == citizen_dwarf or unit == pet_dog or unit == livestock_dog
             end,
             getCasteRaw=function(unit)
-                return {flags=unit == citizen_dog and {PET=true} or {}}
+                return {flags=(unit == pet_dog or unit == livestock_dog) and {PET=true} or {}}
             end,
-            isPet=function(unit) return unit == citizen_dog end,
+            isPet=function(unit) return unit == pet_dog end,
             isVisitor=function(unit) return unit == visitor_dwarf or unit == visitor_dog end,
             isMerchant=function() return false end,
             isDiplomat=function() return false end,
@@ -79,7 +80,7 @@ return function(test, repo_root)
         local cases = {
             {
                 name='no scope or race filters returns every active unit',
-                filters={}, expected={1, 2, 3, 4, 5, 7},
+                filters={}, expected={1, 2, 3, 4, 5, 7, 8},
             },
             {
                 name='Humanoids returns every active humanoid',
@@ -106,7 +107,7 @@ return function(test, repo_root)
             },
             {
                 name='Livestock selects fort-controlled pet castes',
-                filters={filter(scope_id(scope.LIVESTOCK))}, expected={3},
+                filters={filter(scope_id(scope.LIVESTOCK))}, expected={8},
             },
             {
                 name='Pets select units marked as pets',
@@ -114,7 +115,7 @@ return function(test, repo_root)
             },
             {
                 name='negative-only Visitors returns every active non-visitor',
-                filters={filter(scope_id(scope.VISITORS), direction.LOW)}, expected={1, 2, 3, 7},
+                filters={filter(scope_id(scope.VISITORS), direction.LOW)}, expected={1, 2, 3, 7, 8},
             },
         }
         for _, case in ipairs(cases) do

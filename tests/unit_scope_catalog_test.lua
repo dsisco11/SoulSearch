@@ -53,10 +53,13 @@ return function(test, repo_root)
         local catalog = soulsearch_env.load_unit_scope_catalog(repo_root, {units=units})
         local descriptors = catalog.get_descriptors()
         local unit = {citizen=true, resident=true, controlled=true, merchant=true, wildlife=true,
-            caste={flags={PET=true}}, pet=true}
+            caste={flags={PET=true}}, pet=false}
         for _, descriptor in ipairs(descriptors) do
-            test.assert_true(catalog.matches_unit(descriptor, unit))
+            if descriptor.id ~= 'unit_scope:pets' then
+                test.assert_true(catalog.matches_unit(descriptor, unit))
+            end
         end
+        test.assert_false(catalog.matches_unit(descriptors[5], unit))
         test.assert_true(calls.citizen)
         test.assert_true(calls.resident)
         test.assert_false(catalog.matches_unit({id='unit_scope:unknown'}, unit))
@@ -72,6 +75,7 @@ return function(test, repo_root)
             isDiplomat=function() return false end,
             isWildlife=function() return false end,
             getCasteRaw=function(unit) return unit.caste end,
+            isPet=function(unit) return unit.pet end,
         }})
         local livestock
         for _, descriptor in ipairs(catalog.get_descriptors()) do
@@ -79,6 +83,8 @@ return function(test, repo_root)
         end
         test.assert_true(catalog.matches_unit(livestock, {controlled=true, caste={flags={PET=true}}}))
         test.assert_true(catalog.matches_unit(livestock, {controlled=true, caste={flags={PET_EXOTIC=true}}}))
+        test.assert_false(catalog.matches_unit(livestock,
+            {controlled=true, pet=true, caste={flags={PET=true}}}))
         test.assert_false(catalog.matches_unit(livestock, {controlled=false, caste={flags={PET=true}}}))
         test.assert_false(catalog.matches_unit(livestock, {controlled=true, caste={flags={}}}))
     end)

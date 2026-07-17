@@ -24,7 +24,7 @@ end
 local function is_livestock(unit)
     local caste = dfhack.units.getCasteRaw(unit)
     local flags = caste and caste.flags
-    return dfhack.units.isFortControlled(unit) and flags and
+    return not dfhack.units.isPet(unit) and dfhack.units.isFortControlled(unit) and flags and
         (flags.PET or flags.PET_EXOTIC) or false
 end
 
