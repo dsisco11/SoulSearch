@@ -29,6 +29,7 @@ FILTER_CONSTANTS.unit_scope = {
     FORT_RESIDENTS='fort_residents',
     CITIZENS_AND_PETS='citizens_and_pets',
     LIVESTOCK='livestock',
+    PETS='pets',
     VISITORS='visitors',
     WILDLIFE='wildlife',
 }

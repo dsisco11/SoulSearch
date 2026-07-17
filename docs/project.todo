@@ -95,7 +95,7 @@
 ✔ Allow selecting multiple scope filters. @done(26-07-16; local validation complete; live DFHack smoke deferred in restrictive-unit-scopes.todo)
 ✔ Add "Wildlife" scope filter to allow searching for wild animals. @done(26-07-16)
 ✔ Add "Livestock" scope filter to allow searching for livestock animals. @done(26-07-16)
-☐ Add "Pets" scope filter to allow searching for pets.
+✔ Add "Pets" scope filter to allow searching for pets. @done(26-07-16)
 ☐ [Scoped Residents]: defaults to the "Residents" scope but it should include both residents and citizens.
 ☐ Make soul search panels size to fit available window space with parent layout callbacks; DFHack `ResizingPanel` grows to fit children rather than filling a resized parent.
 ☐ Make soul search window panels resizeable with a custom draggable splitter; the native DFHack `Divider` widget is visual-only.

@@ -46,6 +46,7 @@ return function(test, repo_root)
             getCasteRaw=function(unit)
                 return {flags=unit == citizen_dog and {PET=true} or {}}
             end,
+            isPet=function(unit) return unit == citizen_dog end,
             isVisitor=function(unit) return unit == visitor_dwarf or unit == visitor_dog end,
             isMerchant=function() return false end,
             isDiplomat=function() return false end,
@@ -106,6 +107,10 @@ return function(test, repo_root)
             {
                 name='Livestock selects fort-controlled pet castes',
                 filters={filter(scope_id(scope.LIVESTOCK))}, expected={3},
+            },
+            {
+                name='Pets select units marked as pets',
+                filters={filter(scope_id(scope.PETS))}, expected={3},
             },
             {
                 name='negative-only Visitors returns every active non-visitor',
