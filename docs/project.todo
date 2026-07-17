@@ -91,7 +91,8 @@
 ✔ [Stats Overlay]: increase the collapse button hitbox by making its entire bracketed arrow label clickable. @done(26-07-16)
 ✔ [Scoped Search Buttons]: reposition "Open SoulSearch" buttons in the base-game creature menu to be easier to find by placing them at the top under the "Residents" subtab, and make them visually distinct with a search icon. @done(26-07-16)
 ✔ [Race Filters]: apply Humanoids only as the first-open default for the primary SoulSearch window; scoped windows and user removals may have no race filter. @done(26-07-16)
-☐ Refactor unit scope filters to be "restrictive" rather than "inclusive" so that the default scope is all units. Then we can allow selecting multiple scope filters to restrict searches.
+☐ Refactor unit scope filters to be "restrictive" rather than "inclusive" so that the default scope is all units. 
+☐ Allow selecting multiple scope filters.
 ☐ Add "Wildlife" scope filter to allow searching for wild animals.
 ☐ Add "Livestock" scope filter to allow searching for livestock animals.
 ☐ Add "Pets" scope filter to allow searching for pets.
