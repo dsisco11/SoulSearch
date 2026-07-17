@@ -22,6 +22,12 @@ return function(test, repo_root)
         test.assert_equal(110, resolved.frame.w)
         test.assert_equal(45, resolved.frame.h)
         test.assert_nil(next(resolved.explicit))
+
+        local scoped = config.resolve({settings_id='scoped'}, 200, 100)
+        test.assert_sequence({}, ids(scoped.filters))
+
+        local unfiltered_primary = config.resolve({filters={}}, 200, 100)
+        test.assert_sequence({}, ids(unfiltered_primary.filters))
     end)
 
     test.case('window config: options override saved fields independently', function()
@@ -42,7 +48,7 @@ return function(test, repo_root)
         }
         local resolved = config.resolve(options, 200, 100)
         test.assert_sequence(
-            {'race:group:HUMANOIDS', 'skill:MINING'}, ids(resolved.filters))
+            {'skill:MINING'}, ids(resolved.filters))
         test.assert_equal('citizens', resolved.unit_scope)
         test.assert_equal('profession', resolved.result_sort.key)
         test.assert_true(resolved.result_sort.reverse)
@@ -54,10 +60,10 @@ return function(test, repo_root)
         test.assert_nil(resolved.explicit.result_sort)
         test.assert_true(resolved.explicit.stats_sort ~= nil)
         options.filters[1].id = 'skill:SWORD'
-        test.assert_equal('skill:MINING', resolved.filters[2].id)
+        test.assert_equal('skill:MINING', resolved.filters[1].id)
         settings.update(resolved.settings_id, resolved.explicit)
         local persisted = settings.load('animals')
-        test.assert_equal('skill:MINING', persisted.filters[2].id)
+        test.assert_equal('skill:MINING', persisted.filters[1].id)
         test.assert_equal('profession', persisted.result_sort.key)
         test.assert_equal(2, persisted.frame.l)
     end)
@@ -77,10 +83,10 @@ return function(test, repo_root)
         }, 200, 100)
 
         test.assert_sequence(
-            {'race:group:HUMANOIDS', 'skill:SWORD'}, ids(existing.filters))
+            {'skill:SWORD'}, ids(existing.filters))
         test.assert_equal('fort_residents', existing.unit_scope)
         test.assert_sequence(
-            {'race:group:HUMANOIDS', 'skill:MINING'}, ids(scoped.filters))
+            {'skill:MINING'}, ids(scoped.filters))
         test.assert_equal('visitors', scoped.unit_scope)
         test.assert_nil(settings.load('creatures:miners'))
         test.assert_equal('skill:SWORD', settings.load().filters[1].id)
@@ -120,7 +126,7 @@ return function(test, repo_root)
         local resolved = config.resolve({
             filters={{id='skill:UNKNOWN', direction='sideways'}},
         }, 200, 100)
-        test.assert_sequence({'race:group:HUMANOIDS'}, ids(resolved.filters))
+        test.assert_sequence({}, ids(resolved.filters))
     end)
 
     test.case('window config: different identities retain every session field independently', function()
@@ -142,11 +148,11 @@ return function(test, repo_root)
         })
         local miners = config.resolve({settings_id='miners'}, 200, 100)
         local soldiers = config.resolve({settings_id='soldiers'}, 200, 100)
-        miners.filters[2].direction = 'low'
+        miners.filters[1].direction = 'low'
         miners.unit_scope = 'visitors'
         miners.result_sort.key = 'unit_id'
         miners.frame.l = 20
-        test.assert_equal('high', soldiers.filters[2].direction)
+        test.assert_equal('high', soldiers.filters[1].direction)
         test.assert_equal('fort_residents', soldiers.unit_scope)
         test.assert_equal('profession', soldiers.result_sort.key)
         test.assert_equal('label', soldiers.stats_sort.key)
@@ -161,8 +167,8 @@ return function(test, repo_root)
         })
         local reopened = config.resolve({settings_id='miners'}, 200, 100)
         test.assert_sequence(
-            {'race:group:HUMANOIDS', 'trait:PATIENCE'}, ids(reopened.filters))
-        test.assert_equal('low', reopened.filters[2].direction)
+            {'trait:PATIENCE'}, ids(reopened.filters))
+        test.assert_equal('low', reopened.filters[1].direction)
     end)
 
     test.case('window config: same-identity windows merge latest updates without rollback', function()
@@ -176,15 +182,15 @@ return function(test, repo_root)
         settings.update('shared', first.explicit)
         local second = config.resolve({settings_id='shared'}, 200, 100)
 
-        first.filters[2].id = 'skill:SWORD'
+        first.filters[1].id = 'skill:SWORD'
         settings.update('shared', {filters=first.filters})
         second.unit_scope = 'visitors'
         settings.update('shared', {unit_scope=second.unit_scope})
 
-        test.assert_equal('skill:MINING', second.filters[2].id)
+        test.assert_equal('skill:MINING', second.filters[1].id)
         local reopened = config.resolve({settings_id='shared'}, 200, 100)
         test.assert_sequence(
-            {'race:group:HUMANOIDS', 'skill:SWORD'}, ids(reopened.filters))
+            {'skill:SWORD'}, ids(reopened.filters))
         test.assert_equal('visitors', reopened.unit_scope)
     end)
 
@@ -200,7 +206,7 @@ return function(test, repo_root)
             unit_scope='unknown',
         }
         local resolved = config.resolve(options, 200, 100)
-        test.assert_sequence({'race:group:HUMANOIDS'}, ids(resolved.filters))
+        test.assert_sequence({}, ids(resolved.filters))
         test.assert_equal('citizens', resolved.unit_scope)
         test.assert_equal('skill:UNKNOWN', options.filters[1].id)
         test.assert_equal('sideways', options.filters[2].direction)

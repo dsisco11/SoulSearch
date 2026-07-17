@@ -780,6 +780,7 @@ end
 
 function M.load_window_config(repo_root)
     local filter_state = M.load_filter_state(repo_root)
+    local filter_constants = M.load_filter_constants(repo_root)
     local unit_scope_provider = M.load_unit_scope_provider(
         repo_root, M.make_df_stub(), {units={}})
     local window_settings = M.load_window_settings(repo_root)
@@ -787,6 +788,7 @@ function M.load_window_config(repo_root)
     local sort_state = M.load_sort_state(repo_root)
     local modules = {
         ['internal/soulsearch/filter_state']=filter_state,
+        ['internal/soulsearch/filter_constants']=filter_constants,
         ['internal/soulsearch/unit_scope_provider']=unit_scope_provider,
         ['internal/soulsearch/window_settings']=window_settings,
         ['internal/soulsearch/ui_layout']=ui_layout,

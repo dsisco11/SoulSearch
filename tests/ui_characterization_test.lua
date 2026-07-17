@@ -211,7 +211,7 @@ return function(test, repo_root)
         }
 
         window:refresh_active_filter_choices()
-        test.assert_equal('Filters: 1', calls.filter_count)
+        test.assert_equal('Filters: 0', calls.filter_count)
     test.assert_equal('Use Add attribute, Add skill, or Add race.',
         calls.active.choices[1].text)
         window:update_available_filter_choices()

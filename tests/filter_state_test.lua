@@ -3,9 +3,7 @@ local soulsearch_env = require('support.soulsearch_env')
 local function ids(filters)
     local result = {}
     for _, filter in ipairs(filters) do
-        if filter.id ~= 'race:group:HUMANOIDS' then
-            table.insert(result, filter.id)
-        end
+        table.insert(result, filter.id)
     end
     return result
 end
@@ -71,14 +69,14 @@ return function(test, repo_root)
         test.assert_true(filter_state.add(state, 'skill:MINING'))
         test.assert_false(filter_state.add(state, 'skill:MINING', 'low'))
         test.assert_equal('high', filter_state.get_direction(state, 'skill:MINING'))
-        test.assert_equal(2, filter_state.count(state))
+        test.assert_equal(1, filter_state.count(state))
     end)
 
     test.case('filter state add: invalid ID and direction are no-ops', function()
         local state = filter_state.new()
         test.assert_false(filter_state.add(state, 'skill:UNKNOWN', 'high'))
         test.assert_false(filter_state.add(state, 'skill:MINING', 'sideways'))
-        test.assert_equal(1, filter_state.count(state))
+        test.assert_equal(0, filter_state.count(state))
     end)
 
     test.case('filter state direction: active changes and unchanged is a no-op', function()
@@ -92,9 +90,9 @@ return function(test, repo_root)
         local state = filter_state.new()
         test.assert_true(filter_state.set_direction(state, 'skill:MINING', 'low'))
         local filters = filter_state.get_filters(state)
-        test.assert_equal(2, #filters)
-        test.assert_equal('skill:MINING', filters[2].id)
-        test.assert_equal('low', filters[2].direction)
+        test.assert_equal(1, #filters)
+        test.assert_equal('skill:MINING', filters[1].id)
+        test.assert_equal('low', filters[1].direction)
         test.assert_false(filter_state.set_direction(state, 'skill:UNKNOWN', 'high'))
         test.assert_false(filter_state.set_direction(state, 'skill:SWORD', 'sideways'))
     end)
@@ -107,7 +105,7 @@ return function(test, repo_root)
         }
         local changed, priority = filter_state.move(state, 'trait:PATIENCE', -2)
         test.assert_true(changed)
-        test.assert_equal(2, priority)
+        test.assert_equal(1, priority)
         test.assert_sequence(
             {'trait:PATIENCE', 'skill:MINING', 'skill:SWORD'},
             ids(filter_state.get_filters(state)))
@@ -120,10 +118,10 @@ return function(test, repo_root)
         }
         local changed, priority = filter_state.move(state, 'skill:MINING', -1)
         test.assert_false(changed)
-        test.assert_equal(2, priority)
+        test.assert_equal(1, priority)
         changed, priority = filter_state.move(state, 'skill:SWORD', 1)
         test.assert_false(changed)
-        test.assert_equal(3, priority)
+        test.assert_equal(2, priority)
         changed, priority = filter_state.move(state, 'skill:UNKNOWN', 1)
         test.assert_false(changed)
         test.assert_nil(priority)
@@ -140,7 +138,7 @@ return function(test, repo_root)
         }
         local filters = filter_state.get_filters(state)
         test.assert_sequence({'skill:MINING', 'trait:PATIENCE'}, ids(filters))
-        test.assert_equal('low', filters[2].direction)
+        test.assert_equal('low', filters[1].direction)
     end)
 
     test.case('filter state reads do not alias live state', function()
@@ -150,9 +148,9 @@ return function(test, repo_root)
         read[1].direction = 'low'
         table.insert(read, {id='trait:PATIENCE', direction='low'})
         local reread = filter_state.get_filters(state)
-        test.assert_equal(2, #reread)
-        test.assert_equal('skill:MINING', reread[2].id)
-        test.assert_equal('high', reread[2].direction)
+        test.assert_equal(1, #reread)
+        test.assert_equal('skill:MINING', reread[1].id)
+        test.assert_equal('high', reread[1].direction)
     end)
 
     test.case('filter state search serialization preserves priority order', function()
@@ -162,8 +160,8 @@ return function(test, repo_root)
         }
         local filters = filter_state.get_filters(state)
         test.assert_sequence({'trait:PATIENCE', 'skill:MINING'}, ids(filters))
-        test.assert_equal('low', filters[2].direction)
-        test.assert_equal('high', filters[3].direction)
+        test.assert_equal('low', filters[1].direction)
+        test.assert_equal('high', filters[2].direction)
     end)
 
     test.case('filter state move: candidate filters never acquire ranking priority', function()
@@ -192,7 +190,7 @@ return function(test, repo_root)
             {id='trait:PATIENCE', direction='low'},
             {id='skill:MINING', direction='high'},
         }
-        test.assert_sequence({'race:group:HUMANOIDS'},
+        test.assert_sequence({},
             (function()
                 local result = {}
                 for _, filter in ipairs(filter_state.get_candidate_filters(state)) do
@@ -222,15 +220,13 @@ return function(test, repo_root)
         }))
     end)
 
-    test.case('filter state replace: legacy and stale race presets restore humanoids', function()
+    test.case('filter state replace: legacy and stale race presets are cleaned', function()
         local state = filter_state.new()
         test.assert_true(filter_state.replace(state, {
             {id='skill:MINING', direction='high'},
         }))
         local filters = filter_state.get_filters(state)
-        test.assert_equal('race:group:HUMANOIDS', filters[1].id)
-        test.assert_equal('high', filters[1].direction)
-        test.assert_equal('skill:MINING', filters[2].id)
+        test.assert_equal('skill:MINING', filters[1].id)
 
         test.assert_true(filter_state.replace(state, {
             {id='race:raw:STALE', direction='high'},
@@ -239,12 +235,12 @@ return function(test, repo_root)
         }))
         filters = filter_state.get_filters(state)
         test.assert_equal('race:group:HUMANOIDS', filters[1].id)
-        test.assert_equal('high', filters[1].direction)
+        test.assert_equal('low', filters[1].direction)
         test.assert_equal('skill:SWORD', filters[2].id)
         test.assert_equal('low', filters[2].direction)
     end)
 
-    test.case('filter state: shipped presets acquire humanoids without reordering ranks', function()
+    test.case('filter state: shipped presets preserve only their ranking filters', function()
         local sources = {
             filter_defaults.get_all()[1].filters,
             role_presets.get_role_presets()[1].filters,
@@ -252,8 +248,7 @@ return function(test, repo_root)
         }
         for _, source in ipairs(sources) do
             local state = filter_state.new(source)
-            local candidates = filter_state.get_candidate_filters(state)
-            test.assert_equal('race:group:HUMANOIDS', candidates[1].id)
+            test.assert_equal(0, #filter_state.get_candidate_filters(state))
             local ranking = filter_state.get_ranking_filters(state)
             local expected = {}
             for _, filter in ipairs(source) do
@@ -269,18 +264,14 @@ return function(test, repo_root)
         end
     end)
 
-    test.case('filter state always restores a positive humanoid candidate scope', function()
+    test.case('filter state permits an empty candidate scope', function()
         local state = filter_state.new{{id='race:raw:UNKNOWN', direction='low'}}
         local candidates = filter_state.get_candidate_filters(state)
-        test.assert_equal(1, #candidates)
-        test.assert_equal('race:group:HUMANOIDS', candidates[1].id)
-        test.assert_equal('high', candidates[1].direction)
+        test.assert_equal(0, #candidates)
 
-        test.assert_false(filter_state.remove(state, 'race:group:HUMANOIDS'))
-        test.assert_false(filter_state.set_direction(
-            state, 'race:group:HUMANOIDS', 'low'))
+        test.assert_true(filter_state.add(state, 'race:group:HUMANOIDS'))
+        test.assert_true(filter_state.remove(state, 'race:group:HUMANOIDS'))
         test.assert_false(filter_state.clear(state))
-        test.assert_equal('high', filter_state.get_candidate_filters(state)[1].direction)
     end)
 
     test.case('filter state removes humanoids when another race is included', function()

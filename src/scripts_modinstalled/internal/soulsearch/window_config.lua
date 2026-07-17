@@ -1,6 +1,8 @@
 --@ module=true
 
 local filter_state = reqscript('internal/soulsearch/filter_state')
+local filter_constants =
+    reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
 local window_settings = reqscript('internal/soulsearch/window_settings')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
@@ -96,6 +98,12 @@ function resolve(options, screen_width, screen_height)
     local explicit = {}
 
     local filter_source = options.filters ~= nil and options.filters or saved.filters
+    if filter_source == nil and settings_id == 'default' then
+        filter_source = {{
+            id=filter_constants.default_race_filter_id,
+            direction=filter_constants.direction.HIGH,
+        }}
+    end
     local filters = filter_state.get_filters(filter_state.new(filter_source))
     if options.filters ~= nil then explicit.filters = filters end
 

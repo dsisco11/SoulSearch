@@ -39,7 +39,6 @@ local TAB_SCOPES = {
         tab_labels={'visitors', 'other'},
         settings_id='creatures:visitors', label='Visitors',
         unit_scope=SCOPE.VISITORS,
-        race_group=RACE.group.HUMANOIDS,
     },
 }
 
@@ -67,14 +66,17 @@ end
 ---@param tab table
 ---@return table
 local function make_options(tab)
-    return {
+    local options = {
         settings_id=tab.settings_id,
         unit_scope=tab.unit_scope,
-        filters={{
+    }
+    if tab.race_group then
+        options.filters={{
             id=race_group_id(tab.race_group),
             direction=DIRECTION.HIGH,
-        }},
-    }
+        }}
+    end
+    return options
 end
 
 ---@param focuses string[]|nil

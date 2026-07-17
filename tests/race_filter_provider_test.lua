@@ -50,7 +50,7 @@ return function(test, repo_root)
         test.assert_sequence({2, 3}, ids(units))
     end)
 
-    test.case('race provider: negative-only input defaults to humanoids', function()
+    test.case('race provider: negative-only input excludes from the upstream scope', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return {
                 {id=1, race=1, caste=0},
@@ -60,7 +60,7 @@ return function(test, repo_root)
         end)
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {filter('race:raw:DWARF', 'low')})
-        test.assert_sequence({3}, ids(provider.get_units()))
+        test.assert_sequence({2, 3}, ids(provider.get_units()))
     end)
 
     test.case('race provider: exclusions support humanoids except dwarves and animals except dogs', function()

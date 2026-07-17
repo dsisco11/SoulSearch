@@ -11,7 +11,6 @@ local filter_constants =
 
 local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
-local DEFAULT_RACE_FILTER_ID = filter_constants.default_race_filter_id
 
 ---@param filter SoulSearchSelectedFilter
 ---@param catalog SoulSearchFilterCatalog
@@ -29,6 +28,7 @@ end
 
 ---@param selected_filters SoulSearchSelectedFilter[]|nil
 ---@return {descriptor: SoulSearchFilterDescriptor, direction: SoulSearchFilterDirection}[]
+---@return boolean has_positive
 local function resolve_filters(selected_filters)
     local catalog = descriptors.get_catalog()
     local resolved = {}
@@ -45,25 +45,7 @@ local function resolve_filters(selected_filters)
             has_positive = has_positive or filter.direction == FILTER_HIGH
         end
     end
-    if not has_positive then
-        local default_descriptor = catalog.by_id[DEFAULT_RACE_FILTER_ID]
-        assert(default_descriptor,
-            'SoulSearch race catalog is missing the Humanoids filter')
-        if seen[DEFAULT_RACE_FILTER_ID] then
-            for _, filter in ipairs(resolved) do
-                if filter.descriptor.id == DEFAULT_RACE_FILTER_ID then
-                    filter.direction = FILTER_HIGH
-                    break
-                end
-            end
-        else
-            table.insert(resolved, 1, {
-                descriptor=default_descriptor,
-                direction=FILTER_HIGH,
-            })
-        end
-    end
-    return resolved
+    return resolved, has_positive
 end
 
 ---@param unit df.unit
@@ -84,13 +66,13 @@ function new(upstream, selected_filters)
         if not units then return nil, err end
 
         -- Resolve catalog IDs and directions once for this provider pass.
-        local filters = resolve_filters(selected_filters)
+        local filters, has_positive = resolve_filters(selected_filters)
         local result = {}
         local seen = {}
         for _, unit in ipairs(units) do
             local key = get_unit_key(unit)
             if not seen[key] then
-                local included = false
+                local included = not has_positive
                 for _, filter in ipairs(filters) do
                     if filter.direction == FILTER_HIGH and
                             race_catalog.matches_unit(filter.descriptor, unit) then
