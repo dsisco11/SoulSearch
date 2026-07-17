@@ -11,27 +11,32 @@ The resulting candidate pipeline is:
 1. Start with every unique active unit.
 2. Apply selected unit-scope candidate filters.
 3. Apply selected race candidate filters.
-4. Build resident/search rows and apply ranking filters.
+4. Build search rows and apply ranking filters.
 
 ## Behavioral contract
 
 - Unit scopes are `SoulSearchFilterDescriptor` entries with candidate behavior.
-- No positive unit-scope filter means the scope layer does not restrict the
-  all-active candidate set.
+- No unit-scope filters at all means the scope layer passes every upstream unit.
+- If there are no positive unit-scope filters, positive inclusion starts from the
+  entire upstream set; any negative scope filters still subtract their matches.
 - Positive unit-scope filters are ORed with one another.
 - Negative unit-scope filters exclude matching units after positive inclusion.
+- Formally, a unit passes the scope family when
+  `(there are no positive scopes OR it matches any positive scope)` AND
+  `it matches no negative scope`.
 - Race filters retain the same positive-OR/negative-exclusion semantics.
 - Candidate-filter families compose by intersection. For example:
   `(Residents OR Visitors) AND (Humanoids OR Dwarves)`.
-- `All units` is represented by the absence of positive unit-scope filters. It is
-  not a descriptor that can be selected alongside other scopes.
+- `All units` is represented by the absence of all unit-scope filters. A
+  negative-only scope selection instead means `All units except ...`.
+- `All units` is not a descriptor that can be selected alongside other scopes.
 - Unit-scope filters appear in the Active filters list, contribute to `Filters: N`,
   are removed by Clear filters, and are saved and loaded with filter presets.
 - The primary window still receives Humanoids as its first-open default filter. It
   receives no default unit-scope filter, so removing Humanoids exposes all active
   units.
-- Scoped Creatures-menu windows seed ordinary unit-scope and race filters instead
-  of passing a separate `unit_scope` option.
+- Scoped Creatures-menu windows seed an ordinary unit-scope filter plus any race
+  filter applicable to that tab instead of passing a separate `unit_scope` option.
 
 ## Scope boundaries
 
@@ -43,6 +48,9 @@ The resulting candidate pipeline is:
 - Included: compatibility normalization for the existing
   `ui.open({unit_scope=...})` caller contract.
 - Excluded: adding the planned Wildlife, Livestock, and Pets scope definitions.
+- Excluded: changing the membership predicates of the existing Citizens,
+  Residents, Citizens and pets, and Visitors scopes; this refactor must preserve
+  their currently characterized behavior.
 - Excluded: changing the primary window's Humanoids first-open default.
 - Excluded: file-backed window state; window settings remain session-only.
 - Do not hand-edit `dist/`; regenerate it with the repository build tooling.
@@ -50,10 +58,9 @@ The resulting candidate pipeline is:
 ## Phase 0 - Characterize and lock the filter algebra
 
 - [ ] Run `./tools/Test.ps1` and record the clean baseline below.
-- [ ] Add characterization coverage for the current composition path:
+- [ ] Add green characterization coverage for the current composition path:
   scalar unit scope -> race provider -> resident row collection.
-- [ ] Add contract tests for the replacement filter algebra before changing the
-  production pipeline:
+- [ ] Record the replacement filter-algebra test matrix for Phases 1 and 2:
   - no scope filters passes every active unit;
   - one positive scope includes only matching units;
   - multiple positive scopes use union semantics;
@@ -62,54 +69,85 @@ The resulting candidate pipeline is:
   - scope and race families intersect;
   - duplicate and inactive active-list entries never reach results;
   - upstream errors return no partial candidates.
-- [ ] Fix stable descriptor IDs and serialized values. Preferred form:
-  `scope:citizens`, `scope:fort_residents`,
-  `scope:citizens_and_pets`, and `scope:visitors`.
-- [ ] Lock legacy conversion rules:
+- [ ] Fix stable descriptor IDs and serialized values as:
+  `unit_scope:citizens`, `unit_scope:fort_residents`,
+  `unit_scope:citizens_and_pets`, and `unit_scope:visitors`, matching the
+  serialized `UNIT_SCOPE='unit_scope'` kind.
+- [ ] Lock legacy conversion precedence:
   - `unit_scope='all_active'` adds no scope filter;
   - another valid scalar adds the matching positive scope filter;
-  - canonical `filters` containing a unit-scope descriptor take precedence over a
-    legacy scalar so the same family is not seeded twice;
-  - malformed legacy values are ignored at the window-config boundary.
+  - explicit `options.filters` containing a unit-scope descriptor are canonical
+    and take precedence over a simultaneous legacy scalar;
+  - when `options.filters` do not specify a unit scope, an explicit legacy scalar
+    replaces unit-scope filters inherited from saved settings, preserving the old
+    per-field override behavior;
+  - malformed legacy values are ignored without mutating canonical filters;
+  - conversion never mutates caller-owned option/filter tables.
+- [ ] Confirm that old `window_settings` snapshots need no migration: settings are
+  module-local/session-only and are cleared when the changed modules reload.
+  Compatibility is for explicit caller options, not hidden persistence.
 
 Phase 0 gate:
 
-- [ ] The baseline is recorded and tests unambiguously define empty, positive,
-  negative, multi-scope, cross-family, and compatibility behavior.
+- [ ] The green baseline and current-path characterization are recorded, and the
+  implementation test matrix unambiguously defines empty, positive, negative,
+  multi-scope, cross-family, and compatibility behavior without intentionally
+  failing Phase 0 tests.
 
-## Phase 1 - Add unit-scope descriptors and candidate providers
+## Phase 1 - Add descriptors and family-filter providers
 
-- [ ] Add a `UNIT_SCOPE` filter kind and scope ID prefix/keys to
-  `filter_constants.lua`.
-- [ ] Remove `ALL_ACTIVE` and `default_unit_scope` as canonical selected-filter
-  values; retain legacy strings only where compatibility conversion needs them.
-- [ ] Create a unit-scope catalog parallel to `race_catalog.lua` that owns:
+- [ ] Add `FILTER_CONSTANTS.kind.UNIT_SCOPE='unit_scope'` plus matching
+  `unit_scope:` descriptor prefix/keys to `filter_constants.lua`.
+- [ ] Reuse `FILTER_CONSTANTS.unit_scope` as the canonical descriptor namespace for
+  its prefix and concrete keys. Mark only the scalar-only `ALL_ACTIVE` sentinel and
+  `default_unit_scope` as legacy, keeping them functional until Phase 2 removes the
+  old provider and its callers.
+- [ ] Create `unit_scope_catalog.lua`, parallel to `race_catalog.lua`, to own:
   - stable descriptors and player-facing labels;
   - Citizens, Residents, Citizens and pets, and Visitors matching predicates;
   - descriptor lookup/matching without world-derived cache.
 - [ ] Add unit-scope descriptors to `descriptors.lua` groups, flat ordering, and
   `by_id` lookup with `behavior=CANDIDATE`.
-- [ ] Extract or introduce an all-active candidate provider that owns active-unit
-  enumeration, availability checks, source ordering, and duplicate suppression.
-- [ ] Replace the inclusive scalar `unit_scope_provider` with a candidate-filter
-  provider that accepts an upstream provider plus selected filters.
-- [ ] Resolve only validated `UNIT_SCOPE` candidate descriptors in that provider.
-- [ ] Apply the same positive-OR then negative-exclusion algorithm used by the race
-  provider.
+- [ ] Add `active_unit_provider.lua` to own active-unit enumeration, availability
+  checks, source ordering, and duplicate suppression. Keep the existing
+  `candidate_provider.lua` as the generic provider wrapper.
+- [ ] Add `candidate_filter_family_provider.lua` for the shared
+  positive-OR/negative-exclusion algorithm. Its inputs are an upstream provider,
+  selected filters, a descriptor kind, and a unit matcher.
+- [ ] Make the shared family provider ignore invalid, stale, and other-kind filter
+  entries while preserving source order, duplicate suppression, and upstream error
+  propagation.
+- [ ] Refactor `race_filter_provider.lua` into a thin adapter over that shared helper
+  without changing its behavior.
+- [ ] Add `unit_scope_filter_provider.lua` as the equivalent thin adapter for
+  `UNIT_SCOPE` descriptors.
+- [ ] Keep the inclusive scalar `unit_scope_provider.lua` temporarily as the
+  characterized legacy path until Phase 2 migrates its production callers.
 - [ ] Keep unit-scope and race matching in separate providers so sequential
   composition gives explicit AND semantics between filter families.
+- [ ] Confirm at the domain-state layer that candidate descriptors cannot be moved
+  as ranking filters; presentation priority is handled in Phase 3.
 - [ ] Update module registration/lifecycle metadata for added, renamed, or removed
   modules.
-- [ ] Update `filter_constants_test.lua`, descriptor/catalog tests,
-  `candidate_provider_test.lua`, `unit_scope_provider_test.lua`,
-  `module_registry_test.lua`, and lifecycle tests as applicable.
+- [ ] Add `unit_scope_catalog_test.lua`, `active_unit_provider_test.lua`,
+  `candidate_filter_family_provider_test.lua`, and
+  `unit_scope_filter_provider_test.lua`; register every new suite in
+  `tests/run.lua`.
+- [ ] Update `filter_constants_test.lua`, descriptor/filter-state tests,
+  `race_filter_provider_test.lua`, `candidate_provider_test.lua`,
+  `module_registry_test.lua`, metadata tests, and lifecycle tests as applicable.
 
 Phase 1 gate:
 
-- [ ] Focused catalog/provider tests pass for the complete filter algebra without
-  relying on UI or window state.
+- [ ] Focused catalog/provider tests pass for empty, positive, negative, union, and
+  include-except behavior in each family. Cross-family intersection remains a
+  Phase 2 composition test.
 
-## Phase 2 - Remove parallel scope state and migrate callers
+## Phase 2 - Atomically cut over state, callers, and UI
+
+This phase is intentionally one vertical cutover. Removing session scope APIs while
+the dedicated scope UI still calls them would leave an unloadable intermediate
+checkout, so the domain and UI switch must land together.
 
 - [ ] Remove `unit_scope` storage, getters, setters, and validation from
   `search_session.lua`; all scope selections must live in its existing
@@ -117,65 +155,101 @@ Phase 1 gate:
 - [ ] Remove `unit_scope` snapshots from `window_settings.lua` and canonical resolved
   settings from `window_config.lua`.
 - [ ] Teach `window_config.lua` to translate legacy scalar `unit_scope` options into
-  ordinary selected filters before `filter_state` validation.
+  ordinary selected filters according to the Phase 0 precedence rules before final
+  `filter_state` validation.
 - [ ] Preserve caller-owned inputs and filter ordering while preventing duplicate
   scope IDs during legacy translation.
 - [ ] Keep the primary default exactly one positive Humanoids filter and no default
   unit-scope filter.
 - [ ] Change `creatures_menu_scope.lua` presets to emit a single `filters` list
-  containing both their scope and race descriptors.
+  containing their scope descriptor and any race descriptor configured for that
+  tab; Visitors currently has no race descriptor.
 - [ ] Update `main_window.lua:refresh_candidates()` to compose:
-  all-active provider -> unit-scope filter provider -> race filter provider.
-- [ ] Ensure every candidate provider receives the same isolated candidate-filter
-  snapshot from `SearchSession:get_candidate_filters()`.
-- [ ] Confirm filter presets require no schema change: their existing serialized
+  active-unit provider -> unit-scope filter provider -> race filter provider.
+- [ ] Pass the same isolated snapshot from
+  `SearchSession:get_candidate_filters()` to both family providers; each adapter
+  resolves only descriptors of its own kind.
+- [ ] Verify filter presets require no schema change: their existing serialized
   `filters` array should automatically preserve unit-scope descriptor IDs and
   directions.
+- [ ] Document and test that loading any custom, built-in, or role preset continues
+  to replace the complete filter list. A preset without unit-scope descriptors
+  therefore restores unrestricted unit scope instead of retaining hidden state.
+- [ ] Remove the `Search for: <scope>` label, Edit button, and singular
+  `UnitScopePicker` path from the filter panel in the same cutover.
+- [ ] Add an `Add unit scope filter` control backed by the existing
+  `SearchablePicker` pattern.
+- [ ] Add `UNIT_SCOPE` to `SEARCH_QUERY_KIND`, a `unit_scope_query` session field,
+  and the corresponding main-window/filter-panel query callbacks and refresh path.
+- [ ] Add the unit-scope picker to `PICKER_VIEW_IDS` and every picker open/close/
+  visibility loop; remove the obsolete singular scope picker entry.
+- [ ] Present unit-scope descriptors through the existing filter toggle/direction
+  path so selections immediately live in shared `filter_state`.
+- [ ] Generalize active-filter presentation and mouse actions from race-kind checks
+  to `behavior == CANDIDATE`, including suppression of ranking move controls and
+  their hit targets.
+- [ ] Resolve ranking priority from catalog descriptor behavior rather than
+  nonexistent `kind` fields on `SoulSearchSelectedFilter` values.
+- [ ] Add unit-scope category color, include/exclude tooltips, empty-state guidance,
+  and picker help without synthesizing an `All units` filter row.
 - [ ] Update `tests/support/soulsearch_env.lua` stubs to expose the new descriptor,
   provider, and settings contracts.
+- [ ] Remove `unit_scope_provider.lua` and its old test/harness loader only after all
+  production callers use the new pipeline and its behavior has replacement
+  coverage in the active-unit/catalog/filter-provider suites.
+- [ ] Remove the scalar-only `ALL_ACTIVE` sentinel and `default_unit_scope` after the
+  old provider is gone. Retain the `unit_scope` descriptor namespace, concrete keys,
+  and prefix; keep any `all_active` compatibility string private to the
+  window-config adapter.
+- [ ] Remove obsolete scope presenter/formatter/layout helpers and the dedicated
+  picker module, and update module registry metadata in the same cutover.
 - [ ] Update `filter_state_test.lua`, `filter_presets_test.lua`,
   `search_session_test.lua`, `window_config_test.lua`,
   `window_settings_test.lua`, `creatures_menu_scope_test.lua`, and
-  `ui_open_test.lua`.
+  `ui_open_test.lua`, plus the focused filter-panel/presenter/action tests required
+  to keep the main window loadable.
+- [ ] Add composition coverage proving unit-scope and race families intersect while
+  ranking filters receive only the already-filtered rows.
 
 Phase 2 gate:
 
 - [ ] There is no canonical `unit_scope` field outside the explicit legacy adapter.
 - [ ] Default, reopened, same-identity, preset-loaded, and Creatures-scoped windows
-  all derive unit restrictions exclusively from their ordinary filter lists.
+  derive unit restrictions exclusively from their ordinary filter lists.
+- [ ] Legacy scalar open options resolve according to the documented precedence
+  without becoming stored canonical state.
+- [ ] The main window loads with the new picker and no old scope control/API/module
+  dependency remains.
 
-## Phase 3 - Replace the dedicated scope control with filter UI
+## Phase 3 - Harden unified filter UI and regression coverage
 
-- [ ] Remove the `Search for: <scope>` label, Edit button, and singular
-  `UnitScopePicker` path from the filter panel.
-- [ ] Add an `Add unit scope filter` control and picker consistent with the existing
-  Add race filter interaction.
-- [ ] Present all unit-scope descriptors in the picker and visibly mark every active
-  selection.
-- [ ] Route scope-picker selection through the existing filter toggle/direction
-  methods instead of a scope-specific setter.
-- [ ] Generalize candidate-filter presentation/action rules that currently special
-  case `kind == RACE` so both race and unit-scope filters:
-  - use include/exclude controls and colors;
-  - do not show ranking-priority movement actions;
-  - remain visible in the shared Active filters list.
-- [ ] Ensure multiple unit-scope filters can be selected and independently changed
-  between include, exclude, and removed states.
-- [ ] Ensure `Clear filters` removes unit-scope filters through the existing shared
-  filter-state clear operation.
-- [ ] Ensure `Filters: N` counts unit-scope filters without special accounting.
-- [ ] Remove obsolete scope presenter/formatter/layout helpers and delete the
-  dedicated picker module if no caller remains.
+- [ ] Add picker characterization for open/close exclusivity, query updates,
+  selected markers, repeated toggles, and multiple simultaneous scope filters.
+- [ ] Add mixed scope/race/ranking active-list tests proving candidate filters do not
+  consume ranking priority numbers or expose ranking movement controls.
+- [ ] Test candidate-filter mouse hit zones so hidden move actions cannot dispatch,
+  while include, exclude, and remove remain independently clickable.
+- [ ] Test unit-scope row colors and tooltips without falling through to attribute
+  descriptions or race-only copy.
+- [ ] Test that Clear filters removes unit-scope filters, returns the candidate set
+  to all active units, and updates `Filters: N` without special accounting.
+- [ ] Test that loading a preset with no scope descriptors removes active scope
+  filters and refreshes picker markers, candidates, results, and stats once.
 - [ ] Keep picker frames and filter-panel layout usable after replacing the old
   two-control scope row.
 - [ ] Update `filter_action_list_test.lua`, `filter_panel_test.lua`,
-  `ui_format_test.lua`, `ui_layout_test.lua`, `ui_characterization_test.lua`, and
+  filter-presenter coverage, `search_session_test.lua`, `ui_format_test.lua`,
+  `ui_layout_test.lua`, `ui_characterization_test.lua`, and
   `widget_extensions_test.lua` as applicable.
+- [ ] Audit `module_registry.lua`, `tests/run.lua`, and the test harness for stale old
+  scope-provider/picker entries or missing new modules/suites.
+- [ ] Run `./tools/Test.ps1` and record the Phase 3 regression result below.
 
 Phase 3 gate:
 
-- [ ] Unit scopes are indistinguishable from other candidate filters in selection,
-  active-list actions, count, clearing, and multi-selection behavior.
+- [ ] The full automated suite is green, and unit scopes are indistinguishable from
+  other candidate filters in selection, active-list actions, count, clearing,
+  preset ownership, and multi-selection.
 
 ## Phase 4 - Integration, documentation, and package validation
 
@@ -188,13 +262,20 @@ Phase 3 gate:
   - negative-only Visitors -> all active non-visitors.
 - [ ] Prove filter preset save/load round-trips mixed scope, race, and ranking filters
   without format changes or stale references.
+- [ ] Prove loading a preset with no unit-scope descriptor clears previously active
+  unit-scope filters because preset application replaces the unified filter list.
 - [ ] Prove each Creatures-menu integration emits and opens with the intended unified
   filter list.
 - [ ] Update README documentation to describe unit scopes as candidate filters,
-  empty scope-filter state as All units, include/exclude behavior, and cross-family
-  intersection.
+  empty scope-filter state as All units, negative-only `All except` behavior, and
+  cross-family intersection.
 - [ ] Update Lua annotations/comments that describe a singular unit scope or an
   inclusive provider.
+- [ ] Search source and tests for scalar scope-state signatures such as
+  `.unit_scope`, `unit_scope=`, `get_unit_scope`, `set_unit_scope`,
+  `default_unit_scope`, and `ALL_ACTIVE`. Only the documented legacy option adapter
+  and its compatibility tests may retain scalar option references; catalog/module/
+  descriptor names and `unit_scope:` filter IDs are expected to remain.
 - [ ] Run `./tools/Test.ps1` and record the result below.
 - [ ] Run `./tools/Build.ps1` and record the result below.
 - [ ] Run `./tools/VerifyPackage.ps1` and record the result below.
@@ -206,6 +287,7 @@ Phase 3 gate:
   - adding a race filter intersects with the selected unit scopes;
   - Clear filters returns to all active units;
   - filter counts and saved presets include unit-scope filters;
+  - loading a preset without scope filters returns to unrestricted unit scope;
   - each Creatures-menu scoped button seeds the correct filters.
 - [ ] Mark both the restrictive-scope and multiple-scope items in
   `docs/project.todo` complete only when all required local validation passes;
@@ -214,8 +296,7 @@ Phase 3 gate:
 Phase 4 gate:
 
 - [ ] Source, automated tests, generated package, documentation, and live behavior
-  all treat unit scopes as first-class candidate filters with no parallel scope
-  state remaining.
+  treat unit scopes as first-class candidate filters with no parallel scope state.
 
 ## Execution evidence
 
@@ -223,8 +304,8 @@ Phase 4 gate:
 | --- | --- | --- | --- |
 | 0 | `./tools/Test.ps1` baseline | Pending | |
 | 1 | Descriptor/catalog/provider tests | Pending | |
-| 2 | Filter state/config/preset/scoped-caller tests | Pending | |
-| 3 | Filter UI and characterization tests | Pending | |
+| 2 | State/config/provider/UI cutover tests | Pending | |
+| 3 | `./tools/Test.ps1` UI/regression suite | Pending | |
 | 4 | `./tools/Test.ps1` | Pending | |
 | 4 | `./tools/Build.ps1` | Pending | |
 | 4 | `./tools/VerifyPackage.ps1` | Pending | |
