@@ -96,7 +96,7 @@ return function(test, repo_root)
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
         test.assert_equal('Prefer high', list.tooltip)
 
-        list:setChoices({{descriptor={kind='race', key='DWARF'}}}, 1)
+        list:setChoices({{descriptor={kind='race', key='DWARF', behavior='candidate'}}}, 1)
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
         test.assert_equal('Include in results.', list.tooltip)
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X +

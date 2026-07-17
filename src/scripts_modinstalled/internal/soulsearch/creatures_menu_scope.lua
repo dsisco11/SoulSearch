@@ -17,6 +17,7 @@ local CREATURES_FOCUS_PREFIX = 'dwarfmode/info/creatures'
 local function race_group_id(group)
     return RACE.group_id_prefix .. group
 end
+local function scope_id(scope) return SCOPE.id_prefix .. scope end
 
 local TAB_SCOPES = {
     {
@@ -66,15 +67,14 @@ end
 ---@param tab table
 ---@return table
 local function make_options(tab)
-    local options = {
-        settings_id=tab.settings_id,
-        unit_scope=tab.unit_scope,
-    }
+    local options = {settings_id=tab.settings_id, filters={{
+        id=scope_id(tab.unit_scope), direction=DIRECTION.HIGH,
+    }}}
     if tab.race_group then
-        options.filters={{
+        table.insert(options.filters, {
             id=race_group_id(tab.race_group),
             direction=DIRECTION.HIGH,
-        }}
+        })
     end
     return options
 end

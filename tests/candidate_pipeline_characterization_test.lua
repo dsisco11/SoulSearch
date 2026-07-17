@@ -5,7 +5,7 @@ local function raw(id, flags)
 end
 
 return function(test, repo_root)
-    test.case('candidate pipeline: scalar scope feeds race filtering before row collection', function()
+    test.case('candidate pipeline: unit scope and race families intersect before row collection', function()
         local citizen_dwarf = {id=1, race=1, caste=0, status={}}
         local citizen_dog = {id=2, race=2, caste=0, status={}}
         local visitor_dwarf = {id=3, race=1, caste=0, status={}}
@@ -39,8 +39,10 @@ return function(test, repo_root)
             translation={translateName=function() return nil end},
         }
 
-        local scoped = soulsearch_env.load_unit_scope_provider(repo_root, df, dfhack)
-            .new('citizens')
+        local active_provider = soulsearch_env.load_active_unit_provider(repo_root, df, dfhack)
+            .new()
+        local scoped = soulsearch_env.load_unit_scope_filter_provider(repo_root, dfhack).new(
+            active_provider, {{id='unit_scope:citizens', direction='high'}})
         local filtered = soulsearch_env.load_race_filter_provider(repo_root, df).new(
             scoped, {{id='race:group:HUMANOIDS', direction='high'}})
         local residents = soulsearch_env.load_residents(repo_root, nil, dfhack)
@@ -51,5 +53,12 @@ return function(test, repo_root)
         test.assert_equal(citizen_dwarf, rows[1].unit)
         test.assert_equal(1, rows[1].unit_id)
         test.assert_equal('Unit 1', rows[1].name)
+
+        local ranked = soulsearch_env.load_search(repo_root,
+            soulsearch_env.load_attributes(repo_root)).apply(rows, {
+            selected_filters={{id='skill:MINING', direction='high'}},
+        })
+        test.assert_equal(1, #ranked)
+        test.assert_equal(1, ranked[1].unit_id)
     end)
 end

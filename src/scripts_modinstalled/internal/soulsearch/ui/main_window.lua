@@ -5,7 +5,8 @@ local widgets = require('gui.widgets')
 reqscript('internal/soulsearch/ui/widget_extensions')
 
 local residents = reqscript('internal/soulsearch/residents')
-local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
+local active_unit_provider = reqscript('internal/soulsearch/active_unit_provider')
+local unit_scope_filter_provider = reqscript('internal/soulsearch/unit_scope_filter_provider')
 local race_filter_provider = reqscript('internal/soulsearch/race_filter_provider')
 local search_session = reqscript('internal/soulsearch/search_session')
 local QUERY_KIND = search_session.SEARCH_QUERY_KIND
@@ -139,6 +140,7 @@ function SoulSearchWindow:init()
     append_descriptors(self.attribute_filter_descriptors, filter_descriptor_groups.traits)
     self.skill_filter_descriptors = filter_descriptor_groups.skills or {}
     self.race_filter_descriptors = filter_descriptor_groups.races or {}
+    self.unit_scope_filter_descriptors = filter_descriptor_groups.unit_scopes or {}
 
     local views = {}
     -- The Results Panel remains first, and its query field remains its first
@@ -184,9 +186,6 @@ function SoulSearchWindow:init()
         view_id='filter_panel_window', frame=ui_layout.get_frame('filter_panel'),
         frame_title='Search filters', draggable=false,
         inputs={
-        unit_scope=self.session:get_unit_scope(),
-        unit_scope_options=unit_scope_provider.get_options(),
-        on_unit_scope_change=function(scope) self:select_unit_scope(scope) end,
         on_clear=function() self:clear_filters() end,
         on_refresh=function(request) self:refresh_views(request) end,
         on_preset_query=function(text)
@@ -213,6 +212,11 @@ function SoulSearchWindow:init()
                 self:refresh_views{pickers=true}
             end
         end,
+        on_unit_scope_query=function(text)
+            if self.session:set_query(QUERY_KIND.UNIT_SCOPE, text) then
+                self:refresh_views{pickers=true}
+            end
+        end,
         on_toggle_filter=function(filter_id) self:toggle_filter(filter_id) end,
         on_filter_action=function(filter_id, action)
             self:handle_filter_action(filter_id, action)
@@ -221,7 +225,6 @@ function SoulSearchWindow:init()
     })
     self:addviews(views)
 
-    self:update_unit_scope_picker()
     self:refresh_residents()
     self:refresh_views{
         active_filters=true,
@@ -288,6 +291,7 @@ function SoulSearchWindow:refresh_picker_choices()
     self:update_available_filter_choices()
     self:update_available_skill_choices()
     self:update_available_race_choices()
+    self:update_available_unit_scope_choices()
 end
 
 ---Refreshes the saved preset names displayed by the preset picker.
@@ -571,6 +575,10 @@ function SoulSearchWindow:toggle_add_race_dropdown()
     return self.subviews.filter_panel_window:toggle_picker('race')
 end
 
+function SoulSearchWindow:toggle_add_unit_scope_dropdown()
+    return self.subviews.filter_panel_window:toggle_picker('unit_scope')
+end
+
 ---@return boolean
 function SoulSearchWindow:close_add_filter_dropdown()
     return self.subviews.filter_panel_window:close_picker()
@@ -618,10 +626,10 @@ end
 
 ---Rebuilds rows from the active unit scope and race candidate filters.
 function SoulSearchWindow:refresh_candidates()
-    local scope_provider = unit_scope_provider.new(self.session:get_unit_scope())
-    local provider = race_filter_provider.new(
-        scope_provider,
-        self.session:get_candidate_filters())
+    local selected_filters = self.session:get_candidate_filters()
+    local provider = active_unit_provider.new()
+    provider = unit_scope_filter_provider.new(provider, selected_filters)
+    provider = race_filter_provider.new(provider, selected_filters)
     local rows, err = residents.collect_from_provider(provider)
     if not rows then
         print(err)
@@ -633,36 +641,11 @@ end
 
 ---@param scope SoulSearchUnitScope
 ---@return boolean changed
-function SoulSearchWindow:set_unit_scope(scope)
-    if not self.session:set_unit_scope(scope) then return false end
-    self:update_session_settings{unit_scope=scope}
-    self:refresh_views{candidates=true, results=true, pickers=true}
-    return true
-end
-
----Builds the unit-scope selector rows and reflects the active scope on its
----control. The popup is intentionally a short modal directly below Search.
-function SoulSearchWindow:update_unit_scope_picker()
-    local choices, selected, selected_label = filter_presenter.present_scopes(
-        unit_scope_provider.get_options(), self.session:get_unit_scope())
-    self.subviews.filter_panel_window:set_unit_scope_choices(
-        choices, selected, selected_label)
-end
-
----Opens or closes the unit-scope selector.
-function SoulSearchWindow:toggle_unit_scope_picker()
-    self:update_unit_scope_picker()
-    return self.subviews.filter_panel_window:toggle_picker('scope')
-end
-
----@param scope SoulSearchUnitScope
-function SoulSearchWindow:select_unit_scope(scope)
-    self.subviews.filter_panel_window:close_picker()
-    local changed = self:set_unit_scope(scope)
-    self:update_unit_scope_picker()
-    if not changed then
-        self:refresh_views{pickers=true}
-    end
+function SoulSearchWindow:update_available_unit_scope_choices(selected)
+    local choices = filter_presenter.present_available(self.unit_scope_filter_descriptors,
+        self.session:get_filters(), self.session.unit_scope_query,
+        'No matching unit scopes.')
+    self.subviews.filter_panel_window:set_picker_choices('unit_scope', choices, selected)
 end
 
 ---@param selected integer|nil

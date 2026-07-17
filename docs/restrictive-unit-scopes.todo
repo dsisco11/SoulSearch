@@ -149,76 +149,76 @@ This phase is intentionally one vertical cutover. Removing session scope APIs wh
 the dedicated scope UI still calls them would leave an unloadable intermediate
 checkout, so the domain and UI switch must land together.
 
-- [ ] Remove `unit_scope` storage, getters, setters, and validation from
+- [x] Remove `unit_scope` storage, getters, setters, and validation from
   `search_session.lua`; all scope selections must live in its existing
   `filter_state`.
-- [ ] Remove `unit_scope` snapshots from `window_settings.lua` and canonical resolved
+- [x] Remove `unit_scope` snapshots from `window_settings.lua` and canonical resolved
   settings from `window_config.lua`.
-- [ ] Teach `window_config.lua` to translate legacy scalar `unit_scope` options into
+- [x] Teach `window_config.lua` to translate legacy scalar `unit_scope` options into
   ordinary selected filters according to the Phase 0 precedence rules before final
   `filter_state` validation.
-- [ ] Preserve caller-owned inputs and filter ordering while preventing duplicate
+- [x] Preserve caller-owned inputs and filter ordering while preventing duplicate
   scope IDs during legacy translation.
-- [ ] Keep the primary default exactly one positive Humanoids filter and no default
+- [x] Keep the primary default exactly one positive Humanoids filter and no default
   unit-scope filter.
-- [ ] Change `creatures_menu_scope.lua` presets to emit a single `filters` list
+- [x] Change `creatures_menu_scope.lua` presets to emit a single `filters` list
   containing their scope descriptor and any race descriptor configured for that
   tab; Visitors currently has no race descriptor.
-- [ ] Update `main_window.lua:refresh_candidates()` to compose:
+- [x] Update `main_window.lua:refresh_candidates()` to compose:
   active-unit provider -> unit-scope filter provider -> race filter provider.
-- [ ] Pass the same isolated snapshot from
+- [x] Pass the same isolated snapshot from
   `SearchSession:get_candidate_filters()` to both family providers; each adapter
   resolves only descriptors of its own kind.
-- [ ] Verify filter presets require no schema change: their existing serialized
+- [x] Verify filter presets require no schema change: their existing serialized
   `filters` array should automatically preserve unit-scope descriptor IDs and
   directions.
-- [ ] Document and test that loading any custom, built-in, or role preset continues
+- [x] Document and test that loading any custom, built-in, or role preset continues
   to replace the complete filter list. A preset without unit-scope descriptors
   therefore restores unrestricted unit scope instead of retaining hidden state.
-- [ ] Remove the `Search for: <scope>` label, Edit button, and singular
+- [x] Remove the `Search for: <scope>` label, Edit button, and singular
   `UnitScopePicker` path from the filter panel in the same cutover.
-- [ ] Add an `Add unit scope filter` control backed by the existing
+- [x] Add an `Add unit scope filter` control backed by the existing
   `SearchablePicker` pattern.
-- [ ] Add `UNIT_SCOPE` to `SEARCH_QUERY_KIND`, a `unit_scope_query` session field,
+- [x] Add `UNIT_SCOPE` to `SEARCH_QUERY_KIND`, a `unit_scope_query` session field,
   and the corresponding main-window/filter-panel query callbacks and refresh path.
-- [ ] Add the unit-scope picker to `PICKER_VIEW_IDS` and every picker open/close/
+- [x] Add the unit-scope picker to `PICKER_VIEW_IDS` and every picker open/close/
   visibility loop; remove the obsolete singular scope picker entry.
-- [ ] Present unit-scope descriptors through the existing filter toggle/direction
+- [x] Present unit-scope descriptors through the existing filter toggle/direction
   path so selections immediately live in shared `filter_state`.
-- [ ] Generalize active-filter presentation and mouse actions from race-kind checks
+- [x] Generalize active-filter presentation and mouse actions from race-kind checks
   to `behavior == CANDIDATE`, including suppression of ranking move controls and
   their hit targets.
-- [ ] Resolve ranking priority from catalog descriptor behavior rather than
+- [x] Resolve ranking priority from catalog descriptor behavior rather than
   nonexistent `kind` fields on `SoulSearchSelectedFilter` values.
-- [ ] Add unit-scope category color, include/exclude tooltips, empty-state guidance,
+- [x] Add unit-scope category color, include/exclude tooltips, empty-state guidance,
   and picker help without synthesizing an `All units` filter row.
-- [ ] Update `tests/support/soulsearch_env.lua` stubs to expose the new descriptor,
+- [x] Update `tests/support/soulsearch_env.lua` stubs to expose the new descriptor,
   provider, and settings contracts.
-- [ ] Remove `unit_scope_provider.lua` and its old test/harness loader only after all
+- [x] Remove `unit_scope_provider.lua` and its old test/harness loader only after all
   production callers use the new pipeline and its behavior has replacement
   coverage in the active-unit/catalog/filter-provider suites.
-- [ ] Remove the scalar-only `ALL_ACTIVE` sentinel and `default_unit_scope` after the
+- [x] Remove the scalar-only `ALL_ACTIVE` sentinel and `default_unit_scope` after the
   old provider is gone. Retain the `unit_scope` descriptor namespace, concrete keys,
   and prefix; keep any `all_active` compatibility string private to the
   window-config adapter.
-- [ ] Remove obsolete scope presenter/formatter/layout helpers and the dedicated
+- [x] Remove obsolete scope presenter/formatter/layout helpers and the dedicated
   picker module, and update module registry metadata in the same cutover.
-- [ ] Update `filter_state_test.lua`, `filter_presets_test.lua`,
+- [x] Update `filter_state_test.lua`, `filter_presets_test.lua`,
   `search_session_test.lua`, `window_config_test.lua`,
   `window_settings_test.lua`, `creatures_menu_scope_test.lua`, and
   `ui_open_test.lua`, plus the focused filter-panel/presenter/action tests required
   to keep the main window loadable.
-- [ ] Add composition coverage proving unit-scope and race families intersect while
+- [x] Add composition coverage proving unit-scope and race families intersect while
   ranking filters receive only the already-filtered rows.
 
 Phase 2 gate:
 
-- [ ] There is no canonical `unit_scope` field outside the explicit legacy adapter.
-- [ ] Default, reopened, same-identity, preset-loaded, and Creatures-scoped windows
+- [x] There is no canonical `unit_scope` field outside the explicit legacy adapter.
+- [x] Default, reopened, same-identity, preset-loaded, and Creatures-scoped windows
   derive unit restrictions exclusively from their ordinary filter lists.
-- [ ] Legacy scalar open options resolve according to the documented precedence
+- [x] Legacy scalar open options resolve according to the documented precedence
   without becoming stored canonical state.
-- [ ] The main window loads with the new picker and no old scope control/API/module
+- [x] The main window loads with the new picker and no old scope control/API/module
   dependency remains.
 
 ## Phase 3 - Harden unified filter UI and regression coverage
@@ -304,7 +304,7 @@ Phase 4 gate:
 | --- | --- | --- | --- |
 | 0 | `./tools/Test.ps1` baseline | Passed | 308 test(s), 0 failure(s). Includes `candidate pipeline: scalar scope feeds race filtering before row collection`, which locks the legacy scalar scope -> race provider -> resident row path. |
 | 1 | Descriptor/catalog/provider tests | Passed | 317 test(s), 0 failure(s). Focused coverage verifies descriptor IDs, active-source deduplication, empty/positive/negative/union/include-except family algebra, adapter behavior, and registry contracts. |
-| 2 | State/config/provider/UI cutover tests | Pending | |
+| 2 | `./tools/Test.ps1`; `./tools/Build.ps1`; stale-symbol audit | Passed | 305 test(s), 0 failure(s); 64 Lua files syntax-checked. The audit retained scalar `unit_scope` only in the window-config compatibility adapter and tests. |
 | 3 | `./tools/Test.ps1` UI/regression suite | Pending | |
 | 4 | `./tools/Test.ps1` | Pending | |
 | 4 | `./tools/Build.ps1` | Pending | |

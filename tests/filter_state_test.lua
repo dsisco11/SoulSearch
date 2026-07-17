@@ -299,4 +299,17 @@ return function(test, repo_root)
         test.assert_sequence({'skill:MINING'},
             ids(filter_state.get_ranking_filters(state)))
     end)
+
+    test.case('filter state: loading a scope-free preset replaces the complete filter list', function()
+        local state = filter_state.new{
+            {id='unit_scope:citizens', direction='high'},
+            {id='race:group:HUMANOIDS', direction='high'},
+            {id='skill:MINING', direction='high'},
+        }
+        test.assert_true(filter_state.replace(state, {
+            {id='skill:SWORD', direction='low'},
+        }))
+        test.assert_sequence({'skill:SWORD'}, ids(filter_state.get_filters(state)))
+        test.assert_equal(0, #filter_state.get_candidate_filters(state))
+    end)
 end

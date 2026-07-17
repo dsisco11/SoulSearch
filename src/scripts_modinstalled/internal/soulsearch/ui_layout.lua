@@ -21,10 +21,6 @@ UNDERLINE_ROW = 3
 PICKER_TOP = 7
 WINDOW_FRAME_BORDER = 1
 WINDOW_CONTENT_INSET = 1
-UNIT_SCOPE_PICKER_VERTICAL_PADDING = 2 *
-    (WINDOW_FRAME_BORDER + WINDOW_CONTENT_INSET)
-
-
 ACTIVE_FILTER_BUTTON_START_X = 21
 FILTER_ACTION_WIDTH = 3
 
@@ -74,15 +70,12 @@ FRAMES = {
     filter_panel_close={r=0, t=0, w=3, h=1},
     active_filter_count={l=1, t=0, w=10, h=1},
     filters_button={l=12, t=0, w=6, h=1},
-    unit_scope={l=0, t=6, w=24, h=1},
-    unit_scope_edit={l=25, t=6, w=6, h=1},
-    unit_scope_picker={l=0, t=7, w=25},
-    unit_scope_picker_list={l=0, t=0, r=0, b=0},
     add_filter={l=0, t=0, w=25, h=1},
     add_skill={l=0, t=1, w=25, h=1},
     add_race={l=0, t=2, w=25, h=1},
     clear_filters={l=0, t=3, w=25, h=1},
     presets={l=0, t=4, w=25, h=1},
+    add_unit_scope={l=0, t=5, w=25, h=1},
     filter_list={l=0, t=7, r=0, b=0},
     picker={l=0, t=0, r=0, b=0},
     picker_close={r=0, t=0, w=3, h=1},
@@ -131,24 +124,6 @@ function get_filter_action_at_x(x)
     end
     return nil
 end
----@param option_count integer
----@return table
-function get_unit_scope_picker_frame(option_count)
-    local frame = get_frame('unit_scope_picker')
-    -- Leave one row per option, plus the framed window's border and content
-    -- inset above and below the list.
-    frame.h = option_count + UNIT_SCOPE_PICKER_VERTICAL_PADDING
-    return frame
-end
----@param option_count integer
----@return table
-function get_unit_scope_picker_list_frame(option_count)
-    local frame = get_frame('unit_scope_picker_list')
-    frame.b = nil
-    frame.h = math.max(1, option_count)
-    return frame
-end
-
 -- End of main-window layout metadata.
 ---@param x integer|nil
 ---@param y integer|nil

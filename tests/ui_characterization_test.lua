@@ -48,13 +48,12 @@ return function(test, repo_root)
             'close_button',
             'filter_panel_window',
             'close_filter_panel_button',
-            'unit_scope_label',
-            'unit_scope_edit',
             'add_filter_button',
             'add_skill_button',
             'add_race_button',
             'clear_filters_button',
             'preset_button',
+            'add_unit_scope_button',
             'filter_list',
             'available_filter_window',
             'close_filter_picker_button',
@@ -64,6 +63,10 @@ return function(test, repo_root)
             'close_race_picker_button',
             'race_search_field',
             'available_race_list',
+            'available_unit_scope_window',
+            'close_unit_scope_picker_button',
+            'unit_scope_search_field',
+            'available_unit_scope_list',
             'available_skill_window',
             'close_skill_picker_button',
             'skill_search_field',
@@ -73,8 +76,6 @@ return function(test, repo_root)
             'save_preset_button',
             'preset_search_field',
             'preset_list',
-            'unit_scope_picker_window',
-            'unit_scope_picker_list',
         }, recursive_ids(window))
     end)
 
@@ -112,10 +113,10 @@ return function(test, repo_root)
         end
     end)
 
-    test.case('UI characterization: picker visibility is exclusive and scope paints last', function()
+    test.case('UI characterization: picker visibility is exclusive and unit-scope picker paints before presets', function()
         local window = new_window()
         local panel = window.subviews.filter_panel_window
-        test.assert_equal('unit_scope_picker_window',
+        test.assert_equal('preset_picker_window',
             panel.subviews[#panel.subviews].view_id)
 
         panel:open()
@@ -125,8 +126,8 @@ return function(test, repo_root)
         panel:toggle_picker('skill')
         test.assert_true(window.subviews.available_skill_window.visible)
         test.assert_false(window.subviews.available_filter_window.visible)
-        panel:toggle_picker('scope')
-        test.assert_true(window.subviews.unit_scope_picker_window.visible)
+        panel:toggle_picker('unit_scope')
+        test.assert_true(window.subviews.available_unit_scope_window.visible)
         test.assert_false(window.subviews.filter_list.visible())
     end)
 
@@ -140,8 +141,8 @@ return function(test, repo_root)
         window:toggle_add_skill_dropdown()
         test.assert_true(panel:is_picker_open('skill'))
 
-        window:toggle_unit_scope_picker()
-        test.assert_true(panel:is_picker_open('scope'))
+        window:toggle_add_unit_scope_dropdown()
+        test.assert_true(panel:is_picker_open('unit_scope'))
 
         window:toggle_preset_picker()
         test.assert_true(panel:is_picker_open('preset'))
@@ -202,9 +203,6 @@ return function(test, repo_root)
             set_picker_choices=function(_, kind, choices, selected)
                 calls.picker = {kind=kind, choices=choices, selected=selected}
             end,
-            set_unit_scope_choices=function(_, choices, selected, label)
-                calls.scope = {choices=choices, selected=selected, label=label}
-            end,
         }
         window.subviews.active_filter_count = {
             setText=function(_, text) calls.filter_count = text end,
@@ -217,8 +215,8 @@ return function(test, repo_root)
         window:update_available_filter_choices()
         test.assert_equal('attribute', calls.picker.kind)
         test.assert_equal('No matching attributes.', calls.picker.choices[1].text)
-        window:update_unit_scope_picker()
-        test.assert_equal('Residents', calls.scope.label)
+        window:update_available_unit_scope_choices()
+        test.assert_equal('unit_scope', calls.picker.kind)
 
         local result_calls = {}
         window.subviews.results_panel = {

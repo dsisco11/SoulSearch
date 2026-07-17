@@ -6,7 +6,7 @@ local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local descriptions = reqscript('internal/soulsearch/attribute_descriptions')
 local filter_constants = reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
-local FILTER_KIND_RACE = filter_constants.kind.RACE
+local CANDIDATE = filter_constants.behavior.CANDIDATE
 
 ---List that snapshots filter choices and dispatches clicks in the fixed-width
 ---action zone for the row under the mouse.
@@ -43,8 +43,10 @@ end
 
 local function describe_choice(choice)
     local descriptor = choice and choice.descriptor
-    if descriptor and descriptor.kind == FILTER_KIND_RACE then
-        return 'Filters by a creatures race.'
+    if descriptor and descriptor.behavior == CANDIDATE then
+        return descriptor.kind == filter_constants.kind.UNIT_SCOPE and
+            'Filters which active units are considered.' or
+            'Filters by a creatures race.'
     end
     return descriptor and descriptions.get_tooltip(descriptor.kind, descriptor.key) or nil
 end
@@ -53,7 +55,7 @@ function FilterActionList:on_pointer_update(x, y)
     local _, choice, action = self:get_action_at(x, y)
     if action then
         local descriptor = choice and choice.descriptor
-        if descriptor and descriptor.kind == FILTER_KIND_RACE then
+        if descriptor and descriptor.behavior == CANDIDATE then
             if action.callback == 'set_high' then
                 self.tooltip = 'Include in results.'
                 return

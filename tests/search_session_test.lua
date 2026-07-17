@@ -4,11 +4,11 @@ return function(test, repo_root)
     local session_module = soulsearch_env.load_search_session(repo_root)
     local QUERY_KIND = session_module.SEARCH_QUERY_KIND
     local function new(filters)
-        return session_module.new({filters=filters or {}, unit_scope='fort_residents',
+        return session_module.new({filters=filters or {},
             result_sort={key=nil, reverse=false, phase=0}})
     end
 
-    test.case('Search session: filters, queries, scope, and sort are isolated', function()
+    test.case('Search session: filters, queries, and sort are isolated', function()
         local session = new()
         test.assert_true(session:add_filter('skill:MINING'))
         test.assert_false(session:add_filter('skill:MINING'))
@@ -18,8 +18,8 @@ return function(test, repo_root)
         test.assert_true(session:set_query(QUERY_KIND.ATTRIBUTE, 'strength'))
         test.assert_false(session:set_query(QUERY_KIND.ATTRIBUTE, 'strength'))
         test.assert_false(session:set_query('not_a_query_kind', 'invalid kind'))
-        test.assert_true(session:set_unit_scope('visitors'))
-        test.assert_false(session:set_unit_scope('visitors'))
+        test.assert_true(session:set_query(QUERY_KIND.UNIT_SCOPE, 'visitors'))
+        test.assert_false(session:set_query(QUERY_KIND.UNIT_SCOPE, 'visitors'))
         test.assert_equal('name', session:cycle_sort('name').key)
         test.assert_true(session:cycle_sort('name').reverse)
         test.assert_nil(session:cycle_sort('name').key)

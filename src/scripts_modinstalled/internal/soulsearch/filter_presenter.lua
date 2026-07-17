@@ -9,11 +9,15 @@ local function matches(text, query)
     return tostring(text):lower():find(tostring(query):lower(), 1, true) ~= nil
 end
 
-local function selected_by_id(filters)
+local function selected_by_id(descriptors, filters)
+    local behavior_by_id = {}
+    for _, descriptor in ipairs(descriptors or {}) do
+        behavior_by_id[descriptor.id] = descriptor.behavior
+    end
     local selected, priority = {}, 0
     for _, filter in ipairs(filters) do
         selected[filter.id] = filter.direction
-        if filter.kind ~= filter_constants.kind.RACE then
+        if behavior_by_id[filter.id] ~= filter_constants.behavior.CANDIDATE then
             priority = priority + 1
             selected[filter.id .. ':priority'] = priority
         end
@@ -25,7 +29,7 @@ end
 ---@param filters SoulSearchSelectedFilter[]
 ---@return table[]
 function present_active(descriptors, filters)
-    local selected, priority_count = selected_by_id(filters)
+    local selected, priority_count = selected_by_id(descriptors, filters)
     local choices = {}
     for _, descriptor in ipairs(descriptors) do
         local direction = selected[descriptor.id]
@@ -45,7 +49,7 @@ end
 ---@param empty_text string
 ---@return table[]
 function present_available(descriptors, filters, query, empty_text)
-    local selected = selected_by_id(filters)
+    local selected = selected_by_id(descriptors, filters)
     local choices = {}
     for _, descriptor in ipairs(descriptors) do
         if matches(descriptor.label, query) then
@@ -65,7 +69,7 @@ end
 ---@param categories string[]
 ---@return table[]
 function present_skills(descriptors, filters, query, categories)
-    local selected = selected_by_id(filters)
+    local selected = selected_by_id(descriptors, filters)
     local groups = {}
     for _, descriptor in ipairs(descriptors) do
         if matches(descriptor.label, query) then
@@ -93,7 +97,7 @@ end
 ---@param query string
 ---@return table[]
 function present_races(descriptors, filters, query)
-    local choices, selected = {}, selected_by_id(filters)
+    local choices, selected = {}, selected_by_id(descriptors, filters)
     local saw_group, gap = false, false
     for _, descriptor in ipairs(descriptors) do
         if matches(descriptor.label, query) then
@@ -108,19 +112,6 @@ function present_races(descriptors, filters, query)
     end
     if #choices == 0 then table.insert(choices, {text='No matching races.'}) end
     return choices
-end
-
----@param options {label: string, value: SoulSearchUnitScope}[]
----@param scope SoulSearchUnitScope
----@return table[], integer|nil, string|nil
-function present_scopes(options, scope)
-    local choices, selected, label = {}, nil, nil
-    for index, option in ipairs(options) do
-        local active = option.value == scope
-        if active then selected, label = index, option.label end
-        table.insert(choices, {text=ui_format.format_unit_scope_choice(option.label, active), scope=option.value})
-    end
-    return choices, selected, label
 end
 
 ---@param saved string[]

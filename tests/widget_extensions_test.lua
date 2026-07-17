@@ -89,7 +89,6 @@ return function(test, repo_root)
             'src/scripts_modinstalled/internal/soulsearch/ui/results_panel.lua',
             'src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua',
             'src/scripts_modinstalled/internal/soulsearch/ui/sortable_header.lua',
-            'src/scripts_modinstalled/internal/soulsearch/ui/unit_scope_picker.lua',
             'src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua',
         }
         for _, relative_path in ipairs(sources) do

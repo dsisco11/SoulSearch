@@ -3,7 +3,6 @@
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
-local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
 local window_settings = reqscript('internal/soulsearch/window_settings')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local sort_state = reqscript('internal/soulsearch/sort_state')
@@ -78,13 +77,38 @@ local function normalize_sort(sort, spec)
     return sort_state.normalize(sort, spec)
 end
 
----@param scope any
----@return string
-local function normalize_scope(scope)
-    if type(scope) == 'string' and pcall(unit_scope_provider.new, scope) then
-        return scope
+local UNIT_SCOPE = filter_constants.unit_scope
+local LEGACY_ALL_ACTIVE = 'all_active'
+
+local function get_scope_filter_id(scope)
+    if scope == LEGACY_ALL_ACTIVE then return nil end
+    for _, key in ipairs{
+        UNIT_SCOPE.CITIZENS, UNIT_SCOPE.FORT_RESIDENTS,
+        UNIT_SCOPE.CITIZENS_AND_PETS, UNIT_SCOPE.VISITORS,
+    } do
+        if scope == key then return UNIT_SCOPE.id_prefix .. key end
     end
-    return unit_scope_provider.get_default_scope()
+end
+
+local function has_unit_scope(filters)
+    for _, filter in ipairs(filters or {}) do
+        if type(filter) == 'table' and type(filter.id) == 'string' and
+                filter.id:sub(1, #UNIT_SCOPE.id_prefix) == UNIT_SCOPE.id_prefix then
+            return true
+        end
+    end
+    return false
+end
+
+local function without_unit_scopes(filters)
+    local result = {}
+    for _, filter in ipairs(filters or {}) do
+        if type(filter) == 'table' and type(filter.id) == 'string' and
+                filter.id:sub(1, #UNIT_SCOPE.id_prefix) ~= UNIT_SCOPE.id_prefix then
+            table.insert(result, filter)
+        end
+    end
+    return result
 end
 
 ---@param options table|nil
@@ -104,13 +128,17 @@ function resolve(options, screen_width, screen_height)
             direction=filter_constants.direction.HIGH,
         }}
     end
+    local legacy_scope = options.unit_scope
+    local scope_filter_id = get_scope_filter_id(legacy_scope)
+    local explicit_scope = options.filters ~= nil and has_unit_scope(options.filters)
+    if legacy_scope ~= nil and (legacy_scope == LEGACY_ALL_ACTIVE or scope_filter_id) and
+            not explicit_scope then
+        filter_source = without_unit_scopes(filter_source)
+        if scope_filter_id then table.insert(filter_source, {
+            id=scope_filter_id, direction=filter_constants.direction.HIGH}) end
+    end
     local filters = filter_state.get_filters(filter_state.new(filter_source))
     if options.filters ~= nil then explicit.filters = filters end
-
-    local scope_source = options.unit_scope ~= nil and options.unit_scope or
-        saved.unit_scope
-    local unit_scope = normalize_scope(scope_source)
-    if options.unit_scope ~= nil then explicit.unit_scope = unit_scope end
 
     local result_sort_source = options.result_sort ~= nil and options.result_sort or
         saved.result_sort
@@ -129,7 +157,6 @@ function resolve(options, screen_width, screen_height)
     return {
         settings_id=settings_id,
         filters=filters,
-        unit_scope=unit_scope,
         result_sort=result_sort,
         stats_sort=normalized_stats_sort,
         frame=frame,

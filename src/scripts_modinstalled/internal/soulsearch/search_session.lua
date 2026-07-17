@@ -2,7 +2,6 @@
 
 local filter_state = reqscript('internal/soulsearch/filter_state')
 local search = reqscript('internal/soulsearch/search')
-local unit_scope_provider = reqscript('internal/soulsearch/unit_scope_provider')
 local sort_state = reqscript('internal/soulsearch/sort_state')
 
 local SearchSession = {}
@@ -14,6 +13,7 @@ SEARCH_QUERY_KIND = {
     ATTRIBUTE='attribute',
     SKILL='skill',
     RACE='race',
+    UNIT_SCOPE='unit_scope',
     PRESET='preset',
 }
 
@@ -22,6 +22,7 @@ local QUERY_FIELDS = {
     [SEARCH_QUERY_KIND.ATTRIBUTE]='attribute_query',
     [SEARCH_QUERY_KIND.SKILL]='skill_query',
     [SEARCH_QUERY_KIND.RACE]='race_query',
+    [SEARCH_QUERY_KIND.UNIT_SCOPE]='unit_scope_query',
     [SEARCH_QUERY_KIND.PRESET]='preset_query',
 }
 
@@ -37,14 +38,12 @@ local function copy_rows(rows)
     return copy
 end
 
----@param settings {filters: SoulSearchSelectedFilter[], unit_scope: SoulSearchUnitScope, result_sort: table}
+---@param settings {filters: SoulSearchSelectedFilter[], result_sort: table}
 ---@return SearchSession
 function new(settings)
-    unit_scope_provider.new(settings.unit_scope)
     return setmetatable({filter_state=filter_state.new(settings.filters),
-        unit_scope=settings.unit_scope,
         result_sort=sort_state.normalize(settings.result_sort, RESULT_SORT_SPEC),
-        query='', attribute_query='', skill_query='', race_query='', preset_query='',
+        query='', attribute_query='', skill_query='', race_query='', unit_scope_query='', preset_query='',
         rows={}, results={}, selected_unit_id=nil, selected_index=1}, SearchSession)
 end
 
@@ -55,7 +54,6 @@ function SearchSession:filter_count() return filter_state.count(self.filter_stat
 function SearchSession:get_filter_priority(id) return filter_state.get_priority(self.filter_state, id) end
 function SearchSession:contains_filter(id) return filter_state.contains(self.filter_state, id) end
 function SearchSession:get_filter_direction(id) return filter_state.get_direction(self.filter_state, id) end
-function SearchSession:get_unit_scope() return self.unit_scope end
 function SearchSession:get_result_sort()
     return sort_state.normalize(self.result_sort, RESULT_SORT_SPEC)
 end
@@ -94,13 +92,6 @@ end
 function SearchSession:cycle_sort(column)
     self.result_sort = sort_state.next(self.result_sort, column, RESULT_SORT_SPEC)
     return self:get_result_sort()
-end
-
-function SearchSession:set_unit_scope(scope)
-    if scope == self.unit_scope then return false end
-    unit_scope_provider.new(scope)
-    self.unit_scope = scope
-    return true
 end
 
 function SearchSession:add_filter(id) return filter_state.add(self.filter_state, id) end

@@ -45,7 +45,6 @@ function update(settings_id, changes)
     local updated = copy_value(snapshots[id] or {})
     for _, key in ipairs{
         'filters',
-        'unit_scope',
         'result_sort',
         'stats_sort',
         'frame',

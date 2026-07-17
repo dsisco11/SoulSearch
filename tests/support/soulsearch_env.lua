@@ -257,30 +257,6 @@ function M.load_candidate_filter_family_provider(repo_root, descriptors_override
         })
 end
 
-function M.load_unit_scope_provider(repo_root, df_stub, dfhack_stub)
-    local candidate_provider = M.load_candidate_provider(repo_root)
-    local filter_constants = M.load_filter_constants(repo_root)
-    local availability = M.load_availability(repo_root, dfhack_stub)
-    local globals = {
-        df=df_stub,
-        dfhack=dfhack_stub,
-        reqscript=function(name)
-            if name == 'internal/soulsearch/candidate_provider' then
-                return candidate_provider
-            end
-            if name == 'internal/soulsearch/filter_constants' then
-                return filter_constants
-            end
-            if name == 'internal/soulsearch/availability' then return availability end
-            error('unexpected reqscript: ' .. tostring(name))
-        end,
-    }
-    return module_loader.load(
-        repo_root,
-        'src/scripts_modinstalled/internal/soulsearch/unit_scope_provider.lua',
-        globals)
-end
-
 function M.load_race_filter_provider(repo_root, df_stub)
     local descriptors = M.load_descriptors(repo_root, df_stub)
     local race_catalog = M.load_race_catalog(repo_root, df_stub)
@@ -484,15 +460,12 @@ function M.load_search_session(repo_root)
     local filters = M.load_filter_state(repo_root)
     local search = M.load_search(repo_root)
     local sort_state = M.load_sort_state(repo_root)
-    local scopes = M.load_unit_scope_provider(repo_root,
-        {global={world={units={active={}}}}}, {units={getCitizens=function() return {} end}})
     return module_loader.load(repo_root,
         'src/scripts_modinstalled/internal/soulsearch/search_session.lua', {
         reqscript=function(name)
             if name == 'internal/soulsearch/filter_state' then return filters end
             if name == 'internal/soulsearch/search' then return search end
             if name == 'internal/soulsearch/sort_state' then return sort_state end
-            if name == 'internal/soulsearch/unit_scope_provider' then return scopes end
             error('unexpected reqscript: ' .. tostring(name))
         end,
     })
@@ -775,8 +748,6 @@ function M.load_filter_panel(repo_root, get_mouse_pos)
         'src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua')
     modules['internal/soulsearch/ui/preset_picker'] = load(
         'src/scripts_modinstalled/internal/soulsearch/ui/preset_picker.lua')
-    modules['internal/soulsearch/ui/unit_scope_picker'] = load(
-        'src/scripts_modinstalled/internal/soulsearch/ui/unit_scope_picker.lua')
     return load('src/scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua'), modules
 end
 
@@ -866,15 +837,12 @@ end
 function M.load_window_config(repo_root)
     local filter_state = M.load_filter_state(repo_root)
     local filter_constants = M.load_filter_constants(repo_root)
-    local unit_scope_provider = M.load_unit_scope_provider(
-        repo_root, M.make_df_stub(), {units={}})
     local window_settings = M.load_window_settings(repo_root)
     local ui_layout = M.load_ui_layout(repo_root)
     local sort_state = M.load_sort_state(repo_root)
     local modules = {
         ['internal/soulsearch/filter_state']=filter_state,
         ['internal/soulsearch/filter_constants']=filter_constants,
-        ['internal/soulsearch/unit_scope_provider']=unit_scope_provider,
         ['internal/soulsearch/window_settings']=window_settings,
         ['internal/soulsearch/ui_layout']=ui_layout,
         ['internal/soulsearch/sort_state']=sort_state,
@@ -1083,12 +1051,6 @@ function M.load_ui_characterization(repo_root)
             end
             function session:move_filter(id, delta) return filter_state.move(self.filter_state, id, delta) end
             function session:replace_rows(rows) self.rows = rows end
-            function session:get_unit_scope() return self.unit_scope end
-            function session:set_unit_scope(scope)
-                if scope == self.unit_scope then return false end
-                self.unit_scope = scope
-                return true
-            end
             return session
         end,
     }
@@ -1099,14 +1061,9 @@ function M.load_ui_characterization(repo_root)
             get_unavailable_reason=function() return nil end,
             collect_from_provider=function() return state.rows or {} end,
         },
-        ['internal/soulsearch/unit_scope_provider']={
-            get_options=function()
-                return {
-                    {label='Residents', value='fort_residents'},
-                    {label='Visitors', value='visitors'},
-                }
-            end,
-            new=function(scope) return {scope=scope} end,
+        ['internal/soulsearch/active_unit_provider']={new=function() return {} end},
+        ['internal/soulsearch/unit_scope_filter_provider']={
+            new=function(provider) return provider end,
         },
         ['internal/soulsearch/race_filter_provider']={
             new=function(provider) return provider end,
@@ -1122,7 +1079,7 @@ function M.load_ui_characterization(repo_root)
             get_catalog=function()
                 return {by_id={}, groups={
                     physical_attributes={}, mental_attributes={}, traits={},
-                    skills={}, races={},
+                    skills={}, races={}, unit_scopes={},
                 }}
             end,
         },
@@ -1156,14 +1113,6 @@ function M.load_ui_characterization(repo_root)
             present_available=function(_, _, _, text) return {{text=text}} end,
             present_skills=function() return {{text='No matching skills.'}} end,
             present_races=function() return {{text='No matching races.'}} end,
-            present_scopes=function(options, scope)
-                local choices, selected, label = {}, nil, nil
-                for index, option in ipairs(options) do
-                    if option.value == scope then selected, label = index, option.label end
-                    table.insert(choices, {text=ui_format.format_unit_scope_choice(option.label, option.value == scope), scope=option.value})
-                end
-                return choices, selected, label
-            end,
             present_presets=function() return {{text='No matching presets.'}} end,
         },
         ['internal/soulsearch/result_presenter']={present=function(results, key, reverse)
@@ -1197,7 +1146,7 @@ function M.load_ui_characterization(repo_root)
         ['internal/soulsearch/ui_glyphs']={CP437_VERTICAL_LINE=179},
         ['internal/soulsearch/filter_constants']={FILTER_CONSTANTS={
             direction={HIGH='high', LOW='low'},
-            kind={RACE='race'},
+            kind={RACE='race', UNIT_SCOPE='unit_scope'},
             race={group_id_prefix='race:group:'},
         }},
     }

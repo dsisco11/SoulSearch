@@ -55,7 +55,6 @@ MODULES = {
     },
     {name='internal/soulsearch/ui/searchable_picker', contract='SearchablePicker', contract_type='table'},
     {name='internal/soulsearch/ui/preset_picker', contract='PresetPicker', contract_type='table'},
-    {name='internal/soulsearch/ui/unit_scope_picker', contract='UnitScopePicker', contract_type='table'},
     {
         name='internal/soulsearch/ui/filter_panel',
         contract='FilterPanel', contract_type='table',
@@ -89,7 +88,6 @@ MODULES = {
     {name='internal/soulsearch/candidate_provider', contract='new'},
     {name='internal/soulsearch/active_unit_provider', contract='new'},
     {name='internal/soulsearch/candidate_filter_family_provider', contract='new'},
-    {name='internal/soulsearch/unit_scope_provider', contract='new'},
     {name='internal/soulsearch/unit_scope_filter_provider', contract='new'},
     {name='internal/soulsearch/filter_state', contract='get_filters'},
     {name='internal/soulsearch/window_config', contract='resolve'},

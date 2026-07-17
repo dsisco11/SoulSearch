@@ -59,7 +59,7 @@ return function(test, repo_root)
             descriptors, filters, 'zzz', 'No matching attributes.')[1].text)
     end)
 
-    test.case('Filter presenter: preset sections and selected scope are stable', function()
+    test.case('Filter presenter: preset sections are stable', function()
         local presets = filter_presenter.present_presets({'Saved'},
             {{id='miner', label='Miner'}}, {{id='soldier', label='Soldier'}},
             {{id='skill:mine', label='Mining'}}, '')
@@ -67,11 +67,6 @@ return function(test, repo_root)
             'Combat presets', '  Soldier', 'Skill presets', '  Mining'},
             (function() local texts = {}; for _, choice in ipairs(presets) do
                 table.insert(texts, choice.text) end; return texts end)())
-        local _, selected, label = filter_presenter.present_scopes({
-            {label='Residents', value='residents'}, {label='Visitors', value='visitors'},
-        }, 'visitors')
-        test.assert_equal(2, selected)
-        test.assert_equal('Visitors', label)
     end)
 
     test.case('UI format: result row snapshot preserves widths', function()
@@ -90,12 +85,6 @@ return function(test, repo_root)
             format.format_result_columns('name', false):sub(1, 6))
         test.assert_equal('Unit ID ' .. string.char(25),
             format.format_result_columns('unit_id', true):sub(56, 64))
-        test.assert_equal('Search for: Visitors',
-            format.format_unit_scope_control('Visitors'))
-        test.assert_equal(string.char(16) .. ' Residents',
-            format.format_unit_scope_choice('Residents', true))
-        test.assert_equal('  Visitors',
-            format.format_unit_scope_choice('Visitors', false))
     end)
 
     test.case('UI format: tooltip text wraps without truncation', function()
@@ -139,9 +128,9 @@ return function(test, repo_root)
         test.assert_equal('lightgreen', selected_filter[1].pen)
     end)
 
-    test.case('UI format: race rows reuse plus and minus without movement', function()
+    test.case('UI format: candidate rows reuse plus and minus without movement', function()
         local tokens = format.format_active_filter_choice(
-            {label='Humanoids', kind='race'},
+            {label='Humanoids', kind='race', behavior='candidate'},
             'low',
             nil,
             0)

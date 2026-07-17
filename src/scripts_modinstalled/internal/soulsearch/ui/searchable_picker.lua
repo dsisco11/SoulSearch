@@ -26,6 +26,10 @@ local PICKER_CONFIGS = {
         close_id='close_race_picker_button', search_id='race_search_field',
         list_id='available_race_list', key='CUSTOM_G',
     },
+    unit_scope={
+        close_id='close_unit_scope_picker_button', search_id='unit_scope_search_field',
+        list_id='available_unit_scope_list', key='CUSTOM_U',
+    },
 }
 local FILTER_KIND_RACE = filter_constants.kind.RACE
 
@@ -64,6 +68,8 @@ function SearchablePicker:init(info)
                     local descriptor = choice and choice.descriptor
                     if descriptor and descriptor.kind == FILTER_KIND_RACE then
                         target.tooltip = 'Filters by a creatures race.'
+                    elseif descriptor and descriptor.kind == filter_constants.kind.UNIT_SCOPE then
+                        target.tooltip = 'Filters which active units are considered.'
                     elseif descriptor and self.kind == 'attribute' then
                         target.tooltip = descriptions.get_tooltip(descriptor.kind, descriptor.key)
                     else

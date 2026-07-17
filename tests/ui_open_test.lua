@@ -62,8 +62,8 @@ return function(test, repo_root)
         end
         local options = {
             settings_id='creatures:miners',
-            filters={{id='skill:MINING', direction='high'}},
-            unit_scope='fort_residents',
+            filters={{id='unit_scope:fort_residents', direction='high'},
+                {id='skill:MINING', direction='high'}},
         }
         local screen = ui.open(options)
 

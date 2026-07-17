@@ -74,24 +74,14 @@ function format_result_columns(sort_key, sort_reverse)
         'Unit ID' .. marker('unit_id'))
 end
 
----@param label string
----@return string
-function format_unit_scope_control(label)
-    return 'Search for: ' .. label
-end
-
----@param label string
----@param selected boolean
----@return string
-function format_unit_scope_choice(label, selected)
-    return (selected and glyphs.CP437_ARROW_RIGHT or ' ') .. ' ' .. label
-end
-
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
 ---@return dfhack.color|dfhack.pen
 function get_category_pen(descriptor)
     if descriptor.kind == filter_constants.kind.RACE then
         return COLOR_LIGHTCYAN
+    end
+    if descriptor.kind == filter_constants.kind.UNIT_SCOPE then
+        return COLOR_CYAN
     end
     if descriptor.kind == 'skill' then return COLOR_YELLOW end
     if descriptor.kind == 'physical_attribute' then return COLOR_LIGHTGREEN end
@@ -154,7 +144,7 @@ end
 ---@return table[]
 function format_active_filter_choice(
         descriptor, mode, priority_index, priority_count)
-    local is_race = descriptor.kind == filter_constants.kind.RACE
+    local is_candidate = descriptor.behavior == filter_constants.behavior.CANDIDATE
     local state = {
         high_selected=mode == FILTER_HIGH,
         low_selected=mode == FILTER_LOW,
@@ -176,7 +166,7 @@ function format_active_filter_choice(
     for _, action in ipairs(layout.FILTER_ACTIONS) do
         local pen = COLOR_DARKGREY
         local label = action.label
-        if is_race then
+        if is_candidate then
             if action.callback == 'move_up' or action.callback == 'move_down' then
                 label = '   '
             end
@@ -185,7 +175,7 @@ function format_active_filter_choice(
             pen = COLOR_LIGHTGREEN
         elseif action.pen_rule == 'low_selected' and state.low_selected then
             pen = COLOR_LIGHTRED
-        elseif not is_race and action.pen_rule == 'enabled' and
+        elseif not is_candidate and action.pen_rule == 'enabled' and
                 state[action.enabled_rule] then
             pen = COLOR_WHITE
         elseif action.pen_rule == 'remove' then

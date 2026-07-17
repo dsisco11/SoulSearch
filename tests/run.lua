@@ -16,7 +16,6 @@ local suites = {
     (require('filter_constants_test')),
     (require('candidate_provider_test')),
     (require('availability_test')),
-    (require('unit_scope_provider_test')),
     (require('unit_scope_catalog_test')),
     (require('active_unit_provider_test')),
     (require('candidate_filter_family_provider_test')),

@@ -38,8 +38,9 @@ return function(test, repo_root)
         test.assert_equal('low', reread[1].direction)
     end)
 
-    test.case('filter presets: preserve mixed race and ranking entries', function()
+    test.case('filter presets: preserve mixed candidate and ranking entries', function()
         local original = {
+            {id='unit_scope:fort_residents', direction='high'},
             {id='race:group:HUMANOIDS', direction='high'},
             {id='race:raw:DWARF', direction='low'},
             {id='skill:MINING', direction='high'},

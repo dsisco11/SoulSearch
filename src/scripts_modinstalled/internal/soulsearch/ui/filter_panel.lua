@@ -11,11 +11,10 @@ local FilterActionList =
 local searchable_picker =
     reqscript('internal/soulsearch/ui/searchable_picker')
 local preset_picker = reqscript('internal/soulsearch/ui/preset_picker')
-local unit_scope_picker = reqscript('internal/soulsearch/ui/unit_scope_picker')
 
 local PICKER_VIEW_IDS = {
     attribute='available_filter_window', skill='available_skill_window',
-    race='available_race_window', scope='unit_scope_picker_window',
+    race='available_race_window', unit_scope='available_unit_scope_window',
     preset='preset_picker_window',
 }
 
@@ -39,21 +38,11 @@ function FilterPanel:init(info)
     FilterPanel.super.init(self, info)
     self.inputs = info.inputs
     local inputs = self.inputs
-    local unit_scope_label
-    for _, option in ipairs(inputs.unit_scope_options) do
-        if option.value == inputs.unit_scope then unit_scope_label = option.label break end
-    end
     self:addviews{
         widgets.TextButton{view_id='close_filter_panel_button',
             frame=ui_layout.get_frame('filter_panel_close'), label='X',
             tooltip='Close',
             on_activate=function() self:close() end},
-        widgets.Label{view_id='unit_scope_label', frame=ui_layout.get_frame('unit_scope'),
-            text=ui_format.format_unit_scope_control(unit_scope_label),
-            tooltip='Shows the unit scope used when searching.'},
-        widgets.TextButton{view_id='unit_scope_edit', frame=ui_layout.get_frame('unit_scope_edit'),
-            label='Edit', tooltip='Choose which units are included in the results.',
-            on_activate=function() self:toggle_picker('scope') end},
         widgets.TextButton{view_id='add_filter_button', frame=ui_layout.get_frame('add_filter'),
             key='CUSTOM_A', label='Add attribute filter',
             tooltip='Add an attribute or trait to the ranking criteria.',
@@ -72,6 +61,9 @@ function FilterPanel:init(info)
             key='CUSTOM_P', label='Filter presets',
             tooltip='Save the current filters or load a custom, role, or skill preset.',
             on_activate=function() self:toggle_picker('preset') end},
+        widgets.TextButton{view_id='add_unit_scope_button', frame=ui_layout.get_frame('add_unit_scope'),
+            label='Add unit scope filter', tooltip='Add a unit scope to the candidate set.',
+            on_activate=function() self:toggle_picker('unit_scope') end},
         FilterActionList{view_id='filter_list', frame=ui_layout.get_frame('filter_list'),
             visible=function()
                 return not self:has_open_picker()
@@ -90,6 +82,13 @@ function FilterPanel:init(info)
             on_close=function() self:on_picker_close('race') end, inputs={
             on_query=inputs.on_race_query,
             on_submit=function(choice) if choice and choice.descriptor then inputs.on_toggle_filter(choice.descriptor.id) end end}},
+        searchable_picker.SearchablePicker{view_id='available_unit_scope_window',
+            frame=ui_layout.get_frame('picker'), frame_title='Select unit scope',
+            draggable=false, kind='unit_scope',
+            on_open=function() self:on_picker_open('unit_scope') end,
+            on_close=function() self:on_picker_close('unit_scope') end, inputs={
+            on_query=inputs.on_unit_scope_query,
+            on_submit=function(choice) if choice and choice.descriptor then inputs.on_toggle_filter(choice.descriptor.id) end end}},
         searchable_picker.SearchablePicker{view_id='available_skill_window',
             frame=ui_layout.get_frame('picker'), frame_title='Select skill',
             draggable=false, kind='skill',
@@ -104,12 +103,6 @@ function FilterPanel:init(info)
             on_save=inputs.on_save_preset,
             on_query=inputs.on_preset_query, on_load=inputs.on_load_preset,
             on_load_default=inputs.on_load_default_preset, on_load_role=inputs.on_load_role_preset}},
-        unit_scope_picker.UnitScopePicker{view_id='unit_scope_picker_window',
-            frame=ui_layout.get_unit_scope_picker_frame(#inputs.unit_scope_options),
-            frame_title='Search scope', draggable=false,
-            on_open=function() self:on_picker_open('scope') end,
-            on_close=function() self:on_picker_close('scope') end, inputs={
-            options=inputs.unit_scope_options, on_select=inputs.on_unit_scope_change}},
     }
 end
 
@@ -132,7 +125,7 @@ end
 
 ---@return boolean changed
 function FilterPanel:close_picker(suppress_refresh)
-    for _, kind in ipairs({'attribute', 'skill', 'race', 'scope', 'preset'}) do
+    for _, kind in ipairs({'attribute', 'skill', 'race', 'unit_scope', 'preset'}) do
         local picker = get_subview(self, PICKER_VIEW_IDS[kind])
         if picker:is_open() then
             self.suppress_picker_refresh = suppress_refresh
@@ -146,7 +139,7 @@ end
 
 ---@return boolean
 function FilterPanel:has_open_picker()
-    for _, kind in ipairs({'attribute', 'skill', 'race', 'scope', 'preset'}) do
+    for _, kind in ipairs({'attribute', 'skill', 'race', 'unit_scope', 'preset'}) do
         if self:is_picker_open(kind) then return true end
     end
     return false
@@ -191,16 +184,8 @@ end
 ---@param choices table[]
 ---@param selected integer|nil
 ---@param label string|nil
-function FilterPanel:set_unit_scope_choices(choices, selected, label)
-    get_subview(self, 'unit_scope_picker_list'):setChoices(choices, selected)
-    get_subview(self, 'unit_scope_label'):setText(
-        ui_format.format_unit_scope_control(label))
-end
 
 ---@class SoulSearchFilterPanelInputs
----@field unit_scope SoulSearchUnitScope
----@field unit_scope_options {label: string, value: SoulSearchUnitScope}[]
----@field on_unit_scope_change fun(scope: SoulSearchUnitScope)
 ---@field on_clear fun()
 ---@field on_refresh fun(request: SoulSearchRefreshRequest)
 ---@field on_preset_query fun(text: string)
@@ -211,6 +196,7 @@ end
 ---@field on_attribute_query fun(text: string)
 ---@field on_skill_query fun(text: string)
 ---@field on_race_query fun(text: string)
+---@field on_unit_scope_query fun(text: string)
 ---@field on_toggle_filter fun(filter_id: string)
 ---@field on_filter_action fun(filter_id: string, action: string)
 
