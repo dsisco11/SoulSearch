@@ -10,7 +10,7 @@ return function(test, root)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)
         test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(18, attrs.version)
+        test.assert_equal(19, attrs.version)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_LEFT,
             attrs.placement[1].button)
         test.assert_equal(config.DIRECTION.LEFT, attrs.placement[1].direction)
@@ -41,6 +41,7 @@ return function(test, root)
         local overlay = env.load_stats_overlay(root)
         local widget = overlay.SoulSearchStatsOverlay{}
         test.assert_equal('thin', widget.subviews.window.frame_style)
+        test.assert_equal(0, widget.subviews.window.frame_inset)
     end)
 
     test.case('stats overlay: forwards per-instance placement fallbacks in order', function()
