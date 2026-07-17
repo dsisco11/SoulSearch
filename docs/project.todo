@@ -82,8 +82,9 @@
 ✔ [Matched Filters Panel]: Encapsulate the matched filters display out of the unit-stats-display into its own component. Specifically the matched filters list and the "Matched Filters" title label are what should be isolated. @done(26-07-15)
 ✔ Evaluate whether any of the projects ui elements/patterns can be replaced with built-in dfhack ui widgets which provide the same functionality. See `docs/dfhack-widget-audit.md`. @done(26-07-16)
 ✔ Add widget to the base-game 'creatures' menu to allow users to quickly open a "scoped" SoulSearch window. Supports Residents, Pets/Livestock, and Other (visitor/humanoid scope) with explicit candidate presets; the scope resolver remains extensible for profession and location contexts. @done(26-07-16)
-☐ [Stats Overlay]: remove indentation on stats list items.
+✔ [Stats Overlay]: remove indentation on stats list items. @done(26-07-16)
 ☐ [Stats Overlay]: remove dead space above stats list headers.
+☐ [Stats Overlay]: add underline to stats list column headers.
 ☐ [Stats Overlay]: use thin border instead of thick border.
 ☐ [Stats Overlay]: Make collapse button arrow direction point toward the unit card for expanding, and away for collapsing.
 ☐ [Stats Overlay]: Increase hit box of collapse button.

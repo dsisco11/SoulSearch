@@ -29,7 +29,8 @@ function get_overlay_columns(has_scrollbar)
         OVERLAY_VALUE_COLUMN_X
     return {
         value_column_x=value_column_x,
-        label_width=value_column_x - 3, -- two-space row inset and trailing gap
+        label_width=value_column_x - 1, -- no row inset and one trailing gap
+        label_inset=0,
     }
 end
 
@@ -64,7 +65,9 @@ end
 ---@param y integer|nil
 ---@return boolean
 function is_label_cell(x, y, columns)
-    return x and y and y >= 0 and x >= 2 and x < get_value_column_x(columns)
+    local label_inset = columns and columns.label_inset or 2
+    return x and y and y >= 0 and x >= label_inset and
+        x < get_value_column_x(columns)
 end
 
 ---@param content_height integer|nil

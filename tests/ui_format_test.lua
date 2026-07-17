@@ -170,13 +170,13 @@ return function(test, repo_root)
         local compact_tokens = {}
         format.append_attribute_record_tokens(compact_tokens, {
             label='Strength', deviation=250, tier_distance=2, pen='physical'},
-            {label_width=24})
-        test.assert_equal('  Strength' .. (' '):rep(17), compact_tokens[1].text)
+            {label_width=26, label_inset=0})
+        test.assert_equal('Strength' .. (' '):rep(19), compact_tokens[1].text)
         local scrolling_tokens = {}
         format.append_attribute_record_tokens(scrolling_tokens, {
             label='Strength', deviation=250, tier_distance=2, pen='physical'},
-            {label_width=22})
-        test.assert_equal('  Strength' .. (' '):rep(15), scrolling_tokens[1].text)
+            {label_width=24, label_inset=0})
+        test.assert_equal('Strength' .. (' '):rep(17), scrolling_tokens[1].text)
     end)
 
     test.case('UI format: panel title rules use CP437 horizontal lines', function()

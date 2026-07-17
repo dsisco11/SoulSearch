@@ -259,8 +259,10 @@ end
 ---@param columns table|nil
 function append_attribute_record_tokens(tokens, record, columns)
     local label_width = columns and columns.label_width or stats_layout.LABEL_WIDTH
+    local label_inset = columns and columns.label_inset or 2
     table.insert(tokens, {
-        text=('  %-' .. label_width .. 's '):format(record.label),
+        text=(('%s%%-%ds '):format((' '):rep(label_inset), label_width)):format(
+            record.label),
         pen=record.pen,
     })
     table.insert(tokens, {
