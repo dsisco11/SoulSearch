@@ -93,7 +93,7 @@
 ✔ [Race Filters]: apply Humanoids only as the first-open default for the primary SoulSearch window; scoped windows and user removals may have no race filter. @done(26-07-16)
 ✔ Refactor unit scope filters to be "restrictive" rather than "inclusive" so that the default scope is all units. See `docs/restrictive-unit-scopes.todo`. @done(26-07-16; local validation complete; live DFHack smoke deferred in restrictive-unit-scopes.todo)
 ✔ Allow selecting multiple scope filters. @done(26-07-16; local validation complete; live DFHack smoke deferred in restrictive-unit-scopes.todo)
-☐ Add "Wildlife" scope filter to allow searching for wild animals.
+✔ Add "Wildlife" scope filter to allow searching for wild animals. @done(26-07-16)
 ☐ Add "Livestock" scope filter to allow searching for livestock animals.
 ☐ Add "Pets" scope filter to allow searching for pets.
 ☐ [Scoped Residents]: defaults to the "Residents" scope but it should include both residents and citizens.

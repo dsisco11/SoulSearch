@@ -12,13 +12,14 @@ return function(test, repo_root)
             isCitizen=function() return false end, isResident=function() return false end,
             isFortControlled=function() return false end, isVisitor=function() return false end,
             isMerchant=function() return false end, isDiplomat=function() return false end,
+            isWildlife=function() return false end,
         }})
         local descriptors = catalog.get_descriptors()
         test.assert_sequence({'unit_scope:citizens', 'unit_scope:fort_residents',
-            'unit_scope:citizens_and_pets', 'unit_scope:visitors'}, ids(descriptors))
-        test.assert_sequence({'Citizens', 'Residents', 'Citizens and pets', 'Visitors'}, {
+            'unit_scope:citizens_and_pets', 'unit_scope:visitors', 'unit_scope:wildlife'}, ids(descriptors))
+        test.assert_sequence({'Citizens', 'Residents', 'Citizens and pets', 'Visitors', 'Wildlife'}, {
             descriptors[1].label, descriptors[2].label, descriptors[3].label,
-            descriptors[4].label,
+            descriptors[4].label, descriptors[5].label,
         })
         for _, descriptor in ipairs(descriptors) do
             test.assert_equal('unit_scope', descriptor.kind)
@@ -41,10 +42,11 @@ return function(test, repo_root)
             isVisitor=function(unit) return unit.visitor end,
             isMerchant=function(unit) return unit.merchant end,
             isDiplomat=function(unit) return unit.diplomat end,
+            isWildlife=function(unit) return unit.wildlife end,
         }
         local catalog = soulsearch_env.load_unit_scope_catalog(repo_root, {units=units})
         local descriptors = catalog.get_descriptors()
-        local unit = {citizen=true, resident=true, controlled=true, merchant=true}
+        local unit = {citizen=true, resident=true, controlled=true, merchant=true, wildlife=true}
         for _, descriptor in ipairs(descriptors) do
             test.assert_true(catalog.matches_unit(descriptor, unit))
         end

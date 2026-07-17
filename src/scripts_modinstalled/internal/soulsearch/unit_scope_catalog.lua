@@ -30,6 +30,9 @@ local DEFINITIONS = {
         return dfhack.units.isFortControlled(unit)
     end},
     {key=UNIT_SCOPE.VISITORS, label='Visitors', matches=is_visitor},
+    {key=UNIT_SCOPE.WILDLIFE, label='Wildlife', matches=function(unit)
+        return dfhack.units.isWildlife(unit)
+    end},
 }
 
 local descriptors_by_id = {}

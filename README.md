@@ -180,7 +180,9 @@ filters means **All units**; removing Humanoids therefore exposes every active
 unit.
 
 Click **Edit filters** to open the filter panel. Use **Add unit scope filter**
-to add Citizens, Residents, Citizens and pets, or Visitors. Multiple positive
+to add Citizens, Residents, Citizens and pets, Visitors, or Wildlife. To search
+wildlife from a primary window, remove its initial **Humanoids** race filter.
+Multiple positive
 unit scopes are combined with OR semantics; negative scope filters mean
 **All units except** the selected scopes. Add race filters independently:
 positive races are ORed within the race family, negative races exclude matches,

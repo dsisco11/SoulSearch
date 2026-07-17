@@ -12,6 +12,7 @@ return function(test, repo_root)
         test.assert_equal('unit_scope', constants.kind.UNIT_SCOPE)
         test.assert_equal('citizens', constants.unit_scope.CITIZENS)
         test.assert_equal('visitors', constants.unit_scope.VISITORS)
+        test.assert_equal('wildlife', constants.unit_scope.WILDLIFE)
         test.assert_equal('unit_scope:', constants.unit_scope.id_prefix)
         test.assert_equal('race:group:HUMANOIDS',
             constants.default_race_filter_id)

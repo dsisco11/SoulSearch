@@ -22,11 +22,12 @@ return function(test, repo_root)
     local visitor_dwarf = {id=4, race=1, caste=0, status={}}
     local visitor_dog = {id=5, race=2, caste=0, status={}}
     local inactive_dwarf = {id=6, race=1, caste=0, status={}}
-    local active = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true}
+    local wild_dog = {id=7, race=2, caste=0, status={}}
+    local active = {[1]=true, [2]=true, [3]=true, [4]=true, [5]=true, [7]=true}
     local df = soulsearch_env.make_df_stub()
     df.global.world.units = {active={
         citizen_dwarf, resident_dwarf, citizen_dog, visitor_dwarf,
-        visitor_dog, inactive_dwarf, citizen_dwarf,
+        visitor_dog, inactive_dwarf, wild_dog, citizen_dwarf,
     }}
     df.global.world.raws.creatures.all = {
         raw('DWARF', {CAN_LEARN=true, CAN_SPEAK=true}),
@@ -45,6 +46,7 @@ return function(test, repo_root)
             isVisitor=function(unit) return unit == visitor_dwarf or unit == visitor_dog end,
             isMerchant=function() return false end,
             isDiplomat=function() return false end,
+            isWildlife=function(unit) return unit == wild_dog end,
             getVisibleName=function() return nil end,
             getReadableName=function(unit) return 'Unit ' .. unit.id end,
             getProfessionName=function() return nil end,
@@ -73,7 +75,7 @@ return function(test, repo_root)
         local cases = {
             {
                 name='no scope or race filters returns every active unit',
-                filters={}, expected={1, 2, 3, 4, 5},
+                filters={}, expected={1, 2, 3, 4, 5, 7},
             },
             {
                 name='Humanoids returns every active humanoid',
@@ -95,8 +97,12 @@ return function(test, repo_root)
                     filter(scope_id(scope.CITIZENS), direction.LOW)}, expected={2},
             },
             {
+                name='Wildlife selects active wild animals',
+                filters={filter(scope_id(scope.WILDLIFE))}, expected={7},
+            },
+            {
                 name='negative-only Visitors returns every active non-visitor',
-                filters={filter(scope_id(scope.VISITORS), direction.LOW)}, expected={1, 2, 3},
+                filters={filter(scope_id(scope.VISITORS), direction.LOW)}, expected={1, 2, 3, 7},
             },
         }
         for _, case in ipairs(cases) do

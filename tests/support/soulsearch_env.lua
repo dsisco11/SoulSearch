@@ -113,6 +113,7 @@ function M.load_descriptors(repo_root, df_override)
             isVisitor=function() return false end,
             isMerchant=function() return false end,
             isDiplomat=function() return false end,
+            isWildlife=function() return false end,
         },
     })
     local globals = {
