@@ -25,7 +25,7 @@ local TAB_SCOPES = {
         focus_tokens={'resident', 'citizen'},
         tab_labels={'residents', 'citizens'},
         settings_id='creatures:residents', label='Residents',
-        unit_scope_key=SCOPE.FORT_RESIDENTS,
+        unit_scope_keys={SCOPE.FORT_RESIDENTS, SCOPE.CITIZENS},
         race_group=RACE.group.HUMANOIDS,
     },
     {
@@ -67,9 +67,12 @@ end
 ---@param tab table
 ---@return table
 local function make_options(tab)
-    local options = {settings_id=tab.settings_id, filters={{
-        id=scope_id(tab.unit_scope_key), direction=DIRECTION.HIGH,
-    }}}
+    local options = {settings_id=tab.settings_id, filters={}}
+    for _, scope in ipairs(tab.unit_scope_keys or {tab.unit_scope_key}) do
+        table.insert(options.filters, {
+            id=scope_id(scope), direction=DIRECTION.HIGH,
+        })
+    end
     if tab.race_group then
         table.insert(options.filters, {
             id=race_group_id(tab.race_group),

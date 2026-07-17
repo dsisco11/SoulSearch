@@ -86,7 +86,8 @@ return function(test, repo_root)
 
     test.case('creatures menu overlay: opens every current unified filter preset', function()
         local cases = {
-            {label='Residents', filters={'unit_scope:fort_residents', 'race:group:HUMANOIDS'}},
+            {label='Residents', filters={'unit_scope:fort_residents', 'unit_scope:citizens',
+                'race:group:HUMANOIDS'}},
             {label='Pets/Livestock', filters={'unit_scope:citizens_and_pets', 'race:group:TAMEABLE_ANIMALS'}},
             {label='Visitors', filters={'unit_scope:visitors'}},
         }

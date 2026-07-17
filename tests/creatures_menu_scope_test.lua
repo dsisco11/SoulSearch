@@ -4,6 +4,7 @@ local CONSTANTS = {
     direction={HIGH='high'},
     unit_scope={
         id_prefix='unit_scope:',
+        CITIZENS='citizens',
         FORT_RESIDENTS='fort_residents',
         CITIZENS_AND_PETS='citizens_and_pets',
         VISITORS='visitors',
@@ -48,7 +49,8 @@ return function(test, repo_root)
         test.assert_equal('Residents', residents.label)
         test.assert_equal('creatures:residents', residents.options.settings_id)
         test.assert_equal('unit_scope:fort_residents', residents.options.filters[1].id)
-        test.assert_equal('race:group:HUMANOIDS', residents.options.filters[2].id)
+        test.assert_equal('unit_scope:citizens', residents.options.filters[2].id)
+        test.assert_equal('race:group:HUMANOIDS', residents.options.filters[3].id)
         test.assert_equal('high', residents.options.filters[1].direction)
 
         focuses[screen] = {'dwarfmode/Info/CREATURES/Pets/Livestock'}
