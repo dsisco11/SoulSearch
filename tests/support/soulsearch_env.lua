@@ -105,6 +105,16 @@ function M.load_descriptors(repo_root, df_override)
     local filter_constants = M.load_filter_constants(repo_root)
     local df = df_override or M.make_df_stub()
     local race_catalog = M.load_race_catalog(repo_root, df)
+    local unit_scope_catalog = M.load_unit_scope_catalog(repo_root, {
+        units={
+            isCitizen=function() return false end,
+            isResident=function() return false end,
+            isFortControlled=function() return false end,
+            isVisitor=function() return false end,
+            isMerchant=function() return false end,
+            isDiplomat=function() return false end,
+        },
+    })
     local globals = {
         df=df,
         reqscript=function(name)
@@ -116,6 +126,9 @@ function M.load_descriptors(repo_root, df_override)
             end
             if name == 'internal/soulsearch/race_catalog' then
                 return race_catalog
+            end
+            if name == 'internal/soulsearch/unit_scope_catalog' then
+                return unit_scope_catalog
             end
             if name == 'internal/soulsearch/filter_constants' then
                 return filter_constants
@@ -196,6 +209,54 @@ function M.load_candidate_provider(repo_root)
         'src/scripts_modinstalled/internal/soulsearch/candidate_provider.lua')
 end
 
+function M.load_unit_scope_catalog(repo_root, dfhack_stub)
+    local filter_constants = M.load_filter_constants(repo_root)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/unit_scope_catalog.lua', {
+            dfhack=dfhack_stub,
+            reqscript=function(name)
+                assert(name == 'internal/soulsearch/filter_constants',
+                    'unexpected reqscript: ' .. tostring(name))
+                return filter_constants
+            end,
+        })
+end
+
+function M.load_active_unit_provider(repo_root, df_stub, dfhack_stub)
+    local candidate_provider = M.load_candidate_provider(repo_root)
+    local availability = M.load_availability(repo_root, dfhack_stub)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/active_unit_provider.lua', {
+            df=df_stub, dfhack=dfhack_stub,
+            reqscript=function(name)
+                if name == 'internal/soulsearch/candidate_provider' then
+                    return candidate_provider
+                end
+                if name == 'internal/soulsearch/availability' then return availability end
+                error('unexpected reqscript: ' .. tostring(name))
+            end,
+        })
+end
+
+function M.load_candidate_filter_family_provider(repo_root, descriptors_override)
+    local candidate_provider = M.load_candidate_provider(repo_root)
+    local descriptors = descriptors_override or M.load_descriptors(repo_root)
+    local filter_constants = M.load_filter_constants(repo_root)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/candidate_filter_family_provider.lua', {
+            reqscript=function(name)
+                if name == 'internal/soulsearch/candidate_provider' then
+                    return candidate_provider
+                end
+                if name == 'internal/soulsearch/descriptors' then return descriptors end
+                if name == 'internal/soulsearch/filter_constants' then
+                    return filter_constants
+                end
+                error('unexpected reqscript: ' .. tostring(name))
+            end,
+        })
+end
+
 function M.load_unit_scope_provider(repo_root, df_stub, dfhack_stub)
     local candidate_provider = M.load_candidate_provider(repo_root)
     local filter_constants = M.load_filter_constants(repo_root)
@@ -223,12 +284,13 @@ end
 function M.load_race_filter_provider(repo_root, df_stub)
     local descriptors = M.load_descriptors(repo_root, df_stub)
     local race_catalog = M.load_race_catalog(repo_root, df_stub)
-    local candidate_provider = M.load_candidate_provider(repo_root)
+    local candidate_filter_family_provider =
+        M.load_candidate_filter_family_provider(repo_root, descriptors)
     local filter_constants = M.load_filter_constants(repo_root)
     local globals = {
         reqscript=function(name)
-            if name == 'internal/soulsearch/candidate_provider' then
-                return candidate_provider
+            if name == 'internal/soulsearch/candidate_filter_family_provider' then
+                return candidate_filter_family_provider
             end
             if name == 'internal/soulsearch/descriptors' then return descriptors end
             if name == 'internal/soulsearch/race_catalog' then return race_catalog end
@@ -242,6 +304,29 @@ function M.load_race_filter_provider(repo_root, df_stub)
         repo_root,
         'src/scripts_modinstalled/internal/soulsearch/race_filter_provider.lua',
         globals)
+end
+
+function M.load_unit_scope_filter_provider(repo_root, dfhack_stub)
+    local unit_scope_catalog = M.load_unit_scope_catalog(repo_root, dfhack_stub)
+    local descriptors = M.load_descriptors(repo_root)
+    local candidate_filter_family_provider =
+        M.load_candidate_filter_family_provider(repo_root, descriptors)
+    local filter_constants = M.load_filter_constants(repo_root)
+    return module_loader.load(repo_root,
+        'src/scripts_modinstalled/internal/soulsearch/unit_scope_filter_provider.lua', {
+            reqscript=function(name)
+                if name == 'internal/soulsearch/candidate_filter_family_provider' then
+                    return candidate_filter_family_provider
+                end
+                if name == 'internal/soulsearch/unit_scope_catalog' then
+                    return unit_scope_catalog
+                end
+                if name == 'internal/soulsearch/filter_constants' then
+                    return filter_constants
+                end
+                error('unexpected reqscript: ' .. tostring(name))
+            end,
+        })
 end
 
 function M.load_ui_refresh(repo_root)

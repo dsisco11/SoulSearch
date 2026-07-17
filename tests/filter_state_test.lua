@@ -285,4 +285,18 @@ return function(test, repo_root)
         test.assert_equal('race:group:TAMEABLE_ANIMALS', candidates[1].id)
         test.assert_equal('high', candidates[1].direction)
     end)
+
+    test.case('filter state: unit-scope candidates cannot acquire ranking priority', function()
+        local state = filter_state.new{
+            {id='unit_scope:citizens', direction='high'},
+            {id='skill:MINING', direction='high'},
+        }
+        local changed, priority = filter_state.move(state, 'unit_scope:citizens', 1)
+        test.assert_false(changed)
+        test.assert_equal(1, priority)
+        test.assert_sequence({'unit_scope:citizens'},
+            ids(filter_state.get_candidate_filters(state)))
+        test.assert_sequence({'skill:MINING'},
+            ids(filter_state.get_ranking_filters(state)))
+    end)
 end

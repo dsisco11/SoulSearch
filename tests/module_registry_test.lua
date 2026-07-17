@@ -18,8 +18,8 @@ return function(test, repo_root)
         test.assert_equal(#registry.MODULES, #calls)
         test.assert_equal('internal/soulsearch/df_enums', calls[1])
         test.assert_equal('internal/soulsearch/ui', calls[#calls])
-        local constants_index, settings_index, race_catalog_index, descriptor_index
-        local candidate_index, scope_index, state_index, config_index
+        local constants_index, settings_index, race_catalog_index, scope_catalog_index, descriptor_index
+        local candidate_index, active_index, family_index, scope_index, scope_filter_index, state_index, config_index
         local screen_registry_index, stats_layout_index, stats_config_index
         local residents_index, stats_presenter_index, stats_list_index
         local stats_panel_index, tooltip_index, popover_index
@@ -34,12 +34,20 @@ return function(test, repo_root)
                 settings_index = index
             elseif name == 'internal/soulsearch/race_catalog' then
                 race_catalog_index = index
+            elseif name == 'internal/soulsearch/unit_scope_catalog' then
+                scope_catalog_index = index
             elseif name == 'internal/soulsearch/descriptors' then
                 descriptor_index = index
             elseif name == 'internal/soulsearch/candidate_provider' then
                 candidate_index = index
+            elseif name == 'internal/soulsearch/active_unit_provider' then
+                active_index = index
+            elseif name == 'internal/soulsearch/candidate_filter_family_provider' then
+                family_index = index
             elseif name == 'internal/soulsearch/unit_scope_provider' then
                 scope_index = index
+            elseif name == 'internal/soulsearch/unit_scope_filter_provider' then
+                scope_filter_index = index
             elseif name == 'internal/soulsearch/filter_state' then
                 state_index = index
             elseif name == 'internal/soulsearch/window_config' then
@@ -94,7 +102,12 @@ return function(test, repo_root)
         test.assert_true(constants_index < settings_index)
         test.assert_true(settings_index < #calls)
         test.assert_true(race_catalog_index < descriptor_index)
+        test.assert_true(scope_catalog_index < descriptor_index)
         test.assert_true(candidate_index < scope_index)
+        test.assert_true(candidate_index < active_index)
+        test.assert_true(candidate_index < family_index)
+        test.assert_true(descriptor_index < family_index)
+        test.assert_true(family_index < scope_filter_index)
         test.assert_true(scope_index < state_index)
         test.assert_true(settings_index < config_index)
         test.assert_true(scope_index < config_index)
@@ -135,9 +148,17 @@ return function(test, repo_root)
         test.assert_true(
             loaded['internal/soulsearch/race_catalog'].get_descriptors ~= nil)
         test.assert_true(
+            loaded['internal/soulsearch/unit_scope_catalog'].get_descriptors ~= nil)
+        test.assert_true(
+            loaded['internal/soulsearch/active_unit_provider'].new ~= nil)
+        test.assert_true(
+            loaded['internal/soulsearch/candidate_filter_family_provider'].new ~= nil)
+        test.assert_true(
             loaded['internal/soulsearch/unit_scope_provider'].new ~= nil)
         test.assert_true(
             loaded['internal/soulsearch/race_filter_provider'].new ~= nil)
+        test.assert_true(
+            loaded['internal/soulsearch/unit_scope_filter_provider'].new ~= nil)
         test.assert_true(type(
             loaded['internal/soulsearch/filter_constants'].FILTER_CONSTANTS) ==
             'table')

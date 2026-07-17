@@ -77,7 +77,7 @@ return function(test, repo_root)
         local first = descriptors.get_catalog()
         local second = descriptors.get_catalog()
         test.assert_true(first == second)
-        test.assert_equal(19, #first.flat)
+        test.assert_equal(23, #first.flat)
 
         local seen = {}
         for _, descriptor in ipairs(first.flat) do
@@ -90,6 +90,12 @@ return function(test, repo_root)
     test.case('descriptor catalog: preserves group and flat ordering', function()
         local descriptors = soulsearch_env.load_descriptors(repo_root)
         local catalog = descriptors.get_catalog()
+        test.assert_sequence({
+            'unit_scope:citizens',
+            'unit_scope:fort_residents',
+            'unit_scope:citizens_and_pets',
+            'unit_scope:visitors',
+        }, descriptor_ids(catalog.groups.unit_scopes))
         test.assert_sequence({
             'skill:MINING',
             'skill:PERSUASION',
@@ -132,6 +138,10 @@ return function(test, repo_root)
             'mental_attribute:WILLPOWER',
             'trait:BRAVERY',
             'trait:PATIENCE',
+            'unit_scope:citizens',
+            'unit_scope:fort_residents',
+            'unit_scope:citizens_and_pets',
+            'unit_scope:visitors',
             'race:group:HUMANOIDS',
             'race:group:TAMEABLE_ANIMALS',
             'race:group:WORK_ANIMALS',
@@ -146,10 +156,11 @@ return function(test, repo_root)
             catalog.by_id['skill:UNLISTED_SKILL'].category)
     end)
 
-    test.case('descriptor catalog: races are candidates and stats are ranking descriptors', function()
+    test.case('descriptor catalog: scopes and races are candidates and stats are ranking descriptors', function()
         local descriptors = soulsearch_env.load_descriptors(repo_root)
         for _, descriptor in ipairs(descriptors.get_catalog().flat) do
-            local expected = descriptor.kind == 'race' and 'candidate' or 'ranking'
+            local expected = (descriptor.kind == 'race' or
+                descriptor.kind == 'unit_scope') and 'candidate' or 'ranking'
             test.assert_equal(expected, descriptor.behavior)
         end
     end)

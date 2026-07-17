@@ -96,50 +96,50 @@ Phase 0 gate:
 
 ## Phase 1 - Add descriptors and family-filter providers
 
-- [ ] Add `FILTER_CONSTANTS.kind.UNIT_SCOPE='unit_scope'` plus matching
+- [x] Add `FILTER_CONSTANTS.kind.UNIT_SCOPE='unit_scope'` plus matching
   `unit_scope:` descriptor prefix/keys to `filter_constants.lua`.
-- [ ] Reuse `FILTER_CONSTANTS.unit_scope` as the canonical descriptor namespace for
+- [x] Reuse `FILTER_CONSTANTS.unit_scope` as the canonical descriptor namespace for
   its prefix and concrete keys. Mark only the scalar-only `ALL_ACTIVE` sentinel and
   `default_unit_scope` as legacy, keeping them functional until Phase 2 removes the
   old provider and its callers.
-- [ ] Create `unit_scope_catalog.lua`, parallel to `race_catalog.lua`, to own:
+- [x] Create `unit_scope_catalog.lua`, parallel to `race_catalog.lua`, to own:
   - stable descriptors and player-facing labels;
   - Citizens, Residents, Citizens and pets, and Visitors matching predicates;
   - descriptor lookup/matching without world-derived cache.
-- [ ] Add unit-scope descriptors to `descriptors.lua` groups, flat ordering, and
+- [x] Add unit-scope descriptors to `descriptors.lua` groups, flat ordering, and
   `by_id` lookup with `behavior=CANDIDATE`.
-- [ ] Add `active_unit_provider.lua` to own active-unit enumeration, availability
+- [x] Add `active_unit_provider.lua` to own active-unit enumeration, availability
   checks, source ordering, and duplicate suppression. Keep the existing
   `candidate_provider.lua` as the generic provider wrapper.
-- [ ] Add `candidate_filter_family_provider.lua` for the shared
+- [x] Add `candidate_filter_family_provider.lua` for the shared
   positive-OR/negative-exclusion algorithm. Its inputs are an upstream provider,
   selected filters, a descriptor kind, and a unit matcher.
-- [ ] Make the shared family provider ignore invalid, stale, and other-kind filter
+- [x] Make the shared family provider ignore invalid, stale, and other-kind filter
   entries while preserving source order, duplicate suppression, and upstream error
   propagation.
-- [ ] Refactor `race_filter_provider.lua` into a thin adapter over that shared helper
+- [x] Refactor `race_filter_provider.lua` into a thin adapter over that shared helper
   without changing its behavior.
-- [ ] Add `unit_scope_filter_provider.lua` as the equivalent thin adapter for
+- [x] Add `unit_scope_filter_provider.lua` as the equivalent thin adapter for
   `UNIT_SCOPE` descriptors.
-- [ ] Keep the inclusive scalar `unit_scope_provider.lua` temporarily as the
+- [x] Keep the inclusive scalar `unit_scope_provider.lua` temporarily as the
   characterized legacy path until Phase 2 migrates its production callers.
-- [ ] Keep unit-scope and race matching in separate providers so sequential
+- [x] Keep unit-scope and race matching in separate providers so sequential
   composition gives explicit AND semantics between filter families.
-- [ ] Confirm at the domain-state layer that candidate descriptors cannot be moved
+- [x] Confirm at the domain-state layer that candidate descriptors cannot be moved
   as ranking filters; presentation priority is handled in Phase 3.
-- [ ] Update module registration/lifecycle metadata for added, renamed, or removed
+- [x] Update module registration/lifecycle metadata for added, renamed, or removed
   modules.
-- [ ] Add `unit_scope_catalog_test.lua`, `active_unit_provider_test.lua`,
+- [x] Add `unit_scope_catalog_test.lua`, `active_unit_provider_test.lua`,
   `candidate_filter_family_provider_test.lua`, and
   `unit_scope_filter_provider_test.lua`; register every new suite in
   `tests/run.lua`.
-- [ ] Update `filter_constants_test.lua`, descriptor/filter-state tests,
+- [x] Update `filter_constants_test.lua`, descriptor/filter-state tests,
   `race_filter_provider_test.lua`, `candidate_provider_test.lua`,
   `module_registry_test.lua`, metadata tests, and lifecycle tests as applicable.
 
 Phase 1 gate:
 
-- [ ] Focused catalog/provider tests pass for empty, positive, negative, union, and
+- [x] Focused catalog/provider tests pass for empty, positive, negative, union, and
   include-except behavior in each family. Cross-family intersection remains a
   Phase 2 composition test.
 
@@ -303,7 +303,7 @@ Phase 4 gate:
 | Phase | Command or check | Result | Notes |
 | --- | --- | --- | --- |
 | 0 | `./tools/Test.ps1` baseline | Passed | 308 test(s), 0 failure(s). Includes `candidate pipeline: scalar scope feeds race filtering before row collection`, which locks the legacy scalar scope -> race provider -> resident row path. |
-| 1 | Descriptor/catalog/provider tests | Pending | |
+| 1 | Descriptor/catalog/provider tests | Passed | 317 test(s), 0 failure(s). Focused coverage verifies descriptor IDs, active-source deduplication, empty/positive/negative/union/include-except family algebra, adapter behavior, and registry contracts. |
 | 2 | State/config/provider/UI cutover tests | Pending | |
 | 3 | `./tools/Test.ps1` UI/regression suite | Pending | |
 | 4 | `./tools/Test.ps1` | Pending | |
