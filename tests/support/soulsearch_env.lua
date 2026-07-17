@@ -1427,7 +1427,8 @@ function M.load_stats_overlay(repo_root, options)
             if name == 'internal/soulsearch/stats_popover_config' then return config end
             if name == 'internal/soulsearch/stats_popover' then return popover end
             if name == 'internal/soulsearch/ui_glyphs' then
-                return {CP437_TRIANGLE_UP=string.char(30), CP437_TRIANGLE_DOWN=string.char(31),
+                return {CP437_ARROW_RIGHT=string.char(16), CP437_ARROW_LEFT=string.char(17),
+                    CP437_ARROW_UP=string.char(24), CP437_ARROW_DOWN=string.char(25),
                     CP437_HORIZONTAL_LINE=string.char(196)}
             end
             if name == 'internal/soulsearch/ui/unit_stats_list' then

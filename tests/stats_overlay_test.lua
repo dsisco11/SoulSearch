@@ -10,7 +10,7 @@ return function(test, root)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)
         test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(21, attrs.version)
+        test.assert_equal(23, attrs.version)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_LEFT,
             attrs.placement[1].button)
         test.assert_equal(config.DIRECTION.LEFT, attrs.placement[1].direction)
@@ -61,6 +61,8 @@ return function(test, root)
         test.assert_equal(config.DIRECTION.UP, state.placements[1].direction)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_RIGHT,
             state.placements[2].button)
+        test.assert_equal(string.char(24), widget.subviews.collapse_button.label)
+        test.assert_equal(string.char(25), widget.subviews.expand_button.label)
     end)
 
     test.case('stats overlay: does not measure or report a closed unit card during layout', function()
@@ -147,7 +149,7 @@ return function(test, root)
         local widget = overlay.SoulSearchStatsOverlay{}
         local window = widget.subviews.window
         local panel = window.subviews.stats_panel
-        test.assert_equal(string.char(30), widget.subviews.collapse_button.label)
+        test.assert_equal(string.char(16), widget.subviews.collapse_button.label)
         test.assert_equal('Collapse the SoulSearch stats view.',
             widget.subviews.collapse_button.tooltip)
         test.assert_equal('Expand the SoulSearch stats view.',
@@ -165,20 +167,22 @@ return function(test, root)
         test.assert_equal(config.DIRECTION.LEFT, state.placements[1].direction)
         test.assert_equal(72, widget.frame.l)
         test.assert_equal(11, widget.frame.t)
-        test.assert_equal(config.DIRECTION.LEFT,
+        test.assert_equal(config.DIRECTION.DOWN,
             widget.subviews.expand_button.direction)
+        test.assert_equal(string.char(25), widget.subviews.expand_button.label)
         widget.subviews.expand_button.on_activate()
         test.assert_false(widget.collapsed)
         test.assert_true(window.visible)
-        test.assert_equal(string.char(31), widget.subviews.expand_button.label)
+        test.assert_equal(string.char(25), widget.subviews.expand_button.label)
         test.assert_equal(32, widget.frame.w)
         test.assert_equal(13, widget.frame.h)
         test.assert_equal(0, window.frame.l)
         test.assert_equal(1, window.frame.t)
         test.assert_equal(29, widget.subviews.collapse_button.frame.l)
         test.assert_equal(0, widget.subviews.collapse_button.frame.t)
-        test.assert_equal(config.DIRECTION.LEFT,
+        test.assert_equal(config.DIRECTION.DOWN,
             widget.subviews.collapse_button.direction)
+        test.assert_equal(string.char(24), widget.subviews.collapse_button.label)
         test.assert_equal(nil, panel.visible)
     end)
 
