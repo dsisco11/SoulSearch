@@ -77,7 +77,7 @@ return function(test, repo_root)
         local first = descriptors.get_catalog()
         local second = descriptors.get_catalog()
         test.assert_true(first == second)
-        test.assert_equal(24, #first.flat)
+        test.assert_equal(25, #first.flat)
 
         local seen = {}
         for _, descriptor in ipairs(first.flat) do
@@ -94,6 +94,7 @@ return function(test, repo_root)
             'unit_scope:citizens',
             'unit_scope:fort_residents',
             'unit_scope:citizens_and_pets',
+            'unit_scope:livestock',
             'unit_scope:visitors',
             'unit_scope:wildlife',
         }, descriptor_ids(catalog.groups.unit_scopes))
@@ -142,6 +143,7 @@ return function(test, repo_root)
             'unit_scope:citizens',
             'unit_scope:fort_residents',
             'unit_scope:citizens_and_pets',
+            'unit_scope:livestock',
             'unit_scope:visitors',
             'unit_scope:wildlife',
             'race:group:HUMANOIDS',

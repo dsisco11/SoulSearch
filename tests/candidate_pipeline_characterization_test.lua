@@ -43,6 +43,9 @@ return function(test, repo_root)
             isFortControlled=function(unit)
                 return unit == citizen_dwarf or unit == citizen_dog
             end,
+            getCasteRaw=function(unit)
+                return {flags=unit == citizen_dog and {PET=true} or {}}
+            end,
             isVisitor=function(unit) return unit == visitor_dwarf or unit == visitor_dog end,
             isMerchant=function() return false end,
             isDiplomat=function() return false end,
@@ -99,6 +102,10 @@ return function(test, repo_root)
             {
                 name='Wildlife selects active wild animals',
                 filters={filter(scope_id(scope.WILDLIFE))}, expected={7},
+            },
+            {
+                name='Livestock selects fort-controlled pet castes',
+                filters={filter(scope_id(scope.LIVESTOCK))}, expected={3},
             },
             {
                 name='negative-only Visitors returns every active non-visitor',

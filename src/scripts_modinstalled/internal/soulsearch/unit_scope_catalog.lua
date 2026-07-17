@@ -19,6 +19,15 @@ local function is_visitor(unit)
         dfhack.units.isDiplomat(unit)
 end
 
+---@param unit df.unit
+---@return boolean
+local function is_livestock(unit)
+    local caste = dfhack.units.getCasteRaw(unit)
+    local flags = caste and caste.flags
+    return dfhack.units.isFortControlled(unit) and flags and
+        (flags.PET or flags.PET_EXOTIC) or false
+end
+
 local DEFINITIONS = {
     {key=UNIT_SCOPE.CITIZENS, label='Citizens', matches=function(unit)
         return dfhack.units.isCitizen(unit, true)
@@ -29,6 +38,7 @@ local DEFINITIONS = {
     {key=UNIT_SCOPE.CITIZENS_AND_PETS, label='Citizens and pets', matches=function(unit)
         return dfhack.units.isFortControlled(unit)
     end},
+    {key=UNIT_SCOPE.LIVESTOCK, label='Livestock', matches=is_livestock},
     {key=UNIT_SCOPE.VISITORS, label='Visitors', matches=is_visitor},
     {key=UNIT_SCOPE.WILDLIFE, label='Wildlife', matches=function(unit)
         return dfhack.units.isWildlife(unit)
