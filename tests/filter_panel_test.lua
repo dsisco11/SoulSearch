@@ -198,6 +198,35 @@ return function(test, repo_root)
         test.assert_equal(13, #refreshes)
     end)
 
+    test.case('filter panel: opening a searchable picker focuses its search field', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        local cases = {
+            {kind='attribute', search_id='attribute_search_field'},
+            {kind='skill', search_id='skill_search_field'},
+            {kind='race', search_id='race_search_field'},
+            {kind='unit_scope', search_id='unit_scope_search_field'},
+            {kind='preset', search_id='preset_search_field'},
+        }
+        for _, case in ipairs(cases) do
+            local picker = by_id(panel.subviews, ({
+                attribute='available_filter_window', skill='available_skill_window',
+                race='available_race_window', unit_scope='available_unit_scope_window',
+                preset='preset_picker_window',
+            })[case.kind])
+            local focus_count = 0
+            picker.subviews[case.search_id].setFocus = function(_, focused)
+                if focused then focus_count = focus_count + 1 end
+            end
+            test.assert_true(panel:toggle_picker(case.kind))
+            test.assert_equal(1, focus_count)
+        end
+    end)
+
     test.case('filter panel: picker lists own dynamic descriptor tooltips', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)

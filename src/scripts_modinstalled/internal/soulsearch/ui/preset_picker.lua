@@ -21,6 +21,7 @@ local ModalPanelWindow =
 PresetPicker = defclass(PresetPicker, ModalPanelWindow)
 
 function PresetPicker:init(info)
+    info.initial_focus_view_id = 'preset_search_field'
     PresetPicker.super.init(self, info)
     self.inputs = info.inputs
     local inputs = self.inputs

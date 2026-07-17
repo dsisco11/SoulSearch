@@ -40,10 +40,11 @@ local FILTER_KIND_RACE = filter_constants.kind.RACE
 SearchablePicker = defclass(SearchablePicker, ModalPanelWindow)
 
 function SearchablePicker:init(info)
+    local config = assert(PICKER_CONFIGS[info.kind], 'unknown searchable picker kind')
+    info.initial_focus_view_id = config.search_id
     SearchablePicker.super.init(self, info)
     self.inputs = info.inputs
     local inputs = self.inputs
-    local config = assert(PICKER_CONFIGS[info.kind], 'unknown searchable picker kind')
     self:addviews{
             widgets.TextButton{
                 view_id=config.close_id,

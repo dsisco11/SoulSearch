@@ -9,6 +9,7 @@ reqscript('internal/soulsearch/ui/widget_extensions')
 ---@field opened boolean
 ---@field on_open fun()|nil
 ---@field on_close fun()|nil
+---@field initial_focus_view_id string|nil
 ---@field visible boolean
 ModalPanelWindow = defclass(ModalPanelWindow, widgets.Window)
 ModalPanelWindow.ATTRS{
@@ -18,6 +19,7 @@ ModalPanelWindow.ATTRS{
 function ModalPanelWindow:init(info)
     self.on_open = info.on_open
     self.on_close = info.on_close
+    self.initial_focus_view_id = info.initial_focus_view_id
     self.opened = false
     self.visible = false
 end
@@ -34,6 +36,9 @@ function ModalPanelWindow:open()
     self.visible = true
     self:setFocus(true)
     if self.on_open then self.on_open() end
+    local initial_focus = self.initial_focus_view_id and
+        self.subviews[self.initial_focus_view_id]
+    if initial_focus then initial_focus:setFocus(true) end
     return true
 end
 
