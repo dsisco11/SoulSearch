@@ -1,0 +1,176 @@
+# Restrictive Unit Scopes
+
+## Objective
+
+Refactor unit scopes from a required inclusive selection into optional restrictions.
+With no unit-scope restriction selected, SoulSearch starts from all active units.
+
+Target behavior:
+
+- No unit-scope restrictions means all active units are eligible.
+- One restriction limits candidates to units matching that restriction.
+- The state model is list-valued so a later phase can allow multiple selections.
+- Until the separate multi-select task is implemented, the UI continues to select
+  at most one restriction at a time.
+- The primary window's existing first-open Humanoids race filter remains unchanged;
+  therefore its effective initial results remain humanoids until that race filter is
+  removed.
+- `All units` is the presentation for an empty restriction list, not a persisted
+  restriction alongside other scopes.
+
+## Scope boundaries
+
+- Included: provider semantics, state/config normalization, scoped-window callers,
+  single-select UI presentation, compatibility handling, tests, and documentation.
+- Excluded: allowing multiple simultaneous UI selections.
+- Excluded: adding Wildlife, Livestock, or Pets scope predicates.
+- Excluded: changing the primary window's first-open Humanoids race filter.
+- Excluded: changing filter-preset persistence unless implementation reveals that
+  presets already own unit-scope state.
+- Do not hand-edit `dist/`; regenerate package output with the repository tooling.
+
+## Phase 0 - Lock the contract and baseline
+
+- [ ] Record a clean `./tools/Test.ps1` baseline in the execution evidence table.
+- [ ] Add or confirm characterization tests for the current candidate pipeline:
+  unit scope provider -> race filter provider -> resident row collection.
+- [ ] Encode the target semantic contract in tests before changing production code:
+  - empty restrictions return every active, unique unit in source order;
+  - a single restriction returns only matching active units;
+  - invalid restriction IDs are rejected or normalized at the documented boundary;
+  - provider errors still return no partial candidate set.
+- [ ] Confirm and document combination semantics for the future multi-select task:
+  selected unit scopes will be ORed, while race filtering remains a downstream
+  candidate restriction.
+- [ ] Confirm compatibility policy for existing scalar callers:
+  - `all_active` maps to an empty restriction list;
+  - another valid scalar maps to a one-element list;
+  - malformed values fall back to an empty restriction list in window config;
+  - direct provider/session construction continues to reject unknown IDs.
+
+Phase 0 gate:
+
+- [ ] The baseline is green and tests state the new empty-means-all contract without
+  yet requiring multi-select UI behavior.
+
+## Phase 1 - Refactor the provider and protocol
+
+- [ ] Update `filter_constants.lua` so the default unit-scope state is unrestricted.
+- [ ] Decide whether `all_active` remains as a compatibility-only protocol value or
+  is removed after all in-repo callers migrate; do not expose it as a combinable
+  restriction.
+- [ ] Replace the scalar provider input in `unit_scope_provider.lua` with normalized
+  list/set input.
+- [ ] Preserve active-unit checks, source ordering, duplicate suppression, and
+  unavailable-context error propagation.
+- [ ] Implement empty-list behavior as the all-active baseline.
+- [ ] Implement one-restriction behavior through the existing scope predicates.
+- [ ] Make the provider capable of ORing multiple restrictions without exposing
+  multi-select UI yet.
+- [ ] Return defensive copies from any exported scope-option/default APIs.
+- [ ] Update `filter_constants_test.lua` and `unit_scope_provider_test.lua` for the
+  new protocol and provider behavior.
+
+Phase 1 gate:
+
+- [ ] Focused provider/protocol tests pass, including empty, scalar-compatibility,
+  one-item, multi-item OR, invalid, duplicate, inactive, and unavailable cases.
+
+## Phase 2 - Migrate session state, configuration, and callers
+
+- [ ] Replace singular `unit_scope` session state with list-valued `unit_scopes`.
+- [ ] Add defensive copying/equality behavior so callers cannot mutate session or
+  settings snapshots through returned tables.
+- [ ] Replace scalar getters/setters with restriction-list operations appropriate for
+  the current single-select UI.
+- [ ] Update `window_config.lua` to normalize explicit options and saved session
+  settings into restriction lists.
+- [ ] Update `window_settings.lua` snapshots to store isolated restriction lists.
+- [ ] Preserve compatibility for `ui.open({unit_scope=...})`; prefer the new
+  `unit_scopes={...}` field when both are present and document the precedence.
+- [ ] Update `creatures_menu_scope.lua` so Residents, Pets/Livestock, and Visitors
+  scoped windows pass explicit one-element restriction lists.
+- [ ] Update `main_window.lua` candidate refresh composition to pass the normalized
+  restriction list into the unit-scope provider before race filtering.
+- [ ] Update `tests/support/soulsearch_env.lua` stubs and fixtures to match the new
+  state/API shape.
+- [ ] Update `search_session_test.lua`, `window_config_test.lua`,
+  `window_settings_test.lua`, `creatures_menu_scope_test.lua`, and `ui_open_test.lua`.
+
+Phase 2 gate:
+
+- [ ] Default, reopened, same-identity, and independently scoped windows retain the
+  correct isolated restriction lists.
+- [ ] Legacy scalar open options still resolve correctly without becoming the stored
+  canonical representation.
+
+## Phase 3 - Present restrictions in the existing single-select UI
+
+- [ ] Display `Search for: All units` when the restriction list is empty.
+- [ ] Treat choosing `All units` as clearing unit-scope restrictions.
+- [ ] Keep choosing Citizens, Residents, Citizens and pets, or Visitors as a
+  replacement operation so at most one restriction is selected in this task.
+- [ ] Ensure the picker marks the active restriction and marks no concrete scope when
+  the state is unrestricted.
+- [ ] Update scope presenter/formatter APIs to consume restriction-list state.
+- [ ] Update picker callbacks and annotations from scalar scope values to the new
+  state contract.
+- [ ] Decide and test whether `Clear filters` also clears unit-scope restrictions;
+  preferred behavior is that it produces a genuinely unrestricted search.
+- [ ] Decide and test whether the active filter count includes unit-scope
+  restrictions; keep the label and tooltip behavior internally consistent.
+- [ ] Update `filter_panel_test.lua`, `ui_format_test.lua`, `ui_layout_test.lua`, and
+  `ui_characterization_test.lua` for the empty/default and one-restriction states.
+
+Phase 3 gate:
+
+- [ ] The UI clearly distinguishes unrestricted `All units` from a selected concrete
+  restriction, with no multi-select behavior introduced accidentally.
+
+## Phase 4 - Integration, documentation, and packaging
+
+- [ ] Add an integration test proving that empty unit restrictions feed all active
+  units into the race provider.
+- [ ] Prove that the primary first-open Humanoids race filter still narrows those
+  candidates and that removing it exposes all active units.
+- [ ] Prove that a scoped Residents/Pets/Visitors window still applies its explicit
+  unit restriction and any supplied race restriction.
+- [ ] Update README usage text from a Citizens default to the restrictive model and
+  explain the separate Humanoids first-open behavior.
+- [ ] Update Lua aliases/comments that still describe unit scope as a scalar or an
+  inclusive candidate source.
+- [ ] Run `./tools/Test.ps1` and record the result below.
+- [ ] Run `./tools/Build.ps1` and record the result below.
+- [ ] Run `./tools/VerifyPackage.ps1` and record the result below.
+- [ ] Perform a live DFHack smoke test:
+  - primary window initially displays `All units` but returns humanoids;
+  - removing Humanoids exposes non-humanoid active units;
+  - choosing and clearing a concrete scope refreshes candidates correctly;
+  - each Creatures-menu scoped button opens with its intended restriction.
+- [ ] Mark the matching item in `docs/project.todo` complete only after every required
+  local validation passes; record any deferred live-only evidence explicitly.
+
+Phase 4 gate:
+
+- [ ] Source, tests, generated package, documentation, and live behavior agree on
+  empty-means-all restrictive semantics.
+
+## Execution evidence
+
+| Phase | Command or check | Result | Notes |
+| --- | --- | --- | --- |
+| 0 | `./tools/Test.ps1` baseline | Pending | |
+| 1 | Focused provider/protocol tests | Pending | |
+| 2 | Session/config/scoped-caller tests | Pending | |
+| 3 | UI/presenter characterization tests | Pending | |
+| 4 | `./tools/Test.ps1` | Pending | |
+| 4 | `./tools/Build.ps1` | Pending | |
+| 4 | `./tools/VerifyPackage.ps1` | Pending | |
+| 4 | Live DFHack smoke | Pending | |
+
+## Follow-up handoff
+
+After this checklist is complete, the separate `Allow selecting multiple scope
+filters` task should only need to change selection/toggle presentation and related
+state-editing behavior. Provider, configuration, and persistence layers should
+already accept multiple OR-combined restriction IDs.
