@@ -1414,7 +1414,7 @@ function M.load_stats_overlay(repo_root, options)
         },
         require=function(name)
             if name == 'plugins.overlay' then return {OverlayWidget=base} end
-            if name == 'gui' then return {FRAME_THIN='thin'} end
+            if name == 'gui' then return {FRAME_INTERIOR='interior'} end
             if name == 'gui.widgets' then return {
                 Window=setmetatable({}, {__call=function(_, info) return window(info) end}),
                 Label=setmetatable({}, {__call=function(_, info) return info end}),

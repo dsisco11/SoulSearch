@@ -10,7 +10,7 @@ return function(test, root)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)
         test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(20, attrs.version)
+        test.assert_equal(21, attrs.version)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_LEFT,
             attrs.placement[1].button)
         test.assert_equal(config.DIRECTION.LEFT, attrs.placement[1].direction)
@@ -38,10 +38,10 @@ return function(test, root)
         test.assert_equal(0, state.lookups)
     end)
 
-    test.case('stats overlay: uses a thin frame without the DFHack footer', function()
+    test.case('stats overlay: uses a signature-free thin frame', function()
         local overlay = env.load_stats_overlay(root)
         local widget = overlay.SoulSearchStatsOverlay{}
-        test.assert_equal('thin', widget.subviews.window.frame_style)
+        test.assert_equal('interior', widget.subviews.window.frame_style)
         test.assert_equal(0, widget.subviews.window.frame_inset)
     end)
 

@@ -85,7 +85,7 @@
 ✔ [Stats Overlay]: remove indentation on stats list items. @done(26-07-16)
 ✔ [Stats Overlay]: remove dead space above stats list headers. @done(26-07-16)
 ✔ [Stats Overlay]: add underline to stats list column headers. @done(26-07-16)
-☐ [Stats Overlay]: use thin border instead of thick border.
+✔ [Stats Overlay]: use a thin, signature-free border instead of thick border. @done(26-07-16)
 ☐ [Stats Overlay]: Make collapse button arrow direction point toward the unit card for expanding, and away for collapsing.
 ☐ [Stats Overlay]: Increase hit box of collapse button.
 ☐ [Scoped Search Buttons]: reposition "Open SoulSearch" buttons in the base-game creature menu to be easier to find by placing them at the top under the "Residents" subtab, and more visually distinct with a kind of search icon.
