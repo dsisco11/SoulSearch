@@ -19,6 +19,7 @@ local suites = {
     (require('unit_scope_provider_test')),
     (require('race_catalog_test')),
     (require('race_filter_provider_test')),
+    (require('candidate_pipeline_characterization_test')),
     (require('filter_state_test')),
     (require('window_settings_test')),
     (require('window_config_test')),

@@ -57,10 +57,10 @@ The resulting candidate pipeline is:
 
 ## Phase 0 - Characterize and lock the filter algebra
 
-- [ ] Run `./tools/Test.ps1` and record the clean baseline below.
-- [ ] Add green characterization coverage for the current composition path:
+- [x] Run `./tools/Test.ps1` and record the clean baseline below.
+- [x] Add green characterization coverage for the current composition path:
   scalar unit scope -> race provider -> resident row collection.
-- [ ] Record the replacement filter-algebra test matrix for Phases 1 and 2:
+- [x] Record the replacement filter-algebra test matrix for Phases 1 and 2:
   - no scope filters passes every active unit;
   - one positive scope includes only matching units;
   - multiple positive scopes use union semantics;
@@ -69,11 +69,11 @@ The resulting candidate pipeline is:
   - scope and race families intersect;
   - duplicate and inactive active-list entries never reach results;
   - upstream errors return no partial candidates.
-- [ ] Fix stable descriptor IDs and serialized values as:
+- [x] Fix stable descriptor IDs and serialized values as:
   `unit_scope:citizens`, `unit_scope:fort_residents`,
   `unit_scope:citizens_and_pets`, and `unit_scope:visitors`, matching the
   serialized `UNIT_SCOPE='unit_scope'` kind.
-- [ ] Lock legacy conversion precedence:
+- [x] Lock legacy conversion precedence:
   - `unit_scope='all_active'` adds no scope filter;
   - another valid scalar adds the matching positive scope filter;
   - explicit `options.filters` containing a unit-scope descriptor are canonical
@@ -83,13 +83,13 @@ The resulting candidate pipeline is:
     per-field override behavior;
   - malformed legacy values are ignored without mutating canonical filters;
   - conversion never mutates caller-owned option/filter tables.
-- [ ] Confirm that old `window_settings` snapshots need no migration: settings are
+- [x] Confirm that old `window_settings` snapshots need no migration: settings are
   module-local/session-only and are cleared when the changed modules reload.
   Compatibility is for explicit caller options, not hidden persistence.
 
 Phase 0 gate:
 
-- [ ] The green baseline and current-path characterization are recorded, and the
+- [x] The green baseline and current-path characterization are recorded, and the
   implementation test matrix unambiguously defines empty, positive, negative,
   multi-scope, cross-family, and compatibility behavior without intentionally
   failing Phase 0 tests.
@@ -302,7 +302,7 @@ Phase 4 gate:
 
 | Phase | Command or check | Result | Notes |
 | --- | --- | --- | --- |
-| 0 | `./tools/Test.ps1` baseline | Pending | |
+| 0 | `./tools/Test.ps1` baseline | Passed | 308 test(s), 0 failure(s). Includes `candidate pipeline: scalar scope feeds race filtering before row collection`, which locks the legacy scalar scope -> race provider -> resident row path. |
 | 1 | Descriptor/catalog/provider tests | Pending | |
 | 2 | State/config/provider/UI cutover tests | Pending | |
 | 3 | `./tools/Test.ps1` UI/regression suite | Pending | |
