@@ -991,17 +991,16 @@ function M.load_ui_characterization(repo_root)
     local search_session = {
         SEARCH_QUERY_KIND={
             RESULT='result', ATTRIBUTE='attribute', SKILL='skill', RACE='race',
-            PRESET='preset',
+            UNIT_SCOPE='unit_scope', PRESET='preset',
         },
         new=function(settings)
             local session = {
                 filter_state=filter_state.new(settings.filters),
-                unit_scope=settings.unit_scope,
                 result_sort={key=settings.result_sort.key,
                     reverse=settings.result_sort.reverse,
                     phase=settings.result_sort.phase},
                 query='', attribute_query='', skill_query='', race_query='',
-                preset_query='', rows={}, selected_index=1,
+                unit_scope_query='', preset_query='', rows={}, selected_index=1,
             }
             function session:get_filters() return filter_state.get_filters(self.filter_state) end
             function session:get_candidate_filters()
@@ -1012,7 +1011,8 @@ function M.load_ui_characterization(repo_root)
             function session:contains_filter(id) return filter_state.contains(self.filter_state, id) end
             function session:set_query(kind, value)
                 local field = kind == 'attribute' and 'attribute_query' or kind == 'skill' and 'skill_query' or
-                    kind == 'race' and 'race_query' or kind == 'preset' and 'preset_query' or 'query'
+                    kind == 'race' and 'race_query' or kind == 'unit_scope' and 'unit_scope_query' or
+                    kind == 'preset' and 'preset_query' or 'query'
                 if self[field] == value then return false end
                 self[field] = value
                 return true
@@ -1196,7 +1196,7 @@ function M.load_ui_characterization(repo_root)
         settings = settings or {
             settings_id='default', explicit={},
             frame={l=1, t=2, w=110, h=45},
-            filters={}, unit_scope='fort_residents',
+            filters={},
             result_sort={key=nil, reverse=false, phase=0},
             stats_sort={key='value', reverse=true},
         }

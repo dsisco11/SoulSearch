@@ -253,33 +253,33 @@ Phase 3 gate:
 
 ## Phase 4 - Integration, documentation, and package validation
 
-- [ ] Add end-to-end candidate tests for:
+- [x] Add end-to-end candidate tests for:
   - no scope/no race filters -> all active units;
   - Humanoids only -> all active humanoids;
   - Residents plus Humanoids -> resident humanoids;
   - Residents OR Visitors plus Humanoids -> humanoids in either scope;
   - Residents except Citizens;
   - negative-only Visitors -> all active non-visitors.
-- [ ] Prove filter preset save/load round-trips mixed scope, race, and ranking filters
+- [x] Prove filter preset save/load round-trips mixed scope, race, and ranking filters
   without format changes or stale references.
-- [ ] Prove loading a preset with no unit-scope descriptor clears previously active
+- [x] Prove loading a preset with no unit-scope descriptor clears previously active
   unit-scope filters because preset application replaces the unified filter list.
-- [ ] Prove each Creatures-menu integration emits and opens with the intended unified
+- [x] Prove each Creatures-menu integration emits and opens with the intended unified
   filter list.
-- [ ] Update README documentation to describe unit scopes as candidate filters,
+- [x] Update README documentation to describe unit scopes as candidate filters,
   empty scope-filter state as All units, negative-only `All except` behavior, and
   cross-family intersection.
-- [ ] Update Lua annotations/comments that describe a singular unit scope or an
+- [x] Update Lua annotations/comments that describe a singular unit scope or an
   inclusive provider.
-- [ ] Search source and tests for scalar scope-state signatures such as
+- [x] Search source and tests for scalar scope-state signatures such as
   `.unit_scope`, `unit_scope=`, `get_unit_scope`, `set_unit_scope`,
   `default_unit_scope`, and `ALL_ACTIVE`. Only the documented legacy option adapter
   and its compatibility tests may retain scalar option references; catalog/module/
   descriptor names and `unit_scope:` filter IDs are expected to remain.
-- [ ] Run `./tools/Test.ps1` and record the result below.
-- [ ] Run `./tools/Build.ps1` and record the result below.
-- [ ] Run `./tools/VerifyPackage.ps1` and record the result below.
-- [ ] Perform live DFHack smoke validation:
+- [x] Run `./tools/Test.ps1` and record the result below.
+- [x] Run `./tools/Build.ps1` and record the result below.
+- [x] Run `./tools/VerifyPackage.ps1` and record the result below.
+- [x] Perform live DFHack smoke validation:
   - the primary window starts with Humanoids and no unit-scope filter;
   - removing Humanoids exposes all active units;
   - multiple positive unit scopes broaden within the scope family;
@@ -289,13 +289,13 @@ Phase 3 gate:
   - filter counts and saved presets include unit-scope filters;
   - loading a preset without scope filters returns to unrestricted unit scope;
   - each Creatures-menu scoped button seeds the correct filters.
-- [ ] Mark both the restrictive-scope and multiple-scope items in
+- [x] Mark both the restrictive-scope and multiple-scope items in
   `docs/project.todo` complete only when all required local validation passes;
   record any deferred live-only checks explicitly.
 
 Phase 4 gate:
 
-- [ ] Source, automated tests, generated package, documentation, and live behavior
+- [x] Source, automated tests, generated package, documentation, and live behavior
   treat unit scopes as first-class candidate filters with no parallel scope state.
 
 ## Execution evidence
@@ -306,7 +306,7 @@ Phase 4 gate:
 | 1 | Descriptor/catalog/provider tests | Passed | 317 test(s), 0 failure(s). Focused coverage verifies descriptor IDs, active-source deduplication, empty/positive/negative/union/include-except family algebra, adapter behavior, and registry contracts. |
 | 2 | `./tools/Test.ps1`; `./tools/Build.ps1`; stale-symbol audit | Passed | 305 test(s), 0 failure(s); 64 Lua files syntax-checked. The audit retained scalar `unit_scope` only in the window-config compatibility adapter and tests. |
 | 3 | `./tools/Test.ps1`; `./tools/Build.ps1`; registry/harness audit | Passed | 311 test(s), 0 failure(s); 64 Lua files syntax-checked. Candidate move hit zones no longer dispatch, while scope include, exclude, and remove actions remain active. |
-| 4 | `./tools/Test.ps1` | Pending | |
-| 4 | `./tools/Build.ps1` | Pending | |
-| 4 | `./tools/VerifyPackage.ps1` | Pending | |
-| 4 | Live DFHack smoke | Pending | |
+| 4 | `./tools/Test.ps1` | Passed | 312 test(s), 0 failure(s). Includes the end-to-end scope/race matrix and candidate-before-ranking proof. |
+| 4 | `./tools/Build.ps1` | Passed | 64 Lua files syntax-checked. |
+| 4 | `./tools/VerifyPackage.ps1` | Passed | `dist/SoulSearch-0.1.0.zip` and expanded package verified by `Publish.ps1`. |
+| 4 | Live DFHack smoke | Passed | DFHack 53.15-r1 running from the workspace script path. Primary opened with Humanoids only (220 rows); removing it exposed 688 active rows. Scope union/exclusion, race intersection, Clear, scope-free preset replacement, and Residents/Pets-Livestock/Visitors scoped openings passed; the probe restored the primary filters. |

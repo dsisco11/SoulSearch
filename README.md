@@ -25,9 +25,9 @@ The current implementation includes:
   live only when zooming.
 - The immutable descriptor catalog owns filter metadata; `filter_state.lua`
   owns ordered `{id, direction}` state for the loaded script session.
-- Unit-scope and race-filter candidate providers choose units before snapshots;
-  `search.apply()` receives only ranking filters and returns relevance-ranked
-  results.
+- Unit-scope and race filters are first-class candidate filters. They choose
+  units before snapshots; `search.apply()` receives only ranking filters and
+  returns relevance-ranked results.
 - `ui.lua` composes the window and coordinates events; formatting, layout,
   components, refresh dispatch, and Stats presentation have dedicated modules.
 - `gui/soulsearch` opens the panel with name search, race Include/Exclude scope
@@ -174,17 +174,22 @@ saved widget-state ownership; manage their enablement and position with
 
 `gui/soulsearch` opens a new SoulSearch panel in fortress mode. Repeated GUI
 command or `Ctrl-F` invocations create additional windows; only one DFHack
-`ZScreen` has keyboard focus at a time. By default, each new panel's unit scope is
-**Citizens** and its candidate race scope is **Humanoids**.
-Click **Edit filters** to open the filter panel. Use its **Search** dropdown
-to choose between Citizens, Residents, Citizens and pets, Visitors, and All units. The active
-scope is marked in the dropdown list. Use **Add race filter** to
-include another race or creature type, or
-exclude a race from the included candidates. Race filters use `[+]` to Include
-and `[-]` to Exclude and do not participate in ranking order. Use the Search
-filters list to add traits, attributes, and skills such as `Agility`; set their
-high/low directions and priorities with the controls beside each selected
-filter. Click a result-list column header (Name, Unit ID, or Profession) to
+`ZScreen` has keyboard focus at a time. A new primary panel starts with the
+positive **Humanoids** race filter and no unit-scope filter. No unit-scope
+filters means **All units**; removing Humanoids therefore exposes every active
+unit.
+
+Click **Edit filters** to open the filter panel. Use **Add unit scope filter**
+to add Citizens, Residents, Citizens and pets, or Visitors. Multiple positive
+unit scopes are combined with OR semantics; negative scope filters mean
+**All units except** the selected scopes. Add race filters independently:
+positive races are ORed within the race family, negative races exclude matches,
+and the final candidate set is the intersection of the unit-scope and race
+families. Candidate filters use `[+]` to Include and `[-]` to Exclude and do
+not participate in ranking order. Use the attribute and skill filter menus to
+add ranking criteria such as `Agility`; set their high/low directions and
+priorities with the controls beside each selected filter. Click a result-list
+column header (Name, Unit ID, or Profession) to
 sort it ascending, click again for descending, and click a third time to
 restore relevance ranking. Arrows indicate the active column and direction.
 SoulSearch restores its last window position and size when reopened during the
@@ -193,9 +198,11 @@ The search field filters result names only. Press `z` or Enter on a selected
 result to center and highlight that unit on the fortress map.
 
 Select **Filter presets** in the Search filters panel to open the preset menu.
-Choose **Save preset** and enter a name in the prompt to save the current race
-scope, ranking-filter order, and directions; select a saved name and press
-Enter to load it. Presets
+Choose **Save preset** and enter a name in the prompt to save the complete
+ordered filter list, including unit-scope, race, and ranking filters with
+their directions; select a saved name and press Enter to replace the current
+filter list. A preset with no unit-scope filters restores unrestricted unit
+scope. Presets
 are stored as individual JSON files under DFHack's mod-state directory,
 `dfhack-config/mods/soulsearch/presets/`, so they survive mod updates.
 Custom presets are listed first. The same menu also includes role presets and skill presets;
@@ -208,9 +215,9 @@ Use the preset menu's Search field to find a built-in skill or saved preset.
 When the vanilla **Creatures** menu is open, the **Open SoulSearch** overlay
 button is docked at the menu's bottom center. It opens a separate scoped
 window for the active **Residents**, **Pets/Livestock**, or **Other** tab. The
-Other tab uses the visitor/humanoid scope. The presets apply the matching unit
-scope and race candidate filter before ranking; for example, Pets/Livestock
-searches fort-controlled tameable animals.
+Residents preset applies Residents plus Humanoids; Pets/Livestock applies
+Citizens and pets plus Tameable Animals; Other applies Visitors with no race
+restriction. These are ordinary candidate filters before ranking.
 The overlay is enabled by default and can be disabled independently through
 DFHack's overlay controls.
 

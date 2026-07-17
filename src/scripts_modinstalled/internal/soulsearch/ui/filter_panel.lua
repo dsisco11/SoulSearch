@@ -106,7 +106,7 @@ function FilterPanel:init(info)
     }
 end
 
----@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
+---@param kind 'attribute'|'skill'|'race'|'unit_scope'|'preset'
 ---@return boolean changed
 function FilterPanel:toggle_picker(kind)
     local picker = get_subview(self, PICKER_VIEW_IDS[kind])
@@ -116,7 +116,7 @@ function FilterPanel:toggle_picker(kind)
     return picker:open()
 end
 
----@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
+---@param kind 'attribute'|'skill'|'race'|'unit_scope'|'preset'
 ---@return boolean
 function FilterPanel:is_picker_open(kind)
     local picker = get_subview(self, PICKER_VIEW_IDS[kind])
@@ -145,12 +145,12 @@ function FilterPanel:has_open_picker()
     return false
 end
 
----@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
+---@param kind 'attribute'|'skill'|'race'|'unit_scope'|'preset'
 function FilterPanel:on_picker_open(kind)
     self.inputs.on_refresh{pickers=true, presets=kind == 'preset'}
 end
 
----@param kind 'attribute'|'skill'|'race'|'scope'|'preset'
+---@param kind 'attribute'|'skill'|'race'|'unit_scope'|'preset'
 function FilterPanel:on_picker_close(kind)
     if not self.suppress_picker_refresh then
         self.inputs.on_refresh{pickers=true, presets=kind == 'preset'}

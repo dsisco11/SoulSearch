@@ -339,12 +339,12 @@ return function(test, repo_root)
     test.case('UI characterization: drag persistence is isolated by settings ID', function()
         local first = new_window({
             settings_id='first', explicit={}, frame={l=1, t=2, w=100, h=40},
-            filters={}, unit_scope='fort_residents',
+            filters={},
             result_sort={key=nil, reverse=false, phase=0}, stats_sort={},
         })
         local second = new_window({
             settings_id='second', explicit={}, frame={l=3, t=4, w=90, h=35},
-            filters={}, unit_scope='fort_residents',
+            filters={},
             result_sort={key=nil, reverse=false, phase=0}, stats_sort={},
         })
         state.settings_updates = {}

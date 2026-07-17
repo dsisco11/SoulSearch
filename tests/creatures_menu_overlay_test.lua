@@ -84,24 +84,34 @@ return function(test, repo_root)
         test.assert_equal(1, widget.frame.h)
     end)
 
-    test.case('creatures menu overlay: opens the current explicit scope through initialized UI', function()
-        local options = {settings_id='creatures:residents', filters={}}
-        local scope = {get_active=function() return {label='Residents', options=options} end}
-        local initialized, opened = 0, 0
-        local command = {initialize=function()
-            initialized = initialized + 1
-            return {['internal/soulsearch/ui']={open=function(given)
-                opened = opened + 1
-                test.assert_true(given == options)
-                return {}
-            end}}
-        end}
-        local overlay = load_overlay(repo_root, scope, command)
-        local widget = overlay.SoulSearchCreaturesOverlay{}
-        test.assert_true(overlay.SoulSearchCreaturesOverlay.attrs.active())
-        test.assert_true(widget:open_scoped_search())
-        test.assert_equal(1, initialized)
-        test.assert_equal(1, opened)
+    test.case('creatures menu overlay: opens every current unified filter preset', function()
+        local cases = {
+            {label='Residents', filters={'unit_scope:fort_residents', 'race:group:HUMANOIDS'}},
+            {label='Pets/Livestock', filters={'unit_scope:citizens_and_pets', 'race:group:TAMEABLE_ANIMALS'}},
+            {label='Visitors', filters={'unit_scope:visitors'}},
+        }
+        for _, case in ipairs(cases) do
+            local options = {settings_id='creatures:' .. case.label, filters={}}
+            for _, id in ipairs(case.filters) do
+                table.insert(options.filters, {id=id, direction='high'})
+            end
+            local scope = {get_active=function() return {label=case.label, options=options} end}
+            local initialized, opened = 0, 0
+            local command = {initialize=function()
+                initialized = initialized + 1
+                return {['internal/soulsearch/ui']={open=function(given)
+                    opened = opened + 1
+                    test.assert_true(given == options)
+                    return {}
+                end}}
+            end}
+            local overlay = load_overlay(repo_root, scope, command)
+            local widget = overlay.SoulSearchCreaturesOverlay{}
+            test.assert_true(overlay.SoulSearchCreaturesOverlay.attrs.active())
+            test.assert_true(widget:open_scoped_search())
+            test.assert_equal(1, initialized)
+            test.assert_equal(1, opened)
+        end
     end)
 
     test.case('creatures menu overlay: does not initialize SoulSearch without a supported tab', function()

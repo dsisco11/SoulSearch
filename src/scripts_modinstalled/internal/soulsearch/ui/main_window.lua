@@ -640,7 +640,7 @@ function SoulSearchWindow:refresh_candidates()
     end
 end
 
----@param scope SoulSearchUnitScope
+---@param selected integer|nil
 ---@return boolean changed
 function SoulSearchWindow:update_available_unit_scope_choices(selected)
     local choices = filter_presenter.present_available(self.unit_scope_filter_descriptors,

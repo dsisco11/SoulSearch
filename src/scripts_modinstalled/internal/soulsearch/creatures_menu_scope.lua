@@ -25,21 +25,21 @@ local TAB_SCOPES = {
         focus_tokens={'resident', 'citizen'},
         tab_labels={'residents', 'citizens'},
         settings_id='creatures:residents', label='Residents',
-        unit_scope=SCOPE.FORT_RESIDENTS,
+        unit_scope_key=SCOPE.FORT_RESIDENTS,
         race_group=RACE.group.HUMANOIDS,
     },
     {
         focus_tokens={'pet', 'livestock', 'work_animal'},
         tab_labels={'pets/livestock'},
         settings_id='creatures:pets-livestock', label='Pets/Livestock',
-        unit_scope=SCOPE.CITIZENS_AND_PETS,
+        unit_scope_key=SCOPE.CITIZENS_AND_PETS,
         race_group=RACE.group.TAMEABLE_ANIMALS,
     },
     {
         focus_tokens={'visitor', 'other'},
         tab_labels={'visitors', 'other'},
         settings_id='creatures:visitors', label='Visitors',
-        unit_scope=SCOPE.VISITORS,
+        unit_scope_key=SCOPE.VISITORS,
     },
 }
 
@@ -68,7 +68,7 @@ end
 ---@return table
 local function make_options(tab)
     local options = {settings_id=tab.settings_id, filters={{
-        id=scope_id(tab.unit_scope), direction=DIRECTION.HIGH,
+        id=scope_id(tab.unit_scope_key), direction=DIRECTION.HIGH,
     }}}
     if tab.race_group then
         table.insert(options.filters, {
