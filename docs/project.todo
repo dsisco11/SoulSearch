@@ -88,7 +88,7 @@
 ✔ [Stats Overlay]: use a thin, signature-free border instead of thick border. @done(26-07-16)
 ✔ [Stats Overlay]: Make collapse button arrow direction point toward the unit card for expanding, and away for collapsing. @done(26-07-16)
 ✔ [Stats Overlay]: make the positioned stats panel authoritative and keep its collapse button in the same composite overlay frame without overlap, preferring the row above the panel. @done(26-07-16)
-☐ [Stats Overlay]: Increase hit box of collapse button.
+✔ [Stats Overlay]: increase the collapse button hitbox by making its entire bracketed arrow label clickable. @done(26-07-16)
 ☐ [Scoped Search Buttons]: reposition "Open SoulSearch" buttons in the base-game creature menu to be easier to find by placing them at the top under the "Residents" subtab, and more visually distinct with a kind of search icon.
 ☐ Make soul search panels size to fit available window space with parent layout callbacks; DFHack `ResizingPanel` grows to fit children rather than filling a resized parent.
 ☐ Make soul search window panels resizeable with a custom draggable splitter; the native DFHack `Divider` widget is visual-only.

@@ -103,8 +103,8 @@ local function same_origin(a, b)
     return a and b and a.l == b.l and a.t == b.t
 end
 
-StatsDeploymentButton = defclass(StatsDeploymentButton, widgets.TextButton)
-StatsDeploymentButton.ATTRS{
+StatsDeploymentLabel = defclass(StatsDeploymentLabel, widgets.Label)
+StatsDeploymentLabel.ATTRS{
     direction=DEFAULT_NIL,
 }
 
@@ -114,6 +114,10 @@ local ARROW_BY_DIRECTION = {
     [config.DIRECTION.UP]=glyphs.CP437_ARROW_UP,
     [config.DIRECTION.DOWN]=glyphs.CP437_ARROW_DOWN,
 }
+
+local function bracketed_arrow(direction)
+    return '[' .. ARROW_BY_DIRECTION[direction] .. ']'
+end
 
 local OPPOSITE_DIRECTION = {
     [config.DIRECTION.LEFT]=config.DIRECTION.RIGHT,
@@ -163,14 +167,16 @@ function SoulSearchStatsOverlay:init()
                 },
             },
         },
-        StatsDeploymentButton{view_id='collapse_button', frame={l=0, t=0,
-            w=config.COLLAPSE_BUTTON_WIDTH, h=1}, label=glyphs.CP437_ARROW_RIGHT,
+        StatsDeploymentLabel{view_id='collapse_button', frame={l=0, t=0,
+            w=config.COLLAPSE_BUTTON_WIDTH, h=1},
+            text=bracketed_arrow(config.DIRECTION.RIGHT),
             tooltip='Collapse the SoulSearch stats view.',
-            on_activate=function() self:set_collapsed(true) end},
-        StatsDeploymentButton{view_id='expand_button', frame={l=0, t=0,
-            w=config.COLLAPSE_BUTTON_WIDTH, h=1}, label=glyphs.CP437_ARROW_LEFT,
+            on_click=function() self:set_collapsed(true) end},
+        StatsDeploymentLabel{view_id='expand_button', frame={l=0, t=0,
+            w=config.COLLAPSE_BUTTON_WIDTH, h=1},
+            text=bracketed_arrow(config.DIRECTION.LEFT),
             tooltip='Expand the SoulSearch stats view.', visible=false,
-            on_activate=function() self:set_collapsed(false) end},
+            on_click=function() self:set_collapsed(false) end},
     }
     -- Unlike the main SoulSearch screen, this is an offset and tightly
     -- clipped overlay. Render its tooltip separately, after the panel, so it
@@ -210,10 +216,9 @@ function SoulSearchStatsOverlay:resolve_frame(width, height)
     local direction = resolved.direction
     self.subviews.collapse_button.direction = direction
     self.subviews.expand_button.direction = direction
-    self.subviews.collapse_button.label = ARROW_BY_DIRECTION[
-        OPPOSITE_DIRECTION[direction]]
-    self.subviews.expand_button.label = ARROW_BY_DIRECTION[
-        direction]
+    self.subviews.collapse_button:setText(bracketed_arrow(
+        OPPOSITE_DIRECTION[direction]))
+    self.subviews.expand_button:setText(bracketed_arrow(direction))
     local key = frame_key(frame, source)
     self.frame = frame
     self.managed_origin = {l=frame.l, t=frame.t}

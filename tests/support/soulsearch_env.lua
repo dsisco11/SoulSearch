@@ -1323,6 +1323,10 @@ function M.load_stats_overlay(repo_root, options)
             __index=parent or base,
             __call=function(cls, info)
                 local instance=info or {}
+                local parent_metatable = parent and getmetatable(parent)
+                if parent_metatable and parent_metatable.__call then
+                    instance = parent(instance)
+                end
                 for key, value in pairs(cls.attrs) do
                     if instance[key] == nil then instance[key] = value end
                 end
@@ -1367,6 +1371,11 @@ function M.load_stats_overlay(repo_root, options)
         local subviews={}
         for _, view in ipairs(info.subviews or {}) do subviews[view.view_id]=view end
         info.subviews=subviews
+        return info
+    end
+    local function label(info)
+        info.widget_kind='Label'
+        function info:setText(text) self.text=text end
         return info
     end
     local function stats_panel(info)
@@ -1417,7 +1426,7 @@ function M.load_stats_overlay(repo_root, options)
             if name == 'gui' then return {FRAME_INTERIOR='interior'} end
             if name == 'gui.widgets' then return {
                 Window=setmetatable({}, {__call=function(_, info) return window(info) end}),
-                Label=setmetatable({}, {__call=function(_, info) return info end}),
+                Label=setmetatable({}, {__call=function(_, info) return label(info) end}),
                 TextButton=setmetatable({}, {__call=function(_, info) return info end}),
             } end
             error('unexpected require: ' .. name)

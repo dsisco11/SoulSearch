@@ -20,7 +20,7 @@ DIRECTION = {
 
 FRAME_INSET = 1 -- The window frame contributes one tile on every edge.
 CLOSE_WIDTH = 3 -- TextButton's banner margins plus its X label.
-COLLAPSE_BUTTON_WIDTH = 3 -- Match the standard compact TextButton footprint.
+COLLAPSE_BUTTON_WIDTH = 3 -- The bracketed arrow label is clickable across all three tiles.
 UNIT_CARD_GAP = 1 -- Keep the popout visually separate from the vanilla card.
 DEFAULT_WIDTH = math.max(layout.MIN_CONTENT_WIDTH + FRAME_INSET * 2, 36)
 -- Leave enough room for a useful portion of the scrolling stats list.

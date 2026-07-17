@@ -66,8 +66,10 @@ return function(test, root)
         test.assert_equal(config.DIRECTION.UP, state.placements[1].direction)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_RIGHT,
             state.placements[2].button)
-        test.assert_equal(string.char(25), widget.subviews.collapse_button.label)
-        test.assert_equal(string.char(24), widget.subviews.expand_button.label)
+        test.assert_equal('[' .. string.char(25) .. ']',
+            widget.subviews.collapse_button.text)
+        test.assert_equal('[' .. string.char(24) .. ']',
+            widget.subviews.expand_button.text)
         test.assert_equal(1, widget.subviews.window.frame.t)
         test.assert_equal(0, widget.subviews.collapse_button.frame.t)
     end)
@@ -101,13 +103,13 @@ return function(test, root)
         test.assert_equal(1, widget.subviews.window.frame.t)
         test.assert_equal(0, widget.subviews.collapse_button.frame.l)
 
-        widget.subviews.collapse_button.on_activate()
+        widget.subviews.collapse_button.on_click()
         test.assert_equal(80, state.positioned_panel.l)
         test.assert_equal(80, widget.frame.l)
         test.assert_equal(6, widget.frame.t)
         test.assert_equal(32, widget.frame.w)
         test.assert_equal(13, widget.frame.h)
-        widget.subviews.expand_button.on_activate()
+        widget.subviews.expand_button.on_click()
         test.assert_equal(80, state.positioned_panel.l)
         test.assert_equal(80, widget.frame.l)
         test.assert_equal(6, widget.frame.t)
@@ -187,13 +189,15 @@ return function(test, root)
         local widget = overlay.SoulSearchStatsOverlay{}
         local window = widget.subviews.window
         local panel = window.subviews.stats_panel
-        test.assert_equal(string.char(16), widget.subviews.collapse_button.label)
+        test.assert_equal('Label', widget.subviews.collapse_button.widget_kind)
+        test.assert_equal('[' .. string.char(16) .. ']',
+            widget.subviews.collapse_button.text)
         test.assert_equal('Collapse the SoulSearch stats view.',
             widget.subviews.collapse_button.tooltip)
         test.assert_equal('Expand the SoulSearch stats view.',
             widget.subviews.expand_button.tooltip)
         test.assert_equal(0, window.frame.l)
-        widget.subviews.collapse_button.on_activate()
+        widget.subviews.collapse_button.on_click()
         test.assert_true(widget.collapsed)
         test.assert_false(window.visible)
         test.assert_false(widget.subviews.collapse_button.visible)
@@ -207,11 +211,13 @@ return function(test, root)
         test.assert_equal(11, widget.frame.t)
         test.assert_equal(config.DIRECTION.LEFT,
             widget.subviews.expand_button.direction)
-        test.assert_equal(string.char(17), widget.subviews.expand_button.label)
-        widget.subviews.expand_button.on_activate()
+        test.assert_equal('[' .. string.char(17) .. ']',
+            widget.subviews.expand_button.text)
+        widget.subviews.expand_button.on_click()
         test.assert_false(widget.collapsed)
         test.assert_true(window.visible)
-        test.assert_equal(string.char(17), widget.subviews.expand_button.label)
+        test.assert_equal('[' .. string.char(17) .. ']',
+            widget.subviews.expand_button.text)
         test.assert_equal(32, widget.frame.w)
         test.assert_equal(13, widget.frame.h)
         test.assert_equal(0, window.frame.l)
@@ -220,7 +226,8 @@ return function(test, root)
         test.assert_equal(0, widget.subviews.collapse_button.frame.t)
         test.assert_equal(config.DIRECTION.LEFT,
             widget.subviews.collapse_button.direction)
-        test.assert_equal(string.char(16), widget.subviews.collapse_button.label)
+        test.assert_equal('[' .. string.char(16) .. ']',
+            widget.subviews.collapse_button.text)
         test.assert_equal(nil, panel.visible)
     end)
 
