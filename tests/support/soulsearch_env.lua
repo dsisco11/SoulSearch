@@ -1350,7 +1350,7 @@ function M.load_stats_overlay(repo_root, options)
         onInput=function() return false end,
         onRenderFrame=function() end,
         render=function() end,
-        updateLayout=function() end,
+        updateLayout=function() state.layout_updates=(state.layout_updates or 0) + 1 end,
     }
     local function class(parent)
         local result = {super=parent or base, attrs={}}

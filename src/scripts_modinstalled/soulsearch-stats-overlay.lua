@@ -220,20 +220,27 @@ function SoulSearchStatsOverlay:resolve_frame(width, height)
         OPPOSITE_DIRECTION[direction]))
     self.subviews.expand_button:setText(bracketed_arrow(direction))
     local key = frame_key(frame, source)
+    local changed = key ~= self.frame_key
     self.frame = frame
     self.managed_origin = {l=frame.l, t=frame.t}
-    if key ~= self.frame_key then
-        self.frame_key = key
-    end
-    return frame
+    if changed then self.frame_key = key end
+    return frame, nil, changed
 end
 
 function SoulSearchStatsOverlay:preUpdateLayout(parent_rect)
     -- Overlay registration and reload layout happen even while the vanilla
     -- unit card is closed. There is no card to measure in that state, so do
-    -- not surface a geometry error to the player.
-    if not has_unit_card_focus() then return end
+    -- not surface a geometry error to the player. Capture a persisted overlay
+    -- origin first, though: otherwise the later unit-card update replaces it
+    -- with the default placement.
     local incoming_origin = absolute_origin(self.frame, parent_rect)
+    if not has_unit_card_focus() then
+        if incoming_origin and not self.managed_origin and
+                (incoming_origin.l ~= 0 or incoming_origin.t ~= 0) then
+            self.positioned_panel = restored_panel_origin(incoming_origin)
+        end
+        return
+    end
     if incoming_origin and self.managed_origin and
             not same_origin(incoming_origin, self.managed_origin) then
         if incoming_origin.l == 0 and incoming_origin.t == 0 then
@@ -249,7 +256,8 @@ function SoulSearchStatsOverlay:preUpdateLayout(parent_rect)
             (incoming_origin.l ~= 0 or incoming_origin.t ~= 0) then
         self.positioned_panel = restored_panel_origin(incoming_origin)
     end
-    self:resolve_frame(parent_rect.width, parent_rect.height)
+    local _, _, changed = self:resolve_frame(parent_rect.width, parent_rect.height)
+    self.needs_layout = self.needs_layout or changed
 end
 
 function SoulSearchStatsOverlay:onRenderFrame(dc, rect)
@@ -281,9 +289,9 @@ end
 function SoulSearchStatsOverlay:overlay_onupdate()
     if not has_unit_card_focus() then return false end
     local width, height = dfhack.screen.getWindowSize()
-    local previous_key = self.frame_key
-    local frame = self:resolve_frame(width, height)
-    if frame and self.frame_key ~= previous_key and self.frame_parent_rect then
+    local frame, _, changed = self:resolve_frame(width, height)
+    if frame and (changed or self.needs_layout) and self.frame_parent_rect then
+        self.needs_layout = false
         self:updateLayout()
     end
     local unit = get_unit_card_unit()

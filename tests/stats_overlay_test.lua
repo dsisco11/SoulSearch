@@ -81,6 +81,32 @@ return function(test, root)
         test.assert_equal(nil, state.placements)
     end)
 
+    test.case('stats overlay: captures a persisted position before the unit card opens', function()
+        local overlay, state = env.load_stats_overlay(root)
+        local widget = overlay.SoulSearchStatsOverlay{}
+        widget.frame={r=5, b=4, w=32, h=13}
+        widget:preUpdateLayout({width=120, height=40})
+        test.assert_equal(83, widget.positioned_panel.l)
+        test.assert_equal(24, widget.positioned_panel.t)
+        test.assert_equal(nil, state.placements)
+
+        widget:resolve_frame(120, 40)
+        test.assert_equal(83, state.positioned_panel.l)
+        test.assert_equal(24, state.positioned_panel.t)
+    end)
+
+    test.case('stats overlay: reapplies child layout after restoring a persisted position', function()
+        local overlay, state = env.load_stats_overlay(root,
+            {focuses={'dwarfmode/ViewSheets/UNIT'}})
+        local widget = overlay.SoulSearchStatsOverlay{}
+        widget.frame={r=5, b=4, w=32, h=13}
+        widget:preUpdateLayout({width=120, height=40})
+        widget.frame_parent_rect={width=120, height=40}
+        widget:overlay_onupdate()
+        test.assert_equal(1, state.layout_updates)
+        test.assert_false(widget.needs_layout)
+    end)
+
     test.case('stats overlay: keeps a repositioned panel authoritative', function()
         local overlay, state = env.load_stats_overlay(root,
             {focuses={'dwarfmode/ViewSheets/UNIT'}})
