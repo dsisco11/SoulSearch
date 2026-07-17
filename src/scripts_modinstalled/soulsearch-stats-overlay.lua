@@ -111,7 +111,7 @@ StatsDeploymentButton.ATTRS{
 SoulSearchStatsOverlay = defclass(SoulSearchStatsOverlay, overlay.OverlayWidget)
 SoulSearchStatsOverlay.ATTRS{
     desc='Display SoulSearch Stats beside the selected unit card.',
-    version=19,
+    version=20,
     default_enabled=true,
     default_pos={x=1, y=1}, -- replaced by resolve_frame() during layout
     hotspot=true,
@@ -136,7 +136,8 @@ function SoulSearchStatsOverlay:init()
             subviews={
                 UnitStatsList{
                     view_id='stats_panel', frame={l=0, t=0, r=0, b=0},
-                    subject=nil, sort=config.OVERLAY_DEFAULT_SORT, adaptive_columns=true,
+                    subject=nil, sort=config.OVERLAY_DEFAULT_SORT,
+                    adaptive_columns=true, show_header_underline=true,
                 },
             },
         },

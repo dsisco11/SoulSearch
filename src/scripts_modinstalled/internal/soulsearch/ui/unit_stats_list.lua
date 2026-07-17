@@ -7,6 +7,7 @@ local presenter = reqscript('internal/soulsearch/stats_presenter')
 local layout = reqscript('internal/soulsearch/stats_layout')
 local sort_state = reqscript('internal/soulsearch/sort_state')
 local sortable_header = reqscript('internal/soulsearch/ui/sortable_header')
+local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 
 local SORT_SPEC = sort_state.new_spec({'label', 'value'}, {value=true})
 
@@ -21,6 +22,7 @@ UnitStatsList.ATTRS{
     sort=DEFAULT_NIL,
     on_sort_change=DEFAULT_NIL,
     adaptive_columns=false,
+    show_header_underline=false,
 }
 
 function UnitStatsList:init(info)
@@ -28,13 +30,14 @@ function UnitStatsList:init(info)
     self.sort = sort_state.normalize(info.sort, SORT_SPEC)
     self.on_sort_change = info.on_sort_change
     self.adaptive_columns = info.adaptive_columns
+    self.show_header_underline = info.show_header_underline
     self.stats_records = {}
-    self.header_height = 1
+    self.header_height = self.show_header_underline and 2 or 1
     self.columns_layout = self.adaptive_columns and layout.get_overlay_columns(false) or {
         value_column_x=layout.VALUE_COLUMN_X,
         label_width=layout.LABEL_WIDTH,
     }
-    self:addviews{
+    local views = {
         sortable_header.new{view_id='columns', auto_height=false,
             frame={l=0, t=0, w=self.columns_layout.label_width}, label='Stat',
             tooltip='Sort by stat name.',
@@ -47,11 +50,22 @@ function UnitStatsList:init(info)
         -- A parent can reserve additional header rows during layout, but the
         -- list must remain visible before that callback has run (as it does
         -- when hosted by an overlay).
-        widgets.Label{view_id='body', frame={l=0, t=1, r=0, b=0}, auto_height=false, text='',
+        widgets.Label{view_id='body', frame={l=0, t=self.header_height, r=0, b=0},
+            auto_height=false, text='',
             on_pointer_update=function(target, x, y)
                 self:update_body_tooltip(target, x, y)
             end},
     }
+    if self.show_header_underline then
+        table.insert(views, widgets.Label{view_id='columns_underline',
+            frame={l=0, t=1, w=self.columns_layout.label_width, h=1},
+            text=glyphs.CP437_HORIZONTAL_LINE:rep(self.columns_layout.label_width)})
+        table.insert(views, widgets.Label{view_id='value_underline',
+            frame={l=self.columns_layout.value_column_x, t=1,
+                w=layout.VALUE_HEADER_WIDTH, h=1},
+            text=glyphs.CP437_HORIZONTAL_LINE:rep(layout.VALUE_HEADER_WIDTH)})
+    end
+    self:addviews(views)
     self:refresh()
 end
 
@@ -108,6 +122,19 @@ function UnitStatsList:set_header_height(height)
         l=self.columns_layout.value_column_x, t=0, w=layout.VALUE_HEADER_WIDTH,
         h=self.header_height,
     }
+    if self.show_header_underline then
+        self.subviews.columns_underline.frame = {
+            l=0, t=1, w=self.columns_layout.label_width, h=1,
+        }
+        self.subviews.columns_underline:setText(
+            glyphs.CP437_HORIZONTAL_LINE:rep(self.columns_layout.label_width))
+        self.subviews.value_underline.frame = {
+            l=self.columns_layout.value_column_x, t=1,
+            w=layout.VALUE_HEADER_WIDTH, h=1,
+        }
+        self.subviews.value_underline:setText(
+            glyphs.CP437_HORIZONTAL_LINE:rep(layout.VALUE_HEADER_WIDTH))
+    end
     self.subviews.body.frame = {l=0, t=self.header_height, r=0, b=0}
 end
 

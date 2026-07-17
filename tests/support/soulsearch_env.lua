@@ -452,6 +452,9 @@ function M.load_unit_stats_list(repo_root)
                 control:setOption(not active and 0 or reverse and 2 or 1, false)
             end,
         } end
+        if name == 'internal/soulsearch/ui_glyphs' then
+            return {CP437_HORIZONTAL_LINE=string.char(196)}
+        end
         if name == 'internal/soulsearch/attribute_descriptions' then
             return {get_tooltip=function(kind, key) return kind .. ':' .. key end}
         end
@@ -1424,7 +1427,8 @@ function M.load_stats_overlay(repo_root, options)
             if name == 'internal/soulsearch/stats_popover_config' then return config end
             if name == 'internal/soulsearch/stats_popover' then return popover end
             if name == 'internal/soulsearch/ui_glyphs' then
-                return {CP437_TRIANGLE_UP=string.char(30), CP437_TRIANGLE_DOWN=string.char(31)}
+                return {CP437_TRIANGLE_UP=string.char(30), CP437_TRIANGLE_DOWN=string.char(31),
+                    CP437_HORIZONTAL_LINE=string.char(196)}
             end
             if name == 'internal/soulsearch/ui/unit_stats_list' then
                 return {UnitStatsList=stats_panel}
