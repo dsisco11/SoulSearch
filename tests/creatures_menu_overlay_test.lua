@@ -58,6 +58,8 @@ return function(test, repo_root)
         local overlay = load_overlay(repo_root, scope, {initialize=function() return {} end})
         local attrs = overlay.SoulSearchCreaturesOverlay.attrs
         test.assert_true(overlay.OVERLAY_WIDGETS.soulsearch_creatures ~= nil)
+        test.assert_nil(
+            overlay.OVERLAY_WIDGETS.soulsearch_creatures_navigator)
         test.assert_equal('dwarfmode/Info/CREATURES', attrs.viewscreens)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)

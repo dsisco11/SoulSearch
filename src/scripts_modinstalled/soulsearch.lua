@@ -27,6 +27,8 @@ also attempts default-keybinding setup, but never replaces another command's
 
 local MODULE_REGISTRY_SCRIPT = 'internal/soulsearch/module_registry'
 local KEYBINDINGS_SCRIPT = 'internal/soulsearch/keybindings'
+local CREATURES_NAVIGATOR_SCRIPT =
+    'internal/soulsearch/creatures_menu_navigator'
 local OVERLAY_SCRIPTS = {
     'soulsearch-stats-overlay',
     'soulsearch-creatures-overlay',
@@ -114,6 +116,11 @@ local function reload_modules()
     assert(type(old_ui.dismiss_all) == 'function',
         'SoulSearch UI module cannot safely dismiss windows for reload.')
     old_ui.dismiss_all()
+    local navigator_ok, old_navigator =
+        pcall(reqscript, CREATURES_NAVIGATOR_SCRIPT)
+    if navigator_ok and type(old_navigator.cancel) == 'function' then
+        old_navigator.cancel()
+    end
 
     local old_script_names = old_registry.get_script_names()
     local old_modules = {}

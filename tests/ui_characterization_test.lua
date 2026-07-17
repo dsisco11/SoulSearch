@@ -29,6 +29,7 @@ return function(test, repo_root)
             'active_filter_count',
             'stats_panel',
             'results_stats_divider',
+            'view_in_creatures_button',
             'close_button',
             'filter_panel_window',
         }, ids(window.subviews))
@@ -45,6 +46,7 @@ return function(test, repo_root)
             'active_filter_count',
             'stats_panel',
             'results_stats_divider',
+            'view_in_creatures_button',
             'close_button',
             'filter_panel_window',
             'close_filter_panel_button',
@@ -294,6 +296,33 @@ return function(test, repo_root)
         test.assert_equal('Edit the current filters.',
             window.subviews.filters_button.tooltip)
         test.assert_equal('Close', window.subviews.close_button.tooltip)
+        test.assert_equal('View the selected unit in the native Creatures panel.',
+            window.subviews.view_in_creatures_button.tooltip)
+    end)
+
+    test.case('UI characterization: Creatures button dismisses then navigates by unit ID', function()
+        local window = new_window()
+        local log_start = #state.creatures_navigation_logs
+        local events = {}
+        window.parent_view = {dismiss=function()
+            table.insert(events, 'dismiss')
+        end}
+        window.subviews.result_list:setChoices({
+            {result={unit_id=42, name='Urist'}},
+        }, 1)
+
+        window.subviews.view_in_creatures_button.on_activate()
+        table.insert(events, 'navigate:' .. state.creatures_navigation[1])
+        test.assert_sequence({'dismiss', 'navigate:42'}, events)
+        test.assert_equal(
+            'View in Creatures TextButton activated',
+            state.creatures_navigation_logs[log_start + 1])
+        test.assert_equal(
+            'view_selected_unit_in_creatures entered',
+            state.creatures_navigation_logs[log_start + 2])
+        test.assert_equal(
+            'selected result resolved to unit 42',
+            state.creatures_navigation_logs[log_start + 3])
     end)
 
     test.case('UI characterization: recompute retains selection by unit ID', function()

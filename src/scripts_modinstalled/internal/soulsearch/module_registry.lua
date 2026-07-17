@@ -26,6 +26,7 @@ MODULES = {
         contract_type='table',
     },
     {name='internal/soulsearch/creatures_menu_scope', contract='get_active'},
+    {name='internal/soulsearch/creatures_menu_navigator', contract='show_unit'},
     {name='internal/soulsearch/ui_format', contract='format_result_choice'},
     {name='internal/soulsearch/filter_presenter', contract='present_active'},
     {name='internal/soulsearch/result_presenter', contract='present'},

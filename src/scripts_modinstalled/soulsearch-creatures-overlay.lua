@@ -104,4 +104,6 @@ function SoulSearchCreaturesOverlay:open_scoped_search()
     return ui.open(scope.options) ~= nil
 end
 
-OVERLAY_WIDGETS = {soulsearch_creatures=SoulSearchCreaturesOverlay}
+OVERLAY_WIDGETS = {
+    soulsearch_creatures=SoulSearchCreaturesOverlay,
+}

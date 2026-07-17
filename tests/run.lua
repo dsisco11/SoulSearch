@@ -43,6 +43,7 @@ local suites = {
     (require('stats_popover_test')),
     (require('stats_overlay_test')),
     (require('creatures_menu_scope_test')),
+    (require('creatures_menu_navigator_test')),
     (require('creatures_menu_overlay_test')),
     (require('text_match_test')),
     (require('ui_format_test')),

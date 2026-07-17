@@ -302,6 +302,11 @@ return function(test, repo_root)
             old_ui.dismiss_count = old_ui.dismiss_count + 1
             table.insert(events, {'dismiss_all'})
         end
+        local old_navigator = {cancel_count=0}
+        function old_navigator.cancel()
+            old_navigator.cancel_count = old_navigator.cancel_count + 1
+            table.insert(events, {'cancel_navigation'})
+        end
         local new_ui = {open_count=0}
         function new_ui.open(...)
             new_ui.open_count = new_ui.open_count + 1
@@ -317,6 +322,7 @@ return function(test, repo_root)
                 return {
                     'internal/soulsearch/module_registry',
                     'internal/soulsearch/ui',
+                    'internal/soulsearch/creatures_menu_navigator',
                     'internal/soulsearch/lifecycle',
                     'internal/soulsearch/removed_module',
                 }
@@ -358,6 +364,7 @@ return function(test, repo_root)
                 internal={scripts={
                     ['/scripts/internal/soulsearch/module_registry.lua']={stale=true},
                     ['/scripts/internal/soulsearch/ui.lua']={stale=true},
+                    ['/scripts/internal/soulsearch/creatures_menu_navigator.lua']={stale=true},
                     ['/scripts/internal/soulsearch/lifecycle.lua']={stale=true},
                     ['/scripts/internal/soulsearch/new_module.lua']={stale=true},
                     ['/scripts/soulsearch-stats-overlay.lua']={stale=true},
@@ -371,6 +378,9 @@ return function(test, repo_root)
                     return {}
                 end
                 if name == 'internal/soulsearch/ui' then return old_ui end
+                if name == 'internal/soulsearch/creatures_menu_navigator' then
+                    return old_navigator
+                end
                 error('unexpected reqscript: ' .. tostring(name))
             end,
             require=function(name)
@@ -392,36 +402,39 @@ return function(test, repo_root)
             'internal/soulsearch/module_registry',
         }, events[2])
         test.assert_sequence({'dismiss_all'}, events[3])
+        test.assert_sequence({'cancel_navigation'}, events[4])
         test.assert_sequence({
             'devel/clear-script-env',
             'internal/soulsearch/ui',
+            'internal/soulsearch/creatures_menu_navigator',
             'internal/soulsearch/lifecycle',
-        }, events[4])
+        }, events[5])
         test.assert_sequence({
             'devel/clear-script-env',
             'internal/soulsearch/module_registry',
-        }, events[5])
+        }, events[6])
         test.assert_sequence({
             'run_script',
             'internal/soulsearch/module_registry',
-        }, events[6])
+        }, events[7])
         test.assert_sequence({
             'devel/clear-script-env',
             'internal/soulsearch/new_module',
             'internal/soulsearch/lifecycle',
             'internal/soulsearch/ui',
-        }, events[7])
-        test.assert_sequence({'run_script', 'internal/soulsearch/new_module'}, events[8])
-        test.assert_sequence({'run_script', 'internal/soulsearch/lifecycle'}, events[9])
-        test.assert_sequence({'run_script', 'internal/soulsearch/ui'}, events[10])
-        test.assert_sequence({'overlay_rescan'}, events[11])
+        }, events[8])
+        test.assert_sequence({'run_script', 'internal/soulsearch/new_module'}, events[9])
+        test.assert_sequence({'run_script', 'internal/soulsearch/lifecycle'}, events[10])
+        test.assert_sequence({'run_script', 'internal/soulsearch/ui'}, events[11])
+        test.assert_sequence({'overlay_rescan'}, events[12])
         test.assert_nil(environment.dfhack.internal.scripts[
             '/scripts/soulsearch-stats-overlay.lua'])
         test.assert_nil(environment.dfhack.internal.scripts[
             '/scripts/soulsearch-creatures-overlay.lua'])
-        test.assert_sequence({'keybindings'}, events[12])
-        test.assert_sequence({'prepare'}, events[13])
+        test.assert_sequence({'keybindings'}, events[13])
+        test.assert_sequence({'prepare'}, events[14])
         test.assert_equal(1, old_ui.dismiss_count)
+        test.assert_equal(1, old_navigator.cancel_count)
         test.assert_true(lifecycle.prepared)
         test.assert_true(keybindings.ensured)
         test.assert_equal(0, new_ui.open_count)

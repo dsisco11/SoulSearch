@@ -98,6 +98,7 @@ FRAMES = {
     result_underline={l=RESULTS_LEFT, t=UNDERLINE_ROW, w=RESULTS_WIDTH, h=1},
     result_columns={l=RESULTS_LEFT, t=5, w=RESULTS_WIDTH, h=1},
     result_list={l=RESULTS_LEFT, t=6, w=RESULTS_WIDTH, b=0},
+    view_in_creatures={r=18, t=0, w=21, h=1},
     close={r=1, t=0, w=16, h=1},
 }
 

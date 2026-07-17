@@ -26,6 +26,8 @@ local filter_presenter = reqscript('internal/soulsearch/filter_presenter')
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 local ui_refresh = reqscript('internal/soulsearch/ui_refresh')
 local UnitInfoPanel = reqscript('internal/soulsearch/stats_panel').UnitInfoPanel
+local creatures_menu_navigator =
+    reqscript('internal/soulsearch/creatures_menu_navigator')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
@@ -120,6 +122,8 @@ SoulSearchWindow.ATTRS {
 
 ---Creates controls and loads the initial resident/filter data.
 function SoulSearchWindow:init()
+    creatures_menu_navigator.log_event(
+        'SoulSearch window initialized with View in Creatures button')
     local settings = self.settings
     if not settings then
         local screen_width, screen_height = dfhack.screen.getWindowSize()
@@ -180,6 +184,17 @@ function SoulSearchWindow:init()
     -- sibling added after the divided panel, as required by DFHack.
     table.insert(views, widgets.Divider{view_id='results_stats_divider',
         frame={l=ui_layout.DIVIDER_XS[1], t=ui_layout.HEADER_ROW, w=1, b=0}})
+    table.insert(views, widgets.TextButton{
+        view_id='view_in_creatures_button',
+        frame=ui_layout.get_frame('view_in_creatures'),
+        label='View in Creatures',
+        tooltip='View the selected unit in the native Creatures panel.',
+        on_activate=function()
+            creatures_menu_navigator.log_event(
+                'View in Creatures TextButton activated')
+            self:view_selected_unit_in_creatures()
+        end,
+    })
     table.insert(views, create_close_button(function()
         self.parent_view:dismiss()
     end))
@@ -412,6 +427,24 @@ function SoulSearchWindow:add_filter(filter_id)
     end
     self:on_filter_state_changed(self:get_filter_choice_index(filter_id))
     return true
+end
+
+---Closes SoulSearch and shows the selected unit in the native Creatures panel.
+---@return boolean
+function SoulSearchWindow:view_selected_unit_in_creatures()
+    creatures_menu_navigator.log_event(
+        'view_selected_unit_in_creatures entered')
+    local result = self:get_selected_result()
+    if not result then
+        print('SoulSearch: no unit selected.')
+        return false
+    end
+
+    local unit_id = result.unit_id
+    creatures_menu_navigator.log_event(
+        'selected result resolved to unit %d', unit_id)
+    self.parent_view:dismiss()
+    return creatures_menu_navigator.show_unit(unit_id)
 end
 
 ---Adds an inactive filter or removes an active one without closing its picker.

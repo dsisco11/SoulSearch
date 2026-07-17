@@ -983,7 +983,9 @@ function M.load_ui_characterization(repo_root)
     local ui_refresh = M.load_ui_refresh(repo_root)
     local screen_registry = M.load_screen_registry(repo_root)
     local state = {
-        settings_updates={}, revealed={}, screen_registry=screen_registry,
+        settings_updates={}, revealed={}, creatures_navigation={},
+        creatures_navigation_logs={},
+        screen_registry=screen_registry,
     }
     local filter_panel = M.load_filter_panel(repo_root, function()
         return state.mouse_x, state.mouse_y
@@ -1109,6 +1111,16 @@ function M.load_ui_characterization(repo_root)
         ['internal/soulsearch/text_match']=M.load_text_match(repo_root),
         ['internal/soulsearch/ui/filter_panel']=filter_panel,
         ['internal/soulsearch/ui/results_panel']=results_panel,
+        ['internal/soulsearch/creatures_menu_navigator']={
+            log_event=function(format_string, ...)
+                table.insert(state.creatures_navigation_logs,
+                    format_string:format(...))
+            end,
+            show_unit=function(unit_id)
+                table.insert(state.creatures_navigation, unit_id)
+                return true
+            end,
+        },
         ['internal/soulsearch/ui_format']=ui_format,
         ['internal/soulsearch/filter_presenter']={
             present_active=function() return {{text='Use Add attribute, Add skill, or Add race.'}} end,

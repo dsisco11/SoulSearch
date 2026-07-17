@@ -97,5 +97,6 @@
 ✔ Add "Livestock" scope filter to allow searching for livestock animals. @done(26-07-16)
 ✔ Add "Pets" scope filter to allow searching for pets. @done(26-07-16)
 ✔ [Scoped Residents]: defaults to the "Residents" scope but it should include both residents and citizens. @done(26-07-17)
+✔ Add "View in Creatures" button to open the native Creatures panel on the selected unit's tab and row. Uses the native `D_UNITLIST` transition, selects the matching `unit_list_mode_type` subtab, then polls bounded coroutine awaits every other rendered frame before centering the selected native row. @done(26-07-17; local validation complete; live smoke deferred)
 ☐ Make soul search panels size to fit available window space with parent layout callbacks; DFHack `ResizingPanel` grows to fit children rather than filling a resized parent.
 ☐ Make soul search window panels resizeable with a custom draggable splitter; the native DFHack `Divider` widget is visual-only.
