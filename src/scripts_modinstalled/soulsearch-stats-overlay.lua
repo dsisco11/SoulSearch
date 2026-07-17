@@ -122,17 +122,18 @@ local OPPOSITE_DIRECTION = {
     [config.DIRECTION.DOWN]=config.DIRECTION.UP,
 }
 
-local function get_deployment_direction(panel, button)
-    if panel.l + panel.w <= button.l then return config.DIRECTION.LEFT end
-    if button.l + button.w <= panel.l then return config.DIRECTION.RIGHT end
-    if button.t + button.h <= panel.t then return config.DIRECTION.DOWN end
-    return config.DIRECTION.UP
+local function restored_panel_origin(origin)
+    local panel = {l=origin.l, t=origin.t}
+    -- The button occupies the composite frame's top row whenever possible.
+    -- At the screen's top edge it instead falls below the panel.
+    if origin.t > 0 then panel.t = panel.t + 1 end
+    return panel
 end
 
 SoulSearchStatsOverlay = defclass(SoulSearchStatsOverlay, overlay.OverlayWidget)
 SoulSearchStatsOverlay.ATTRS{
     desc='Display SoulSearch Stats beside the selected unit card.',
-    version=23,
+    version=28,
     default_enabled=true,
     default_pos={x=1, y=1}, -- replaced by resolve_frame() during layout
     hotspot=true,
@@ -192,7 +193,7 @@ end
 
 function SoulSearchStatsOverlay:resolve_frame(width, height)
     local resolved, err, source = config.resolve(
-        width, height, get_unit_card_rect(), self.placement, self.repositioned_panel)
+        width, height, get_unit_card_rect(), self.placement, self.positioned_panel)
     if not resolved then
         if self.layout_error ~= err then
             self.layout_error = err
@@ -201,15 +202,12 @@ function SoulSearchStatsOverlay:resolve_frame(width, height)
         return nil, err
     end
     self.layout_error = nil
-    local frame = self.collapsed and {
-        l=resolved.button.l, t=resolved.button.t,
-        w=resolved.button.w, h=resolved.button.h,
-    } or union_frames(resolved.panel, resolved.button)
+    local frame = union_frames(resolved.panel, resolved.button)
     self.subviews.window.frame = relative_frame(resolved.panel, frame)
     local button_frame = relative_frame(resolved.button, frame)
     self.subviews.collapse_button.frame = button_frame
     self.subviews.expand_button.frame = button_frame
-    local direction = get_deployment_direction(resolved.panel, resolved.button)
+    local direction = resolved.direction
     self.subviews.collapse_button.direction = direction
     self.subviews.expand_button.direction = direction
     self.subviews.collapse_button.label = ARROW_BY_DIRECTION[
@@ -234,19 +232,17 @@ function SoulSearchStatsOverlay:preUpdateLayout(parent_rect)
     if incoming_origin and self.managed_origin and
             not same_origin(incoming_origin, self.managed_origin) then
         if incoming_origin.l == 0 and incoming_origin.t == 0 then
-            self.repositioned_panel = nil
+            self.positioned_panel = nil
         else
             local window_frame = self.subviews.window.frame
-            self.repositioned_panel = {
+            self.positioned_panel = {
                 l=incoming_origin.l + (window_frame.l or 0),
                 t=incoming_origin.t + (window_frame.t or 0),
             }
         end
     elseif incoming_origin and not self.managed_origin and
             (incoming_origin.l ~= 0 or incoming_origin.t ~= 0) then
-        self.repositioned_panel = {
-            l=incoming_origin.l, t=incoming_origin.t,
-        }
+        self.positioned_panel = restored_panel_origin(incoming_origin)
     end
     self:resolve_frame(parent_rect.width, parent_rect.height)
 end

@@ -174,7 +174,7 @@ local function validate_placements(placements)
     end
 end
 
----@param position table
+---@param position table absolute panel origin selected by the overlay editor
 ---@param screen_width integer
 ---@param screen_height integer
 ---@param width integer
@@ -187,36 +187,39 @@ local function resolve_from_repositioned_panel(
     local x2 = get_integer(rect, 'x2')
     local y1 = get_integer(rect, 'y1')
     local y2 = get_integer(rect, 'y2')
+    local has_card_bounds = x1 and x2 and y1 and y2 and x2 >= x1 and y2 >= y1
     local panel = {l=position.l, t=position.t, w=width, h=height}
-    if not x1 or not x2 or not y1 or not y2 or x2 < x1 or y2 < y1 or
-            not frame_fits(panel, screen_width, screen_height) then
-        return nil
-    end
-
+    if not frame_fits(panel, screen_width, screen_height) then return nil end
     local button = {w=COLLAPSE_BUTTON_WIDTH, h=1}
-    if panel.l + panel.w <= x1 then
+    local direction
+
+    if has_card_bounds and panel.l + panel.w <= x1 then
         button.l = panel.l + panel.w - button.w
-    elseif panel.l > x2 then
+        direction = DIRECTION.LEFT
+    elseif has_card_bounds and panel.l > x2 then
         button.l = panel.l
+        direction = DIRECTION.RIGHT
     else
         local panel_center = panel.l + (panel.w - 1) / 2
-        local card_center = x1 + (x2 - x1) / 2
+        local card_center = has_card_bounds and x1 + (x2 - x1) / 2 or panel_center
         button.l = panel_center <= card_center and panel.l + panel.w - button.w or panel.l
+        if has_card_bounds then
+            local panel_y_center = panel.t + (panel.h - 1) / 2
+            local card_y_center = y1 + (y2 - y1) / 2
+            direction = panel_y_center <= card_y_center and DIRECTION.UP or DIRECTION.DOWN
+        else
+            direction = DIRECTION.DOWN
+        end
     end
-
-    local direction
     local above = panel.t - button.h
     local below = panel.t + panel.h
     if above >= 0 then
         button.t = above
-        direction = DIRECTION.DOWN
     elseif below + button.h <= screen_height then
         button.t = below
-        direction = DIRECTION.UP
     else
         return nil
     end
-
     if not frame_fits(button, screen_width, screen_height) then return nil end
     return {panel=panel, button=button, direction=direction}
 end
@@ -225,11 +228,11 @@ end
 ---@param screen_height integer
 ---@param unit_card_rect any|nil
 ---@param placements SoulSearchStatsDeployment[] ordered placement fallbacks
----@param repositioned_panel table|nil absolute user-selected panel origin
+---@param positioned_panel table|nil absolute panel origin selected by the editor
 ---@return table|nil layout
 ---@return string|nil error
 ---@return string|nil source
-function resolve(screen_width, screen_height, unit_card_rect, placements, repositioned_panel)
+function resolve(screen_width, screen_height, unit_card_rect, placements, positioned_panel)
     validate_placements(placements)
     if type(screen_width) ~= 'number' or type(screen_height) ~= 'number' then
         return nil, 'SoulSearch Stats popout requires a valid screen size.'
@@ -241,13 +244,13 @@ function resolve(screen_width, screen_height, unit_card_rect, placements, reposi
     end
     local width = math.min(DEFAULT_WIDTH, screen_width)
     local height = math.min(DEFAULT_HEIGHT, screen_height)
-    if repositioned_panel then
+    if positioned_panel then
         local repositioned_layout = resolve_from_repositioned_panel(
-            repositioned_panel, screen_width, screen_height, width, height, unit_card_rect)
+            positioned_panel, screen_width, screen_height, width, height, unit_card_rect)
         if repositioned_layout then
             return repositioned_layout, nil, 'user-positioned stats panel'
         end
-        return nil, 'SoulSearch Stats cannot deploy from the repositioned panel.'
+        return nil, 'SoulSearch Stats cannot fit at the selected position.'
     end
     for _, placement in ipairs(placements) do
         local native_layout = resolve_from_unit_card(

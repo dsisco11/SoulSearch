@@ -1347,11 +1347,11 @@ function M.load_stats_overlay(repo_root, options)
         },
         DIRECTION={LEFT='left', RIGHT='right', UP='up', DOWN='down'},
         LOG_POSITIONING=false,
-        resolve=function(width, height, rect, placements, repositioned_panel)
+        resolve=function(width, height, rect, placements, positioned_panel)
             state.placements=placements
             state.unit_card_rect=rect
-            state.repositioned_panel=repositioned_panel
-            return options.layout or {
+            state.positioned_panel=positioned_panel
+            return state.layout or options.layout or {
                 panel={l=43, t=12, w=32, h=12},
                 button={l=72, t=11, w=3, h=1},
                 direction=placements[1].direction,

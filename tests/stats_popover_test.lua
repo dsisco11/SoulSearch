@@ -91,7 +91,7 @@ return function(test, root)
                 config.DIRECTION.LEFT), preferred='anything'}))
     end)
 
-    test.case('stats popout config: reverse-computes a button from a positioned panel', function()
+    test.case('stats popout config: keeps a positioned panel authoritative', function()
         local _, config = env.load_stats_popover(root)
         local placements = {deployment(config,
             config.BUTTON_PLACEMENT.OUTSIDE_LEFT, config.DIRECTION.LEFT)}
@@ -99,22 +99,38 @@ return function(test, root)
 
         local resolved = assert(config.resolve(
             180, 120, card, placements, {l=10, t=20}))
-        test.assert_equal(config.DIRECTION.DOWN, resolved.direction)
+        test.assert_equal(config.DIRECTION.LEFT, resolved.direction)
         test.assert_equal(resolved.button.l + resolved.button.w,
             resolved.panel.l + resolved.panel.w)
-        test.assert_equal(resolved.button.t + resolved.button.h, resolved.panel.t)
         test.assert_equal(10, resolved.panel.l)
         test.assert_equal(20, resolved.panel.t)
+        test.assert_equal(19, resolved.button.t)
 
         resolved = assert(config.resolve(
             180, 120, card, placements, {l=125, t=20}))
-        test.assert_equal(config.DIRECTION.DOWN, resolved.direction)
+        test.assert_equal(config.DIRECTION.RIGHT, resolved.direction)
         test.assert_equal(resolved.button.l, resolved.panel.l)
+
+        resolved = assert(config.resolve(
+            180, 120, card, placements, {l=60, t=5}))
+        test.assert_equal(config.DIRECTION.UP, resolved.direction)
+        test.assert_equal(4, resolved.button.t)
+
+        resolved = assert(config.resolve(
+            180, 120, card, placements, {l=60, t=80}))
+        test.assert_equal(config.DIRECTION.DOWN, resolved.direction)
+        test.assert_equal(79, resolved.button.t)
+
+        resolved = assert(config.resolve(
+            180, 120, nil, placements, {l=10, t=20}))
+        test.assert_equal(10, resolved.panel.l)
+        test.assert_equal(20, resolved.panel.t)
+        test.assert_equal(19, resolved.button.t)
 
         resolved = assert(config.resolve(
             180, 120, card, placements, {l=60, t=0}))
         test.assert_equal(config.DIRECTION.UP, resolved.direction)
-        test.assert_equal(resolved.button.t, resolved.panel.t + resolved.panel.h)
+        test.assert_equal(resolved.panel.t + resolved.panel.h, resolved.button.t)
     end)
 
     test.case('stats popout: resolves a subject for the attached overlay', function()

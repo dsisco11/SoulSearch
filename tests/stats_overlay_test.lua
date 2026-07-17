@@ -10,7 +10,7 @@ return function(test, root)
         test.assert_true(attrs.default_enabled)
         test.assert_true(attrs.hotspot)
         test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(23, attrs.version)
+        test.assert_equal(28, attrs.version)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_LEFT,
             attrs.placement[1].button)
         test.assert_equal(config.DIRECTION.LEFT, attrs.placement[1].direction)
@@ -55,14 +55,21 @@ return function(test, root)
                     direction=config.DIRECTION.RIGHT},
             },
         }
+        state.layout={
+            panel={l=43, t=5, w=32, h=12},
+            button={l=72, t=4, w=3, h=1},
+            direction=config.DIRECTION.UP,
+        }
         widget:resolve_frame(120, 40)
         test.assert_equal(config.BUTTON_PLACEMENT.INSIDE_LEFT,
             state.placements[1].button)
         test.assert_equal(config.DIRECTION.UP, state.placements[1].direction)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_RIGHT,
             state.placements[2].button)
-        test.assert_equal(string.char(24), widget.subviews.collapse_button.label)
-        test.assert_equal(string.char(25), widget.subviews.expand_button.label)
+        test.assert_equal(string.char(25), widget.subviews.collapse_button.label)
+        test.assert_equal(string.char(24), widget.subviews.expand_button.label)
+        test.assert_equal(1, widget.subviews.window.frame.t)
+        test.assert_equal(0, widget.subviews.collapse_button.frame.t)
     end)
 
     test.case('stats overlay: does not measure or report a closed unit card during layout', function()
@@ -72,30 +79,61 @@ return function(test, root)
         test.assert_equal(nil, state.placements)
     end)
 
-    test.case('stats overlay: preserves a user-repositioned panel position', function()
+    test.case('stats overlay: keeps a repositioned panel authoritative', function()
         local overlay, state = env.load_stats_overlay(root,
             {focuses={'dwarfmode/ViewSheets/UNIT'}})
         local widget = overlay.SoulSearchStatsOverlay{}
-        widget.frame={l=18, t=7, w=3, h=1}
+        widget:resolve_frame(120, 40)
+        state.layout={
+            panel={l=80, t=7, w=32, h=12},
+            button={l=80, t=6, w=3, h=1},
+            direction='right',
+        }
+        widget.frame={l=80, t=6, w=32, h=13}
         widget:preUpdateLayout({width=120, height=40})
-        test.assert_equal(18, state.repositioned_panel.l)
-        test.assert_equal(7, state.repositioned_panel.t)
+        test.assert_equal(80, state.positioned_panel.l)
+        test.assert_equal(7, state.positioned_panel.t)
+        test.assert_equal(80, widget.positioned_panel.l)
+        test.assert_equal(7, widget.positioned_panel.t)
+        test.assert_equal(80, widget.frame.l)
+        test.assert_equal(6, widget.frame.t)
+        test.assert_equal(0, widget.subviews.window.frame.l)
+        test.assert_equal(1, widget.subviews.window.frame.t)
+        test.assert_equal(0, widget.subviews.collapse_button.frame.l)
 
         widget.subviews.collapse_button.on_activate()
-        test.assert_equal(18, widget.repositioned_panel.l)
-        test.assert_equal(7, widget.repositioned_panel.t)
+        test.assert_equal(80, state.positioned_panel.l)
+        test.assert_equal(80, widget.frame.l)
+        test.assert_equal(6, widget.frame.t)
+        test.assert_equal(32, widget.frame.w)
+        test.assert_equal(13, widget.frame.h)
         widget.subviews.expand_button.on_activate()
-        test.assert_equal(18, widget.repositioned_panel.l)
-        test.assert_equal(7, widget.repositioned_panel.t)
+        test.assert_equal(80, state.positioned_panel.l)
+        test.assert_equal(80, widget.frame.l)
+        test.assert_equal(6, widget.frame.t)
+    end)
 
-        widget.frame={r=5, b=4, w=3, h=1}
+    test.case('stats overlay: restores a persisted panel position', function()
+        local overlay, state = env.load_stats_overlay(root,
+            {focuses={'dwarfmode/ViewSheets/UNIT'}})
+        local widget = overlay.SoulSearchStatsOverlay{}
+        state.layout={
+            panel={l=83, t=24, w=32, h=12},
+            button={l=83, t=23, w=3, h=1},
+            direction='right',
+        }
+        widget.frame={r=5, b=4, w=32, h=13}
         widget:preUpdateLayout({width=120, height=40})
-        test.assert_equal(112, state.repositioned_panel.l)
-        test.assert_equal(36, state.repositioned_panel.t)
+        test.assert_equal(83, state.positioned_panel.l)
+        test.assert_equal(24, state.positioned_panel.t)
+        test.assert_equal(83, widget.positioned_panel.l)
+        test.assert_equal(24, widget.positioned_panel.t)
 
-        widget.frame={l=0, t=0, w=3, h=1}
+        state.layout=nil
+        widget.frame={l=0, t=0, w=32, h=13}
+        widget.managed_origin={l=83, t=24}
         widget:preUpdateLayout({width=120, height=40})
-        test.assert_equal(nil, state.repositioned_panel)
+        test.assert_equal(nil, widget.positioned_panel)
     end)
 
     test.case('stats overlay: recognizes a unit card beneath a launcher screen', function()
@@ -143,7 +181,7 @@ return function(test, root)
         test.assert_equal(widget, widget.tooltip.parent_view)
     end)
 
-    test.case('stats overlay: collapse button shrinks and restores the popout', function()
+    test.case('stats overlay: collapse button hides and restores the panel in place', function()
         local overlay, state, config = env.load_stats_overlay(root,
             {focuses={'dwarfmode/ViewSheets/UNIT'}})
         local widget = overlay.SoulSearchStatsOverlay{}
@@ -160,29 +198,29 @@ return function(test, root)
         test.assert_false(window.visible)
         test.assert_false(widget.subviews.collapse_button.visible)
         test.assert_true(widget.subviews.expand_button.visible)
-        test.assert_equal(3, widget.frame.w)
-        test.assert_equal(1, widget.frame.h)
+        test.assert_equal(32, widget.frame.w)
+        test.assert_equal(13, widget.frame.h)
         test.assert_equal(config.BUTTON_PLACEMENT.OUTSIDE_LEFT,
             state.placements[1].button)
         test.assert_equal(config.DIRECTION.LEFT, state.placements[1].direction)
-        test.assert_equal(72, widget.frame.l)
+        test.assert_equal(43, widget.frame.l)
         test.assert_equal(11, widget.frame.t)
-        test.assert_equal(config.DIRECTION.DOWN,
+        test.assert_equal(config.DIRECTION.LEFT,
             widget.subviews.expand_button.direction)
-        test.assert_equal(string.char(25), widget.subviews.expand_button.label)
+        test.assert_equal(string.char(17), widget.subviews.expand_button.label)
         widget.subviews.expand_button.on_activate()
         test.assert_false(widget.collapsed)
         test.assert_true(window.visible)
-        test.assert_equal(string.char(25), widget.subviews.expand_button.label)
+        test.assert_equal(string.char(17), widget.subviews.expand_button.label)
         test.assert_equal(32, widget.frame.w)
         test.assert_equal(13, widget.frame.h)
         test.assert_equal(0, window.frame.l)
         test.assert_equal(1, window.frame.t)
         test.assert_equal(29, widget.subviews.collapse_button.frame.l)
         test.assert_equal(0, widget.subviews.collapse_button.frame.t)
-        test.assert_equal(config.DIRECTION.DOWN,
+        test.assert_equal(config.DIRECTION.LEFT,
             widget.subviews.collapse_button.direction)
-        test.assert_equal(string.char(24), widget.subviews.collapse_button.label)
+        test.assert_equal(string.char(16), widget.subviews.collapse_button.label)
         test.assert_equal(nil, panel.visible)
     end)
 
