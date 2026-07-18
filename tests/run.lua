@@ -1,75 +1,29 @@
-local repo_root = assert(arg[1], 'usage: lua tests/run.lua <repo-root>')
 local separator = package.config:sub(1, 1)
-local tests_root = repo_root .. separator .. 'tests'
+local source = debug.getinfo(1, 'S').source
+assert(source:sub(1, 1) == '@', 'tests/run.lua must be loaded from a file')
+local tests_root = assert(source:sub(2):match('^(.*)[/\\][^/\\]+$'),
+    'could not resolve the tests directory')
+local repo_root = tests_root .. separator .. '..'
+local production_root = repo_root .. separator .. 'src' .. separator ..
+    'scripts_modinstalled'
 package.path = table.concat({
     tests_root .. separator .. '?.lua',
     tests_root .. separator .. '?' .. separator .. 'init.lua',
+    production_root .. separator .. '?.lua',
+    production_root .. separator .. '?' .. separator .. 'init.lua',
     package.path,
 }, ';')
 
-local test = require('support.testlib')
-local suites = {
-    (require('script_harness_test')),
-    (require('attributes_test')),
-    (require('attribute_descriptions_test')),
-    (require('metadata_test')),
-    (require('filter_constants_test')),
-    (require('candidate_provider_test')),
-    (require('availability_test')),
-    (require('unit_scope_catalog_test')),
-    (require('active_unit_provider_test')),
-    (require('candidate_filter_family_provider_test')),
-    (require('unit_scope_filter_provider_test')),
-    (require('race_catalog_test')),
-    (require('race_filter_provider_test')),
-    (require('candidate_pipeline_characterization_test')),
-    (require('filter_state_test')),
-    (require('window_settings_test')),
-    (require('window_config_test')),
-    (require('screen_registry_test')),
-    (require('filter_defaults_test')),
-    (require('role_presets_test')),
-    (require('filter_presets_test')),
-    (require('search_test')),
-    (require('ui_refresh_test')),
-    (require('ui_glyphs_test')),
-    (require('ui_layout_test')),
-    (require('stats_layout_test')),
-    (require('stats_sort_subject_test')),
-    (require('stats_panel_test')),
-    (require('unit_identity_test')),
-    (require('matched_filters_panel_test')),
-    (require('unit_stats_list_test')),
-    (require('stats_popover_test')),
-    (require('stats_overlay_test')),
-    (require('creatures_menu_scope_test')),
-    (require('creatures_menu_navigator_test')),
-    (require('creatures_menu_overlay_test')),
-    (require('text_match_test')),
-    (require('ui_format_test')),
-    (require('widget_extensions_test')),
-    (require('pointer_dispatcher_test')),
-    (require('tooltip_agent_test')),
-    (require('ui_tooltip_test')),
-    (require('stats_presenter_test')),
-    (require('modal_panel_test')),
-    (require('filter_action_list_test')),
-    (require('search_session_test')),
-    (require('filter_panel_test')),
-    (require('results_panel_test')),
-    (require('ui_characterization_test')),
-    (require('ui_open_test')),
-    (require('residents_test')),
-    (require('keybindings_test')),
-    (require('lifecycle_test')),
-    (require('module_registry_test')),
-    (require('soulsearch_command_test')),
-}
+local luaunit = require('luaunit')
 
-for _, register_suite in ipairs(suites) do
-    register_suite(test, repo_root)
-end
+-- Run-UnitTests.ps1 supplies the deterministic, newline-delimited suite list
+-- through this project-neutral environment variable. LuaUnit CLI arguments are
+-- deliberately left in arg so callers can target tests or select output modes.
+assert(os.getenv('DFHACK_LUA_TEST_FILES'),
+    'DFHACK_LUA_TEST_FILES must be provided by Tools/Run-UnitTests.ps1')
 
-if not test.run() then
-    os.exit(1)
-end
+-- Phase 2 runs the native LuaUnit bootstrap contract only. Phase 3 bridges the
+-- existing custom suites onto LuaUnit before they join this runner.
+require('luaunit_setup_test')
+
+os.exit(luaunit.LuaUnit.run())

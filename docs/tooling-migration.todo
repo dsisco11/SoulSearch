@@ -110,7 +110,7 @@ output. This preserves the user's in-progress cutover changes.
 | New `Check-LuaSyntax.ps1` | `LuaCompiler=$env:DFHACK_LUAC`, `RequiredLuaVersion=$env:DFHACK_LUA_VERSION`, `IncludeTests` | `luac.exe` or configured compiler | none | Throws on missing/wrong-version compiler and first syntax failure; called by new `Build.ps1` |
 | New `Common.ps1` | no script parameters; exports `Import-EnvironmentFile`, `Get-ModInfo`, and `Resolve-DFHackRunner` | PowerShell/.NET only | may set previously absent process environment variables | Helper functions throw on invalid env entries, metadata, or runner resolution; dot-sourced by new Build and Publish |
 | Old `tools/Test.ps1` | `LuaPath=''`; no environment contract | explicit/discovered `lua` interpreter | none | Throws on missing runner/interpreter or nonzero test exit; called by README, `tests/README.md`, and active feature plans |
-| New `Run-UnitTests.ps1` | remaining arguments become `LuaUnitArgs`; temporarily reads/writes `LUA_PATH` and copied `DOTHIS_TEST_FILES` | exact LuaUnit `3.5-1`, `lua`, `luarocks`, and package-install access when the rock is absent | installs `.luarocks/`; temporarily replaces process test/Lua paths and restores them in `finally` | Throws during bootstrap/path setup, then uses `exit $LASTEXITCODE` for the Lua runner; targeted by the modified VS Code Unit Tests task |
+| New `Run-UnitTests.ps1` | remaining arguments become `LuaUnitArgs`; temporarily reads/writes `LUA_PATH` and project-neutral `DFHACK_LUA_TEST_FILES` | exact LuaUnit `3.5-1`, `lua`, `luarocks`, and package-install access when the rock is absent | installs only `.luarocks/`; temporarily replaces process test/Lua paths and restores them in `finally` | Throws after cleanup for a nonzero Lua result, without terminating a caller's PowerShell host; targeted by the modified VS Code Unit Tests task |
 | Old tracked `tools/Publish.ps1` | `SourceDir=src`, `OutputDir=dist`, `PackageName=''`, `NoRootFolder`, `NoExpandedFolder`; no environment contract | PowerShell copy/archive commands and old verifier | temporary staging tree, versioned zip, and optional expanded package | Throws on PowerShell/verifier failure and removes temp data in `finally`; called by README |
 | New `Publish.ps1` | `SourceDir=src`, `OutputDir=dist`, `PackageName=''`; no direct environment parameters | new Common, Build, VerifyPackage, and PowerShell archive commands | temporary staging tree, versioned flat-root zip, and expanded package | Runs Build with live reload disabled, throws on build/package/verification failure, and removes temp data in `finally`; called by README after cutover |
 | Old tracked `tools/VerifyPackage.ps1` | `SourceDir=src`, mandatory `ZipPath`/`PackageRoot`, optional `ExpandedPath`, `NoRootFolder` | .NET zip APIs and PowerShell filesystem reads | opens the zip; no durable output | Throws on payload-set or SoulSearch-bootstrap mismatch; called by old Publish |
@@ -266,31 +266,46 @@ test/support Lua files.
 
 ## Phase 2 - Establish the repo-local LuaUnit runner contract
 
-☐ Add `.luarocks/` to `.gitignore` and confirm it cannot enter `src/` or a
+☑ Add `.luarocks/` to `.gitignore` and confirm it cannot enter `src/` or a
   published package.
-☐ Keep LuaUnit pinned to `3.5-1`; check and install that exact version into
+☑ Keep LuaUnit pinned to `3.5-1`; check and install that exact version into
   `.luarocks/` rather than accepting an arbitrary globally installed version.
-☐ Replace `DOTHIS_TEST_FILES` with a documented project-neutral mechanism
+☑ Replace `DOTHIS_TEST_FILES` with a documented project-neutral mechanism
   for passing the discovered suite list to `tests/run.lua`.
-☐ Make `tests/run.lua` derive `repo_root`, `tests/`, and
+☑ Make `tests/run.lua` derive `repo_root`, `tests/`, and
   `src/scripts_modinstalled/` paths from its own location so LuaUnit CLI
   arguments remain untouched.
-☐ Preserve the caller's existing `LUA_PATH` while adding the repo-local rock
+☑ Preserve the caller's existing `LUA_PATH` while adding the repo-local rock
   path, test support path, and production-module path; restore process
   environment variables on both success and failure.
-☐ Preserve passthrough of LuaUnit CLI arguments for targeted tests, output
+☑ Preserve passthrough of LuaUnit CLI arguments for targeted tests, output
   modes, verbosity, and failure controls.
-☐ Ensure test discovery is deterministic, selects all current suite files,
+☑ Ensure test discovery is deterministic, selects all current suite files,
   and excludes `run.lua`, support modules, and fixtures.
-☐ Avoid terminating a parent PowerShell host unexpectedly when
+☑ Avoid terminating a parent PowerShell host unexpectedly when
   `Run-UnitTests.ps1` is invoked from another tool; expose a reliable nonzero
   process result without bypassing cleanup.
-☐ Add one LuaUnit smoke suite that proves dependency loading, repository-root
+☑ Add one LuaUnit smoke suite that proves dependency loading, repository-root
   resolution, discovery, and a deliberate assertion failure path.
 
 Exit gate: staged `NewTools/Run-UnitTests.ps1` can bootstrap pinned LuaUnit and
 execute a discovered smoke suite with correct paths, arguments, cleanup, and
 exit status without installing it into `tools/` yet.
+
+Phase 2 recorded evidence: `.luarocks/` is ignored and outside `src/`, so it
+cannot enter the package source tree. The runner requires LuaRocks, checks the
+exact `luaunit 3.5-1` rock in that local tree, and installs it there when absent.
+It supplies the sorted, newline-delimited `DFHACK_LUA_TEST_FILES` list and
+appends repo-local rock, test, production, and caller paths to `LUA_PATH`; both
+environment values are restored in `finally`.
+
+On 2026-07-17, `luarocks install luaunit 3.5-1 --tree ./.luarocks` successfully
+installed the pinned rock and `luarocks show` confirmed its local module path.
+The earlier manifest error was caused by the restricted execution environment;
+the same command succeeds with normal system/network access. The staged runner
+then passed all three smoke tests and one targeted test. The deterministic
+discovery scan found 56 current `*_test.lua`/`test_*.lua` files and no support,
+fixture, or `run.lua` matches.
 
 ## Phase 3 - Bridge the existing test suite onto LuaUnit
 
@@ -455,7 +470,7 @@ behavior are all recorded and green.
 | Phase 0 syntax baseline | complete | 2026-07-17: `tools/Build.ps1`; 66 production Lua files passed with `luac` 5.4.6 |
 | Phase 0 package manifests/invariants | complete | 2026-07-17: complete hashes in `docs/tooling-migration-phase-0-manifest.md`; fingerprints/drift recorded above; historical zip root is `SoulSearch/`; all bootstrap invariants present |
 | Reusable common/syntax/build tools | complete | 2026-07-17: staged `NewTools/` fixture audit passed explicit/env compiler paths, version failure, SourceDir propagation, `.env` precedence, all runner-resolution modes, reload capture/failure, and sibling-leak scan |
-| LuaUnit bootstrap and smoke failure proof | pending | |
+| LuaUnit bootstrap and smoke failure proof | complete | 2026-07-17: exact LuaRocks install of LuaUnit 3.5-1 succeeded in ignored `.luarocks`; staged runner passed 3 smoke tests and 1 targeted test |
 | Full suite through compatibility bridge | pending | |
 | Native LuaUnit conversion | pending | |
 | Generic publish/package verification | pending | |
