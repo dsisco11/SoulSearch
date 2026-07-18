@@ -4,13 +4,13 @@
         {
             "label": "Build",
             "type": "process",
-            "command": "powershell.exe",
+            "command": "pwsh.exe",
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\Tools\\Build.ps1"
+                "${workspaceFolder}\\tools\\Build.ps1"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -24,13 +24,13 @@
         {
             "label": "Unit Tests",
             "type": "process",
-            "command": "powershell.exe",
+            "command": "pwsh.exe",
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\Tools\\Run-UnitTests.ps1"
+                "${workspaceFolder}\\tools\\Run-UnitTests.ps1"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

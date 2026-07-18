@@ -2,13 +2,12 @@
 
 ## Objective
 
-Entirely replace SoulSearch's existing `tools/` scripts with the reusable
-toolchain currently staged under `NewTools/`: remove every old tool script,
-move the complete finalized contents of `NewTools/` into the existing plain
-`tools/` directory, and remove the now-empty `NewTools/` directory. Migrate the
-complete pure-Lua test suite from the custom `tests/support/testlib.lua`
-framework to LuaUnit, and preserve SoulSearch's source, package, and live
-DFHack behavior through the cutover.
+Entirely replace SoulSearch's original `tools/` scripts with the reusable
+toolchain staged under `NewTools/` through Phases 1-5. Phase 6 moves that exact
+finalized set into the plain `tools/` directory and removes `NewTools/`.
+Migrate the complete pure-Lua test suite from the former custom framework to
+LuaUnit, and preserve SoulSearch's source, package, and live DFHack behavior
+through the cutover.
 
 The new `Build.ps1` behavior is the target contract. A default build must:
 
@@ -28,8 +27,8 @@ default interactive build contract.
   SoulSearch tests instead of embedding them in generic packaging scripts.
 - Keep LuaUnit pinned to `3.5-1` in the repository-local `.luarocks/` tree.
 - Discover test files by the existing `test_*.lua` / `*_test.lua` convention;
-  support modules, fixtures, and `tests/run.lua` must not be treated as suites.
-- Make `tests/run.lua` derive the repository root from its own location instead
+    support modules, fixtures, and `Tests/run.lua` must not be treated as suites.
+  - Make `Tests/run.lua` derive the repository root from its own location instead
   of interpreting the first LuaUnit argument as a path.
 - Replace the copied `DOTHIS_TEST_FILES` name with a project-neutral runner
   contract. No copied script may retain DoThis or another sibling project's
@@ -109,7 +108,7 @@ output. This preserves the user's in-progress cutover changes.
 | New `Build.ps1` | `LuaCompiler`, `RequiredLuaVersion`, `LiveReload=$true`, `SourceDir=src`, `DFHackRunner`, `DwarfFortressRoot`, `ReloadOutputPath`, `EnvFile=.env.local`; reads `DFHACK_LUAC`, `DFHACK_LUA_VERSION`, `DFHACK_RUNNER`, and `DFHACK_DWARF_FORTRESS_ROOT` directly or through `.env.local` | `Check-LuaSyntax.ps1`, `Common.ps1`, `luac.exe`, and `dfhack-run.exe` | optional reload-output file; imports missing process variables from `.env.local`; performs `<mod-id> reload` | Throws on missing tools/metadata, syntax failure, or reload failure; targeted by the VS Code Build task and called with `-LiveReload:$false` by the new publisher |
 | New `Check-LuaSyntax.ps1` | `LuaCompiler=$env:DFHACK_LUAC`, `RequiredLuaVersion=$env:DFHACK_LUA_VERSION`, `IncludeTests` | `luac.exe` or configured compiler | none | Throws on missing/wrong-version compiler and first syntax failure; called by new `Build.ps1` |
 | New `Common.ps1` | no script parameters; exports `Import-EnvironmentFile`, `Get-ModInfo`, and `Resolve-DFHackRunner` | PowerShell/.NET only | may set previously absent process environment variables | Helper functions throw on invalid env entries, metadata, or runner resolution; dot-sourced by new Build and Publish |
-| Old `tools/Test.ps1` | `LuaPath=''`; no environment contract | explicit/discovered `lua` interpreter | none | Throws on missing runner/interpreter or nonzero test exit; called by README, `tests/README.md`, and active feature plans |
+| Old `tools/Test.ps1` | `LuaPath=''`; no environment contract | explicit/discovered `lua` interpreter | none | Throws on missing runner/interpreter or nonzero test exit; called by README, `Tests/README.md`, and active feature plans |
 | New `Run-UnitTests.ps1` | remaining arguments become `LuaUnitArgs`; temporarily reads/writes `LUA_PATH` and project-neutral `DFHACK_LUA_TEST_FILES` | exact LuaUnit `3.5-1`, `lua`, `luarocks`, and package-install access when the rock is absent | installs only `.luarocks/`; temporarily replaces process test/Lua paths and restores them in `finally` | Throws after cleanup for a nonzero Lua result, without terminating a caller's PowerShell host; targeted by the modified VS Code Unit Tests task |
 | Old tracked `tools/Publish.ps1` | `SourceDir=src`, `OutputDir=dist`, `PackageName=''`, `NoRootFolder`, `NoExpandedFolder`; no environment contract | PowerShell copy/archive commands and old verifier | temporary staging tree, versioned zip, and optional expanded package | Throws on PowerShell/verifier failure and removes temp data in `finally`; called by README |
 | New `Publish.ps1` | `SourceDir=src`, `OutputDir=dist`, `PackageName=''`; no direct environment parameters | new Common, Build, VerifyPackage, and PowerShell archive commands | temporary staging tree, versioned flat-root zip, and expanded package | Runs Build with live reload disabled, throws on build/package/verification failure, and removes temp data in `finally`; called by README after cutover |
@@ -122,7 +121,7 @@ Repository caller audit at this baseline:
   `Tools/Run-UnitTests.ps1`.
 - `README.md` still documents `tools/Build.ps1`, the old `LuaPath`/`LuaMode`
   parameters, `tools/Test.ps1`, and `tools/Publish.ps1`.
-- `tests/README.md` still documents `tools/Test.ps1` and the publisher boundary.
+- `Tests/README.md` still documents `tools/Test.ps1` and the publisher boundary.
 - `docs/revealed-unit-filtering.todo` still uses `tools/Test.ps1` and
   `tools/Build.ps1` as future gates.
 - Inside `NewTools/`, Build calls Check/Common and Publish calls
@@ -271,8 +270,8 @@ test/support Lua files.
 ☑ Keep LuaUnit pinned to `3.5-1`; check and install that exact version into
   `.luarocks/` rather than accepting an arbitrary globally installed version.
 ☑ Replace `DOTHIS_TEST_FILES` with a documented project-neutral mechanism
-  for passing the discovered suite list to `tests/run.lua`.
-☑ Make `tests/run.lua` derive `repo_root`, `tests/`, and
+  for passing the discovered suite list to `Tests/run.lua`.
+☑ Make `Tests/run.lua` derive `repo_root`, `Tests/`, and
   `src/scripts_modinstalled/` paths from its own location so LuaUnit CLI
   arguments remain untouched.
 ☑ Preserve the caller's existing `LUA_PATH` while adding the repo-local rock
@@ -333,7 +332,7 @@ fixture, or `run.lua` matches.
 Exit gate: the complete pre-existing suite runs under LuaUnit with no omitted
 suites or weakened assertions, while production code remains unchanged.
 
-Phase 3 recorded evidence: `tests/support/luaunit_compat.lua` creates one fresh
+Phase 3 recorded evidence: `Tests/support/luaunit_compat.lua` creates one fresh
 compatibility API per discovered legacy suite file. Each `test.case()` becomes
 a uniquely named LuaUnit function in the form
 `test <suite module> :: <dynamic case name>`, while each suite registration
@@ -371,11 +370,11 @@ remained.
   full suite after the batch.
 ☑ Convert UI component, overlay, pointer, tooltip, geometry, refresh, and
   characterization suites; run the full suite after the batch.
-☑ Replace the explicit suite registry in `tests/run.lua` with the proven
+☑ Replace the explicit suite registry in `Tests/run.lua` with the proven
   deterministic discovery contract.
 ☑ Remove the temporary compatibility adapter and
-  `tests/support/testlib.lua` only after no suite requires them.
-☑ Search the complete `tests/` tree for old `test.case`, custom assertion,
+  `Tests/support/testlib.lua` only after no suite requires them.
+☑ Search the complete `Tests/` tree for old `test.case`, custom assertion,
   suite-registration, and positional `repo_root` conventions; the result must
   be empty except for intentional migration-history text in this plan.
 ☑ Compare final suite/case/assertion coverage with the Phase 0 baseline and
@@ -389,7 +388,7 @@ Phase 4 recorded evidence (2026-07-18): all 55 pre-existing suite files now
 return native LuaUnit test tables and use LuaUnit assertions directly. The four
 required batch boundaries each passed the complete 328-test run: the native
 case count advanced from 3 smoke / 325 legacy to 68 / 260, 159 / 169,
-208 / 120, and finally 328 / 0. After the last batch, `tests/run.lua` was
+208 / 120, and finally 328 / 0. After the last batch, `Tests/run.lua` was
 simplified to load every sorted discovered test file uniformly and publish its
 returned table under a deterministic `Test_<module>` name.
 
@@ -405,12 +404,12 @@ assertions (1,502 static calls total); runtime totals are higher because
 table-driven cases execute some call sites repeatedly. Phase 0 itself exposed
 no assertion count, so there is no Phase 0 assertion-total change to explain.
 
-`tests/support/luaunit_compat.lua` and `tests/support/testlib.lua` were deleted
+`Tests/support/luaunit_compat.lua` and `Tests/support/testlib.lua` were deleted
 only after a mixed-mode full run reported 56 native suites and zero legacy
-suites. A complete `tests/` scan then returned no old `test.case`, custom
+suites. A complete `Tests/` scan then returned no old `test.case`, custom
 assertion, registration-function, custom-framework require, or positional
 repository-root convention matches. Repository-root resolution now lives in
-the ordinary path helper `tests/support/repo_root.lua`, not a test framework.
+the ordinary path helper `Tests/support/repo_root.lua`, not a test framework.
 Final validation passed the default 328-test run, a one-case verbose target,
 and the reusable build's Lua 5.4.6 syntax check of 66 production plus 63
 test/support files. The native smoke failure opt-in produced exactly one visible
@@ -470,7 +469,7 @@ The adopted archive contract is flat root: `info.txt` and
 is `<OutputDir>/<metadata-or-explicit-name>/`. Publish uses .NET directory
 archiving without a wrapper, VerifyPackage compares the extraction root
 directly, README installation text gives the matching extraction procedure,
-and `tests/package_tools_test.ps1` rejects a wrapper-root archive. Repository
+and `Tests/package_tools_test.ps1` rejects a wrapper-root archive. Repository
 search found no live callers of the removed `NoRootFolder` or
 `NoExpandedFolder` switches; both were intentionally removed because Phase 5
 requires both fixed-shape package forms on every publish and verification.
@@ -484,7 +483,7 @@ failed. Absolute paths passed, and repository-relative paths passed while the
 caller was in a different working directory.
 
 SoulSearch package invariants now belong to the discovered native LuaUnit
-suite `tests/package_contract_test.lua`, which requires nonempty ID, name,
+suite `Tests/package_contract_test.lua`, which requires nonempty ID, name,
 numeric/displayed version, and description metadata; both public command
 files; the `--@module=true` and `--@enable=true` annotations; the bootstrap's
 keybinding reference; and the keybinding module itself. The full suite passed
@@ -504,42 +503,97 @@ publisher then created and verified `dist/SoulSearch-0.1.0.zip` plus
 
 ## Phase 6 - Perform the atomic toolchain cutover
 
-☐ Record the finalized `NewTools/` file manifest. It must contain the complete
+☑ Record the finalized `NewTools/` file manifest. It must contain the complete
   replacement set: `Build.ps1`, `Check-LuaSyntax.ps1`, `Common.ps1`,
   `Run-UnitTests.ps1`, `Publish.ps1`, and `VerifyPackage.ps1`, plus any new
   reusable support file intentionally added by an earlier phase.
-☐ Confirm every finalized staged tool and the migrated LuaUnit suite pass
+☑ Confirm every finalized staged tool and the migrated LuaUnit suite pass
   from `NewTools/` before changing the contents of `tools/`.
-☐ Remove every pre-existing script from `tools/`, including the old
+☑ Remove every pre-existing script from `tools/`, including the old
   `Build.ps1` and `Test.ps1`; do not retain compatibility wrappers or merge
   old implementations with the new set.
-☐ Move every file from `NewTools/` into the now-empty `tools/` directory in
+☑ Move every file from `NewTools/` into the now-empty `tools/` directory in
   one cutover. Do not selectively copy files or leave maintained duplicates.
-☐ Remove the empty `NewTools/` directory and verify it no longer exists.
-☐ Compare the post-move `tools/` manifest with the recorded pre-move
+☑ Remove the empty `NewTools/` directory and verify it no longer exists.
+☑ Compare the post-move `tools/` manifest with the recorded pre-move
   `NewTools/` manifest; paths and file hashes must match exactly.
-☐ Remove obsolete `tools/Test.ps1` references and update every caller to
+☑ Remove obsolete `tools/Test.ps1` references and update every caller to
   `tools/Run-UnitTests.ps1` and the other new contracts.
-☐ Update `.vscode/tasks.json` so Build invokes the accepted default live
+☑ Update `.vscode/tasks.json` so Build invokes the accepted default live
   build and Unit Tests invokes `tools/Run-UnitTests.ps1`.
-☐ Update `README.md` and `tests/README.md` for:
+☑ Update `README.md` and `Tests/README.md` for:
   - Lua, `luac`, LuaRocks, and DFHack runner prerequisites;
   - `.env.local` and `DFHACK_*` configuration;
   - default live build/reload behavior;
   - LuaUnit bootstrap and argument passthrough;
   - publish/package layout and installation.
-☐ Update active `.todo` files and durable docs that still name
+☑ Update active `.todo` files and durable docs that still name
   `tools/Test.ps1` or describe the old syntax-only build contract.
-☐ Search the repository for old tool names, removed parameters, DoThis
+☑ Search the repository for old tool names, removed parameters, DoThis
   identifiers, obsolete package-root claims, and stale command examples; fix
   every actionable hit.
-☐ Preserve unrelated working-tree changes during the cutover.
+☑ Preserve unrelated working-tree changes during the cutover.
 
 Exit gate: the old `tools/` script set has been entirely replaced by the exact
 finalized `NewTools/` set, `NewTools/` no longer exists, `tools/` is the sole
 toolchain location, all callers/documentation use the new contracts, and no
 old wrapper, mixed implementation, copied-project leakage, or stale entrypoint
 remains.
+
+Phase 6 recorded evidence (2026-07-18): immediately before the move, the
+finalized staging directory contained exactly this six-file manifest:
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `Build.ps1` | 3,497 | `933C53D901CE42330B431BA7E8C5D93419D44CA19E0A532CF8111B45C193F172` |
+| `Check-LuaSyntax.ps1` | 2,441 | `95EF8DDE4E2A1FC4D8DC9FA22FCC9FF1BCBD6ED207EBFB241610AD86EE812563` |
+| `Common.ps1` | 3,427 | `DE4639FE7F3BE1A97460078BF67C5414326C5907B0A87741ECA903364E62E3C8` |
+| `Publish.ps1` | 4,138 | `38F9DF3DBD7493279EB6AE83EDE20D45E400C56A31922DBF41451F62B1BF19DE` |
+| `Run-UnitTests.ps1` | 3,360 | `81F192B90E48F6AB0D80E1BF6CC3E183B176088AC095BE4E150AE7F2E2C28F9F` |
+| `VerifyPackage.ps1` | 3,837 | `6E636F4FC0D6ACE1D4328B949E1CD7518BAAD34A68F75028E1698A1C77B30EF0` |
+
+The final pre-move gates passed from `NewTools/`: 331 native LuaUnit tests,
+the Lua 5.4.6 syntax check of 66 production plus 64 test/support files, and the
+complete package-tool fixture matrix (which directly exercised Common, Build,
+Check-LuaSyntax, Publish, and VerifyPackage). The old `tools/` manifest was
+verified as exactly `Build.ps1` plus `Test.ps1`; both files were removed, all
+six staged files were moved in one operation, and the empty staging directory
+was removed.
+
+The post-move `tools/` manifest contains exactly the same six names, sizes, and
+hashes above: zero missing, additional, or differing files. `NewTools/` and
+`tools/Test.ps1` do not exist, and a repository-wide duplicate-name audit found
+no second copy of any tool.
+
+VS Code now invokes `pwsh.exe` and the lowercase sole tool paths; Build has no
+arguments and therefore retains its accepted default live reload, while Unit
+Tests calls `tools/Run-UnitTests.ps1`. README documents PowerShell 7, Lua 5.4,
+`luac`, LuaRocks, DFHack runner discovery, `.env.local`/`DFHACK_*`, default live
+build behavior, explicit syntax-only opt-out, LuaUnit bootstrap/argument
+forwarding, and the package/verification commands. The test README describes
+native deterministic LuaUnit discovery, and the active revealed-unit plan now
+uses `Run-UnitTests.ps1`.
+
+Post-move execution passed 331/331 tests, a one-case verbose invocation through
+the same `pwsh.exe -File` shape used by VS Code, the 66/64 non-live syntax
+build, the complete package-tool fixture matrix through `tools/`, and an
+independent verification of the existing real package. Searches outside this
+plan's intentional baseline/migration history found zero `NewTools`,
+`tools/Test.ps1`, old `-LuaPath`/`-LuaMode`, copied environment names, removed
+package switches/root parameters, sibling-project identifiers, duplicate
+tools, or stale examples. No production file changed, temporary fixture count
+was zero, and `git diff --check` passed. The sole pre-cutover working-tree
+change, the Phase 5 addition to `Tests/README.md`, remains present and was
+extended for the final entrypoint rather than discarded.
+
+Post-Phase 6 follow-up (2026-07-18): the repository test directory was renamed
+to the capitalized `Tests/` form. The cutover hash table above remains the exact
+pre-/post-move evidence from the tool replacement itself. Updating the two tool
+defaults for the capitalized directory intentionally changed the current
+SHA-256 hashes to `BC5F6CCCB593313BB3CAEF56F2EFDDDCE1D93248BFF30BB563DB033973AA0E53`
+for `Check-LuaSyntax.ps1` and
+`8A363DC0A6E9EB0E6329B48FD6143455711B519BFA6C523C1A591267A75A4565`
+for `Run-UnitTests.ps1`.
 
 ## Phase 7 - Complete automated, package, and live validation
 
@@ -584,7 +638,7 @@ behavior are all recorded and green.
 | Full suite through compatibility bridge | complete | 2026-07-17: 55 legacy files and all 325 baseline cases passed through LuaUnit; 2,001 assertions executed across all six mappings; targeted dynamic name plus domain and harness failure probes proved visible nonzero failures, then were reverted |
 | Native LuaUnit conversion | complete | 2026-07-18: four full-suite batch gates and the final native-only run passed 328/328; 55 baseline suites/cases retained as 56 files and 328 cases with the 3 smoke additions; 2,001 migrated runtime assertions matched Phase 3; legacy framework files and conventions removed |
 | Generic publish/package verification | complete | 2026-07-18: real flat-root zip and expanded package matched all 67 source files by SHA-256; generic fixture passed metadata/explicit identity, custom-source non-live build, both path forms, precise manifest failures, wrapper/tamper rejection, and success/failure cleanup; 331 LuaUnit tests retained SoulSearch package invariants |
-| Exact `NewTools/` -> `tools/` move and stale-reference audit | pending | |
+| Exact `NewTools/` -> `tools/` move and stale-reference audit | complete | 2026-07-18: pre/post six-file names, sizes, and SHA-256 hashes match exactly; old Build/Test set removed, `NewTools/` absent, sole `tools/` location passed 331 tests, targeted forwarding, 66/64 build, package fixtures, and standalone verification; live callers/docs updated and actionable stale/duplicate audit returned zero |
 | Clean-tree LuaUnit bootstrap run | pending | |
 | Warm LuaUnit and targeted-test runs | pending | |
 | Default live build/reload | pending | |

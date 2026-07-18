@@ -30,7 +30,7 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
-$testsRoot = Join-Path $projectRoot 'tests'
+$testsRoot = Join-Path $projectRoot 'Tests'
 if (-not (Test-Path -LiteralPath $testsRoot -PathType Container)) {
     throw "Could not find Lua test directory: $testsRoot"
 }
@@ -85,11 +85,11 @@ try {
         $luaPathEntries += $oldLuaPath
     }
     Set-Item -LiteralPath Env:LUA_PATH -Value ($luaPathEntries -join ';')
-    # tests/run.lua consumes this newline-delimited discovered suite list. Keeping
+    # Tests/run.lua consumes this newline-delimited discovered suite list. Keeping
     # the contract DFHack-neutral lets the runner be reused by other Lua projects.
     Set-Item -LiteralPath "Env:$testFileEnvironmentVariable" -Value ($testFiles -join "`n")
 
-    & lua (Join-Path $projectRoot 'tests/run.lua') @LuaUnitArgs
+    & lua (Join-Path $projectRoot 'Tests/run.lua') @LuaUnitArgs
     $testExitCode = $LASTEXITCODE
 }
 finally {

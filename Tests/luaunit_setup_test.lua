@@ -18,8 +18,8 @@ function native_tests:test_discovery_contract()
 
     luaunit.assertStrContains(files, 'luaunit_setup_test.lua')
     luaunit.assertStrContains(files, 'attributes_test.lua')
-    luaunit.assertNotStrContains(files, 'tests\\support\\testlib.lua')
-    luaunit.assertNotStrContains(files, 'tests\\run.lua')
+    luaunit.assertNotStrContains(files, 'Tests\\support\\testlib.lua')
+    luaunit.assertNotStrContains(files, 'Tests\\run.lua')
 end
 
 function native_tests:test_opt_in_failure_path()

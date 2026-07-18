@@ -183,7 +183,7 @@ reports that unit as hidden, regardless of user filter state.
 
 ## Phase 5 - Automated validation and documentation
 
-☐ Run the complete Lua test suite with `tools/Test.ps1` and record the exact
+☐ Run the complete Lua test suite with `tools/Run-UnitTests.ps1` and record the exact
   test result.
 ☐ Run `tools/Build.ps1` and record the exact build result.
 ☐ Verify the built package contains every new production module and no test or

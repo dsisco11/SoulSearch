@@ -3,13 +3,23 @@
 Run the suites from the repository root with:
 
 ```powershell
-.\tools\Test.ps1
+.\tools\Run-UnitTests.ps1
 ```
 
-The repository uses a small dependency-free runner in `tests/support/testlib.lua`.
-`tests/run.lua` loads a fixed suite list, so test discovery and ordering are
-deterministic. Test failures print the case name, expected/actual context, and a
-traceback; any failure produces a nonzero process exit code.
+Lua and LuaRocks must be available on PATH. The entrypoint installs pinned
+LuaUnit 3.5-1 into the ignored `.luarocks/` tree when absent, discovers sorted
+`test_*.lua` and `*_test.lua` files, and forwards all remaining arguments to
+LuaUnit. For example:
+
+```powershell
+.\tools\Run-UnitTests.ps1 -v
+.\tools\Run-UnitTests.ps1 -v "Test_attributes_test.test attributes: physical above race median"
+```
+
+`Tests/run.lua` publishes each discovered native test table under a
+deterministic module-derived name. Test failures print the case name,
+expected/actual context, and a traceback; any failure produces a nonzero
+process result after the runner restores its temporary environment values.
 
 Tests load the production Lua files directly with an isolated environment. The
 environment stubs only the external APIs needed by the modules under test:
@@ -50,5 +60,10 @@ The tests do not emulate DFHack widget behavior or claim to validate in-game
 behavior. Visual layout, focus, mouse handling, live unit access, refresh, and
 zoom remain covered by the manual checklist in `docs/ui-baseline.md`.
 
-The `tests/` tree is outside `src/`; `tools/Publish.ps1` packages only `src/`, so
+The `Tests/` tree is outside `src/`; `tools/Publish.ps1` packages only `src/`, so
 test code is not included in the shipped mod payload.
+
+Run `Tests/package_tools_test.ps1` with PowerShell to exercise the reusable
+publisher and verifier against an isolated fixture. It covers absolute and
+repository-relative paths, flat zip layout, manifest diagnostics, non-live
+custom-source builds, tampered packages, and temporary-directory cleanup.

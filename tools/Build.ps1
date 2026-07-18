@@ -1,114 +1,101 @@
 [CmdletBinding()]
 param(
-    [string]$SourceDir = "src/scripts_modinstalled",
-    [string]$LuaPath = "",
-    [ValidateSet("Auto", "Luac", "Lua")]
-    [string]$LuaMode = "Auto"
+    [string] $LuaCompiler = $env:DFHACK_LUAC,
+    [string] $RequiredLuaVersion = $env:DFHACK_LUA_VERSION,
+    [bool] $LiveReload = $true,
+    [string] $SourceDir = 'src',
+    [string] $DFHackRunner = $env:DFHACK_RUNNER,
+    [string] $DwarfFortressRoot = $env:DFHACK_DWARF_FORTRESS_ROOT,
+    [string] $ReloadOutputPath,
+    [string] $EnvFile = '.env.local'
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-function Resolve-ToolPath {
-    param(
-        [string]$ExplicitPath,
-        [string[]]$CandidateNames
-    )
+$scriptRoot = Split-Path -Parent $PSScriptRoot
+$syntaxCheck = Join-Path $PSScriptRoot 'Check-LuaSyntax.ps1'
+$commonTools = Join-Path $PSScriptRoot 'Common.ps1'
 
-    if ($ExplicitPath) {
-        $resolved = Resolve-Path -LiteralPath $ExplicitPath -ErrorAction Stop
-        return $resolved.Path
-    }
-
-    foreach ($candidate in $CandidateNames) {
-        $command = Get-Command $candidate -ErrorAction SilentlyContinue
-        if ($command) {
-            return $command.Source
-        }
-    }
-
-    return $null
+if (-not (Test-Path -LiteralPath $commonTools -PathType Leaf)) {
+    throw "Missing required common tools: $commonTools"
 }
+. $commonTools
 
-function Test-LuaFileWithLuac {
-    param(
-        [string]$ToolPath,
-        [string]$FilePath
-    )
-
-    & $ToolPath -p $FilePath
-    return $LASTEXITCODE
+$resolvedEnvFile = $EnvFile
+if (-not [IO.Path]::IsPathRooted($resolvedEnvFile)) {
+    $resolvedEnvFile = Join-Path $scriptRoot $resolvedEnvFile
 }
+Import-EnvironmentFile -Path $resolvedEnvFile -AllowMissing
 
-function Test-LuaFileWithLua {
-    param(
-        [string]$ToolPath,
-        [string]$FilePath
-    )
+$processLuaCompiler = [Environment]::GetEnvironmentVariable('DFHACK_LUAC', 'Process')
+$processRequiredLuaVersion = [Environment]::GetEnvironmentVariable('DFHACK_LUA_VERSION', 'Process')
+$processDFHackRunner = [Environment]::GetEnvironmentVariable('DFHACK_RUNNER', 'Process')
+$processDwarfFortressRoot = [Environment]::GetEnvironmentVariable('DFHACK_DWARF_FORTRESS_ROOT', 'Process')
 
-    & $ToolPath -e "assert(loadfile(arg[1]))" $FilePath
-    return $LASTEXITCODE
-}
-
-$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Resolve-Path (Join-Path $scriptRoot "..")
-$sourcePath = Resolve-Path (Join-Path $repoRoot $SourceDir)
-
-$luacPath = Resolve-ToolPath -ExplicitPath $LuaPath -CandidateNames @("luac", "luac5.4", "luac54", "luac5.3", "luac53", "luac5.2", "luac52", "luac5.1", "luac51")
-$useLuaFallback = $false
-
-if ($LuaMode -eq "Lua") {
-    $useLuaFallback = $true
-} elseif ($LuaMode -eq "Luac") {
-    $useLuaFallback = $false
-} elseif ($LuaPath) {
-    $toolFileName = [IO.Path]::GetFileNameWithoutExtension($luacPath)
-    $useLuaFallback = $toolFileName -notmatch '^luac'
-}
-
-if (-not $luacPath -and $LuaMode -ne "Luac") {
-    $luacPath = Resolve-ToolPath -ExplicitPath "" -CandidateNames @("lua", "lua5.4", "lua54", "lua5.3", "lua53", "lua5.2", "lua52", "lua5.1", "lua51")
-    $useLuaFallback = $true
-}
-
-if (-not $luacPath) {
-    throw @"
-No Lua compiler/interpreter was found.
-
-Install Lua and make either 'luac' or 'lua' available on PATH, or pass an explicit tool path:
-
-    .\tools\Build.ps1 -LuaPath "C:\path\to\luac.exe"
-    .\tools\Build.ps1 -LuaPath "C:\path\to\lua.exe" -LuaMode Lua
-
-This build only syntax-checks Lua files; DFHack runtime behavior still needs in-game validation.
-"@
-}
-
-$luaFiles = Get-ChildItem -LiteralPath $sourcePath -Recurse -Filter "*.lua" -File | Sort-Object FullName
-if (-not $luaFiles) {
-    throw "No Lua files found under $sourcePath"
-}
-
-$failed = @()
-$toolName = if ($useLuaFallback) { "lua" } else { "luac" }
-Write-Host "Checking $($luaFiles.Count) Lua file(s) with $toolName at '$luacPath'..."
-
-foreach ($file in $luaFiles) {
-    $relativePath = [IO.Path]::GetRelativePath($repoRoot.Path, $file.FullName)
-    Write-Host "  $relativePath"
-
-    $exitCode = if ($useLuaFallback) {
-        Test-LuaFileWithLua -ToolPath $luacPath -FilePath $file.FullName
+if (-not $LuaCompiler) {
+    $LuaCompiler = if ($processLuaCompiler) {
+        $processLuaCompiler
     } else {
-        Test-LuaFileWithLuac -ToolPath $luacPath -FilePath $file.FullName
-    }
-
-    if ($exitCode -ne 0) {
-        $failed += $relativePath
+        'luac.exe'
     }
 }
-
-if ($failed.Count -gt 0) {
-    throw "Lua build check failed for $($failed.Count) file(s): $($failed -join ', ')"
+if (-not $RequiredLuaVersion) {
+    $RequiredLuaVersion = $processRequiredLuaVersion
+}
+if (-not $DFHackRunner) {
+    $DFHackRunner = $processDFHackRunner
+}
+if (-not $DwarfFortressRoot) {
+    $DwarfFortressRoot = $processDwarfFortressRoot
 }
 
-Write-Host "Lua build check passed."
+if (-not (Test-Path -LiteralPath $syntaxCheck -PathType Leaf)) {
+    throw "Missing required syntax checker: $syntaxCheck"
+}
+
+$sourcePath = if ([IO.Path]::IsPathRooted($SourceDir)) {
+    $SourceDir
+} else {
+    Join-Path $scriptRoot $SourceDir
+}
+
+& $syntaxCheck -LuaCompiler $LuaCompiler -RequiredLuaVersion $RequiredLuaVersion `
+    -SourceDir $sourcePath -IncludeTests
+if ($LASTEXITCODE -ne 0) {
+    throw 'Lua syntax check failed.'
+}
+
+if ($LiveReload) {
+    $sourcePath = (Resolve-Path -LiteralPath $sourcePath).Path
+    $modInfo = Get-ModInfo -InfoPath (Join-Path $sourcePath 'info.txt')
+    if (-not $modInfo.Id) {
+        throw "Missing required [ID] in $(Join-Path $sourcePath 'info.txt')"
+    }
+
+    $runner = Resolve-DFHackRunner -RunnerPath $DFHackRunner `
+        -DwarfFortressRoot $DwarfFortressRoot
+    Write-Host "Running DFHack command: $($modInfo.Id) reload"
+    $reloadOutput = @(& $runner $modInfo.Id reload 2>&1) |
+        ForEach-Object { $_.ToString() }
+    $reloadExitCode = $LASTEXITCODE
+
+    foreach ($line in $reloadOutput) {
+        Write-Host $line
+    }
+
+    if ($ReloadOutputPath) {
+        $resolvedOutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(
+            $ReloadOutputPath)
+        $outputDirectory = Split-Path -Parent $resolvedOutputPath
+        if ($outputDirectory -and -not (Test-Path -LiteralPath $outputDirectory)) {
+            New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+        }
+        $reloadOutput | Out-File -LiteralPath $resolvedOutputPath -Encoding utf8
+        Write-Host "Captured DFHack output in $resolvedOutputPath"
+    }
+
+    if ($reloadExitCode -ne 0) {
+        throw "DFHack command '$($modInfo.Id) reload' failed with exit code $reloadExitCode."
+    }
+}

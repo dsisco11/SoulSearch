@@ -5,8 +5,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$publishScript = Join-Path $projectRoot 'NewTools\Publish.ps1'
-$verifyScript = Join-Path $projectRoot 'NewTools\VerifyPackage.ps1'
+$publishScript = Join-Path $projectRoot 'tools\Publish.ps1'
+$verifyScript = Join-Path $projectRoot 'tools\VerifyPackage.ps1'
 $fixtureRoot = Join-Path $projectRoot ".package-tools-test-$([guid]::NewGuid())"
 $sourceRoot = Join-Path $fixtureRoot 'source'
 $outputRoot = Join-Path $fixtureRoot 'output'
@@ -241,7 +241,7 @@ try {
 
     # A verifier stub proves Publish removes staging after verification fails.
     $toolCopy = Join-Path $fixtureRoot 'tool-copy'
-    Copy-DirectoryContents -Source (Join-Path $projectRoot 'NewTools') `
+    Copy-DirectoryContents -Source (Join-Path $projectRoot 'tools') `
         -Destination $toolCopy
     Set-Content -LiteralPath (Join-Path $toolCopy 'VerifyPackage.ps1') `
         -Encoding utf8 -Value "throw 'forced verification failure'"

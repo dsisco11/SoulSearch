@@ -3,7 +3,7 @@ param(
     [string] $LuaCompiler = $env:DFHACK_LUAC,
     [string] $RequiredLuaVersion = $env:DFHACK_LUA_VERSION,
     [string] $SourceDir = 'src',
-    [string] $TestsDir = 'tests',
+    [string] $TestsDir = 'Tests',
     [switch] $IncludeTests
 )
 

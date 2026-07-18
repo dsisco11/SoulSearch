@@ -79,33 +79,58 @@ rescan modules. A normal packaged installation does not require either command.
 
 ## Validation and publishing
 
-Run the syntax-only Lua build check with:
+The local tools require PowerShell 7. Install Lua 5.4 with `luac` on PATH for
+build validation, and install LuaRocks on PATH for the LuaUnit runner. The
+default build also requires a running DFHack instance and either
+`dfhack-run.exe` on PATH or an explicitly configured runner.
+
+Machine-local settings can be placed in an ignored `.env.local` file at the
+repository root:
+
+```text
+DFHACK_LUAC=C:\path\to\luac.exe
+DFHACK_LUA_VERSION=5.4
+DFHACK_RUNNER=C:\path\to\Dwarf Fortress\hack\dfhack-run.exe
+# Alternatively: DFHACK_DWARF_FORTRESS_ROOT=C:\path\to\Dwarf Fortress
+```
+
+Existing process environment variables take precedence. The same values can
+also be supplied through `-LuaCompiler`, `-RequiredLuaVersion`,
+`-DFHackRunner`, or `-DwarfFortressRoot`.
+
+Run the default build with:
 
 ```powershell
 .\tools\Build.ps1
 ```
 
-The build checks every `.lua` file under `src/scripts_modinstalled/` for syntax
-errors using `luac -p`, or `lua` with `loadfile()` if `luac` is not available.
-Install Lua on PATH or pass a specific executable path:
+It syntax-checks production and test Lua, reads the mod ID from `src/info.txt`,
+and runs `soulsearch reload` through DFHack. A syntax-only build must opt out of
+the default live reload explicitly:
 
 ```powershell
-.\tools\Build.ps1 -LuaPath "C:\path\to\luac.exe"
-.\tools\Build.ps1 -LuaPath "C:\path\to\lua.exe" -LuaMode Lua
+.\tools\Build.ps1 -LiveReload:$false
+.\tools\Build.ps1 -LuaCompiler "C:\path\to\luac.exe" -RequiredLuaVersion 5.4
 ```
 
-This checks Lua syntax only. It does not exercise DFHack APIs, widgets, or game
-state.
-
-Run pure Lua tests with:
+Run the native LuaUnit suites with:
 
 ```powershell
-.\tools\Test.ps1
+.\tools\Run-UnitTests.ps1
 ```
 
-The tests cover domain rules, filter transitions, ranking, formatting, layout,
-module lifecycle, resident snapshot transformation, and package-independent
-logic. They do not replace an in-game smoke pass.
+The runner installs pinned LuaUnit 3.5-1 into the ignored `.luarocks/` tree when
+needed. Remaining arguments pass directly to LuaUnit, so verbosity, output,
+failure controls, suites, and individual cases can be selected, for example:
+
+```powershell
+.\tools\Run-UnitTests.ps1 -v
+.\tools\Run-UnitTests.ps1 -v "Test_package_contract_test.test package contract: required metadata is present"
+```
+
+These tests cover domain rules, filter transitions, ranking, formatting,
+layout, module lifecycle, resident snapshots, and package contracts. They do
+not replace an in-game smoke pass.
 
 Create a distributable zip with:
 
@@ -117,6 +142,14 @@ Create a distributable zip with:
 then verifies both contain exactly the payload under `src/`: root `info.txt`,
 the public command, and every runtime Lua module, with no tests or docs. The
 expanded folder can be copied directly into the Dwarf Fortress `mods/` folder.
+Publishing calls the build with `-LiveReload:$false`, so it does not require or
+contact a running game. The package can be verified independently with:
+
+```powershell
+.\tools\VerifyPackage.ps1 -SourceDir src `
+    -ZipPath dist\SoulSearch-0.1.0.zip `
+    -ExpandedPath dist\SoulSearch
+```
 
 Run the interactive fortress-mode smoke checklist separately in
 [`docs/ui-baseline.md`](docs/ui-baseline.md). That is the gate for visual
