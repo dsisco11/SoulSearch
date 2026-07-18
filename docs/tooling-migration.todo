@@ -309,29 +309,56 @@ fixture, or `run.lua` matches.
 
 ## Phase 3 - Bridge the existing test suite onto LuaUnit
 
-☐ Introduce the smallest temporary compatibility adapter needed to map the
+☑ Introduce the smallest temporary compatibility adapter needed to map the
   current `test.case` and assertion API onto LuaUnit without changing test
   meaning.
-☐ Preserve the existing per-file registration boundary while the adapter is
+☑ Preserve the existing per-file registration boundary while the adapter is
   active so every current suite continues to receive a valid repository root
   and isolated harness state.
-☐ Map every custom assertion with equivalent failure semantics and useful
+☑ Map every custom assertion with equivalent failure semantics and useful
   messages:
   - true, false, and nil;
   - exact equality;
   - numeric tolerance;
   - ordered sequence equality.
-☐ Make dynamic case names visible and uniquely identifiable in LuaUnit
+☑ Make dynamic case names visible and uniquely identifiable in LuaUnit
   output.
-☐ Execute all existing `*_test.lua` suites through the staged
+☑ Execute all existing `*_test.lua` suites through the staged
   `NewTools/Run-UnitTests.ps1` runner and compare discovered file, case, and
   assertion totals with the Phase 0 baseline.
-☐ Deliberately fail one representative domain assertion and one harness/UI
+☑ Deliberately fail one representative domain assertion and one harness/UI
   assertion to prove failures are neither swallowed nor reported as passes;
   revert only the deliberate failures after recording the proof.
 
 Exit gate: the complete pre-existing suite runs under LuaUnit with no omitted
 suites or weakened assertions, while production code remains unchanged.
+
+Phase 3 recorded evidence: `tests/support/luaunit_compat.lua` creates one fresh
+compatibility API per discovered legacy suite file. Each `test.case()` becomes
+a uniquely named LuaUnit function in the form
+`test <suite module> :: <dynamic case name>`, while each suite registration
+still receives its own adapter and the resolved repository root. The adapter
+preserves the legacy truthy/falsey, nil, exact `==`, numeric-tolerance, and
+ordered-sequence semantics while reporting failures through LuaUnit.
+
+On 2026-07-17 the staged runner discovered 56 test files: the 55 pre-existing
+legacy suite files plus the Phase 2 LuaUnit smoke file. The full run passed 328
+tests with zero failures: all 325 Phase 0 legacy cases plus three smoke cases.
+The compatibility bridge exposed a new forward baseline of 2,001 executed
+legacy assertion calls: true=535, false=169, nil=86, equal=1,056, near=8, and
+sequence=147. Phase 0 exposed no assertion total, so file and case totals match
+that baseline exactly while 2,001 becomes the first comparable assertion
+baseline. A verbose targeted run displayed and executed exactly
+`test attributes_test :: attributes: physical above race median`.
+
+Two temporary negative probes were applied and reverted. The domain probe
+reported `test attributes_test :: traits: caste-aware baseline and tier
+distance` as failed with `expected 61, got 60`. The harness probe reported
+`test script_harness_test :: script harness: supplies only explicit
+dependencies and overrides` as failed with `expected 10, got 9`. Both produced
+exit code 1 through `NewTools/Run-UnitTests.ps1`; the post-revert full run passed
+again, and `git diff` confirmed neither probe nor any production `src/` change
+remained.
 
 ## Phase 4 - Convert suites to native LuaUnit and retire the custom framework
 
@@ -471,7 +498,7 @@ behavior are all recorded and green.
 | Phase 0 package manifests/invariants | complete | 2026-07-17: complete hashes in `docs/tooling-migration-phase-0-manifest.md`; fingerprints/drift recorded above; historical zip root is `SoulSearch/`; all bootstrap invariants present |
 | Reusable common/syntax/build tools | complete | 2026-07-17: staged `NewTools/` fixture audit passed explicit/env compiler paths, version failure, SourceDir propagation, `.env` precedence, all runner-resolution modes, reload capture/failure, and sibling-leak scan |
 | LuaUnit bootstrap and smoke failure proof | complete | 2026-07-17: exact LuaRocks install of LuaUnit 3.5-1 succeeded in ignored `.luarocks`; staged runner passed 3 smoke tests and 1 targeted test |
-| Full suite through compatibility bridge | pending | |
+| Full suite through compatibility bridge | complete | 2026-07-17: 55 legacy files and all 325 baseline cases passed through LuaUnit; 2,001 assertions executed across all six mappings; targeted dynamic name plus domain and harness failure probes proved visible nonzero failures, then were reverted |
 | Native LuaUnit conversion | pending | |
 | Generic publish/package verification | pending | |
 | Exact `NewTools/` -> `tools/` move and stale-reference audit | pending | |
