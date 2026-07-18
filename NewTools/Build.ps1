@@ -28,34 +28,46 @@ if (-not [IO.Path]::IsPathRooted($resolvedEnvFile)) {
 }
 Import-EnvironmentFile -Path $resolvedEnvFile -AllowMissing
 
+$processLuaCompiler = [Environment]::GetEnvironmentVariable('DFHACK_LUAC', 'Process')
+$processRequiredLuaVersion = [Environment]::GetEnvironmentVariable('DFHACK_LUA_VERSION', 'Process')
+$processDFHackRunner = [Environment]::GetEnvironmentVariable('DFHACK_RUNNER', 'Process')
+$processDwarfFortressRoot = [Environment]::GetEnvironmentVariable('DFHACK_DWARF_FORTRESS_ROOT', 'Process')
+
 if (-not $LuaCompiler) {
-    $LuaCompiler = if ($env:DFHACK_LUAC) {
-        $env:DFHACK_LUAC
+    $LuaCompiler = if ($processLuaCompiler) {
+        $processLuaCompiler
     } else {
         'luac.exe'
     }
 }
 if (-not $RequiredLuaVersion) {
-    $RequiredLuaVersion = $env:DFHACK_LUA_VERSION
+    $RequiredLuaVersion = $processRequiredLuaVersion
 }
 if (-not $DFHackRunner) {
-    $DFHackRunner = $env:DFHACK_RUNNER
+    $DFHackRunner = $processDFHackRunner
 }
 if (-not $DwarfFortressRoot) {
-    $DwarfFortressRoot = $env:DFHACK_DWARF_FORTRESS_ROOT
+    $DwarfFortressRoot = $processDwarfFortressRoot
 }
 
 if (-not (Test-Path -LiteralPath $syntaxCheck -PathType Leaf)) {
     throw "Missing required syntax checker: $syntaxCheck"
 }
 
-& $syntaxCheck -LuaCompiler $LuaCompiler -RequiredLuaVersion $RequiredLuaVersion -IncludeTests
+$sourcePath = if ([IO.Path]::IsPathRooted($SourceDir)) {
+    $SourceDir
+} else {
+    Join-Path $scriptRoot $SourceDir
+}
+
+& $syntaxCheck -LuaCompiler $LuaCompiler -RequiredLuaVersion $RequiredLuaVersion `
+    -SourceDir $sourcePath -IncludeTests
 if ($LASTEXITCODE -ne 0) {
     throw 'Lua syntax check failed.'
 }
 
 if ($LiveReload) {
-    $sourcePath = Join-Path $scriptRoot $SourceDir
+    $sourcePath = (Resolve-Path -LiteralPath $sourcePath).Path
     $modInfo = Get-ModInfo -InfoPath (Join-Path $sourcePath 'info.txt')
     if (-not $modInfo.Id) {
         throw "Missing required [ID] in $(Join-Path $sourcePath 'info.txt')"

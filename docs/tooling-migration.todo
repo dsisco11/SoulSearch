@@ -194,33 +194,75 @@ SoulSearch-specific package invariant: root `info.txt`, public
 
 ## Phase 1 - Harden the reusable common, syntax, and build tools
 
-☐ Audit `NewTools/Common.ps1`, `Check-LuaSyntax.ps1`, and `Build.ps1` for
+☑ Audit `NewTools/Common.ps1`, `Check-LuaSyntax.ps1`, and `Build.ps1` for
   sibling-project names, paths, IDs, commands, and assumptions; remove every
   project-specific leak.
-☐ Keep the new build defaults intact, especially `LiveReload=$true`,
+☑ Keep the new build defaults intact, especially `LiveReload=$true`,
   `.env.local`, `src/info.txt`, and `<mod-id> reload`.
-☐ Reconcile `Build.ps1 -SourceDir` with syntax checking so a caller cannot
+☑ Reconcile `Build.ps1 -SourceDir` with syntax checking so a caller cannot
   select one source tree for metadata while `Check-LuaSyntax.ps1` silently
   validates another. Either pass explicit search roots into the syntax checker
   or remove any parameter whose advertised behavior is not real.
-☐ Make syntax-check output distinguish production files from test/support
+☑ Make syntax-check output distinguish production files from test/support
   files and report accurate counts when `-IncludeTests` is active.
-☐ Verify explicit and environment-based compiler resolution, including the
+☑ Verify explicit and environment-based compiler resolution, including the
   configured Lua-version mismatch failure.
-☐ Verify `.env.local` parsing for comments, optional `export`, quoted values,
+☑ Verify `.env.local` parsing for comments, optional `export`, quoted values,
   missing optional files, invalid entries, and precedence of process variables
   over file values.
-☐ Verify DFHack runner resolution through an explicit path, a Dwarf Fortress
+☑ Verify DFHack runner resolution through an explicit path, a Dwarf Fortress
   root, and PATH, with clear failures for missing runner files.
-☐ Verify reload output is printed, optionally captured to
+☑ Verify reload output is printed, optionally captured to
   `ReloadOutputPath`, and preserved in the failure report when reload exits
   nonzero.
-☐ Add `.env.local` to `.gitignore`; add a safe example/template only if the
+☑ Add `.env.local` to `.gitignore`; add a safe example/template only if the
   required variables cannot be documented clearly without one.
 
 Exit gate: the reusable build stack validates the intended files, retains all
 accepted defaults, contains no sibling-project leakage, and has focused proof
 for configuration and failure behavior.
+
+### Phase 1 recorded evidence (2026-07-17)
+
+Implementation changes in staged `NewTools/`:
+
+- `Check-LuaSyntax.ps1` now accepts `SourceDir` and `TestsDir`, resolves an
+  explicit production directory, and reports separate production and
+  test/support file counts. `Build.ps1` resolves and forwards its `SourceDir`,
+  so validation and live metadata now use the same source tree.
+- Empty test directories remain a real empty array under StrictMode instead of
+  becoming `$null` and failing on `.Count`.
+- `Build.ps1` rereads `DFHACK_*` values through the same process-environment
+  API used by `Import-EnvironmentFile`, so values newly loaded from `.env.local`
+  configure compilation and live reload in that invocation.
+- `Import-EnvironmentFile` now distinguishes an absent process variable from
+  an explicitly empty one; the latter retains precedence over `.env.local`.
+- `.env.local` is ignored by Git. No example file was added because the four
+  supported `DFHACK_*` variables are explicit in the tool's parameters and
+  error messages.
+
+Focused disposable-fixture audit passed:
+
+- no `DoThis` or `SoulSearch` identifier occurs in staged Build, syntax, or
+  common tooling;
+- an explicit `luac.exe` path and `DFHACK_LUAC` each syntax-checked a one-file
+  source fixture; requiring Lua `0.0` failed with the expected version error;
+- a one-file absolute `SourceDir` passed Build with `-LiveReload:$false` and
+  reported one production plus 62 test/support files, proving the selected
+  source directory was used instead of hard-coded `src`;
+- `.env` comments, `export`, single/double quotes, missing optional files,
+  invalid entries, and nonempty/empty process-variable precedence behaved as
+  specified;
+- `Resolve-DFHackRunner` resolved an explicit runner, a
+  `<DwarfFortressRoot>/hack/dfhack-run.exe` fixture, and a PATH fixture; missing
+  explicit paths and roots produced clear errors;
+- default `LiveReload=$true` invoked `soulsearch reload`, printed mock runner
+  output, wrote `ReloadOutputPath`, and on a mock exit code of 7 retained the
+  captured output before throwing an exit-code error.
+
+The staged build also passed against the real checkout with
+`-LiveReload:$false`: Lua 5.4.6 syntax-checked 66 production and 62
+test/support Lua files.
 
 ## Phase 2 - Establish the repo-local LuaUnit runner contract
 
@@ -412,7 +454,7 @@ behavior are all recorded and green.
 | Phase 0 custom-suite baseline | complete | 2026-07-17: `tools/Test.ps1`; 55 registered suites, 325 tests, 0 failures; assertion total not exposed |
 | Phase 0 syntax baseline | complete | 2026-07-17: `tools/Build.ps1`; 66 production Lua files passed with `luac` 5.4.6 |
 | Phase 0 package manifests/invariants | complete | 2026-07-17: complete hashes in `docs/tooling-migration-phase-0-manifest.md`; fingerprints/drift recorded above; historical zip root is `SoulSearch/`; all bootstrap invariants present |
-| Reusable common/syntax/build tools | pending | |
+| Reusable common/syntax/build tools | complete | 2026-07-17: staged `NewTools/` fixture audit passed explicit/env compiler paths, version failure, SourceDir propagation, `.env` precedence, all runner-resolution modes, reload capture/failure, and sibling-leak scan |
 | LuaUnit bootstrap and smoke failure proof | pending | |
 | Full suite through compatibility bridge | pending | |
 | Native LuaUnit conversion | pending | |

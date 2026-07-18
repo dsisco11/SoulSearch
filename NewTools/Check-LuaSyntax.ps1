@@ -2,6 +2,8 @@
 param(
     [string] $LuaCompiler = $env:DFHACK_LUAC,
     [string] $RequiredLuaVersion = $env:DFHACK_LUA_VERSION,
+    [string] $SourceDir = 'src',
+    [string] $TestsDir = 'tests',
     [switch] $IncludeTests
 )
 
@@ -29,15 +31,46 @@ $compilerVersion = if ($versionMatch.Success) {
 }
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$searchRoots = @((Join-Path $projectRoot 'src'))
-if ($IncludeTests) {
-    $searchRoots += Join-Path $projectRoot 'tests'
+
+function Resolve-ProjectDirectory {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path,
+
+        [Parameter(Mandatory)]
+        [string] $Label,
+
+        [switch] $AllowMissing
+    )
+
+    $candidate = if ([IO.Path]::IsPathRooted($Path)) {
+        $Path
+    } else {
+        Join-Path $projectRoot $Path
+    }
+    if (-not (Test-Path -LiteralPath $candidate -PathType Container)) {
+        if ($AllowMissing) {
+            return $null
+        }
+        throw "Could not find $Label directory: $candidate"
+    }
+    return (Resolve-Path -LiteralPath $candidate).Path
 }
 
-$luaFiles = $searchRoots |
-    Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
-    ForEach-Object { Get-ChildItem -LiteralPath $_ -Recurse -File -Filter '*.lua' } |
-    Sort-Object FullName
+$sourcePath = Resolve-ProjectDirectory -Path $SourceDir -Label 'Lua source'
+$testPath = if ($IncludeTests) {
+    Resolve-ProjectDirectory -Path $TestsDir -Label 'Lua test' -AllowMissing
+}
+
+$productionFiles = @(Get-ChildItem -LiteralPath $sourcePath -Recurse -File -Filter '*.lua' |
+    Sort-Object FullName)
+$testFiles = @(
+    if ($testPath) {
+        Get-ChildItem -LiteralPath $testPath -Recurse -File -Filter '*.lua' |
+            Sort-Object FullName
+    }
+)
+$luaFiles = @($productionFiles + $testFiles)
 
 foreach ($luaFile in $luaFiles) {
     & $compiler.Source -p $luaFile.FullName
@@ -46,4 +79,4 @@ foreach ($luaFile in $luaFiles) {
     }
 }
 
-Write-Host "Lua $compilerVersion syntax check passed for $($luaFiles.Count) production file(s)."
+Write-Host "Lua $compilerVersion syntax check passed for $($productionFiles.Count) production file(s) and $($testFiles.Count) test/support file(s)."

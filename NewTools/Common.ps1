@@ -45,7 +45,7 @@ function Import-EnvironmentFile {
             }
         }
 
-        if (-not [Environment]::GetEnvironmentVariable($name, 'Process')) {
+        if ($null -eq [Environment]::GetEnvironmentVariable($name, 'Process')) {
             [Environment]::SetEnvironmentVariable($name, $value, 'Process')
         }
     }
