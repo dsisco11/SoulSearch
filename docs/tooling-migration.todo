@@ -50,34 +50,133 @@ default interactive build contract.
 
 ## Phase 0 - Record the existing contracts and migration baseline
 
-☐ Inventory the old and new parameters, environment variables, external
+☑ Inventory the old and new parameters, environment variables, external
   dependencies, generated files, exit behavior, and callers for:
   - `Build.ps1` and `Check-LuaSyntax.ps1`;
   - `Test.ps1` and `Run-UnitTests.ps1`;
   - `Publish.ps1` and `VerifyPackage.ps1`;
   - `Common.ps1`.
-☐ Record that default live reload is an accepted requirement of the new
+☑ Record that default live reload is an accepted requirement of the new
   build, including the expected `DFHACK_RUNNER`,
   `DFHACK_DWARF_FORTRESS_ROOT`, `DFHACK_LUAC`, and
   `DFHACK_LUA_VERSION` configuration seams.
-☐ Run the current custom test suite and record its exact suite, case,
+☑ Run the current custom test suite and record its exact suite, case,
   assertion, and failure totals where the current runner exposes them.
-☐ Run the current syntax-only build and record the exact production-file
+☑ Run the current syntax-only build and record the exact production-file
   count and compiler version.
-☐ Capture the current source manifest and the manifests of the expanded and
+☑ Capture the current source manifest and the manifests of the expanded and
   zip packages, including whether the zip has a package-root directory.
-☐ Record the existing project-specific package invariants currently checked
+☑ Record the existing project-specific package invariants currently checked
   outside generic manifest equality, including:
   - `info.txt` at the package root;
   - `scripts_modinstalled/soulsearch.lua`;
   - the `--@module=true` and `--@enable=true` annotations;
   - `internal/soulsearch/keybindings.lua`.
-☐ Add the baseline results to the execution-evidence table before changing
+☑ Add the baseline results to the execution-evidence table before changing
   the active `tools/` entrypoints.
 
 Exit gate: the pre-migration test coverage, syntax scope, package shape,
 SoulSearch-specific package invariants, and live-build target are explicit and
 recorded.
+
+### Phase 0 recorded baseline (2026-07-17)
+
+The baseline was captured without restoring the deleted tracked
+`tools/Publish.ps1` and `tools/VerifyPackage.ps1`, moving `NewTools/`, or
+rebuilding `dist/`. The tracked `HEAD` versions define the old publish and
+verification interfaces; the existing package artifacts record their last
+output. This preserves the user's in-progress cutover changes.
+
+#### Tool contract inventory
+
+| Surface | Parameters and environment | Dependencies | Generated/process state | Exit behavior and callers |
+| --- | --- | --- | --- | --- |
+| Old `tools/Build.ps1` | `SourceDir=src/scripts_modinstalled`, `LuaPath=''`, `LuaMode=Auto|Luac|Lua`; no environment contract | `luac` candidates, with `lua`/`loadfile()` fallback | none | Collects all syntax failures, then throws; called by README/docs and the VS Code Build task, but not by the old publisher |
+| New `Build.ps1` | `LuaCompiler`, `RequiredLuaVersion`, `LiveReload=$true`, `SourceDir=src`, `DFHackRunner`, `DwarfFortressRoot`, `ReloadOutputPath`, `EnvFile=.env.local`; reads `DFHACK_LUAC`, `DFHACK_LUA_VERSION`, `DFHACK_RUNNER`, and `DFHACK_DWARF_FORTRESS_ROOT` directly or through `.env.local` | `Check-LuaSyntax.ps1`, `Common.ps1`, `luac.exe`, and `dfhack-run.exe` | optional reload-output file; imports missing process variables from `.env.local`; performs `<mod-id> reload` | Throws on missing tools/metadata, syntax failure, or reload failure; targeted by the VS Code Build task and called with `-LiveReload:$false` by the new publisher |
+| New `Check-LuaSyntax.ps1` | `LuaCompiler=$env:DFHACK_LUAC`, `RequiredLuaVersion=$env:DFHACK_LUA_VERSION`, `IncludeTests` | `luac.exe` or configured compiler | none | Throws on missing/wrong-version compiler and first syntax failure; called by new `Build.ps1` |
+| New `Common.ps1` | no script parameters; exports `Import-EnvironmentFile`, `Get-ModInfo`, and `Resolve-DFHackRunner` | PowerShell/.NET only | may set previously absent process environment variables | Helper functions throw on invalid env entries, metadata, or runner resolution; dot-sourced by new Build and Publish |
+| Old `tools/Test.ps1` | `LuaPath=''`; no environment contract | explicit/discovered `lua` interpreter | none | Throws on missing runner/interpreter or nonzero test exit; called by README, `tests/README.md`, and active feature plans |
+| New `Run-UnitTests.ps1` | remaining arguments become `LuaUnitArgs`; temporarily reads/writes `LUA_PATH` and copied `DOTHIS_TEST_FILES` | exact LuaUnit `3.5-1`, `lua`, `luarocks`, and package-install access when the rock is absent | installs `.luarocks/`; temporarily replaces process test/Lua paths and restores them in `finally` | Throws during bootstrap/path setup, then uses `exit $LASTEXITCODE` for the Lua runner; targeted by the modified VS Code Unit Tests task |
+| Old tracked `tools/Publish.ps1` | `SourceDir=src`, `OutputDir=dist`, `PackageName=''`, `NoRootFolder`, `NoExpandedFolder`; no environment contract | PowerShell copy/archive commands and old verifier | temporary staging tree, versioned zip, and optional expanded package | Throws on PowerShell/verifier failure and removes temp data in `finally`; called by README |
+| New `Publish.ps1` | `SourceDir=src`, `OutputDir=dist`, `PackageName=''`; no direct environment parameters | new Common, Build, VerifyPackage, and PowerShell archive commands | temporary staging tree, versioned flat-root zip, and expanded package | Runs Build with live reload disabled, throws on build/package/verification failure, and removes temp data in `finally`; called by README after cutover |
+| Old tracked `tools/VerifyPackage.ps1` | `SourceDir=src`, mandatory `ZipPath`/`PackageRoot`, optional `ExpandedPath`, `NoRootFolder` | .NET zip APIs and PowerShell filesystem reads | opens the zip; no durable output | Throws on payload-set or SoulSearch-bootstrap mismatch; called by old Publish |
+| New `VerifyPackage.ps1` | mandatory `SourceDir`, `ZipPath`, and `ExpandedPath`; `PackageRoot=''` | PowerShell SHA-256 hashing and archive commands | temporary extraction tree removed in `finally` | Throws on source-shape, manifest, or content-hash mismatch; called by new Publish and intended as a standalone entrypoint |
+
+Repository caller audit at this baseline:
+
+- `.vscode/tasks.json` points Build at `Tools/Build.ps1` and Unit Tests at
+  `Tools/Run-UnitTests.ps1`.
+- `README.md` still documents `tools/Build.ps1`, the old `LuaPath`/`LuaMode`
+  parameters, `tools/Test.ps1`, and `tools/Publish.ps1`.
+- `tests/README.md` still documents `tools/Test.ps1` and the publisher boundary.
+- `docs/revealed-unit-filtering.todo` still uses `tools/Test.ps1` and
+  `tools/Build.ps1` as future gates.
+- Inside `NewTools/`, Build calls Check/Common and Publish calls
+  Build/Common/VerifyPackage.
+
+The accepted target is the new default Build contract: syntax-check production
+and test Lua, load optional `.env.local`, read the mod ID from `src/info.txt`,
+and run `<mod-id> reload`. `DFHACK_RUNNER` or
+`DFHACK_DWARF_FORTRESS_ROOT` locates the runner; `DFHACK_LUAC` selects the
+compiler; `DFHACK_LUA_VERSION` optionally enforces its version.
+
+#### Executed test and syntax baseline
+
+- `./tools/Test.ps1` used
+  `C:\Users\Sisco\AppData\Local\Programs\Lua\bin\lua.exe` and passed all 55
+  explicitly registered suite modules: `325 test(s), 0 failure(s)`.
+- The custom runner exposes case and failure totals but not a distinct assertion
+  total, so the assertion baseline is recorded as unavailable rather than
+  inferred.
+- `./tools/Build.ps1` syntax-checked all 66 Lua files under
+  `src/scripts_modinstalled/` and passed.
+- The resolved compiler was
+  `C:\Users\Sisco\AppData\Local\Programs\Lua\bin\luac.exe`, reporting
+  `Lua 5.4.6`.
+
+#### Source and package manifest baseline
+
+Manifest fingerprints are SHA-256 hashes of the UTF-8 sequence of sorted
+`normalized/path|file-SHA-256` rows. Zip paths are also recorded raw so the
+archive-root contract remains visible. The complete per-path, per-artifact
+hash manifest is recorded in `docs/tooling-migration-phase-0-manifest.md`.
+
+| Artifact | Files | Manifest fingerprint | Shape |
+| --- | ---: | --- | --- |
+| Current `src/` | 67 | `60EAD277DB57EB03C2F197D0CEC4718008175FD6D6E036CE90F5BC5262E73D3D` | root `info.txt` plus `scripts_modinstalled/` |
+| Existing `dist/SoulSearch/` | 65 | `39BB4A9C0B6A527446C6B2C1076373BB86ADC0544A7C2A9F870992FFDC55B680` | expanded package root is `SoulSearch/` |
+| Existing `dist/SoulSearch-0.1.0.zip` | 65 | `39BB4A9C0B6A527446C6B2C1076373BB86ADC0544A7C2A9F870992FFDC55B680` after stripping the archive prefix | every file is beneath the single raw archive root `SoulSearch/` |
+
+The expanded directory and normalized zip manifests are byte-for-byte equal.
+They are a historical package baseline, not a current-source parity claim. Both
+artifacts are missing these current source paths:
+
+- `scripts_modinstalled/internal/soulsearch/creatures_menu_navigator.lua`;
+- `scripts_modinstalled/soulsearch-creatures-log.lua`.
+
+They contain no unexpected paths and differ from current source at these 14
+existing paths:
+
+- `scripts_modinstalled/internal/soulsearch/creatures_menu_scope.lua`;
+- `scripts_modinstalled/internal/soulsearch/filter_constants.lua`;
+- `scripts_modinstalled/internal/soulsearch/module_registry.lua`;
+- `scripts_modinstalled/internal/soulsearch/ui_layout.lua`;
+- `scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua`;
+- `scripts_modinstalled/internal/soulsearch/ui/main_window.lua`;
+- `scripts_modinstalled/internal/soulsearch/ui/modal_panel.lua`;
+- `scripts_modinstalled/internal/soulsearch/ui/preset_picker.lua`;
+- `scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua`;
+- `scripts_modinstalled/internal/soulsearch/unit_scope_catalog.lua`;
+- `scripts_modinstalled/internal/soulsearch/window_config.lua`;
+- `scripts_modinstalled/soulsearch-creatures-overlay.lua`;
+- `scripts_modinstalled/soulsearch-stats-overlay.lua`;
+- `scripts_modinstalled/soulsearch.lua`.
+
+The source, expanded package, and zip each satisfy every recorded
+SoulSearch-specific package invariant: root `info.txt`, public
+`scripts_modinstalled/soulsearch.lua`, both `--@module=true` and
+`--@enable=true` annotations, and
+`scripts_modinstalled/internal/soulsearch/keybindings.lua` are present.
 
 ## Phase 1 - Harden the reusable common, syntax, and build tools
 
@@ -283,9 +382,9 @@ behavior are all recorded and green.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Phase 0 custom-suite baseline | pending | |
-| Phase 0 syntax baseline | pending | |
-| Phase 0 package manifests/invariants | pending | |
+| Phase 0 custom-suite baseline | complete | 2026-07-17: `tools/Test.ps1`; 55 registered suites, 325 tests, 0 failures; assertion total not exposed |
+| Phase 0 syntax baseline | complete | 2026-07-17: `tools/Build.ps1`; 66 production Lua files passed with `luac` 5.4.6 |
+| Phase 0 package manifests/invariants | complete | 2026-07-17: complete hashes in `docs/tooling-migration-phase-0-manifest.md`; fingerprints/drift recorded above; historical zip root is `SoulSearch/`; all bootstrap invariants present |
 | Reusable common/syntax/build tools | pending | |
 | LuaUnit bootstrap and smoke failure proof | pending | |
 | Full suite through compatibility bridge | pending | |
