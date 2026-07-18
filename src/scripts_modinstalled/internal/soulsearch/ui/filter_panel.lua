@@ -56,7 +56,7 @@ function FilterPanel:init(info)
             tooltip='Add a race to the candidate scope.',
             on_activate=function() self:toggle_picker('race') end},
         widgets.TextButton{view_id='clear_filters_button', frame=ui_layout.get_frame('clear_filters'),
-            key='CUSTOM_C', label='Clear filters', on_activate=inputs.on_clear},
+            key='CUSTOM_C', label='Reset filters', on_activate=inputs.on_clear},
         widgets.TextButton{view_id='preset_button', frame=ui_layout.get_frame('presets'),
             key='CUSTOM_P', label='Filter presets',
             tooltip='Save the current filters or load a custom, role, or skill preset.',

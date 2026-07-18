@@ -79,6 +79,7 @@ return function(test, repo_root)
         end)())
         test.assert_equal('preset_picker_window',
             panel.subviews[#panel.subviews].view_id)
+        test.assert_equal('Reset filters', panel.subviews.clear_filters_button.label)
         test.assert_equal('Close', panel.subviews.close_filter_panel_button.tooltip)
         test.assert_equal('Add an attribute or trait to the ranking criteria.',
             panel.subviews.add_filter_button.tooltip)

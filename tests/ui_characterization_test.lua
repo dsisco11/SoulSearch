@@ -195,16 +195,36 @@ return function(test, repo_root)
         test.assert_sequence({2, 1}, state_changes)
     end)
 
-    test.case('UI characterization: clear and scope-free presets refresh unified state once', function()
+    test.case('UI characterization: opening filter defaults are captured by value', function()
+        local settings = {
+            settings_id='creatures:visitors', explicit={},
+            frame={l=1, t=2, w=110, h=45},
+            filters={{id='unit_scope:visitors', direction='high'}},
+            result_sort={key=nil, reverse=false, phase=0}, stats_sort={},
+        }
+        local window = new_window(settings)
+        settings.filters[1].id = 'skill:MINING'
+        window.session:replace_filters({
+            {id='race:group:HUMANOIDS', direction='low'},
+        })
+
+        test.assert_true(window:clear_filters())
+        local restored = window.session:get_filters()
+        test.assert_equal(1, #restored)
+        test.assert_equal('unit_scope:visitors', restored[1].id)
+        test.assert_equal('high', restored[1].direction)
+    end)
+
+    test.case('UI characterization: clear restores opening defaults and presets refresh unified state once', function()
         local requests, picker_closes = {}, 0
         local session = {
-            filters={{id='unit_scope:citizens', direction='high'}},
-            clear_filters=function(self)
-                if #self.filters == 0 then return false end
-                self.filters = {}
-                return true
-            end,
+            filters={{id='skill:MINING', direction='high'}},
             replace_filters=function(self, filters)
+                if self.filters[1] and filters[1] and
+                        self.filters[1].id == filters[1].id and
+                        self.filters[1].direction == filters[1].direction then
+                    return false
+                end
                 self.filters = filters
                 return true
             end,
@@ -212,6 +232,7 @@ return function(test, repo_root)
         }
         local window = setmetatable({
             session=session,
+            default_filters={{id='unit_scope:citizens', direction='high'}},
             subviews={filter_panel_window={close_picker=function()
                 picker_closes = picker_closes + 1
             end}},
@@ -225,7 +246,8 @@ return function(test, repo_root)
         test.assert_true(window:clear_filters())
         test.assert_equal(1, picker_closes)
         test.assert_equal(1, #requests)
-        test.assert_equal(0, #session.filters)
+        test.assert_equal('unit_scope:citizens', session.filters[1].id)
+        test.assert_equal('high', session.filters[1].direction)
         test.assert_true(requests[1].active_filters)
         test.assert_true(requests[1].pickers)
         test.assert_true(requests[1].candidates)

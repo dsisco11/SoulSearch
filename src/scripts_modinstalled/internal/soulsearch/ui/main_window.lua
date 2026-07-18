@@ -105,6 +105,7 @@ end
 
 ---@class SoulSearchWindow: widgets.Window
 ---@field session SoulSearchSearchSession
+---@field default_filters SoulSearchSelectedFilter[]
 ---@field suppress_result_select_refresh boolean
 ---@field filter_catalog SoulSearchFilterCatalog
 ---@field attribute_filter_descriptors SoulSearchFilterDescriptor[]
@@ -135,6 +136,7 @@ function SoulSearchWindow:init()
     self.frame_explicit = settings.explicit and settings.explicit.frame ~= nil
     self.frame_dirty = false
     self.session = search_session.new(settings)
+    self.default_filters = self.session:get_filters()
     self.suppress_result_select_refresh = false
     local filter_catalog = descriptors.get_catalog()
     local filter_descriptor_groups = filter_catalog.groups
@@ -472,7 +474,7 @@ end
 
 ---@return boolean
 function SoulSearchWindow:clear_filters()
-    if not self.session:clear_filters() then
+    if not self.session:replace_filters(self.default_filters) then
         return false
     end
 
