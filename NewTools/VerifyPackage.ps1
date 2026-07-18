@@ -5,8 +5,7 @@ param(
     [Parameter(Mandatory)]
     [string] $ZipPath,
     [Parameter(Mandatory)]
-    [string] $ExpandedPath,
-    [string] $PackageRoot = ''
+    [string] $ExpandedPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,7 +16,7 @@ function Get-Manifest {
 
     $resolvedRoot = (Resolve-Path -LiteralPath $Root).Path
     return @(
-        Get-ChildItem -LiteralPath $resolvedRoot -Recurse -File | ForEach-Object {
+        Get-ChildItem -LiteralPath $resolvedRoot -Recurse -File -Force | ForEach-Object {
             [pscustomobject]@{
                 RelativePath = [IO.Path]::GetRelativePath($resolvedRoot, $_.FullName).Replace('\', '/')
                 Hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
@@ -38,37 +37,75 @@ function Assert-MatchesSource {
     foreach ($entry in $Expected) { $expectedMap[$entry.RelativePath] = $entry.Hash }
     foreach ($entry in $Actual) { $actualMap[$entry.RelativePath] = $entry.Hash }
 
-    if (($expectedMap.Keys | Sort-Object) -join "`n" -ne ($actualMap.Keys | Sort-Object) -join "`n") {
-        throw "$Label file manifest does not match src."
-    }
-    foreach ($path in $expectedMap.Keys) {
-        if ($expectedMap[$path] -ne $actualMap[$path]) {
-            throw "$Label file differs from src: $path"
+    $missing = @($expectedMap.Keys | Where-Object {
+        -not $actualMap.ContainsKey($_)
+    } | Sort-Object)
+    $unexpected = @($actualMap.Keys | Where-Object {
+        -not $expectedMap.ContainsKey($_)
+    } | Sort-Object)
+    if ($missing.Count -gt 0 -or $unexpected.Count -gt 0) {
+        $details = @()
+        if ($missing.Count -gt 0) {
+            $details += "missing: $($missing -join ', ')"
         }
+        if ($unexpected.Count -gt 0) {
+            $details += "unexpected: $($unexpected -join ', ')"
+        }
+        throw "$Label file manifest differs from source ($($details -join '; '))."
+    }
+
+    $differing = @($expectedMap.Keys | Where-Object {
+        $expectedMap[$_] -ne $actualMap[$_]
+    } | Sort-Object)
+    if ($differing.Count -gt 0) {
+        throw "$Label file content differs from source (differing: $($differing -join ', '))."
     }
 }
 
-$sourceManifest = Get-Manifest -Root $SourceDir
+$scriptRoot = $PSScriptRoot
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..')).Path
+
+function Resolve-RepositoryPath {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [Parameter(Mandatory)][string] $PathType
+    )
+
+    $candidate = if ([IO.Path]::IsPathFullyQualified($Path)) {
+        $Path
+    } else {
+        Join-Path $repoRoot $Path
+    }
+    $resolved = Resolve-Path -LiteralPath $candidate
+    if (-not (Test-Path -LiteralPath $resolved.Path -PathType $PathType)) {
+        throw "Expected a $PathType path: $candidate"
+    }
+    return $resolved.Path
+}
+
+$sourcePath = Resolve-RepositoryPath -Path $SourceDir -PathType Container
+$zipFilePath = Resolve-RepositoryPath -Path $ZipPath -PathType Leaf
+$expandedDirectoryPath = Resolve-RepositoryPath `
+    -Path $ExpandedPath -PathType Container
+
+$sourceManifest = Get-Manifest -Root $sourcePath
 if (-not ($sourceManifest.RelativePath -contains 'info.txt')) {
-    throw 'src must contain info.txt at its root.'
+    throw 'Source must contain info.txt at its root.'
 }
 if (-not ($sourceManifest.RelativePath | Where-Object { $_ -like 'scripts_modinstalled/*' })) {
-    throw 'src must contain at least one file under scripts_modinstalled/.'
-}
-if ($sourceManifest.RelativePath | Where-Object { $_ -match '^(tests|tools)/' }) {
-    throw 'src must not package tests or tools.'
+    throw 'Source must contain at least one file under scripts_modinstalled/.'
 }
 
-Assert-MatchesSource -Expected $sourceManifest -Actual (Get-Manifest -Root $ExpandedPath) -Label 'Expanded package'
+Assert-MatchesSource -Expected $sourceManifest `
+    -Actual (Get-Manifest -Root $expandedDirectoryPath) `
+    -Label 'Expanded package'
 
 $extractRoot = Join-Path ([IO.Path]::GetTempPath()) "DFHackModVerify-$([guid]::NewGuid())"
 try {
-    Expand-Archive -LiteralPath $ZipPath -DestinationPath $extractRoot -Force
-    $zipContentRoot = if ($PackageRoot) { Join-Path $extractRoot $PackageRoot } else { $extractRoot }
-    if (-not (Test-Path -LiteralPath $zipContentRoot -PathType Container)) {
-        throw "Zip package root was not found: $PackageRoot"
-    }
-    Assert-MatchesSource -Expected $sourceManifest -Actual (Get-Manifest -Root $zipContentRoot) -Label 'Zip package'
+    Expand-Archive -LiteralPath $zipFilePath -DestinationPath $extractRoot
+    Assert-MatchesSource -Expected $sourceManifest `
+        -Actual (Get-Manifest -Root $extractRoot) `
+        -Label 'Zip package'
 }
 finally {
     if (Test-Path -LiteralPath $extractRoot) {

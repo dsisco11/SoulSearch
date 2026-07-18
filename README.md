@@ -54,8 +54,11 @@ mods/SoulSearch/scripts_modinstalled/soulsearch.lua
 mods/SoulSearch/scripts_modinstalled/gui/soulsearch.lua
 ```
 
-If you extract the release zip, make sure the extraction tool does not add an
-extra wrapper folder such as `mods/SoulSearch-0.1.0/SoulSearch/info.txt`.
+The release zip uses a flat-root contract: `info.txt` and
+`scripts_modinstalled/` are at the archive root. Create `mods/SoulSearch/` and
+extract the archive contents into that folder. Do not extract the flat archive
+directly into `mods/`, and do not add a second wrapper folder such as
+`mods/SoulSearch/SoulSearch/info.txt`.
 
 ## Development Setup
 

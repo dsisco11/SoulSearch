@@ -419,37 +419,88 @@ override was removed immediately afterward.
 
 ## Phase 5 - Migrate publishing and package verification
 
-☐ Audit `NewTools/Publish.ps1` and `VerifyPackage.ps1` for sibling-project
+☑ Audit `NewTools/Publish.ps1` and `VerifyPackage.ps1` for sibling-project
   leakage and confirm all project identity comes from `src/info.txt` or
   explicit parameters.
-☐ Reconcile `Publish.ps1 -SourceDir` with its build invocation so a custom
+☑ Reconcile `Publish.ps1 -SourceDir` with its build invocation so a custom
   source selection is consistently validated, packaged, and verified.
-☐ Preserve the new publish behavior that calls the build with
+☑ Preserve the new publish behavior that calls the build with
   `-LiveReload:$false`; publishing must not require or trigger a running game.
-☐ Record and adopt one intentional zip-root contract, then make
+☑ Record and adopt one intentional zip-root contract, then make
   `Publish.ps1`, `VerifyPackage.ps1`, README installation instructions, and
   tests agree on it.
-☐ Record whether the removed `NoRootFolder` and `NoExpandedFolder` options
+☑ Record whether the removed `NoRootFolder` and `NoExpandedFolder` options
   have any remaining callers; either preserve a generic equivalent or update
   every caller and document their removal.
-☐ Preserve byte-for-byte/SHA-256 manifest comparison between `src/`, the
+☑ Preserve byte-for-byte/SHA-256 manifest comparison between `src/`, the
   expanded package, and the extracted zip, with useful missing, unexpected,
   and differing-file diagnostics.
-☐ Move SoulSearch-specific bootstrap checks out of the generic verifier and
+☑ Move SoulSearch-specific bootstrap checks out of the generic verifier and
   into focused project tests so generic verification does not weaken these
   invariants:
   - required `soulsearch.lua` annotations;
   - keybinding bootstrap dependency;
   - public command and required metadata presence.
-☐ Verify both repository-relative and absolute source/package paths.
-☐ Verify temporary staging/extraction directories are cleaned after success
+☑ Verify both repository-relative and absolute source/package paths.
+☑ Verify temporary staging/extraction directories are cleaned after success
   and after forced verification failure.
-☐ Verify tests, tools, `.luarocks/`, `.env.local`, docs, and planning files
+☑ Verify tests, tools, `.luarocks/`, `.env.local`, docs, and planning files
   are absent from both package forms.
 
 Exit gate: publishing is reusable and non-live, both package forms exactly
 match the intended source payload, and SoulSearch-specific package guarantees
 remain covered by project tests.
+
+Phase 5 recorded evidence (2026-07-18): `Publish.ps1` and
+`VerifyPackage.ps1` contain no SoulSearch, DoThis, DwarfSearch, or legacy
+project-environment identifiers. Package name and displayed version are
+required from the selected source's `info.txt`, with only the package name
+allowing an explicit override. The fixture contract published once as the
+metadata name `FixtureMod` and once as the explicit name `ExplicitPackage`.
+
+`Publish.ps1` now passes its resolved `SourceDir` to `Build.ps1` together with
+`-LiveReload:$false`, and passes the same path to staging and verification. A
+fixture with invalid Lua failed during the custom-source build, proving the
+selected source is validated; successful fixture publishes with deliberately
+invalid DFHack runner/root environment values proved no live runner is
+resolved or invoked.
+
+The adopted archive contract is flat root: `info.txt` and
+`scripts_modinstalled/` are archive-root entries, while the expanded package
+is `<OutputDir>/<metadata-or-explicit-name>/`. Publish uses .NET directory
+archiving without a wrapper, VerifyPackage compares the extraction root
+directly, README installation text gives the matching extraction procedure,
+and `tests/package_tools_test.ps1` rejects a wrapper-root archive. Repository
+search found no live callers of the removed `NoRootFolder` or
+`NoExpandedFolder` switches; both were intentionally removed because Phase 5
+requires both fixed-shape package forms on every publish and verification.
+
+The generic verifier now reports complete missing, unexpected, or differing
+path lists and compares SHA-256 manifests for source, expanded output, and the
+extracted zip. Fixture probes independently produced and recognized
+`missing: payload.bin`, `unexpected: unexpected.txt`, and
+`differing: payload.bin`; an unexpected zip entry and wrapper-root zip also
+failed. Absolute paths passed, and repository-relative paths passed while the
+caller was in a different working directory.
+
+SoulSearch package invariants now belong to the discovered native LuaUnit
+suite `tests/package_contract_test.lua`, which requires nonempty ID, name,
+numeric/displayed version, and description metadata; both public command
+files; the `--@module=true` and `--@enable=true` annotations; the bootstrap's
+keybinding reference; and the keybinding module itself. The full suite passed
+331 tests (the Phase 4 total plus three intentional package-contract cases),
+and the generic verifier retains only project-neutral DFHack payload shape and
+manifest checks.
+
+The fixture test observed no new `DFHackModPublish-*` or
+`DFHackModVerify-*` directories after successful publish/verification, after a
+verifier stub forced publisher verification failure, after a locked payload
+forced staging-copy failure, or after a tampered zip forced extraction
+verification failure; its unique workspace fixture was also removed. The real
+publisher then created and verified `dist/SoulSearch-0.1.0.zip` plus
+`dist/SoulSearch/`: all 67 source files matched both forms, the zip had
+`info.txt` at its root, and scans found zero tests, tools, `NewTools`,
+`.luarocks`, `.env.local`, docs, or `.todo` files in either package.
 
 ## Phase 6 - Perform the atomic toolchain cutover
 
@@ -532,7 +583,7 @@ behavior are all recorded and green.
 | LuaUnit bootstrap and smoke failure proof | complete | 2026-07-17: exact LuaRocks install of LuaUnit 3.5-1 succeeded in ignored `.luarocks`; staged runner passed 3 smoke tests and 1 targeted test |
 | Full suite through compatibility bridge | complete | 2026-07-17: 55 legacy files and all 325 baseline cases passed through LuaUnit; 2,001 assertions executed across all six mappings; targeted dynamic name plus domain and harness failure probes proved visible nonzero failures, then were reverted |
 | Native LuaUnit conversion | complete | 2026-07-18: four full-suite batch gates and the final native-only run passed 328/328; 55 baseline suites/cases retained as 56 files and 328 cases with the 3 smoke additions; 2,001 migrated runtime assertions matched Phase 3; legacy framework files and conventions removed |
-| Generic publish/package verification | pending | |
+| Generic publish/package verification | complete | 2026-07-18: real flat-root zip and expanded package matched all 67 source files by SHA-256; generic fixture passed metadata/explicit identity, custom-source non-live build, both path forms, precise manifest failures, wrapper/tamper rejection, and success/failure cleanup; 331 LuaUnit tests retained SoulSearch package invariants |
 | Exact `NewTools/` -> `tools/` move and stale-reference audit | pending | |
 | Clean-tree LuaUnit bootstrap run | pending | |
 | Warm LuaUnit and targeted-test runs | pending | |
