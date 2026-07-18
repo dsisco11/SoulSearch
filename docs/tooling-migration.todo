@@ -2,10 +2,13 @@
 
 ## Objective
 
-Replace SoulSearch's existing `tools/` scripts with the reusable toolchain
-currently staged under `NewTools/`, migrate the complete pure-Lua test suite
-from the custom `tests/support/testlib.lua` framework to LuaUnit, and preserve
-SoulSearch's source, package, and live DFHack behavior through the cutover.
+Entirely replace SoulSearch's existing `tools/` scripts with the reusable
+toolchain currently staged under `NewTools/`: remove every old tool script,
+move the complete finalized contents of `NewTools/` into the existing plain
+`tools/` directory, and remove the now-empty `NewTools/` directory. Migrate the
+complete pure-Lua test suite from the custom `tests/support/testlib.lua`
+framework to LuaUnit, and preserve SoulSearch's source, package, and live
+DFHack behavior through the cutover.
 
 The new `Build.ps1` behavior is the target contract. A default build must:
 
@@ -35,8 +38,16 @@ default interactive build contract.
   fewer assertions or silently omitting a suite is not a successful migration.
 - Keep source/package truth anchored to `src/`, including root `info.txt` and
   `scripts_modinstalled/`.
-- Perform the final `NewTools/` to `tools/` replacement atomically after the new
-  entrypoints and migrated test runner are proven together.
+- Treat `NewTools/` as the staging location through Phases 1-5. Harden and
+  validate the new scripts there; do not incrementally merge them into
+  `tools/`.
+- Perform the final replacement atomically after the staged entrypoints and
+  migrated test runner are proven together: empty the old `tools/` script set,
+  move every finalized file from `NewTools/` into `tools/`, then remove
+  `NewTools/`.
+- The final `tools/` script manifest must be exactly the finalized pre-move
+  `NewTools/` manifest. Do not retain old scripts, compatibility wrappers,
+  duplicate entrypoints, or a mixture of old and new implementations.
 
 ## Non-goals
 
@@ -45,6 +56,9 @@ default interactive build contract.
   payload checks, or live smoke requirements.
 - Do not make LuaUnit or `.luarocks/` part of the published mod payload.
 - Do not remove live reload from the default build.
+- Do not preserve an old tool script merely to retain its filename, parameters,
+  fallback behavior, or compatibility with a stale caller; update the caller
+  to the new tool contract instead.
 - Do not treat a successful syntax check as proof that the LuaUnit suite,
   package, or live UI is correct.
 
@@ -232,8 +246,9 @@ for configuration and failure behavior.
 ☐ Add one LuaUnit smoke suite that proves dependency loading, repository-root
   resolution, discovery, and a deliberate assertion failure path.
 
-Exit gate: `tools/Run-UnitTests.ps1` can bootstrap pinned LuaUnit and execute a
-discovered smoke suite with correct paths, arguments, cleanup, and exit status.
+Exit gate: staged `NewTools/Run-UnitTests.ps1` can bootstrap pinned LuaUnit and
+execute a discovered smoke suite with correct paths, arguments, cleanup, and
+exit status without installing it into `tools/` yet.
 
 ## Phase 3 - Bridge the existing test suite onto LuaUnit
 
@@ -251,9 +266,9 @@ discovered smoke suite with correct paths, arguments, cleanup, and exit status.
   - ordered sequence equality.
 ☐ Make dynamic case names visible and uniquely identifiable in LuaUnit
   output.
-☐ Execute all existing `*_test.lua` suites through the LuaUnit runner and
-  compare discovered file, case, and assertion totals with the Phase 0
-  baseline.
+☐ Execute all existing `*_test.lua` suites through the staged
+  `NewTools/Run-UnitTests.ps1` runner and compare discovered file, case, and
+  assertion totals with the Phase 0 baseline.
 ☐ Deliberately fail one representative domain assertion and one harness/UI
   assertion to prove failures are neither swallowed nor reported as passes;
   revert only the deliberate failures after recording the proof.
@@ -322,12 +337,22 @@ remain covered by project tests.
 
 ## Phase 6 - Perform the atomic toolchain cutover
 
-☐ Place the finalized `Build.ps1`, `Check-LuaSyntax.ps1`, `Common.ps1`,
-  `Run-UnitTests.ps1`, `Publish.ps1`, and `VerifyPackage.ps1` under `tools/`.
-☐ Remove obsolete `tools/Test.ps1` references only after
-  `tools/Run-UnitTests.ps1` passes the complete suite.
-☐ Remove `NewTools/` only after its finalized contents are present under
-  `tools/` and a manifest comparison confirms no accidental omissions.
+☐ Record the finalized `NewTools/` file manifest. It must contain the complete
+  replacement set: `Build.ps1`, `Check-LuaSyntax.ps1`, `Common.ps1`,
+  `Run-UnitTests.ps1`, `Publish.ps1`, and `VerifyPackage.ps1`, plus any new
+  reusable support file intentionally added by an earlier phase.
+☐ Confirm every finalized staged tool and the migrated LuaUnit suite pass
+  from `NewTools/` before changing the contents of `tools/`.
+☐ Remove every pre-existing script from `tools/`, including the old
+  `Build.ps1` and `Test.ps1`; do not retain compatibility wrappers or merge
+  old implementations with the new set.
+☐ Move every file from `NewTools/` into the now-empty `tools/` directory in
+  one cutover. Do not selectively copy files or leave maintained duplicates.
+☐ Remove the empty `NewTools/` directory and verify it no longer exists.
+☐ Compare the post-move `tools/` manifest with the recorded pre-move
+  `NewTools/` manifest; paths and file hashes must match exactly.
+☐ Remove obsolete `tools/Test.ps1` references and update every caller to
+  `tools/Run-UnitTests.ps1` and the other new contracts.
 ☐ Update `.vscode/tasks.json` so Build invokes the accepted default live
   build and Unit Tests invokes `tools/Run-UnitTests.ps1`.
 ☐ Update `README.md` and `tests/README.md` for:
@@ -343,9 +368,11 @@ remain covered by project tests.
   every actionable hit.
 ☐ Preserve unrelated working-tree changes during the cutover.
 
-Exit gate: `tools/` is the sole toolchain location, all repository callers and
-documentation use the new contracts, and no copied-project leakage or stale
-entrypoint remains.
+Exit gate: the old `tools/` script set has been entirely replaced by the exact
+finalized `NewTools/` set, `NewTools/` no longer exists, `tools/` is the sole
+toolchain location, all callers/documentation use the new contracts, and no
+old wrapper, mixed implementation, copied-project leakage, or stale entrypoint
+remains.
 
 ## Phase 7 - Complete automated, package, and live validation
 
@@ -390,7 +417,7 @@ behavior are all recorded and green.
 | Full suite through compatibility bridge | pending | |
 | Native LuaUnit conversion | pending | |
 | Generic publish/package verification | pending | |
-| Atomic `tools/` cutover and stale-reference audit | pending | |
+| Exact `NewTools/` -> `tools/` move and stale-reference audit | pending | |
 | Clean-tree LuaUnit bootstrap run | pending | |
 | Warm LuaUnit and targeted-test runs | pending | |
 | Default live build/reload | pending | |
@@ -403,8 +430,11 @@ behavior are all recorded and green.
 
 This migration is complete only when:
 
-- `tools/` contains the sole supported generic toolchain and `NewTools/` is no
-  longer needed;
+- every old script formerly under `tools/` has been removed, the exact finalized
+  `NewTools/` manifest has been moved into `tools/`, and `NewTools/` no longer
+  exists;
+- no old compatibility wrapper, old implementation, or duplicate tool
+  entrypoint remains anywhere in the repository;
 - default `tools/Build.ps1` performs syntax validation plus successful live
   `<mod-id> reload` using metadata from `src/info.txt`;
 - every SoulSearch pure-Lua test is discovered and executed natively by pinned
