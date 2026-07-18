@@ -362,28 +362,60 @@ remained.
 
 ## Phase 4 - Convert suites to native LuaUnit and retire the custom framework
 
-☐ Convert domain/catalog/formatting suites to native LuaUnit structures and
+☑ Convert domain/catalog/formatting suites to native LuaUnit structures and
   assertions; run the full suite after the batch.
-☐ Convert candidate-provider, filter-state, preset, settings, search, and
+☑ Convert candidate-provider, filter-state, preset, settings, search, and
   lifecycle suites; run the full suite after the batch.
-☐ Convert module-loader, script-harness, DFHack-stub, and environment-heavy
+☑ Convert module-loader, script-harness, DFHack-stub, and environment-heavy
   suites while preserving per-test isolation and global restoration; run the
   full suite after the batch.
-☐ Convert UI component, overlay, pointer, tooltip, geometry, refresh, and
+☑ Convert UI component, overlay, pointer, tooltip, geometry, refresh, and
   characterization suites; run the full suite after the batch.
-☐ Replace the explicit suite registry in `tests/run.lua` with the proven
+☑ Replace the explicit suite registry in `tests/run.lua` with the proven
   deterministic discovery contract.
-☐ Remove the temporary compatibility adapter and
+☑ Remove the temporary compatibility adapter and
   `tests/support/testlib.lua` only after no suite requires them.
-☐ Search the complete `tests/` tree for old `test.case`, custom assertion,
+☑ Search the complete `tests/` tree for old `test.case`, custom assertion,
   suite-registration, and positional `repo_root` conventions; the result must
   be empty except for intentional migration-history text in this plan.
-☐ Compare final suite/case/assertion coverage with the Phase 0 baseline and
+☑ Compare final suite/case/assertion coverage with the Phase 0 baseline and
   explain any intentional count change in the execution evidence.
 
 Exit gate: every SoulSearch test is natively executed and reported by LuaUnit,
 the custom framework is gone, and the full suite retains baseline behavior and
 coverage.
+
+Phase 4 recorded evidence (2026-07-18): all 55 pre-existing suite files now
+return native LuaUnit test tables and use LuaUnit assertions directly. The four
+required batch boundaries each passed the complete 328-test run: the native
+case count advanced from 3 smoke / 325 legacy to 68 / 260, 159 / 169,
+208 / 120, and finally 328 / 0. After the last batch, `tests/run.lua` was
+simplified to load every sorted discovered test file uniformly and publish its
+returned table under a deterministic `Test_<module>` name.
+
+The final default run discovered 56 native files and passed 328 tests with zero
+failures: the Phase 0 total of 55 suites and 325 cases is unchanged, and the
+three intentional Phase 2 smoke cases explain the only count increase. A
+temporary measurement run executed exactly 2,001 migrated assertion calls,
+matching the Phase 3 forward baseline exactly; all 147 runtime sequence checks
+used dense primitive sequences, confirming native ordered table equality has
+the same observed comparison domain as the legacy shallow sequence assertion.
+The source tree retains all 1,497 migrated assertion call sites plus five smoke
+assertions (1,502 static calls total); runtime totals are higher because
+table-driven cases execute some call sites repeatedly. Phase 0 itself exposed
+no assertion count, so there is no Phase 0 assertion-total change to explain.
+
+`tests/support/luaunit_compat.lua` and `tests/support/testlib.lua` were deleted
+only after a mixed-mode full run reported 56 native suites and zero legacy
+suites. A complete `tests/` scan then returned no old `test.case`, custom
+assertion, registration-function, custom-framework require, or positional
+repository-root convention matches. Repository-root resolution now lives in
+the ordinary path helper `tests/support/repo_root.lua`, not a test framework.
+Final validation passed the default 328-test run, a one-case verbose target,
+and the reusable build's Lua 5.4.6 syntax check of 66 production plus 63
+test/support files. The native smoke failure opt-in produced exactly one visible
+failure and propagated exit code 1 through `Run-UnitTests.ps1`; the environment
+override was removed immediately afterward.
 
 ## Phase 5 - Migrate publishing and package verification
 
@@ -499,7 +531,7 @@ behavior are all recorded and green.
 | Reusable common/syntax/build tools | complete | 2026-07-17: staged `NewTools/` fixture audit passed explicit/env compiler paths, version failure, SourceDir propagation, `.env` precedence, all runner-resolution modes, reload capture/failure, and sibling-leak scan |
 | LuaUnit bootstrap and smoke failure proof | complete | 2026-07-17: exact LuaRocks install of LuaUnit 3.5-1 succeeded in ignored `.luarocks`; staged runner passed 3 smoke tests and 1 targeted test |
 | Full suite through compatibility bridge | complete | 2026-07-17: 55 legacy files and all 325 baseline cases passed through LuaUnit; 2,001 assertions executed across all six mappings; targeted dynamic name plus domain and harness failure probes proved visible nonzero failures, then were reverted |
-| Native LuaUnit conversion | pending | |
+| Native LuaUnit conversion | complete | 2026-07-18: four full-suite batch gates and the final native-only run passed 328/328; 55 baseline suites/cases retained as 56 files and 328 cases with the 3 smoke additions; 2,001 migrated runtime assertions matched Phase 3; legacy framework files and conventions removed |
 | Generic publish/package verification | pending | |
 | Exact `NewTools/` -> `tools/` move and stale-reference audit | pending | |
 | Clean-tree LuaUnit bootstrap run | pending | |

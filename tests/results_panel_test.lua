@@ -6,7 +6,14 @@ local function ids(views)
     return result
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local module = soulsearch_env.load_results_panel(repo_root)
 
     local function make_panel(calls)
@@ -19,18 +26,18 @@ return function(test, repo_root)
             }}
     end
 
-    test.case('results panel: owns the stable result view hierarchy', function()
+    add_test('results panel: owns the stable result view hierarchy', function()
         local panel = make_panel({})
-        test.assert_equal('Panel', panel.widget_kind)
-        test.assert_sequence({'search_field', 'result_header',
+        luaunit.assertIs('Panel', panel.widget_kind)
+        luaunit.assertEquals({'search_field', 'result_header',
             'result_header_underline', 'result_columns',
             'result_profession_column', 'result_unit_id_column', 'result_list'},
             ids(panel.subviews))
-        test.assert_equal('CUSTOM_F', panel.subviews.search_field.key)
-        test.assert_true(panel.subviews.search_field.modal)
+        luaunit.assertIs('CUSTOM_F', panel.subviews.search_field.key)
+        luaunit.assertEvalToTrue(panel.subviews.search_field.modal)
     end)
 
-    test.case('results panel: preserves query, selection, submission, and sort callbacks', function()
+    add_test('results panel: preserves query, selection, submission, and sort callbacks', function()
         local calls = {}
         local panel = make_panel(calls)
         local result = {unit_id=42}
@@ -38,13 +45,13 @@ return function(test, repo_root)
         panel.subviews.result_list.on_select(1, {result=result})
         panel.subviews.result_list.on_submit(1, {result=result})
         panel.subviews.result_columns.on_change()
-        test.assert_equal('miner', calls.query)
-        test.assert_true(calls.selected == result)
-        test.assert_true(calls.submitted == result)
-        test.assert_equal('name', calls.sorted)
+        luaunit.assertIs('miner', calls.query)
+        luaunit.assertEvalToTrue(calls.selected == result)
+        luaunit.assertEvalToTrue(calls.submitted == result)
+        luaunit.assertIs('name', calls.sorted)
     end)
 
-    test.case('results panel: exposes narrow update, navigation, and declared header tooltips', function()
+    add_test('results panel: exposes narrow update, navigation, and declared header tooltips', function()
         local panel = make_panel({})
         local result = {unit_id=7}
         panel:set_query_text('smith')
@@ -52,16 +59,17 @@ return function(test, repo_root)
             {key='unit_id', reverse=true})
         panel:set_choices({{result=result}}, 1)
         panel:move_cursor(-10)
-        test.assert_equal('smith', panel.subviews.search_field.text)
-        test.assert_equal('Results (1)', panel.subviews.result_header.text)
-        test.assert_equal(1, panel:get_selected_index())
-        test.assert_true(panel:get_selected_result() == result)
-        test.assert_equal(-10, panel.subviews.result_list.cursor_delta)
-        test.assert_equal(0, panel.subviews.result_columns.option)
-        test.assert_equal(0, panel.subviews.result_profession_column.option)
-        test.assert_equal(2, panel.subviews.result_unit_id_column.option)
-        test.assert_equal('Sort by name.', panel.subviews.result_columns.tooltip)
-        test.assert_equal('Sort by profession.', panel.subviews.result_profession_column.tooltip)
-        test.assert_equal('Sort by unit ID.', panel.subviews.result_unit_id_column.tooltip)
+        luaunit.assertIs('smith', panel.subviews.search_field.text)
+        luaunit.assertIs('Results (1)', panel.subviews.result_header.text)
+        luaunit.assertIs(1, panel:get_selected_index())
+        luaunit.assertEvalToTrue(panel:get_selected_result() == result)
+        luaunit.assertIs(-10, panel.subviews.result_list.cursor_delta)
+        luaunit.assertIs(0, panel.subviews.result_columns.option)
+        luaunit.assertIs(0, panel.subviews.result_profession_column.option)
+        luaunit.assertIs(2, panel.subviews.result_unit_id_column.option)
+        luaunit.assertIs('Sort by name.', panel.subviews.result_columns.tooltip)
+        luaunit.assertIs('Sort by profession.', panel.subviews.result_profession_column.tooltip)
+        luaunit.assertIs('Sort by unit ID.', panel.subviews.result_unit_id_column.tooltip)
     end)
-end
+
+return native_tests

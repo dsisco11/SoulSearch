@@ -33,7 +33,14 @@ local function make_catalog(keys)
     return {get_catalog=function() return {by_id=by_id} end}
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local role_presets = soulsearch_env.load_role_presets(repo_root,
         make_catalog({'ORGANIZATION', 'RECORD_KEEPING', 'APPRAISAL',
             'JUDGING_INTENT', 'NEGOTIATION', 'DIAGNOSIS', 'HAMMER', 'CROSSBOW',
@@ -46,71 +53,72 @@ return function(test, repo_root)
             'READING', 'WRITING', 'TEACHING', 'POETRY', 'DANCE', 'MAKE_MUSIC',
             'SING_MUSIC', 'SPEAKING'}))
 
-    test.case('role presets: expose the researched roles in a stable order', function()
+    add_test('role presets: expose the researched roles in a stable order', function()
         local labels = {}
         for _, preset in ipairs(role_presets.get_all()) do
             table.insert(labels, preset.label)
         end
-        test.assert_sequence({'Manager', 'Bookkeeper', 'Broker',
+        luaunit.assertEquals({'Manager', 'Bookkeeper', 'Broker',
             'Chief Medical Dwarf', 'Interrogator', 'Doctor', 'Animal Trainer'},
             first(7, labels))
-        test.assert_equal(true, contains(labels, 'Trader'))
-        test.assert_equal(true, contains(labels, 'Baron'))
-        test.assert_equal(true, contains(labels, 'Militia Commander'))
-        test.assert_equal(true, contains(labels, 'Scholar'))
-        test.assert_equal(true, contains(labels, 'Messenger'))
+        luaunit.assertIs(true, contains(labels, 'Trader'))
+        luaunit.assertIs(true, contains(labels, 'Baron'))
+        luaunit.assertIs(true, contains(labels, 'Militia Commander'))
+        luaunit.assertIs(true, contains(labels, 'Scholar'))
+        luaunit.assertIs(true, contains(labels, 'Messenger'))
     end)
 
-    test.case('role presets: put role skills before wiki-priority attributes', function()
-        test.assert_sequence({'skill:ORGANIZATION',
+    add_test('role presets: put role skills before wiki-priority attributes', function()
+        luaunit.assertEquals({'skill:ORGANIZATION',
             'mental_attribute:ANALYTICAL_ABILITY',
             'mental_attribute:SOCIAL_AWARENESS',
             'mental_attribute:CREATIVITY'},
             first(4, ids(assert(role_presets.get('manager')))))
-        test.assert_sequence({'skill:CROSSBOW', 'skill:ARCHERY', 'skill:HAMMER',
+        luaunit.assertEquals({'skill:CROSSBOW', 'skill:ARCHERY', 'skill:HAMMER',
             'skill:DODGING', 'skill:SHIELD', 'skill:ARMOR',
             'physical_attribute:AGILITY', 'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:KINESTHETIC_SENSE', 'mental_attribute:FOCUS'},
             first(10, ids(assert(role_presets.get('marksdwarf')))))
     end)
 
-    test.case('role presets: merge each selected skill preset attributes', function()
+    add_test('role presets: merge each selected skill preset attributes', function()
         local marksdwarf = ids(assert(role_presets.get('marksdwarf')))
-        test.assert_equal(true, contains(marksdwarf, 'physical_attribute:TOUGHNESS'))
-        test.assert_equal(true, contains(marksdwarf, 'physical_attribute:ENDURANCE'))
+        luaunit.assertIs(true, contains(marksdwarf, 'physical_attribute:TOUGHNESS'))
+        luaunit.assertIs(true, contains(marksdwarf, 'physical_attribute:ENDURANCE'))
         local doctor = ids(assert(role_presets.get('doctor')))
-        test.assert_equal(true, contains(doctor, 'mental_attribute:EMPATHY'))
+        luaunit.assertIs(true, contains(doctor, 'mental_attribute:EMPATHY'))
     end)
 
-    test.case('role presets: separate complete combat presets and add dodging', function()
+    add_test('role presets: separate complete combat presets and add dodging', function()
         local combat = role_presets.get_combat_presets()
-        test.assert_equal('Militia Commander', combat[1].label)
-        test.assert_equal('Militia Captain', combat[2].label)
-        test.assert_equal('Soldier', combat[3].label)
-        test.assert_equal('Hammerer', combat[#combat].label)
-        test.assert_sequence({'skill:AXE', 'skill:MELEE_COMBAT', 'skill:DODGING',
+        luaunit.assertIs('Militia Commander', combat[1].label)
+        luaunit.assertIs('Militia Captain', combat[2].label)
+        luaunit.assertIs('Soldier', combat[3].label)
+        luaunit.assertIs('Hammerer', combat[#combat].label)
+        luaunit.assertEquals({'skill:AXE', 'skill:MELEE_COMBAT', 'skill:DODGING',
             'skill:SHIELD', 'skill:ARMOR'},
             first(5, ids(assert(role_presets.get('axedwarf')))))
-        test.assert_equal('role', role_presets.get_role_presets()[1].category)
-        test.assert_equal('combat', combat[1].category)
+        luaunit.assertIs('role', role_presets.get_role_presets()[1].category)
+        luaunit.assertIs('combat', combat[1].category)
     end)
 
-    test.case('role presets: add the missing leadership, service, and culture roles', function()
-        test.assert_sequence({'skill:APPRAISAL', 'skill:JUDGING_INTENT',
+    add_test('role presets: add the missing leadership, service, and culture roles', function()
+        luaunit.assertEquals({'skill:APPRAISAL', 'skill:JUDGING_INTENT',
             'skill:NEGOTIATION'}, first(3, ids(assert(role_presets.get('trader')))))
-        test.assert_sequence({'skill:LEADERSHIP', 'skill:MILITARY_TACTICS',
+        luaunit.assertEquals({'skill:LEADERSHIP', 'skill:MILITARY_TACTICS',
             'skill:ORGANIZATION'},
             first(3, ids(assert(role_presets.get('militia_commander')))))
-        test.assert_equal(true, contains(ids(assert(role_presets.get('performer'))),
+        luaunit.assertIs(true, contains(ids(assert(role_presets.get('performer'))),
             'mental_attribute:MUSICALITY'))
     end)
 
-    test.case('role presets: resolve version-specific skill key fallbacks', function()
+    add_test('role presets: resolve version-specific skill key fallbacks', function()
         local filters = assert(role_presets.get('doctor'))
-        test.assert_equal('skill:DIAGNOSIS', filters[1].id)
-        test.assert_equal('skill:BONE_SETTING', filters[3].id)
+        luaunit.assertIs('skill:DIAGNOSIS', filters[1].id)
+        luaunit.assertIs('skill:BONE_SETTING', filters[3].id)
         filters[1].id = 'skill:OTHER'
-        test.assert_equal('skill:DIAGNOSIS', assert(role_presets.get('doctor'))[1].id)
-        test.assert_nil(role_presets.get('unknown'))
+        luaunit.assertIs('skill:DIAGNOSIS', assert(role_presets.get('doctor'))[1].id)
+        luaunit.assertNil(role_presets.get('unknown'))
     end)
-end
+
+return native_tests

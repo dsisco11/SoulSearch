@@ -10,7 +10,14 @@ local function ids(rows)
     return result
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local constants = soulsearch_env.load_filter_constants(repo_root).FILTER_CONSTANTS
     local direction = constants.direction
     local scope = constants.unit_scope
@@ -76,7 +83,7 @@ return function(test, repo_root)
             .collect_from_provider(provider))
     end
 
-    test.case('candidate pipeline: end-to-end scope and race matrix', function()
+    add_test('candidate pipeline: end-to-end scope and race matrix', function()
         local cases = {
             {
                 name='no scope or race filters returns every active unit',
@@ -119,17 +126,18 @@ return function(test, repo_root)
             },
         }
         for _, case in ipairs(cases) do
-            test.assert_sequence(case.expected, ids(collect(case.filters)), case.name)
+            luaunit.assertEquals(case.expected, ids(collect(case.filters)), case.name)
         end
     end)
 
-    test.case('candidate pipeline: ranking receives only the candidate-filtered rows', function()
+    add_test('candidate pipeline: ranking receives only the candidate-filtered rows', function()
         local rows = collect({filter(scope_id(scope.CITIZENS)),
             filter(race_group_id(race.group.HUMANOIDS))})
         local ranked = soulsearch_env.load_search(repo_root,
             soulsearch_env.load_attributes(repo_root)).apply(rows, {
             selected_filters={{id='skill:MINING', direction=direction.HIGH}},
         })
-        test.assert_sequence({1}, ids(ranked))
+        luaunit.assertEquals({1}, ids(ranked))
     end)
-end
+
+return native_tests

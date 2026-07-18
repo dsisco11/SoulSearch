@@ -6,8 +6,15 @@ local function ids(descriptors)
     return result
 end
 
-return function(test, repo_root)
-    test.case('unit scope catalog: stable candidate descriptors have player-facing labels', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('unit scope catalog: stable candidate descriptors have player-facing labels', function()
         local catalog = soulsearch_env.load_unit_scope_catalog(repo_root, {units={
             isCitizen=function() return false end, isResident=function() return false end,
             isFortControlled=function() return false end, isVisitor=function() return false end,
@@ -17,20 +24,20 @@ return function(test, repo_root)
             isPet=function() return false end,
         }})
         local descriptors = catalog.get_descriptors()
-        test.assert_sequence({'unit_scope:citizens', 'unit_scope:fort_residents',
+        luaunit.assertEquals({'unit_scope:citizens', 'unit_scope:fort_residents',
             'unit_scope:livestock', 'unit_scope:pets', 'unit_scope:visitors',
             'unit_scope:wildlife'}, ids(descriptors))
-        test.assert_sequence({'Citizens', 'Residents', 'Livestock', 'Pets', 'Visitors', 'Wildlife'}, {
+        luaunit.assertEquals({'Citizens', 'Residents', 'Livestock', 'Pets', 'Visitors', 'Wildlife'}, {
             descriptors[1].label, descriptors[2].label, descriptors[3].label,
             descriptors[4].label, descriptors[5].label, descriptors[6].label,
         })
         for _, descriptor in ipairs(descriptors) do
-            test.assert_equal('unit_scope', descriptor.kind)
-            test.assert_equal('candidate', descriptor.behavior)
+            luaunit.assertIs('unit_scope', descriptor.kind)
+            luaunit.assertIs('candidate', descriptor.behavior)
         end
     end)
 
-    test.case('unit scope catalog: preserves existing membership predicates', function()
+    add_test('unit scope catalog: preserves existing membership predicates', function()
         local calls = {}
         local units = {
             isCitizen=function(unit, include_insane)
@@ -55,20 +62,20 @@ return function(test, repo_root)
             caste={flags={PET=true}}, pet=false}
         for _, descriptor in ipairs(descriptors) do
             if descriptor.id ~= 'unit_scope:pets' then
-                test.assert_true(catalog.matches_unit(descriptor, unit))
+                luaunit.assertEvalToTrue(catalog.matches_unit(descriptor, unit))
             end
         end
         local pets
         for _, descriptor in ipairs(descriptors) do
             if descriptor.id == 'unit_scope:pets' then pets = descriptor end
         end
-        test.assert_false(catalog.matches_unit(pets, unit))
-        test.assert_true(calls.citizen)
-        test.assert_true(calls.resident)
-        test.assert_false(catalog.matches_unit({id='unit_scope:unknown'}, unit))
+        luaunit.assertEvalToFalse(catalog.matches_unit(pets, unit))
+        luaunit.assertEvalToTrue(calls.citizen)
+        luaunit.assertEvalToTrue(calls.resident)
+        luaunit.assertEvalToFalse(catalog.matches_unit({id='unit_scope:unknown'}, unit))
     end)
 
-    test.case('unit scope catalog: livestock requires fort control and a livestock caste', function()
+    add_test('unit scope catalog: livestock requires fort control and a livestock caste', function()
         local catalog = soulsearch_env.load_unit_scope_catalog(repo_root, {units={
             isCitizen=function() return false end,
             isResident=function() return false end,
@@ -84,15 +91,15 @@ return function(test, repo_root)
         for _, descriptor in ipairs(catalog.get_descriptors()) do
             if descriptor.id == 'unit_scope:livestock' then livestock = descriptor end
         end
-        test.assert_true(catalog.matches_unit(livestock, {controlled=true, caste={flags={PET=true}}}))
-        test.assert_true(catalog.matches_unit(livestock, {controlled=true, caste={flags={PET_EXOTIC=true}}}))
-        test.assert_false(catalog.matches_unit(livestock,
+        luaunit.assertEvalToTrue(catalog.matches_unit(livestock, {controlled=true, caste={flags={PET=true}}}))
+        luaunit.assertEvalToTrue(catalog.matches_unit(livestock, {controlled=true, caste={flags={PET_EXOTIC=true}}}))
+        luaunit.assertEvalToFalse(catalog.matches_unit(livestock,
             {controlled=true, pet=true, caste={flags={PET=true}}}))
-        test.assert_false(catalog.matches_unit(livestock, {controlled=false, caste={flags={PET=true}}}))
-        test.assert_false(catalog.matches_unit(livestock, {controlled=true, caste={flags={}}}))
+        luaunit.assertEvalToFalse(catalog.matches_unit(livestock, {controlled=false, caste={flags={PET=true}}}))
+        luaunit.assertEvalToFalse(catalog.matches_unit(livestock, {controlled=true, caste={flags={}}}))
     end)
 
-    test.case('unit scope catalog: pets use the DFHack pet predicate', function()
+    add_test('unit scope catalog: pets use the DFHack pet predicate', function()
         local catalog = soulsearch_env.load_unit_scope_catalog(repo_root, {units={
             isCitizen=function() return false end,
             isResident=function() return false end,
@@ -108,7 +115,8 @@ return function(test, repo_root)
         for _, descriptor in ipairs(catalog.get_descriptors()) do
             if descriptor.id == 'unit_scope:pets' then pets = descriptor end
         end
-        test.assert_true(catalog.matches_unit(pets, {pet=true}))
-        test.assert_false(catalog.matches_unit(pets, {pet=false}))
+        luaunit.assertEvalToTrue(catalog.matches_unit(pets, {pet=true}))
+        luaunit.assertEvalToFalse(catalog.matches_unit(pets, {pet=false}))
     end)
-end
+
+return native_tests

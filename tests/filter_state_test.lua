@@ -8,7 +8,14 @@ local function ids(filters)
     return result
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local filter_state, descriptors = soulsearch_env.load_filter_state(repo_root)
     local filter_defaults = soulsearch_env.load_filter_defaults(repo_root)
     local role_presets = soulsearch_env.load_role_presets(repo_root, descriptors)
@@ -57,77 +64,77 @@ return function(test, repo_root)
         },
     }
     for _, case in ipairs(transition_cases) do
-        test.case('filter state transition: ' .. case.name, function()
+        add_test('filter state transition: ' .. case.name, function()
             local state = filter_state.new(case.initial)
-            test.assert_equal(case.expected_changed, case.apply(state))
-            test.assert_sequence(case.expected_ids, ids(filter_state.get_filters(state)))
+            luaunit.assertIs(case.expected_changed, case.apply(state))
+            luaunit.assertEquals(case.expected_ids, ids(filter_state.get_filters(state)))
         end)
     end
 
-    test.case('filter state add: defaults to high and duplicate is a no-op', function()
+    add_test('filter state add: defaults to high and duplicate is a no-op', function()
         local state = filter_state.new()
-        test.assert_true(filter_state.add(state, 'skill:MINING'))
-        test.assert_false(filter_state.add(state, 'skill:MINING', 'low'))
-        test.assert_equal('high', filter_state.get_direction(state, 'skill:MINING'))
-        test.assert_equal(1, filter_state.count(state))
+        luaunit.assertEvalToTrue(filter_state.add(state, 'skill:MINING'))
+        luaunit.assertEvalToFalse(filter_state.add(state, 'skill:MINING', 'low'))
+        luaunit.assertIs('high', filter_state.get_direction(state, 'skill:MINING'))
+        luaunit.assertIs(1, filter_state.count(state))
     end)
 
-    test.case('filter state add: invalid ID and direction are no-ops', function()
+    add_test('filter state add: invalid ID and direction are no-ops', function()
         local state = filter_state.new()
-        test.assert_false(filter_state.add(state, 'skill:UNKNOWN', 'high'))
-        test.assert_false(filter_state.add(state, 'skill:MINING', 'sideways'))
-        test.assert_equal(0, filter_state.count(state))
+        luaunit.assertEvalToFalse(filter_state.add(state, 'skill:UNKNOWN', 'high'))
+        luaunit.assertEvalToFalse(filter_state.add(state, 'skill:MINING', 'sideways'))
+        luaunit.assertIs(0, filter_state.count(state))
     end)
 
-    test.case('filter state direction: active changes and unchanged is a no-op', function()
+    add_test('filter state direction: active changes and unchanged is a no-op', function()
         local state = filter_state.new{{id='skill:MINING', direction='high'}}
-        test.assert_true(filter_state.set_direction(state, 'skill:MINING', 'low'))
-        test.assert_equal('low', filter_state.get_direction(state, 'skill:MINING'))
-        test.assert_false(filter_state.set_direction(state, 'skill:MINING', 'low'))
+        luaunit.assertEvalToTrue(filter_state.set_direction(state, 'skill:MINING', 'low'))
+        luaunit.assertIs('low', filter_state.get_direction(state, 'skill:MINING'))
+        luaunit.assertEvalToFalse(filter_state.set_direction(state, 'skill:MINING', 'low'))
     end)
 
-    test.case('filter state direction: inactive filter is added atomically', function()
+    add_test('filter state direction: inactive filter is added atomically', function()
         local state = filter_state.new()
-        test.assert_true(filter_state.set_direction(state, 'skill:MINING', 'low'))
+        luaunit.assertEvalToTrue(filter_state.set_direction(state, 'skill:MINING', 'low'))
         local filters = filter_state.get_filters(state)
-        test.assert_equal(1, #filters)
-        test.assert_equal('skill:MINING', filters[1].id)
-        test.assert_equal('low', filters[1].direction)
-        test.assert_false(filter_state.set_direction(state, 'skill:UNKNOWN', 'high'))
-        test.assert_false(filter_state.set_direction(state, 'skill:SWORD', 'sideways'))
+        luaunit.assertIs(1, #filters)
+        luaunit.assertIs('skill:MINING', filters[1].id)
+        luaunit.assertIs('low', filters[1].direction)
+        luaunit.assertEvalToFalse(filter_state.set_direction(state, 'skill:UNKNOWN', 'high'))
+        luaunit.assertEvalToFalse(filter_state.set_direction(state, 'skill:SWORD', 'sideways'))
     end)
 
-    test.case('filter state move: reorders and reports the new priority', function()
+    add_test('filter state move: reorders and reports the new priority', function()
         local state = filter_state.new{
             {id='skill:MINING', direction='high'},
             {id='skill:SWORD', direction='low'},
             {id='trait:PATIENCE', direction='high'},
         }
         local changed, priority = filter_state.move(state, 'trait:PATIENCE', -2)
-        test.assert_true(changed)
-        test.assert_equal(1, priority)
-        test.assert_sequence(
+        luaunit.assertEvalToTrue(changed)
+        luaunit.assertIs(1, priority)
+        luaunit.assertEquals(
             {'trait:PATIENCE', 'skill:MINING', 'skill:SWORD'},
             ids(filter_state.get_filters(state)))
     end)
 
-    test.case('filter state move: clamps first and last boundaries', function()
+    add_test('filter state move: clamps first and last boundaries', function()
         local state = filter_state.new{
             {id='skill:MINING', direction='high'},
             {id='skill:SWORD', direction='low'},
         }
         local changed, priority = filter_state.move(state, 'skill:MINING', -1)
-        test.assert_false(changed)
-        test.assert_equal(1, priority)
+        luaunit.assertEvalToFalse(changed)
+        luaunit.assertIs(1, priority)
         changed, priority = filter_state.move(state, 'skill:SWORD', 1)
-        test.assert_false(changed)
-        test.assert_equal(2, priority)
+        luaunit.assertEvalToFalse(changed)
+        luaunit.assertIs(2, priority)
         changed, priority = filter_state.move(state, 'skill:UNKNOWN', 1)
-        test.assert_false(changed)
-        test.assert_nil(priority)
+        luaunit.assertEvalToFalse(changed)
+        luaunit.assertNil(priority)
     end)
 
-    test.case('filter state validation: skips stale duplicate and malformed entries', function()
+    add_test('filter state validation: skips stale duplicate and malformed entries', function()
         local state = filter_state.new{
             false,
             {id='skill:UNKNOWN', direction='high'},
@@ -137,43 +144,43 @@ return function(test, repo_root)
             {id='trait:PATIENCE', direction='high'},
         }
         local filters = filter_state.get_filters(state)
-        test.assert_sequence({'skill:MINING', 'trait:PATIENCE'}, ids(filters))
-        test.assert_equal('low', filters[1].direction)
+        luaunit.assertEquals({'skill:MINING', 'trait:PATIENCE'}, ids(filters))
+        luaunit.assertIs('low', filters[1].direction)
     end)
 
-    test.case('filter state reads do not alias live state', function()
+    add_test('filter state reads do not alias live state', function()
         local state = filter_state.new{{id='skill:MINING', direction='high'}}
         local read = filter_state.get_filters(state)
         read[1].id = 'skill:SWORD'
         read[1].direction = 'low'
         table.insert(read, {id='trait:PATIENCE', direction='low'})
         local reread = filter_state.get_filters(state)
-        test.assert_equal(1, #reread)
-        test.assert_equal('skill:MINING', reread[1].id)
-        test.assert_equal('high', reread[1].direction)
+        luaunit.assertIs(1, #reread)
+        luaunit.assertIs('skill:MINING', reread[1].id)
+        luaunit.assertIs('high', reread[1].direction)
     end)
 
-    test.case('filter state search serialization preserves priority order', function()
+    add_test('filter state search serialization preserves priority order', function()
         local state = filter_state.new{
             {id='trait:PATIENCE', direction='low'},
             {id='skill:MINING', direction='high'},
         }
         local filters = filter_state.get_filters(state)
-        test.assert_sequence({'trait:PATIENCE', 'skill:MINING'}, ids(filters))
-        test.assert_equal('low', filters[1].direction)
-        test.assert_equal('high', filters[2].direction)
+        luaunit.assertEquals({'trait:PATIENCE', 'skill:MINING'}, ids(filters))
+        luaunit.assertIs('low', filters[1].direction)
+        luaunit.assertIs('high', filters[2].direction)
     end)
 
-    test.case('filter state move: candidate filters never acquire ranking priority', function()
+    add_test('filter state move: candidate filters never acquire ranking priority', function()
         local state = filter_state.new{
             {id='race:group:HUMANOIDS', direction='high'},
             {id='skill:MINING', direction='high'},
         }
         local changed, priority = filter_state.move(
             state, 'race:group:HUMANOIDS', 1)
-        test.assert_false(changed)
-        test.assert_equal(1, priority)
-        test.assert_sequence({
+        luaunit.assertEvalToFalse(changed)
+        luaunit.assertIs(1, priority)
+        luaunit.assertEquals({
             'race:group:HUMANOIDS',
             'skill:MINING',
         }, (function()
@@ -185,12 +192,12 @@ return function(test, repo_root)
         end)())
     end)
 
-    test.case('filter state behavior projections preserve ranking order and isolation', function()
+    add_test('filter state behavior projections preserve ranking order and isolation', function()
         local state = filter_state.new{
             {id='trait:PATIENCE', direction='low'},
             {id='skill:MINING', direction='high'},
         }
-        test.assert_sequence({},
+        luaunit.assertEquals({},
             (function()
                 local result = {}
                 for _, filter in ipairs(filter_state.get_candidate_filters(state)) do
@@ -199,48 +206,48 @@ return function(test, repo_root)
                 return result
             end)())
         local ranking = filter_state.get_ranking_filters(state)
-        test.assert_sequence({'trait:PATIENCE', 'skill:MINING'}, ids(ranking))
+        luaunit.assertEquals({'trait:PATIENCE', 'skill:MINING'}, ids(ranking))
         ranking[1].id = 'skill:SWORD'
-        test.assert_sequence({'trait:PATIENCE', 'skill:MINING'},
+        luaunit.assertEquals({'trait:PATIENCE', 'skill:MINING'},
             ids(filter_state.get_ranking_filters(state)))
     end)
 
-    test.case('filter state replace validates and preserves preset order', function()
+    add_test('filter state replace validates and preserves preset order', function()
         local state = filter_state.new{{id='skill:MINING', direction='high'}}
-        test.assert_true(filter_state.replace(state, {
+        luaunit.assertEvalToTrue(filter_state.replace(state, {
             {id='trait:PATIENCE', direction='low'},
             {id='skill:SWORD', direction='high'},
             {id='skill:UNKNOWN', direction='high'},
         }))
-        test.assert_sequence({'trait:PATIENCE', 'skill:SWORD'},
+        luaunit.assertEquals({'trait:PATIENCE', 'skill:SWORD'},
             ids(filter_state.get_filters(state)))
-        test.assert_false(filter_state.replace(state, {
+        luaunit.assertEvalToFalse(filter_state.replace(state, {
             {id='trait:PATIENCE', direction='low'},
             {id='skill:SWORD', direction='high'},
         }))
     end)
 
-    test.case('filter state replace: legacy and stale race presets are cleaned', function()
+    add_test('filter state replace: legacy and stale race presets are cleaned', function()
         local state = filter_state.new()
-        test.assert_true(filter_state.replace(state, {
+        luaunit.assertEvalToTrue(filter_state.replace(state, {
             {id='skill:MINING', direction='high'},
         }))
         local filters = filter_state.get_filters(state)
-        test.assert_equal('skill:MINING', filters[1].id)
+        luaunit.assertIs('skill:MINING', filters[1].id)
 
-        test.assert_true(filter_state.replace(state, {
+        luaunit.assertEvalToTrue(filter_state.replace(state, {
             {id='race:raw:STALE', direction='high'},
             {id='race:group:HUMANOIDS', direction='low'},
             {id='skill:SWORD', direction='low'},
         }))
         filters = filter_state.get_filters(state)
-        test.assert_equal('race:group:HUMANOIDS', filters[1].id)
-        test.assert_equal('low', filters[1].direction)
-        test.assert_equal('skill:SWORD', filters[2].id)
-        test.assert_equal('low', filters[2].direction)
+        luaunit.assertIs('race:group:HUMANOIDS', filters[1].id)
+        luaunit.assertIs('low', filters[1].direction)
+        luaunit.assertIs('skill:SWORD', filters[2].id)
+        luaunit.assertIs('low', filters[2].direction)
     end)
 
-    test.case('filter state: shipped presets preserve only their ranking filters', function()
+    add_test('filter state: shipped presets preserve only their ranking filters', function()
         local sources = {
             filter_defaults.get_all()[1].filters,
             role_presets.get_role_presets()[1].filters,
@@ -248,7 +255,7 @@ return function(test, repo_root)
         }
         for _, source in ipairs(sources) do
             local state = filter_state.new(source)
-            test.assert_equal(0, #filter_state.get_candidate_filters(state))
+            luaunit.assertIs(0, #filter_state.get_candidate_filters(state))
             local ranking = filter_state.get_ranking_filters(state)
             local expected = {}
             for _, filter in ipairs(source) do
@@ -256,60 +263,61 @@ return function(test, repo_root)
                     table.insert(expected, filter)
                 end
             end
-            test.assert_equal(#expected, #ranking)
+            luaunit.assertIs(#expected, #ranking)
             for index, filter in ipairs(expected) do
-                test.assert_equal(filter.id, ranking[index].id)
-                test.assert_equal(filter.direction, ranking[index].direction)
+                luaunit.assertIs(filter.id, ranking[index].id)
+                luaunit.assertIs(filter.direction, ranking[index].direction)
             end
         end
     end)
 
-    test.case('filter state permits an empty candidate scope', function()
+    add_test('filter state permits an empty candidate scope', function()
         local state = filter_state.new{{id='race:raw:UNKNOWN', direction='low'}}
         local candidates = filter_state.get_candidate_filters(state)
-        test.assert_equal(0, #candidates)
+        luaunit.assertIs(0, #candidates)
 
-        test.assert_true(filter_state.add(state, 'race:group:HUMANOIDS'))
-        test.assert_true(filter_state.remove(state, 'race:group:HUMANOIDS'))
-        test.assert_false(filter_state.clear(state))
+        luaunit.assertEvalToTrue(filter_state.add(state, 'race:group:HUMANOIDS'))
+        luaunit.assertEvalToTrue(filter_state.remove(state, 'race:group:HUMANOIDS'))
+        luaunit.assertEvalToFalse(filter_state.clear(state))
     end)
 
-    test.case('filter state removes humanoids when another race is included', function()
+    add_test('filter state removes humanoids when another race is included', function()
         local state = filter_state.new{
             {id='race:group:HUMANOIDS', direction='high'},
             {id='race:group:TAMEABLE_ANIMALS', direction='high'},
         }
-        test.assert_true(filter_state.remove(state, 'race:group:HUMANOIDS'))
+        luaunit.assertEvalToTrue(filter_state.remove(state, 'race:group:HUMANOIDS'))
         local candidates = filter_state.get_candidate_filters(state)
-        test.assert_equal(1, #candidates)
-        test.assert_equal('race:group:TAMEABLE_ANIMALS', candidates[1].id)
-        test.assert_equal('high', candidates[1].direction)
+        luaunit.assertIs(1, #candidates)
+        luaunit.assertIs('race:group:TAMEABLE_ANIMALS', candidates[1].id)
+        luaunit.assertIs('high', candidates[1].direction)
     end)
 
-    test.case('filter state: unit-scope candidates cannot acquire ranking priority', function()
+    add_test('filter state: unit-scope candidates cannot acquire ranking priority', function()
         local state = filter_state.new{
             {id='unit_scope:citizens', direction='high'},
             {id='skill:MINING', direction='high'},
         }
         local changed, priority = filter_state.move(state, 'unit_scope:citizens', 1)
-        test.assert_false(changed)
-        test.assert_equal(1, priority)
-        test.assert_sequence({'unit_scope:citizens'},
+        luaunit.assertEvalToFalse(changed)
+        luaunit.assertIs(1, priority)
+        luaunit.assertEquals({'unit_scope:citizens'},
             ids(filter_state.get_candidate_filters(state)))
-        test.assert_sequence({'skill:MINING'},
+        luaunit.assertEquals({'skill:MINING'},
             ids(filter_state.get_ranking_filters(state)))
     end)
 
-    test.case('filter state: loading a scope-free preset replaces the complete filter list', function()
+    add_test('filter state: loading a scope-free preset replaces the complete filter list', function()
         local state = filter_state.new{
             {id='unit_scope:citizens', direction='high'},
             {id='race:group:HUMANOIDS', direction='high'},
             {id='skill:MINING', direction='high'},
         }
-        test.assert_true(filter_state.replace(state, {
+        luaunit.assertEvalToTrue(filter_state.replace(state, {
             {id='skill:SWORD', direction='low'},
         }))
-        test.assert_sequence({'skill:SWORD'}, ids(filter_state.get_filters(state)))
-        test.assert_equal(0, #filter_state.get_candidate_filters(state))
+        luaunit.assertEquals({'skill:SWORD'}, ids(filter_state.get_filters(state)))
+        luaunit.assertIs(0, #filter_state.get_candidate_filters(state))
     end)
-end
+
+return native_tests

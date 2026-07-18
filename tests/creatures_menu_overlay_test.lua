@@ -52,41 +52,48 @@ local function load_overlay(repo_root, scope, command)
         })
 end
 
-return function(test, repo_root)
-    test.case('creatures menu overlay: registers a visible native button on supported tabs', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('creatures menu overlay: registers a visible native button on supported tabs', function()
         local scope = {get_active=function() return nil end}
         local overlay = load_overlay(repo_root, scope, {initialize=function() return {} end})
         local attrs = overlay.SoulSearchCreaturesOverlay.attrs
-        test.assert_true(overlay.OVERLAY_WIDGETS.soulsearch_creatures ~= nil)
-        test.assert_nil(
+        luaunit.assertEvalToTrue(overlay.OVERLAY_WIDGETS.soulsearch_creatures ~= nil)
+        luaunit.assertNil(
             overlay.OVERLAY_WIDGETS.soulsearch_creatures_navigator)
-        test.assert_equal('dwarfmode/Info/CREATURES', attrs.viewscreens)
-        test.assert_true(attrs.default_enabled)
-        test.assert_true(attrs.hotspot)
-        test.assert_equal(0, attrs.overlay_onupdate_max_freq_seconds)
-        test.assert_equal(9, attrs.version)
-        test.assert_equal(-2, attrs.default_pos.x)
-        test.assert_equal(2, attrs.default_pos.y)
-        test.assert_false(attrs.active())
+        luaunit.assertIs('dwarfmode/Info/CREATURES', attrs.viewscreens)
+        luaunit.assertEvalToTrue(attrs.default_enabled)
+        luaunit.assertEvalToTrue(attrs.hotspot)
+        luaunit.assertIs(0, attrs.overlay_onupdate_max_freq_seconds)
+        luaunit.assertIs(9, attrs.version)
+        luaunit.assertIs(-2, attrs.default_pos.x)
+        luaunit.assertIs(2, attrs.default_pos.y)
+        luaunit.assertEvalToFalse(attrs.active())
 
         local widget = overlay.SoulSearchCreaturesOverlay{}
         local button = widget.subviews.open_scoped_search
-        test.assert_equal('Open SoulSearch', button.label)
-        test.assert_equal('Open SoulSearch scoped to the active Creatures tab.', button.tooltip)
+        luaunit.assertIs('Open SoulSearch', button.label)
+        luaunit.assertIs('Open SoulSearch scoped to the active Creatures tab.', button.tooltip)
     end)
 
-    test.case('creatures menu overlay: docks below the Residents subtab', function()
+    add_test('creatures menu overlay: docks below the Residents subtab', function()
         local scope = {get_active=function() return nil end}
         local overlay = load_overlay(repo_root, scope, {initialize=function() return {} end})
         local widget = overlay.SoulSearchCreaturesOverlay{}
         widget:preUpdateLayout({width=80, height=25})
-        test.assert_equal(7, widget.frame.l)
-        test.assert_equal(9, widget.frame.t)
-        test.assert_equal(17, widget.frame.w)
-        test.assert_equal(1, widget.frame.h)
+        luaunit.assertIs(7, widget.frame.l)
+        luaunit.assertIs(9, widget.frame.t)
+        luaunit.assertIs(17, widget.frame.w)
+        luaunit.assertIs(1, widget.frame.h)
     end)
 
-    test.case('creatures menu overlay: opens every current unified filter preset', function()
+    add_test('creatures menu overlay: opens every current unified filter preset', function()
         local cases = {
             {label='Residents', filters={'unit_scope:fort_residents', 'unit_scope:citizens',
                 'race:group:HUMANOIDS'}},
@@ -105,27 +112,28 @@ return function(test, repo_root)
                 initialized = initialized + 1
                 return {['internal/soulsearch/ui']={open=function(given)
                     opened = opened + 1
-                    test.assert_true(given == options)
+                    luaunit.assertEvalToTrue(given == options)
                     return {}
                 end}}
             end}
             local overlay = load_overlay(repo_root, scope, command)
             local widget = overlay.SoulSearchCreaturesOverlay{}
-            test.assert_true(overlay.SoulSearchCreaturesOverlay.attrs.active())
-            test.assert_true(widget:open_scoped_search())
-            test.assert_equal(1, initialized)
-            test.assert_equal(1, opened)
+            luaunit.assertEvalToTrue(overlay.SoulSearchCreaturesOverlay.attrs.active())
+            luaunit.assertEvalToTrue(widget:open_scoped_search())
+            luaunit.assertIs(1, initialized)
+            luaunit.assertIs(1, opened)
         end
     end)
 
-    test.case('creatures menu overlay: does not initialize SoulSearch without a supported tab', function()
+    add_test('creatures menu overlay: does not initialize SoulSearch without a supported tab', function()
         local scope = {get_active=function() return nil end}
         local initialized = 0
         local overlay = load_overlay(repo_root, scope, {initialize=function()
             initialized = initialized + 1
             return {}
         end})
-        test.assert_false(overlay.SoulSearchCreaturesOverlay{}:open_scoped_search())
-        test.assert_equal(0, initialized)
+        luaunit.assertEvalToFalse(overlay.SoulSearchCreaturesOverlay{}:open_scoped_search())
+        luaunit.assertIs(0, initialized)
     end)
-end
+
+return native_tests

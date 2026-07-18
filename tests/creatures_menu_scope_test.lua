@@ -40,57 +40,64 @@ local function load_scope(repo_root, focus_by_screen, top_screen, tab_label)
         })
 end
 
-return function(test, repo_root)
-    test.case('creatures menu scope: maps supported tabs to explicit candidate presets', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('creatures menu scope: maps supported tabs to explicit candidate presets', function()
         local screen = {}
         local focuses = {[screen]={'dwarfmode/Info/CREATURES/Residents'}}
         local scope = load_scope(repo_root, focuses, screen)
 
         local residents = scope.get_active()
-        test.assert_equal('Residents', residents.label)
-        test.assert_equal('creatures:residents', residents.options.settings_id)
-        test.assert_equal('unit_scope:fort_residents', residents.options.filters[1].id)
-        test.assert_equal('unit_scope:citizens', residents.options.filters[2].id)
-        test.assert_equal('race:group:HUMANOIDS', residents.options.filters[3].id)
-        test.assert_equal('high', residents.options.filters[1].direction)
+        luaunit.assertIs('Residents', residents.label)
+        luaunit.assertIs('creatures:residents', residents.options.settings_id)
+        luaunit.assertIs('unit_scope:fort_residents', residents.options.filters[1].id)
+        luaunit.assertIs('unit_scope:citizens', residents.options.filters[2].id)
+        luaunit.assertIs('race:group:HUMANOIDS', residents.options.filters[3].id)
+        luaunit.assertIs('high', residents.options.filters[1].direction)
 
         focuses[screen] = {'dwarfmode/Info/CREATURES/Pets/Livestock'}
         local pets = scope.get_active()
-        test.assert_equal('Pets/Livestock', pets.label)
-        test.assert_equal('creatures:pets-livestock', pets.options.settings_id)
-        test.assert_equal('unit_scope:pets', pets.options.filters[1].id)
-        test.assert_equal('unit_scope:livestock', pets.options.filters[2].id)
-        test.assert_equal('race:group:TAMEABLE_ANIMALS', pets.options.filters[3].id)
-        test.assert_equal('high', pets.options.filters[1].direction)
+        luaunit.assertIs('Pets/Livestock', pets.label)
+        luaunit.assertIs('creatures:pets-livestock', pets.options.settings_id)
+        luaunit.assertIs('unit_scope:pets', pets.options.filters[1].id)
+        luaunit.assertIs('unit_scope:livestock', pets.options.filters[2].id)
+        luaunit.assertIs('race:group:TAMEABLE_ANIMALS', pets.options.filters[3].id)
+        luaunit.assertIs('high', pets.options.filters[1].direction)
 
         focuses[screen] = {'dwarfmode/Info/CREATURES/Visitors'}
         local visitors = scope.get_active()
-        test.assert_equal('Visitors', visitors.label)
-        test.assert_equal('unit_scope:visitors', visitors.options.filters[1].id)
+        luaunit.assertIs('Visitors', visitors.label)
+        luaunit.assertIs('unit_scope:visitors', visitors.options.filters[1].id)
     end)
 
-    test.case('creatures menu scope: resolves the suffix-free Residents focus from vanilla tabs', function()
+    add_test('creatures menu scope: resolves the suffix-free Residents focus from vanilla tabs', function()
         local screen = {}
         local focuses = {[screen]={'dwarfmode/Info/CREATURES'}}
         local scope = load_scope(repo_root, focuses, screen, 'Residents')
-        test.assert_equal('Residents', scope.get_active().label)
+        luaunit.assertIs('Residents', scope.get_active().label)
 
         scope = load_scope(repo_root, focuses, screen, 'Dead/Missing')
-        test.assert_nil(scope.get_active())
+        luaunit.assertNil(scope.get_active())
     end)
 
-    test.case('creatures menu scope: accepts live focus names and rejects unrelated contexts', function()
+    add_test('creatures menu scope: accepts live focus names and rejects unrelated contexts', function()
         local screen = {}
         local focuses = {[screen]={'dwarfmode/Info/CREATURES/CITIZEN'}}
         local scope = load_scope(repo_root, focuses, screen)
-        test.assert_equal('Residents', scope.get_active().label)
+        luaunit.assertIs('Residents', scope.get_active().label)
 
         focuses[screen] = {'dwarfmode/Info/CREATURES/Others'}
-        test.assert_equal('Visitors', scope.get_active().label)
-        test.assert_nil(scope.get_from_focuses({'dwarfmode/ViewSheets/UNIT'}))
+        luaunit.assertIs('Visitors', scope.get_active().label)
+        luaunit.assertNil(scope.get_from_focuses({'dwarfmode/ViewSheets/UNIT'}))
     end)
 
-    test.case('creatures menu scope: returns fresh options and finds an underlying menu', function()
+    add_test('creatures menu scope: returns fresh options and finds an underlying menu', function()
         local creatures = {}
         local launcher = {parent=creatures}
         local scope = load_scope(repo_root, {
@@ -101,6 +108,7 @@ return function(test, repo_root)
         local first = scope.get_active()
         first.options.filters[3].id = 'changed'
         local second = scope.get_active()
-        test.assert_equal('race:group:TAMEABLE_ANIMALS', second.options.filters[3].id)
+        luaunit.assertIs('race:group:TAMEABLE_ANIMALS', second.options.filters[3].id)
     end)
-end
+
+return native_tests

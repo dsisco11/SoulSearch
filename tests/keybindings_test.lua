@@ -10,8 +10,15 @@ local function load_keybindings(repo_root, hotkey)
         {dfhack={hotkey=hotkey}})
 end
 
-return function(test, repo_root)
-    test.case('keybindings: adds the default when Ctrl-F is unclaimed', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('keybindings: adds the default when Ctrl-F is unclaimed', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function() return {} end,
@@ -21,14 +28,14 @@ return function(test, repo_root)
         })
 
         local result = keybindings.ensure_default()
-        test.assert_equal('added', result.status)
-        test.assert_true(result.binding_added)
-        test.assert_equal(1, #added)
-        test.assert_equal(DEFAULT_SPEC, added[1].spec)
-        test.assert_equal(SOULSEARCH_COMMAND, added[1].command)
+        luaunit.assertIs('added', result.status)
+        luaunit.assertEvalToTrue(result.binding_added)
+        luaunit.assertIs(1, #added)
+        luaunit.assertIs(DEFAULT_SPEC, added[1].spec)
+        luaunit.assertIs(SOULSEARCH_COMMAND, added[1].command)
     end)
 
-    test.case('keybindings: does not duplicate its existing Ctrl-F binding', function()
+    add_test('keybindings: does not duplicate its existing Ctrl-F binding', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function()
@@ -38,12 +45,12 @@ return function(test, repo_root)
         })
 
         local result = keybindings.ensure_default()
-        test.assert_equal('existing', result.status)
-        test.assert_false(result.binding_added)
-        test.assert_equal(0, #added)
+        luaunit.assertIs('existing', result.status)
+        luaunit.assertEvalToFalse(result.binding_added)
+        luaunit.assertIs(0, #added)
     end)
 
-    test.case('keybindings: does not replace another Ctrl-F binding', function()
+    add_test('keybindings: does not replace another Ctrl-F binding', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function()
@@ -53,12 +60,12 @@ return function(test, repo_root)
         })
 
         local result = keybindings.ensure_default()
-        test.assert_equal('occupied', result.status)
-        test.assert_false(result.binding_added)
-        test.assert_equal(0, #added)
+        luaunit.assertIs('occupied', result.status)
+        luaunit.assertEvalToFalse(result.binding_added)
+        luaunit.assertIs(0, #added)
     end)
 
-    test.case('keybindings: ignores bindings on other hotkeys', function()
+    add_test('keybindings: ignores bindings on other hotkeys', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function()
@@ -71,11 +78,11 @@ return function(test, repo_root)
         })
 
         local result = keybindings.ensure_default()
-        test.assert_equal('added', result.status)
-        test.assert_equal(1, #added)
+        luaunit.assertIs('added', result.status)
+        luaunit.assertIs(1, #added)
     end)
 
-    test.case('keybindings: ignores malformed rows', function()
+    add_test('keybindings: ignores malformed rows', function()
         local added = {}
         local keybindings = load_keybindings(repo_root, {
             listAllKeybinds=function()
@@ -84,20 +91,21 @@ return function(test, repo_root)
             addKeybind=function(...) table.insert(added, {...}) end,
         })
 
-        test.assert_equal('added', keybindings.ensure_default().status)
-        test.assert_equal(1, #added)
+        luaunit.assertIs('added', keybindings.ensure_default().status)
+        luaunit.assertIs(1, #added)
     end)
 
-    test.case('keybindings: unavailable APIs and add failures fail safely', function()
+    add_test('keybindings: unavailable APIs and add failures fail safely', function()
         local no_hotkey = load_keybindings(repo_root, nil)
-        test.assert_equal('unavailable', no_hotkey.ensure_default().status)
+        luaunit.assertIs('unavailable', no_hotkey.ensure_default().status)
 
         local failed = load_keybindings(repo_root, {
             listAllKeybinds=function() return {} end,
             addKeybind=function() error('add failed') end,
         })
         local result = failed.ensure_default()
-        test.assert_equal('error', result.status)
-        test.assert_false(result.binding_added)
+        luaunit.assertIs('error', result.status)
+        luaunit.assertEvalToFalse(result.binding_added)
     end)
-end
+
+return native_tests

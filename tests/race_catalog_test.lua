@@ -20,14 +20,21 @@ local function ids(descriptors)
     return result
 end
 
-return function(test, repo_root)
-    test.case('race catalog: compounds precede stable sorted individual IDs', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('race catalog: compounds precede stable sorted individual IDs', function()
         local catalog = soulsearch_env.load_race_catalog(repo_root, make_df({
             raw('ZEBRA', 'zebra'),
             raw('DOG', 'dog'),
             raw('ALPACA', 'alpaca'),
         }))
-        test.assert_sequence({
+        luaunit.assertEquals({
             'race:group:HUMANOIDS',
             'race:group:TAMEABLE_ANIMALS',
             'race:group:WORK_ANIMALS',
@@ -41,7 +48,7 @@ return function(test, repo_root)
         }, ids(catalog.get_descriptors()))
     end)
 
-    test.case('race catalog: compound predicates use documented caste flags', function()
+    add_test('race catalog: compound predicates use documented caste flags', function()
         local raws = {
             raw('DWARF', 'dwarf', {CAN_LEARN=true, CAN_SPEAK=true}),
             raw('DOG', 'dog', {TRAINABLE_HUNTING=true}),
@@ -62,57 +69,58 @@ return function(test, repo_root)
             {'WILD_ANIMALS', 5}, {'MEGABEASTS', 6}, {'VERMIN', 7},
         }
         for _, case in ipairs(cases) do
-            test.assert_true(catalog.matches_unit(
+            luaunit.assertEvalToTrue(catalog.matches_unit(
                 by_id['race:group:' .. case[1]], {race=case[2], caste=0}))
         end
-        test.assert_false(catalog.matches_unit(
+        luaunit.assertEvalToFalse(catalog.matches_unit(
             by_id['race:group:WILD_ANIMALS'], {race=1, caste=0}))
-        test.assert_false(catalog.matches_unit(
+        luaunit.assertEvalToFalse(catalog.matches_unit(
             by_id['race:group:TAMEABLE_ANIMALS'], {race=2, caste=0}))
-        test.assert_false(catalog.matches_unit(
+        luaunit.assertEvalToFalse(catalog.matches_unit(
             by_id['race:group:WORK_ANIMALS'], {race=3, caste=0}))
-        test.assert_true(catalog.matches_unit(
+        luaunit.assertEvalToTrue(catalog.matches_unit(
             by_id['race:raw:DOG'], {race=2, caste=0}))
     end)
 
-    test.case('race catalog: raw-vector order does not affect individual IDs', function()
+    add_test('race catalog: raw-vector order does not affect individual IDs', function()
         local first = soulsearch_env.load_race_catalog(repo_root, make_df({
             raw('DOG', 'dog'), raw('DWARF', 'dwarf'),
         }))
         local second = soulsearch_env.load_race_catalog(repo_root, make_df({
             raw('DWARF', 'dwarf'), raw('DOG', 'dog'),
         }))
-        test.assert_sequence(ids(first.get_descriptors()), ids(second.get_descriptors()))
+        luaunit.assertEquals(ids(first.get_descriptors()), ids(second.get_descriptors()))
         local dog
         for _, descriptor in ipairs(second.get_descriptors()) do
             if descriptor.id == 'race:raw:DOG' then dog = descriptor end
         end
-        test.assert_true(second.matches_unit(dog, {race=2, caste=0}))
+        luaunit.assertEvalToTrue(second.matches_unit(dog, {race=2, caste=0}))
     end)
 
-    test.case('race catalog: missing raws and caste data never match', function()
+    add_test('race catalog: missing raws and caste data never match', function()
         local catalog = soulsearch_env.load_race_catalog(repo_root, make_df({
             {}, raw('DOG', 'dog', {PET=true}), {creature_id='MISSING_NAME'},
         }))
         local descriptors = catalog.get_descriptors()
-        test.assert_equal(9, #descriptors)
-        test.assert_false(catalog.matches_unit(descriptors[1], {race=2, caste=99}))
-        test.assert_false(catalog.matches_unit(descriptors[1], {race=99, caste=0}))
+        luaunit.assertIs(9, #descriptors)
+        luaunit.assertEvalToFalse(catalog.matches_unit(descriptors[1], {race=2, caste=99}))
+        luaunit.assertEvalToFalse(catalog.matches_unit(descriptors[1], {race=99, caste=0}))
     end)
 
-    test.case('race catalog: duplicate creature IDs fail clearly and cache resets', function()
+    add_test('race catalog: duplicate creature IDs fail clearly and cache resets', function()
         local catalog = soulsearch_env.load_race_catalog(repo_root, make_df({
             raw('DOG', 'dog'), raw('DOG', 'other dog'),
         }))
         local ok, err = pcall(catalog.get_descriptors)
-        test.assert_false(ok)
-        test.assert_true(tostring(err):find(
+        luaunit.assertEvalToFalse(ok)
+        luaunit.assertEvalToTrue(tostring(err):find(
             'duplicate SoulSearch creature ID: DOG', 1, true) ~= nil)
 
         catalog = soulsearch_env.load_race_catalog(repo_root, make_df({raw('DOG', 'dog')}))
         local first = catalog.get_descriptors()
-        test.assert_true(first == catalog.get_descriptors())
+        luaunit.assertEvalToTrue(first == catalog.get_descriptors())
         catalog.reset_cache()
-        test.assert_false(first == catalog.get_descriptors())
+        luaunit.assertEvalToFalse(first == catalog.get_descriptors())
     end)
-end
+
+return native_tests

@@ -1,23 +1,31 @@
 local soulsearch_env = require('support.soulsearch_env')
 
-return function(test, repo_root)
-    test.case('filter constants: preserve serialized filter protocol values', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('filter constants: preserve serialized filter protocol values', function()
         local constants =
             soulsearch_env.load_filter_constants(repo_root).FILTER_CONSTANTS
 
-        test.assert_equal('high', constants.direction.HIGH)
-        test.assert_equal('low', constants.direction.LOW)
-        test.assert_equal('candidate', constants.behavior.CANDIDATE)
-        test.assert_equal('ranking', constants.behavior.RANKING)
-        test.assert_equal('unit_scope', constants.kind.UNIT_SCOPE)
-        test.assert_equal('citizens', constants.unit_scope.CITIZENS)
-        test.assert_equal('livestock', constants.unit_scope.LIVESTOCK)
-        test.assert_equal('pets', constants.unit_scope.PETS)
-        test.assert_equal('visitors', constants.unit_scope.VISITORS)
-        test.assert_equal('wildlife', constants.unit_scope.WILDLIFE)
-        test.assert_equal('unit_scope:', constants.unit_scope.id_prefix)
-        test.assert_equal('race:group:HUMANOIDS',
+        luaunit.assertIs('high', constants.direction.HIGH)
+        luaunit.assertIs('low', constants.direction.LOW)
+        luaunit.assertIs('candidate', constants.behavior.CANDIDATE)
+        luaunit.assertIs('ranking', constants.behavior.RANKING)
+        luaunit.assertIs('unit_scope', constants.kind.UNIT_SCOPE)
+        luaunit.assertIs('citizens', constants.unit_scope.CITIZENS)
+        luaunit.assertIs('livestock', constants.unit_scope.LIVESTOCK)
+        luaunit.assertIs('pets', constants.unit_scope.PETS)
+        luaunit.assertIs('visitors', constants.unit_scope.VISITORS)
+        luaunit.assertIs('wildlife', constants.unit_scope.WILDLIFE)
+        luaunit.assertIs('unit_scope:', constants.unit_scope.id_prefix)
+        luaunit.assertIs('race:group:HUMANOIDS',
             constants.default_race_filter_id)
-        test.assert_equal('race:raw:', constants.race.raw_id_prefix)
+        luaunit.assertIs('race:raw:', constants.race.raw_id_prefix)
     end)
-end
+
+return native_tests

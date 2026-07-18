@@ -10,7 +10,14 @@ local function filter(key, direction)
     return {id='unit_scope:' .. key, direction=direction or 'high'}
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local family = soulsearch_env.load_candidate_filter_family_provider(repo_root)
     local candidates = soulsearch_env.load_candidate_provider(repo_root)
     local source = {
@@ -26,29 +33,30 @@ return function(test, repo_root)
             .get_units()
     end
 
-    test.case('candidate filter family: empty, positive, union, negative, and include-except behavior', function()
-        test.assert_sequence({1, 2, 3, 4}, ids(run({})))
-        test.assert_sequence({1}, ids(run({filter('citizens')})))
-        test.assert_sequence({1, 3}, ids(run({filter('citizens'), filter('visitors')})))
-        test.assert_sequence({1, 3, 4}, ids(run({filter('livestock', 'low')})))
-        test.assert_sequence({4}, ids(run({filter('fort_residents'), filter('citizens', 'low')})))
+    add_test('candidate filter family: empty, positive, union, negative, and include-except behavior', function()
+        luaunit.assertEquals({1, 2, 3, 4}, ids(run({})))
+        luaunit.assertEquals({1}, ids(run({filter('citizens')})))
+        luaunit.assertEquals({1, 3}, ids(run({filter('citizens'), filter('visitors')})))
+        luaunit.assertEquals({1, 3, 4}, ids(run({filter('livestock', 'low')})))
+        luaunit.assertEquals({4}, ids(run({filter('fort_residents'), filter('citizens', 'low')})))
     end)
 
-    test.case('candidate filter family: ignores stale, duplicate, invalid, and other-kind filters', function()
+    add_test('candidate filter family: ignores stale, duplicate, invalid, and other-kind filters', function()
         local units = run({
             filter('citizens'), filter('citizens', 'low'),
             {id='unit_scope:unknown', direction='high'},
             {id='race:group:HUMANOIDS', direction='high'},
             {id='unit_scope:visitors', direction='sideways'},
         })
-        test.assert_sequence({1}, ids(units))
+        luaunit.assertEquals({1}, ids(units))
     end)
 
-    test.case('candidate filter family: propagates upstream errors without partial candidates', function()
+    add_test('candidate filter family: propagates upstream errors without partial candidates', function()
         local provider = family.new(candidates.new(function() return nil, 'upstream unavailable' end),
             {}, 'unit_scope', function() return true end)
         local units, err = provider.get_units()
-        test.assert_nil(units)
-        test.assert_equal('upstream unavailable', err)
+        luaunit.assertNil(units)
+        luaunit.assertIs('upstream unavailable', err)
     end)
-end
+
+return native_tests

@@ -1,7 +1,14 @@
 local soulsearch_env = require('support.soulsearch_env')
 
-return function(test, repo_root)
-    test.case('UI open: unavailable context prints reason without constructing a screen', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('UI open: unavailable context prints reason without constructing a screen', function()
         local ui = soulsearch_env.load_ui_open_guard(
             repo_root, 'SoulSearch requires a loaded fortress.')
         local printed = {}
@@ -10,17 +17,17 @@ return function(test, repo_root)
         local ok, err = pcall(ui.open)
         print = original_print
 
-        test.assert_true(ok, tostring(err))
-        test.assert_sequence(
+        luaunit.assertEvalToTrue(ok, tostring(err))
+        luaunit.assertEquals(
             {'SoulSearch requires a loaded fortress.'}, printed)
     end)
 
-    test.case('UI reload teardown: dismisses zero, one, and multiple screens safely', function()
+    add_test('UI reload teardown: dismisses zero, one, and multiple screens safely', function()
         local ui, registry = soulsearch_env.load_ui_open_guard(repo_root, nil)
         registry.clear()
 
         ui.dismiss_all()
-        test.assert_equal(0, registry.count())
+        luaunit.assertIs(0, registry.count())
 
         local dismissals = {}
         local function registered_screen(name)
@@ -36,23 +43,23 @@ return function(test, repo_root)
 
         local one = registered_screen('one')
         ui.dismiss_all()
-        test.assert_equal(1, one.dismiss_count)
-        test.assert_equal(0, registry.count())
+        luaunit.assertIs(1, one.dismiss_count)
+        luaunit.assertIs(0, registry.count())
 
         local first = registered_screen('first')
         local second = registered_screen('second')
         local third = registered_screen('third')
         ui.dismiss_all()
-        test.assert_equal(1, first.dismiss_count)
-        test.assert_equal(1, second.dismiss_count)
-        test.assert_equal(1, third.dismiss_count)
-        test.assert_equal(0, registry.count())
+        luaunit.assertIs(1, first.dismiss_count)
+        luaunit.assertIs(1, second.dismiss_count)
+        luaunit.assertIs(1, third.dismiss_count)
+        luaunit.assertIs(0, registry.count())
 
         ui.dismiss_all()
-        test.assert_equal(4, #dismissals)
+        luaunit.assertIs(4, #dismissals)
     end)
 
-    test.case('UI open: scoped options construct one new screen', function()
+    add_test('UI open: scoped options construct one new screen', function()
         local ui, _, state, screen_constructor =
             soulsearch_env.load_ui_open_guard(repo_root, nil)
         local constructed
@@ -67,13 +74,13 @@ return function(test, repo_root)
         }
         local screen = ui.open(options)
 
-        test.assert_true(screen ~= nil)
-        test.assert_true(state.options == options)
-        test.assert_equal('creatures:miners', constructed.settings_id)
-        test.assert_equal('creatures:miners', constructed.settings.settings_id)
+        luaunit.assertEvalToTrue(screen ~= nil)
+        luaunit.assertEvalToTrue(state.options == options)
+        luaunit.assertIs('creatures:miners', constructed.settings_id)
+        luaunit.assertIs('creatures:miners', constructed.settings.settings_id)
     end)
 
-    test.case('UI input: child handling precedes global fallback handling', function()
+    add_test('UI input: child handling precedes global fallback handling', function()
         local _, _, _, main_window =
             soulsearch_env.load_ui_characterization(repo_root)
         local super_calls, refreshes = 0, 0
@@ -86,9 +93,10 @@ return function(test, repo_root)
         local window = {
             refresh_residents=function() refreshes = refreshes + 1 end,
         }
-        test.assert_true(main_window.SoulSearchWindow.onInput(
+        luaunit.assertEvalToTrue(main_window.SoulSearchWindow.onInput(
             window, {CUSTOM_R=true}))
-        test.assert_equal(1, super_calls)
-        test.assert_equal(0, refreshes)
+        luaunit.assertIs(1, super_calls)
+        luaunit.assertIs(0, refreshes)
     end)
-end
+
+return native_tests

@@ -6,7 +6,14 @@ local function labels(records)
     return result
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local fake_attributes = {
         evaluate=function(kind, key, value, unit)
             return {deviation=value, tier_distance=math.abs(value)}
@@ -26,26 +33,26 @@ return function(test, repo_root)
         },
     }
 
-    test.case('Stats presenter: notable values and default sections', function()
+    add_test('Stats presenter: notable values and default sections', function()
         local sections, flat = presenter.build_records(result)
-        test.assert_equal(3, #sections)
-        test.assert_sequence({'Strength'}, labels(sections[1]))
-        test.assert_sequence({'Focus', 'Willpower'}, labels(sections[2]))
-        test.assert_sequence({'Patience'}, labels(sections[3]))
-        test.assert_equal(4, #flat)
-        test.assert_equal('lightgreen', sections[1][1].pen)
-        test.assert_equal('lightblue', sections[2][1].pen)
-        test.assert_equal('lightmagenta', sections[3][1].pen)
+        luaunit.assertIs(3, #sections)
+        luaunit.assertEquals({'Strength'}, labels(sections[1]))
+        luaunit.assertEquals({'Focus', 'Willpower'}, labels(sections[2]))
+        luaunit.assertEquals({'Patience'}, labels(sections[3]))
+        luaunit.assertIs(4, #flat)
+        luaunit.assertIs('lightgreen', sections[1][1].pen)
+        luaunit.assertIs('lightblue', sections[2][1].pen)
+        luaunit.assertIs('lightmagenta', sections[3][1].pen)
     end)
 
-    test.case('Stats presenter: skills remain excluded', function()
+    add_test('Stats presenter: skills remain excluded', function()
         local _, flat = presenter.build_records(result)
         for _, record in ipairs(flat) do
-            test.assert_false(record.label == 'Mining')
+            luaunit.assertEvalToFalse(record.label == 'Mining')
         end
     end)
 
-    test.case('Stats presenter: no meaningful deviations produces no records', function()
+    add_test('Stats presenter: no meaningful deviations produces no records', function()
         local records = presenter.get_display_records({
             unit={},
             row={
@@ -54,7 +61,7 @@ return function(test, repo_root)
                 traits={PATIENCE=0},
             },
         }, nil, false)
-        test.assert_equal(0, #records)
+        luaunit.assertIs(0, #records)
     end)
 
     local sort_cases = {
@@ -68,38 +75,39 @@ return function(test, repo_root)
          expected={'Willpower', 'Strength', 'Patience', 'Focus'}},
     }
     for _, case in ipairs(sort_cases) do
-        test.case('Stats presenter: ' .. case.name, function()
+        add_test('Stats presenter: ' .. case.name, function()
             local _, records = presenter.build_records(result)
             presenter.sort_records(records, case.key, case.reverse)
-            test.assert_sequence(case.expected, labels(records))
+            luaunit.assertEquals(case.expected, labels(records))
         end)
     end
 
-    test.case('Stats presenter: ties use label then stable source order', function()
+    add_test('Stats presenter: ties use label then stable source order', function()
         local records = {
             {label='Beta', label_key='beta', deviation=1, ordinal=3},
             {label='Alpha', label_key='alpha', deviation=1, ordinal=2},
             {label='Alpha', label_key='alpha', deviation=1, ordinal=1},
         }
         presenter.sort_records(records, 'value', true)
-        test.assert_sequence({'Alpha', 'Alpha', 'Beta'}, labels(records))
-        test.assert_equal(1, records[1].ordinal)
-        test.assert_equal(2, records[2].ordinal)
+        luaunit.assertEquals({'Alpha', 'Alpha', 'Beta'}, labels(records))
+        luaunit.assertIs(1, records[1].ordinal)
+        luaunit.assertIs(2, records[2].ordinal)
     end)
 
-    test.case('Stats presenter: body preserves default section gaps', function()
+    add_test('Stats presenter: body preserves default section gaps', function()
         local tokens = presenter.body(result, nil, false)
         local newline_count = 0
         for _, token in ipairs(tokens) do
             if token == '<NL>' then newline_count = newline_count + 1 end
         end
-        test.assert_equal(6, newline_count)
+        luaunit.assertIs(6, newline_count)
     end)
 
-    test.case('Stats presenter: column header remains separate from records', function()
+    add_test('Stats presenter: column header remains separate from records', function()
         local header = presenter.column_header('value', true)
         local body = presenter.body(result, nil, false)
-        test.assert_equal('Stat' .. (' '):rep(22), header[1].text)
-        test.assert_equal('  Strength' .. (' '):rep(16), body[1].text)
+        luaunit.assertIs('Stat' .. (' '):rep(22), header[1].text)
+        luaunit.assertIs('  Strength' .. (' '):rep(16), body[1].text)
     end)
-end
+
+return native_tests

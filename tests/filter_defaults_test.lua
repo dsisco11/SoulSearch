@@ -6,41 +6,49 @@ local function ids(filters)
     return result
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local defaults = soulsearch_env.load_filter_defaults(repo_root)
 
-    test.case('built-in presets: expose every wiki skill-table row', function()
+    add_test('built-in presets: expose every wiki skill-table row', function()
         local labels = {}
         for _, preset in ipairs(defaults.get_all()) do
             table.insert(labels, preset.label)
         end
-        test.assert_equal(137, #labels)
-        test.assert_equal('Miner', labels[1])
-        test.assert_equal('Stone carver', labels[#labels])
-        test.assert_nil(defaults.get('scholar'))
-        test.assert_nil(defaults.get('sheriff'))
-        test.assert_nil(defaults.get('manager'))
+        luaunit.assertIs(137, #labels)
+        luaunit.assertIs('Miner', labels[1])
+        luaunit.assertIs('Stone carver', labels[#labels])
+        luaunit.assertNil(defaults.get('scholar'))
+        luaunit.assertNil(defaults.get('sheriff'))
+        luaunit.assertNil(defaults.get('manager'))
     end)
 
-    test.case('built-in presets: preserve wiki A, B, C priority order', function()
-        test.assert_sequence({
+    add_test('built-in presets: preserve wiki A, B, C priority order', function()
+        luaunit.assertEquals({
             'physical_attribute:AGILITY',
             'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:KINESTHETIC_SENSE',
             'mental_attribute:FOCUS',
         }, ids(assert(defaults.get('crossbowman'))))
-        test.assert_sequence({
+        luaunit.assertEquals({
             'mental_attribute:ANALYTICAL_ABILITY',
             'mental_attribute:SPATIAL_SENSE',
             'mental_attribute:MEMORY',
         }, ids(assert(defaults.get('mathematician'))))
     end)
 
-    test.case('built-in presets: reads do not alias the catalog', function()
+    add_test('built-in presets: reads do not alias the catalog', function()
         local filters = assert(defaults.get('miner'))
         filters[1].id = 'physical_attribute:AGILITY'
-        test.assert_equal('physical_attribute:STRENGTH',
+        luaunit.assertIs('physical_attribute:STRENGTH',
             assert(defaults.get('miner'))[1].id)
-        test.assert_nil(defaults.get('unknown'))
+        luaunit.assertNil(defaults.get('unknown'))
     end)
-end
+
+return native_tests

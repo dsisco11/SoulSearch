@@ -25,8 +25,15 @@ local function filter(id, direction)
     return {id=id, direction=direction or 'high'}
 end
 
-return function(test, repo_root)
-    test.case('race provider: positives union and negatives subtract in source order', function()
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
+    add_test('race provider: positives union and negatives subtract in source order', function()
         local upstream_calls = 0
         local source = {
             {id=1, race=1, caste=0},
@@ -45,12 +52,12 @@ return function(test, repo_root)
                 filter('race:raw:DWARF', 'low'),
             })
         local units, err = provider.get_units()
-        test.assert_nil(err)
-        test.assert_equal(1, upstream_calls)
-        test.assert_sequence({2, 3}, ids(units))
+        luaunit.assertNil(err)
+        luaunit.assertIs(1, upstream_calls)
+        luaunit.assertEquals({2, 3}, ids(units))
     end)
 
-    test.case('race provider: negative-only input excludes from the upstream scope', function()
+    add_test('race provider: negative-only input excludes from the upstream scope', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return {
                 {id=1, race=1, caste=0},
@@ -60,10 +67,10 @@ return function(test, repo_root)
         end)
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {filter('race:raw:DWARF', 'low')})
-        test.assert_sequence({2, 3}, ids(provider.get_units()))
+        luaunit.assertEquals({2, 3}, ids(provider.get_units()))
     end)
 
-    test.case('race provider: exclusions support humanoids except dwarves and animals except dogs', function()
+    add_test('race provider: exclusions support humanoids except dwarves and animals except dogs', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return {
                 {id=1, race=1, caste=0},
@@ -77,31 +84,32 @@ return function(test, repo_root)
                 filter('race:group:HUMANOIDS'),
                 filter('race:raw:DWARF', 'low'),
             })
-        test.assert_sequence({3}, ids(provider.get_units()))
+        luaunit.assertEquals({3}, ids(provider.get_units()))
 
         provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {
                 filter('race:group:TAMEABLE_ANIMALS'),
                 filter('race:raw:DOG', 'low'),
             })
-        test.assert_sequence({4}, ids(provider.get_units()))
+        luaunit.assertEquals({4}, ids(provider.get_units()))
     end)
 
-    test.case('race provider: upstream errors propagate without a partial set', function()
+    add_test('race provider: upstream errors propagate without a partial set', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return nil, 'scope unavailable'
         end)
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {filter('race:group:HUMANOIDS')})
         local units, err = provider.get_units()
-        test.assert_nil(units)
-        test.assert_equal('scope unavailable', err)
+        luaunit.assertNil(units)
+        luaunit.assertIs('scope unavailable', err)
     end)
 
-    test.case('race provider: invalid upstream providers fail at construction', function()
+    add_test('race provider: invalid upstream providers fail at construction', function()
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df())
         local ok, err = pcall(provider.new, {})
-        test.assert_false(ok)
-        test.assert_true(tostring(err):find('requires an upstream candidate provider', 1, true) ~= nil)
+        luaunit.assertEvalToFalse(ok)
+        luaunit.assertEvalToTrue(tostring(err):find('requires an upstream candidate provider', 1, true) ~= nil)
     end)
-end
+
+return native_tests

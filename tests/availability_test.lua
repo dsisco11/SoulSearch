@@ -1,6 +1,13 @@
 local soulsearch_env = require('support.soulsearch_env')
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local function load(map_loaded, fortress_mode)
         return soulsearch_env.load_availability(repo_root, {
             isMapLoaded=function() return map_loaded end,
@@ -8,11 +15,12 @@ return function(test, repo_root)
         })
     end
 
-    test.case('availability: no map, wrong mode, and valid fortress have one policy', function()
-        test.assert_equal('SoulSearch requires a loaded fortress map.',
+    add_test('availability: no map, wrong mode, and valid fortress have one policy', function()
+        luaunit.assertIs('SoulSearch requires a loaded fortress map.',
             load(false, true).get_unavailable_reason())
-        test.assert_equal('SoulSearch only works in fortress mode.',
+        luaunit.assertIs('SoulSearch only works in fortress mode.',
             load(true, false).get_unavailable_reason())
-        test.assert_nil(load(true, true).get_unavailable_reason())
+        luaunit.assertNil(load(true, true).get_unavailable_reason())
     end)
-end
+
+return native_tests

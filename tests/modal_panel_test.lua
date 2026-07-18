@@ -1,6 +1,13 @@
 local soulsearch_env = require('support.soulsearch_env')
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local ModalPanelWindow =
         soulsearch_env.load_modal_panel(repo_root).ModalPanelWindow
 
@@ -17,53 +24,54 @@ return function(test, repo_root)
         return panel, function() return panel:is_open(), opens, closes end
     end
 
-    test.case('modal panel: open and close transitions are idempotent', function()
+    add_test('modal panel: open and close transitions are idempotent', function()
         local panel, get_state = make_panel()
-        test.assert_false(panel.visible)
-        test.assert_equal('block', panel.pointer_policy)
-        test.assert_true(panel:open())
-        test.assert_false(panel:open())
-        test.assert_true(panel.focused)
-        test.assert_true(panel.visible)
+        luaunit.assertEvalToFalse(panel.visible)
+        luaunit.assertIs('block', panel.pointer_policy)
+        luaunit.assertEvalToTrue(panel:open())
+        luaunit.assertEvalToFalse(panel:open())
+        luaunit.assertEvalToTrue(panel.focused)
+        luaunit.assertEvalToTrue(panel.visible)
         local open, opens, closes = get_state()
-        test.assert_true(open)
-        test.assert_equal(1, opens)
-        test.assert_equal(0, closes)
+        luaunit.assertEvalToTrue(open)
+        luaunit.assertIs(1, opens)
+        luaunit.assertIs(0, closes)
 
-        test.assert_true(panel:close())
-        test.assert_false(panel:close())
-        test.assert_false(panel.focused)
-        test.assert_false(panel.visible)
+        luaunit.assertEvalToTrue(panel:close())
+        luaunit.assertEvalToFalse(panel:close())
+        luaunit.assertEvalToFalse(panel.focused)
+        luaunit.assertEvalToFalse(panel.visible)
         open, opens, closes = get_state()
-        test.assert_false(open)
-        test.assert_equal(1, opens)
-        test.assert_equal(1, closes)
+        luaunit.assertEvalToFalse(open)
+        luaunit.assertIs(1, opens)
+        luaunit.assertIs(1, closes)
     end)
 
-    test.case('modal panel: input capture and right-click dismissal are exact', function()
+    add_test('modal panel: input capture and right-click dismissal are exact', function()
         local panel, get_state = make_panel()
         panel.mouse_x, panel.mouse_y = 1, 1
-        test.assert_false(panel:onInput{_MOUSE_L=true})
+        luaunit.assertEvalToFalse(panel:onInput{_MOUSE_L=true})
         panel:open()
-        test.assert_true(panel:onInput{_MOUSE_L=true})
-        test.assert_true(panel:onInput{_MOUSE_R=true})
+        luaunit.assertEvalToTrue(panel:onInput{_MOUSE_L=true})
+        luaunit.assertEvalToTrue(panel:onInput{_MOUSE_R=true})
         local open, _, closes = get_state()
-        test.assert_false(open)
-        test.assert_equal(1, closes)
+        luaunit.assertEvalToFalse(open)
+        luaunit.assertIs(1, closes)
 
         panel:open()
         panel.mouse_x, panel.mouse_y = nil, nil
-        test.assert_false(panel:onInput{_MOUSE_L=true})
-        test.assert_true(get_state())
+        luaunit.assertEvalToFalse(panel:onInput{_MOUSE_L=true})
+        luaunit.assertEvalToTrue(get_state())
     end)
 
-    test.case('modal panel: child input wins before modal mouse handling', function()
+    add_test('modal panel: child input wins before modal mouse handling', function()
         local panel = make_panel()
         panel:open()
         panel.super_input_result = true
         panel.mouse_x, panel.mouse_y = nil, nil
-        test.assert_true(panel:onInput{})
-        test.assert_equal(1, panel.super_input_calls)
+        luaunit.assertEvalToTrue(panel:onInput{})
+        luaunit.assertIs(1, panel.super_input_calls)
     end)
 
-end
+
+return native_tests

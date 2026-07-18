@@ -29,7 +29,14 @@ local function result_names(results)
     return names
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local attributes = soulsearch_env.load_attributes(repo_root)
     local search = soulsearch_env.load_search(repo_root, attributes)
 
@@ -76,22 +83,22 @@ return function(test, repo_root)
         },
     }
     for _, case in ipairs(comparator_cases) do
-        test.case('result comparator: ' .. case.name, function()
+        add_test('result comparator: ' .. case.name, function()
             local left = result_for_order(case.left)
             local right = result_for_order(case.right)
-            test.assert_true(search.compare_results(left, right))
-            test.assert_false(search.compare_results(right, left))
+            luaunit.assertEvalToTrue(search.compare_results(left, right))
+            luaunit.assertEvalToFalse(search.compare_results(right, left))
         end)
     end
 
-    test.case('result comparator: equal values do not reorder', function()
+    add_test('result comparator: equal values do not reorder', function()
         local left = result_for_order()
         local right = result_for_order()
-        test.assert_false(search.compare_results(left, right))
-        test.assert_false(search.compare_results(right, left))
+        luaunit.assertEvalToFalse(search.compare_results(left, right))
+        luaunit.assertEvalToFalse(search.compare_results(right, left))
     end)
 
-    test.case('search filters: validates entries and keeps first valid duplicate', function()
+    add_test('search filters: validates entries and keeps first valid duplicate', function()
         local filters = {
             false,
             {id='skill:UNKNOWN', direction='high'},
@@ -102,17 +109,17 @@ return function(test, repo_root)
         }
         local row = resident(1, 'Miner', {skills={MINING=2}})
         local result = search.apply({row}, {selected_filters=filters})[1]
-        test.assert_equal(2, result.matched_count)
-        test.assert_equal(2, #result.filter_criteria)
-        test.assert_equal('skill:MINING', result.filter_criteria[1].id)
-        test.assert_equal('high', result.filter_criteria[1].direction)
-        test.assert_equal('skill:SWIMMING', result.filter_criteria[2].id)
-        test.assert_equal('low', result.filter_criteria[2].direction)
-        test.assert_equal('high', filters[4].direction)
-        test.assert_equal('low', filters[5].direction)
+        luaunit.assertIs(2, result.matched_count)
+        luaunit.assertIs(2, #result.filter_criteria)
+        luaunit.assertIs('skill:MINING', result.filter_criteria[1].id)
+        luaunit.assertIs('high', result.filter_criteria[1].direction)
+        luaunit.assertIs('skill:SWIMMING', result.filter_criteria[2].id)
+        luaunit.assertIs('low', result.filter_criteria[2].direction)
+        luaunit.assertIs('high', filters[4].direction)
+        luaunit.assertIs('low', filters[5].direction)
     end)
 
-    test.case('result column sort: uses the selected column then relevance', function()
+    add_test('result column sort: uses the selected column then relevance', function()
         local results = {
             result_for_order{unit_id=7, name='Beta', profession='Miner'},
             result_for_order{unit_id=3, name='Alpha', profession='Peasant'},
@@ -120,54 +127,54 @@ return function(test, repo_root)
                 unit_id=4, name='Alpha', profession='Woodworker', matched_count=2},
         }
         search.sort_results(results, 'name', false)
-        test.assert_sequence({4, 3, 7},
+        luaunit.assertEquals({4, 3, 7},
             {results[1].unit_id, results[2].unit_id, results[3].unit_id})
 
         search.sort_results(results, 'unit_id', true)
-        test.assert_sequence({7, 4, 3},
+        luaunit.assertEquals({7, 4, 3},
             {results[1].unit_id, results[2].unit_id, results[3].unit_id})
 
         search.sort_results(results, 'profession', false)
-        test.assert_sequence({'Miner', 'Peasant', 'Woodworker'},
+        luaunit.assertEquals({'Miner', 'Peasant', 'Woodworker'},
             {results[1].profession, results[2].profession, results[3].profession})
     end)
 
-    test.case('search filters: candidate descriptors are ignored by the ranker', function()
+    add_test('search filters: candidate descriptors are ignored by the ranker', function()
         local result = search.apply({resident(1, 'Miner', {skills={MINING=2}})}, {
             selected_filters={
                 selected_filter('race:group', 'HUMANOIDS'),
                 selected_filter('skill', 'MINING'),
             },
         })[1]
-        test.assert_equal(1, result.matched_count)
-        test.assert_equal(1, #result.filter_criteria)
-        test.assert_equal('skill:MINING', result.filter_criteria[1].id)
+        luaunit.assertIs(1, result.matched_count)
+        luaunit.assertIs(1, #result.filter_criteria)
+        luaunit.assertIs('skill:MINING', result.filter_criteria[1].id)
     end)
 
-    test.case('result model: contains only consumed presentation and sort data', function()
+    add_test('result model: contains only consumed presentation and sort data', function()
         local result = search.apply({resident(1, 'Urist')}, {
             selected_filters={},
         })[1]
-        test.assert_true(result.row ~= nil)
-        test.assert_true(result.unit ~= nil)
-        test.assert_equal(0, result.matched_count)
-        test.assert_equal(0, result.score)
-        test.assert_equal(0, result.weighted_score)
-        test.assert_nil(result.matched_criteria)
-        test.assert_nil(result.criteria_count)
-        test.assert_nil(result.match_label)
+        luaunit.assertEvalToTrue(result.row ~= nil)
+        luaunit.assertEvalToTrue(result.unit ~= nil)
+        luaunit.assertIs(0, result.matched_count)
+        luaunit.assertIs(0, result.score)
+        luaunit.assertIs(0, result.weighted_score)
+        luaunit.assertNil(result.matched_criteria)
+        luaunit.assertNil(result.criteria_count)
+        luaunit.assertNil(result.match_label)
     end)
 
-    test.case('search query: empty includes all and uses name then unit ID', function()
+    add_test('search query: empty includes all and uses name then unit ID', function()
         local rows = {
             resident(3, 'Beta'),
             resident(2, 'Alpha'),
             resident(1, 'Alpha'),
         }
         local results = search.apply(rows, {query='', selected_filters={}})
-        test.assert_sequence({'Alpha', 'Alpha', 'Beta'}, result_names(results))
-        test.assert_equal(1, results[1].unit_id)
-        test.assert_equal(2, results[2].unit_id)
+        luaunit.assertEquals({'Alpha', 'Alpha', 'Beta'}, result_names(results))
+        luaunit.assertIs(1, results[1].unit_id)
+        luaunit.assertIs(2, results[2].unit_id)
     end)
 
     local query_cases = {
@@ -176,7 +183,7 @@ return function(test, repo_root)
         {name='nonmatching query', query='Zon', expected={}},
     }
     for _, case in ipairs(query_cases) do
-        test.case('search query: ' .. case.name, function()
+        add_test('search query: ' .. case.name, function()
             local rows = {
                 resident(1, 'Urist McMiner'),
                 resident(2, 'Domas Smith'),
@@ -185,11 +192,11 @@ return function(test, repo_root)
                 query=case.query,
                 selected_filters={},
             })
-            test.assert_sequence(case.expected, result_names(results))
+            luaunit.assertEquals(case.expected, result_names(results))
         end)
     end
 
-    test.case('ranking: full and partial matches remain in results', function()
+    add_test('ranking: full and partial matches remain in results', function()
         local filters = {
             selected_filter('physical_attribute', 'STRENGTH'),
             selected_filter('physical_attribute', 'AGILITY'),
@@ -200,16 +207,16 @@ return function(test, repo_root)
             resident(3, 'Full Match', {physical_attributes={STRENGTH=1500, AGILITY=1500}}),
         }
         local results = search.apply(rows, {selected_filters=filters})
-        test.assert_sequence(
+        luaunit.assertEquals(
             {'Full Match', 'Partial Match', 'No Match'},
             result_names(results))
-        test.assert_equal(2, results[1].matched_count)
-        test.assert_equal(1, results[2].matched_count)
-        test.assert_equal(0, results[3].matched_count)
-        test.assert_equal(3, #results)
+        luaunit.assertIs(2, results[1].matched_count)
+        luaunit.assertIs(1, results[2].matched_count)
+        luaunit.assertIs(0, results[3].matched_count)
+        luaunit.assertIs(3, #results)
     end)
 
-    test.case('ranking: earlier selected filter receives priority bonus', function()
+    add_test('ranking: earlier selected filter receives priority bonus', function()
         local filters = {
             selected_filter('physical_attribute', 'STRENGTH'),
             selected_filter('physical_attribute', 'AGILITY'),
@@ -219,15 +226,15 @@ return function(test, repo_root)
             resident(2, 'First Priority', {physical_attributes={STRENGTH=1500, AGILITY=500}}),
         }
         local results = search.apply(rows, {selected_filters=filters})
-        test.assert_sequence(
+        luaunit.assertEquals(
             {'First Priority', 'Second Priority'},
             result_names(results))
-        test.assert_equal(results[1].matched_count, results[2].matched_count)
-        test.assert_near(results[1].score, results[2].score)
-        test.assert_true(results[1].weighted_score > results[2].weighted_score)
+        luaunit.assertIs(results[1].matched_count, results[2].matched_count)
+        luaunit.assertAlmostEquals(results[1].score, results[2].score)
+        luaunit.assertEvalToTrue(results[1].weighted_score > results[2].weighted_score)
     end)
 
-    test.case('ranking: raw score breaks an exact weighted-score tie', function()
+    add_test('ranking: raw score breaks an exact weighted-score tie', function()
         local filters = {
             selected_filter('physical_attribute', 'STRENGTH'),
             selected_filter('physical_attribute', 'AGILITY'),
@@ -237,36 +244,36 @@ return function(test, repo_root)
             resident(2, 'Zulu Higher Raw', {physical_attributes={STRENGTH=1050, AGILITY=1650}}),
         }
         local results = search.apply(rows, {selected_filters=filters})
-        test.assert_equal(results[1].matched_count, results[2].matched_count)
-        test.assert_equal(results[1].weighted_score, results[2].weighted_score)
-        test.assert_true(results[1].score > results[2].score)
-        test.assert_sequence(
+        luaunit.assertIs(results[1].matched_count, results[2].matched_count)
+        luaunit.assertIs(results[1].weighted_score, results[2].weighted_score)
+        luaunit.assertEvalToTrue(results[1].score > results[2].score)
+        luaunit.assertEquals(
             {'Zulu Higher Raw', 'Alpha Lower Raw'},
             result_names(results))
     end)
 
-    test.case('ranking: name breaks complete score tie', function()
+    add_test('ranking: name breaks complete score tie', function()
         local filter = selected_filter('physical_attribute', 'STRENGTH')
         local rows = {
             resident(1, 'Zulu', {physical_attributes={STRENGTH=1500}}),
             resident(2, 'Alpha', {physical_attributes={STRENGTH=1500}}),
         }
         local results = search.apply(rows, {selected_filters={filter}})
-        test.assert_sequence({'Alpha', 'Zulu'}, result_names(results))
+        luaunit.assertEquals({'Alpha', 'Zulu'}, result_names(results))
     end)
 
-    test.case('ranking: unit ID breaks complete score and name tie', function()
+    add_test('ranking: unit ID breaks complete score and name tie', function()
         local filter = selected_filter('physical_attribute', 'STRENGTH')
         local rows = {
             resident(20, 'Urist', {physical_attributes={STRENGTH=1500}}),
             resident(10, 'Urist', {physical_attributes={STRENGTH=1500}}),
         }
         local results = search.apply(rows, {selected_filters={filter}})
-        test.assert_equal(10, results[1].unit_id)
-        test.assert_equal(20, results[2].unit_id)
+        luaunit.assertIs(10, results[1].unit_id)
+        luaunit.assertIs(20, results[2].unit_id)
     end)
 
-    test.case('ranking: mixed stat kinds evaluate together', function()
+    add_test('ranking: mixed stat kinds evaluate together', function()
         local filters = {
             selected_filter('trait', 'PATIENCE', 'high'),
             selected_filter('mental_attribute', 'FOCUS', 'low'),
@@ -282,11 +289,11 @@ return function(test, repo_root)
             skills={MINING=1.5},
         })
         local result = search.apply({row}, {selected_filters=filters})[1]
-        test.assert_equal(4, result.matched_count)
-        test.assert_equal(4, #result.filter_criteria)
+        luaunit.assertIs(4, result.matched_count)
+        luaunit.assertIs(4, #result.filter_criteria)
     end)
 
-    test.case('ranking: missing trait is omitted and absent skill supports low', function()
+    add_test('ranking: missing trait is omitted and absent skill supports low', function()
         local filters = {
             selected_filter('trait', 'PATIENCE', 'high'),
             selected_filter('skill', 'MINING', 'low'),
@@ -294,9 +301,10 @@ return function(test, repo_root)
         local result = search.apply(
             {resident(1, 'No Soul Stats')},
             {selected_filters=filters})[1]
-        test.assert_equal(1, result.matched_count)
-        test.assert_equal(1, #result.filter_criteria)
-        test.assert_equal('skill', result.filter_criteria[1].kind)
-        test.assert_true(result.filter_criteria[1].matched)
+        luaunit.assertIs(1, result.matched_count)
+        luaunit.assertIs(1, #result.filter_criteria)
+        luaunit.assertIs('skill', result.filter_criteria[1].kind)
+        luaunit.assertEvalToTrue(result.filter_criteria[1].matched)
     end)
-end
+
+return native_tests

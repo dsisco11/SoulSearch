@@ -1,65 +1,72 @@
 local soulsearch_env = require('support.soulsearch_env')
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local layout = soulsearch_env.load_ui_layout(repo_root)
     local stats_layout = soulsearch_env.load_stats_layout(repo_root)
 
-    test.case('UI layout: baseline panel geometry is exact', function()
-        test.assert_equal(110, layout.WINDOW_FRAME.w)
-        test.assert_equal(45, layout.WINDOW_FRAME.h)
-        test.assert_equal(90, layout.WINDOW_RESIZE_MIN.w)
-        test.assert_equal(30, layout.WINDOW_RESIZE_MIN.h)
-        test.assert_sequence({65}, layout.DIVIDER_XS)
-        test.assert_equal(1, layout.RESULTS_LEFT)
-        test.assert_equal(64, layout.RESULTS_WIDTH)
-        test.assert_equal(67, layout.STATS_LEFT)
-        test.assert_equal(layout.STATS_LEFT - 2, layout.DIVIDER_XS[1])
-        test.assert_equal(5, layout.get_frame('result_columns').t)
-        test.assert_equal(6, layout.get_frame('result_list').t)
-        test.assert_equal(1, layout.get_frame('active_filter_count').l)
-        test.assert_equal(12, layout.get_frame('filters_button').l)
-        test.assert_equal(35, layout.RESULT_NAME_WIDTH)
-        test.assert_equal(9, layout.RESULT_UNIT_ID_WIDTH)
-        test.assert_equal(18, layout.RESULT_PROFESSION_WIDTH)
-        test.assert_equal('name', layout.get_result_header_column(0, 0))
-        test.assert_equal('name', layout.get_result_header_column(34, 0))
-        test.assert_nil(layout.get_result_header_column(35, 0))
-        test.assert_equal('profession', layout.get_result_header_column(36, 0))
-        test.assert_equal('profession', layout.get_result_header_column(53, 0))
-        test.assert_equal('unit_id', layout.get_result_header_column(55, 0))
-        test.assert_nil(layout.get_result_header_column(64, 0))
+    add_test('UI layout: baseline panel geometry is exact', function()
+        luaunit.assertIs(110, layout.WINDOW_FRAME.w)
+        luaunit.assertIs(45, layout.WINDOW_FRAME.h)
+        luaunit.assertIs(90, layout.WINDOW_RESIZE_MIN.w)
+        luaunit.assertIs(30, layout.WINDOW_RESIZE_MIN.h)
+        luaunit.assertEquals({65}, layout.DIVIDER_XS)
+        luaunit.assertIs(1, layout.RESULTS_LEFT)
+        luaunit.assertIs(64, layout.RESULTS_WIDTH)
+        luaunit.assertIs(67, layout.STATS_LEFT)
+        luaunit.assertIs(layout.STATS_LEFT - 2, layout.DIVIDER_XS[1])
+        luaunit.assertIs(5, layout.get_frame('result_columns').t)
+        luaunit.assertIs(6, layout.get_frame('result_list').t)
+        luaunit.assertIs(1, layout.get_frame('active_filter_count').l)
+        luaunit.assertIs(12, layout.get_frame('filters_button').l)
+        luaunit.assertIs(35, layout.RESULT_NAME_WIDTH)
+        luaunit.assertIs(9, layout.RESULT_UNIT_ID_WIDTH)
+        luaunit.assertIs(18, layout.RESULT_PROFESSION_WIDTH)
+        luaunit.assertIs('name', layout.get_result_header_column(0, 0))
+        luaunit.assertIs('name', layout.get_result_header_column(34, 0))
+        luaunit.assertNil(layout.get_result_header_column(35, 0))
+        luaunit.assertIs('profession', layout.get_result_header_column(36, 0))
+        luaunit.assertIs('profession', layout.get_result_header_column(53, 0))
+        luaunit.assertIs('unit_id', layout.get_result_header_column(55, 0))
+        luaunit.assertNil(layout.get_result_header_column(64, 0))
     end)
 
-    test.case('UI layout: returned frames cannot mutate metadata', function()
+    add_test('UI layout: returned frames cannot mutate metadata', function()
         local frame = layout.get_frame('result_list')
         frame.l = 999
-        test.assert_equal(1, layout.get_frame('result_list').l)
+        luaunit.assertIs(1, layout.get_frame('result_list').l)
     end)
 
-    test.case('UI layout: candidate filter controls extend the filter panel in order', function()
-        test.assert_equal(2, layout.get_frame('filter_panel').t)
-        test.assert_equal(0, layout.get_frame('add_filter').t)
-        test.assert_equal(1, layout.get_frame('add_skill').t)
-        test.assert_equal(2, layout.get_frame('add_race').t)
-        test.assert_equal(3, layout.get_frame('clear_filters').t)
-        test.assert_equal(layout.get_frame('add_filter').w,
+    add_test('UI layout: candidate filter controls extend the filter panel in order', function()
+        luaunit.assertIs(2, layout.get_frame('filter_panel').t)
+        luaunit.assertIs(0, layout.get_frame('add_filter').t)
+        luaunit.assertIs(1, layout.get_frame('add_skill').t)
+        luaunit.assertIs(2, layout.get_frame('add_race').t)
+        luaunit.assertIs(3, layout.get_frame('clear_filters').t)
+        luaunit.assertIs(layout.get_frame('add_filter').w,
             layout.get_frame('clear_filters').w)
-        test.assert_equal(4, layout.get_frame('presets').t)
-        test.assert_equal(5, layout.get_frame('add_unit_scope').t)
-        test.assert_equal(layout.get_frame('add_filter').w,
+        luaunit.assertIs(4, layout.get_frame('presets').t)
+        luaunit.assertIs(5, layout.get_frame('add_unit_scope').t)
+        luaunit.assertIs(layout.get_frame('add_filter').w,
             layout.get_frame('add_unit_scope').w)
-        test.assert_equal(7, layout.get_frame('filter_list').t)
+        luaunit.assertIs(7, layout.get_frame('filter_list').t)
     end)
 
-    test.case('UI layout: filter actions retain width and total zone', function()
-        test.assert_equal(3, layout.FILTER_ACTION_WIDTH)
-        test.assert_equal(15, layout.FILTER_ACTION_ZONE_WIDTH)
-        test.assert_equal(5, #layout.FILTER_ACTIONS)
+    add_test('UI layout: filter actions retain width and total zone', function()
+        luaunit.assertIs(3, layout.FILTER_ACTION_WIDTH)
+        luaunit.assertIs(15, layout.FILTER_ACTION_ZONE_WIDTH)
+        luaunit.assertIs(5, #layout.FILTER_ACTIONS)
         for _, action in ipairs(layout.FILTER_ACTIONS) do
-            test.assert_equal(3, action.width)
-            test.assert_equal(3, #action.label)
+            luaunit.assertIs(3, action.width)
+            luaunit.assertIs(3, #action.label)
         end
-        test.assert_sequence({
+        luaunit.assertEquals({
             layout.FILTER_ACTION.SET_HIGH,
             layout.FILTER_ACTION.SET_LOW,
             layout.FILTER_ACTION.MOVE_UP,
@@ -74,43 +81,44 @@ return function(test, repo_root)
         end)())
     end)
 
-    test.case('UI layout: every filter action boundary maps from metadata', function()
+    add_test('UI layout: every filter action boundary maps from metadata', function()
         local expected = {'plus', 'minus', 'up', 'down', 'remove'}
         local start = layout.ACTIVE_FILTER_BUTTON_START_X
-        test.assert_nil(layout.get_filter_action_at_x(start - 1))
+        luaunit.assertNil(layout.get_filter_action_at_x(start - 1))
         for index, action_id in ipairs(expected) do
             local left = start + (index - 1) * layout.FILTER_ACTION_WIDTH
             local right = left + layout.FILTER_ACTION_WIDTH - 1
-            test.assert_equal(action_id, layout.get_filter_action_at_x(left).id)
-            test.assert_equal(action_id, layout.get_filter_action_at_x(right).id)
+            luaunit.assertIs(action_id, layout.get_filter_action_at_x(left).id)
+            luaunit.assertIs(action_id, layout.get_filter_action_at_x(right).id)
         end
-        test.assert_nil(layout.get_filter_action_at_x(
+        luaunit.assertNil(layout.get_filter_action_at_x(
             start + layout.FILTER_ACTION_ZONE_WIDTH))
     end)
 
-    test.case('UI layout: stats header boundaries are exact', function()
-        test.assert_equal('label', stats_layout.get_header_column(0, 0))
-        test.assert_equal('label', stats_layout.get_header_column(22, 0))
-        test.assert_nil(stats_layout.get_header_column(23, 0))
-        test.assert_nil(stats_layout.get_header_column(25, 0))
-        test.assert_equal('value', stats_layout.get_header_column(26, 0))
-        test.assert_equal('value', stats_layout.get_header_column(32, 0))
-        test.assert_nil(stats_layout.get_header_column(33, 0))
-        test.assert_nil(stats_layout.get_header_column(2, 1))
+    add_test('UI layout: stats header boundaries are exact', function()
+        luaunit.assertIs('label', stats_layout.get_header_column(0, 0))
+        luaunit.assertIs('label', stats_layout.get_header_column(22, 0))
+        luaunit.assertNil(stats_layout.get_header_column(23, 0))
+        luaunit.assertNil(stats_layout.get_header_column(25, 0))
+        luaunit.assertIs('value', stats_layout.get_header_column(26, 0))
+        luaunit.assertIs('value', stats_layout.get_header_column(32, 0))
+        luaunit.assertNil(stats_layout.get_header_column(33, 0))
+        luaunit.assertNil(stats_layout.get_header_column(2, 1))
     end)
 
-    test.case('UI layout: stats delta cells use the scrolling records', function()
-        test.assert_true(stats_layout.is_value_cell(26, 0))
-        test.assert_true(stats_layout.is_value_cell(26, 1))
-        test.assert_true(stats_layout.is_value_cell(26, 2))
-        test.assert_true(stats_layout.is_value_cell(32, 8))
-        test.assert_false(stats_layout.is_value_cell(33, 2))
-        test.assert_false(stats_layout.is_value_cell(25, 2))
+    add_test('UI layout: stats delta cells use the scrolling records', function()
+        luaunit.assertEvalToTrue(stats_layout.is_value_cell(26, 0))
+        luaunit.assertEvalToTrue(stats_layout.is_value_cell(26, 1))
+        luaunit.assertEvalToTrue(stats_layout.is_value_cell(26, 2))
+        luaunit.assertEvalToTrue(stats_layout.is_value_cell(32, 8))
+        luaunit.assertEvalToFalse(stats_layout.is_value_cell(33, 2))
+        luaunit.assertEvalToFalse(stats_layout.is_value_cell(25, 2))
     end)
 
-    test.case('UI layout: stats labels exclude their values', function()
-        test.assert_true(stats_layout.is_label_cell(2, 0))
-        test.assert_true(stats_layout.is_label_cell(25, 5))
-        test.assert_false(stats_layout.is_label_cell(26, 0))
+    add_test('UI layout: stats labels exclude their values', function()
+        luaunit.assertEvalToTrue(stats_layout.is_label_cell(2, 0))
+        luaunit.assertEvalToTrue(stats_layout.is_label_cell(25, 5))
+        luaunit.assertEvalToFalse(stats_layout.is_label_cell(26, 0))
     end)
-end
+
+return native_tests

@@ -27,10 +27,17 @@ local function make_owner()
     return owner
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local ui_refresh = soulsearch_env.load_ui_refresh(repo_root)
 
-    test.case('UI refresh: filter change refreshes each dependent view once', function()
+    add_test('UI refresh: filter change refreshes each dependent view once', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {
             active_filters=true,
@@ -38,63 +45,64 @@ return function(test, repo_root)
             results=true,
             selected_filter=3,
         })
-        test.assert_sequence(
+        luaunit.assertEquals(
             {'active_filters', 'pickers', 'results', 'stats'},
             owner.calls)
-        test.assert_equal(1, owner.counts.results)
-        test.assert_equal(1, owner.counts.stats)
-        test.assert_equal(3, owner.values.active_filters)
-        test.assert_equal(42, owner.last_value.unit_id)
+        luaunit.assertIs(1, owner.counts.results)
+        luaunit.assertIs(1, owner.counts.stats)
+        luaunit.assertIs(3, owner.values.active_filters)
+        luaunit.assertIs(42, owner.last_value.unit_id)
     end)
 
-    test.case('UI refresh: picker change never recomputes results', function()
+    add_test('UI refresh: picker change never recomputes results', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {pickers=true})
-        test.assert_sequence({'pickers'}, owner.calls)
-        test.assert_nil(owner.counts.results)
-        test.assert_nil(owner.counts.stats)
+        luaunit.assertEquals({'pickers'}, owner.calls)
+        luaunit.assertNil(owner.counts.results)
+        luaunit.assertNil(owner.counts.stats)
     end)
 
-    test.case('UI refresh: candidate refresh precedes result recomputation', function()
+    add_test('UI refresh: candidate refresh precedes result recomputation', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {candidates=true, results=true})
-        test.assert_sequence({'candidates', 'results', 'stats'}, owner.calls)
-        test.assert_equal(1, owner.counts.candidates)
-        test.assert_equal(1, owner.counts.results)
+        luaunit.assertEquals({'candidates', 'results', 'stats'}, owner.calls)
+        luaunit.assertIs(1, owner.counts.candidates)
+        luaunit.assertIs(1, owner.counts.results)
     end)
 
-    test.case('UI refresh: preset change never recomputes results', function()
+    add_test('UI refresh: preset change never recomputes results', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {presets=true})
-        test.assert_sequence({'presets'}, owner.calls)
-        test.assert_nil(owner.counts.results)
-        test.assert_nil(owner.counts.stats)
+        luaunit.assertEquals({'presets'}, owner.calls)
+        luaunit.assertNil(owner.counts.results)
+        luaunit.assertNil(owner.counts.stats)
     end)
 
-    test.case('UI refresh: query or resident change recomputes once', function()
+    add_test('UI refresh: query or resident change recomputes once', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {results=true})
-        test.assert_sequence({'results', 'stats'}, owner.calls)
-        test.assert_equal(1, owner.counts.results)
+        luaunit.assertEquals({'results', 'stats'}, owner.calls)
+        luaunit.assertIs(1, owner.counts.results)
     end)
 
-    test.case('UI refresh: selection or sort change refreshes only stats', function()
+    add_test('UI refresh: selection or sort change refreshes only stats', function()
         local owner = make_owner()
         ui_refresh.apply(owner, {stats=true})
-        test.assert_sequence({'get_selected_result', 'stats'}, owner.calls)
-        test.assert_equal(7, owner.last_value.unit_id)
-        test.assert_nil(owner.counts.results)
+        luaunit.assertEquals({'get_selected_result', 'stats'}, owner.calls)
+        luaunit.assertIs(7, owner.last_value.unit_id)
+        luaunit.assertNil(owner.counts.results)
     end)
 
-    test.case('UI refresh: result selection preserves unit identity', function()
+    add_test('UI refresh: result selection preserves unit identity', function()
         local results = {{unit_id=1}, {unit_id=7}, {unit_id=3}}
-        test.assert_equal(2, ui_refresh.get_result_selection(results, 7, 1))
+        luaunit.assertIs(2, ui_refresh.get_result_selection(results, 7, 1))
     end)
 
-    test.case('UI refresh: missing resident keeps and clamps list position', function()
+    add_test('UI refresh: missing resident keeps and clamps list position', function()
         local results = {{unit_id=1}, {unit_id=2}}
-        test.assert_equal(2, ui_refresh.get_result_selection(results, 7, 2))
-        test.assert_equal(2, ui_refresh.get_result_selection(results, 7, 5))
-        test.assert_equal(1, ui_refresh.get_result_selection({}, 7, 5))
+        luaunit.assertIs(2, ui_refresh.get_result_selection(results, 7, 2))
+        luaunit.assertIs(2, ui_refresh.get_result_selection(results, 7, 5))
+        luaunit.assertIs(1, ui_refresh.get_result_selection({}, 7, 5))
     end)
-end
+
+return native_tests

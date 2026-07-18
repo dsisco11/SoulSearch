@@ -12,10 +12,6 @@ $rockTree = Join-Path $projectRoot '.luarocks'
 $luaUnitVersion = '3.5-1'
 $testFileEnvironmentVariable = 'DFHACK_LUA_TEST_FILES'
 
-if (-not (Get-Command lua -ErrorAction SilentlyContinue)) {
-    throw 'Lua was not found on PATH.'
-}
-
 if (-not (Get-Command luarocks -ErrorAction SilentlyContinue)) {
     throw 'LuaRocks was not found on PATH.'
 }

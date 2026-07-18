@@ -17,13 +17,20 @@ local function recursive_ids(view, result)
     return result
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local ui, new_window, state, main_window, main_screen =
         soulsearch_env.load_ui_characterization(repo_root)
 
-    test.case('UI characterization: root and recursive child order is exact', function()
+    add_test('UI characterization: root and recursive child order is exact', function()
         local window = new_window()
-        test.assert_sequence({
+        luaunit.assertEquals({
             'results_panel',
             'filters_button',
             'active_filter_count',
@@ -33,7 +40,7 @@ return function(test, repo_root)
             'close_button',
             'filter_panel_window',
         }, ids(window.subviews))
-        test.assert_sequence({
+        luaunit.assertEquals({
             'results_panel',
             'search_field',
             'result_header',
@@ -81,26 +88,26 @@ return function(test, repo_root)
         }, recursive_ids(window))
     end)
 
-    test.case('UI characterization: every descendant ID is exposed at the root', function()
+    add_test('UI characterization: every descendant ID is exposed at the root', function()
         local window = new_window()
         for _, id in ipairs(recursive_ids(window)) do
-            test.assert_true(window.subviews[id] ~= nil, 'missing descendant: ' .. id)
-            test.assert_equal(id, window.subviews[id].view_id)
+            luaunit.assertEvalToTrue(window.subviews[id] ~= nil, 'missing descendant: ' .. id)
+            luaunit.assertIs(id, window.subviews[id].view_id)
         end
-        test.assert_true(window.subviews.available_filter_list.parent_view ==
+        luaunit.assertEvalToTrue(window.subviews.available_filter_list.parent_view ==
             window.subviews.available_filter_window)
-        test.assert_true(window.subviews.filter_list.parent_view ==
+        luaunit.assertEvalToTrue(window.subviews.filter_list.parent_view ==
             window.subviews.filter_panel_window)
-        test.assert_true(window.subviews.result_list.parent_view ==
+        luaunit.assertEvalToTrue(window.subviews.result_list.parent_view ==
             window.subviews.results_panel)
     end)
 
-    test.case('UI characterization: query focus position and cursor shortcuts are stable', function()
+    add_test('UI characterization: query focus position and cursor shortcuts are stable', function()
         local window = new_window()
-        test.assert_equal('results_panel', window.subviews[1].view_id)
-        test.assert_equal('search_field', window.subviews.results_panel.subviews[1].view_id)
-        test.assert_true(window.subviews.search_field.modal)
-        test.assert_equal('CUSTOM_F', window.subviews.search_field.key)
+        luaunit.assertIs('results_panel', window.subviews[1].view_id)
+        luaunit.assertIs('search_field', window.subviews.results_panel.subviews[1].view_id)
+        luaunit.assertEvalToTrue(window.subviews.search_field.modal)
+        luaunit.assertIs('CUSTOM_F', window.subviews.search_field.key)
 
         local expected = {
             {keys={KEYBOARD_CURSOR_UP=true}, delta=-1},
@@ -110,55 +117,55 @@ return function(test, repo_root)
         }
         for _, item in ipairs(expected) do
             window.subviews.result_list.cursor_delta = nil
-            test.assert_true(window:onInput(item.keys))
-            test.assert_equal(item.delta, window.subviews.result_list.cursor_delta)
+            luaunit.assertEvalToTrue(window:onInput(item.keys))
+            luaunit.assertIs(item.delta, window.subviews.result_list.cursor_delta)
         end
     end)
 
-    test.case('UI characterization: picker visibility is exclusive and unit-scope picker paints before presets', function()
+    add_test('UI characterization: picker visibility is exclusive and unit-scope picker paints before presets', function()
         local window = new_window()
         local panel = window.subviews.filter_panel_window
-        test.assert_equal('preset_picker_window',
+        luaunit.assertIs('preset_picker_window',
             panel.subviews[#panel.subviews].view_id)
 
         panel:open()
         panel:toggle_picker('attribute')
-        test.assert_true(window.subviews.available_filter_window.visible)
-        test.assert_false(window.subviews.filter_list.visible())
+        luaunit.assertEvalToTrue(window.subviews.available_filter_window.visible)
+        luaunit.assertEvalToFalse(window.subviews.filter_list.visible())
         panel:toggle_picker('skill')
-        test.assert_true(window.subviews.available_skill_window.visible)
-        test.assert_false(window.subviews.available_filter_window.visible)
+        luaunit.assertEvalToTrue(window.subviews.available_skill_window.visible)
+        luaunit.assertEvalToFalse(window.subviews.available_filter_window.visible)
         panel:toggle_picker('unit_scope')
-        test.assert_true(window.subviews.available_unit_scope_window.visible)
-        test.assert_false(window.subviews.filter_list.visible())
+        luaunit.assertEvalToTrue(window.subviews.available_unit_scope_window.visible)
+        luaunit.assertEvalToFalse(window.subviews.filter_list.visible())
     end)
 
-    test.case('UI characterization: picker transitions close competing state', function()
+    add_test('UI characterization: picker transitions close competing state', function()
         local window = new_window()
         local panel = window.subviews.filter_panel_window
 
         window:toggle_add_filter_dropdown()
-        test.assert_true(panel:is_picker_open('attribute'))
+        luaunit.assertEvalToTrue(panel:is_picker_open('attribute'))
 
         window:toggle_add_skill_dropdown()
-        test.assert_true(panel:is_picker_open('skill'))
+        luaunit.assertEvalToTrue(panel:is_picker_open('skill'))
 
         window:toggle_add_unit_scope_dropdown()
-        test.assert_true(panel:is_picker_open('unit_scope'))
+        luaunit.assertEvalToTrue(panel:is_picker_open('unit_scope'))
 
         window:toggle_preset_picker()
-        test.assert_true(panel:is_picker_open('preset'))
-        test.assert_true(window:close_preset_picker())
-        test.assert_false(panel:has_open_picker())
+        luaunit.assertEvalToTrue(panel:is_picker_open('preset'))
+        luaunit.assertEvalToTrue(window:close_preset_picker())
+        luaunit.assertEvalToFalse(panel:has_open_picker())
 
         panel:open()
         panel:toggle_picker('race')
-        test.assert_true(window:close_filter_panel_state())
-        test.assert_false(panel:is_open())
-        test.assert_false(panel:has_open_picker())
+        luaunit.assertEvalToTrue(window:close_filter_panel_state())
+        luaunit.assertEvalToFalse(panel:is_open())
+        luaunit.assertEvalToFalse(panel:has_open_picker())
     end)
 
-    test.case('UI characterization: adding a filter keeps its picker open', function()
+    add_test('UI characterization: adding a filter keeps its picker open', function()
         local close_calls, state_changes = 0, {}
         local window = setmetatable({
             session={
@@ -181,7 +188,7 @@ return function(test, repo_root)
                 close_picker=function() close_calls = close_calls + 1 end,
             }},
             get_filter_choice_index=function(_, id)
-                test.assert_equal('skill:MINING', id)
+                luaunit.assertIs('skill:MINING', id)
                 return 2
             end,
             on_filter_state_changed=function(_, index)
@@ -189,13 +196,13 @@ return function(test, repo_root)
             end,
         }, {__index=main_window.SoulSearchWindow})
 
-        test.assert_true(window:toggle_filter('skill:MINING'))
-        test.assert_true(window:toggle_filter('skill:MINING'))
-        test.assert_equal(0, close_calls)
-        test.assert_sequence({2, 1}, state_changes)
+        luaunit.assertEvalToTrue(window:toggle_filter('skill:MINING'))
+        luaunit.assertEvalToTrue(window:toggle_filter('skill:MINING'))
+        luaunit.assertIs(0, close_calls)
+        luaunit.assertEquals({2, 1}, state_changes)
     end)
 
-    test.case('UI characterization: opening filter defaults are captured by value', function()
+    add_test('UI characterization: opening filter defaults are captured by value', function()
         local settings = {
             settings_id='creatures:visitors', explicit={},
             frame={l=1, t=2, w=110, h=45},
@@ -208,14 +215,14 @@ return function(test, repo_root)
             {id='race:group:HUMANOIDS', direction='low'},
         })
 
-        test.assert_true(window:clear_filters())
+        luaunit.assertEvalToTrue(window:clear_filters())
         local restored = window.session:get_filters()
-        test.assert_equal(1, #restored)
-        test.assert_equal('unit_scope:visitors', restored[1].id)
-        test.assert_equal('high', restored[1].direction)
+        luaunit.assertIs(1, #restored)
+        luaunit.assertIs('unit_scope:visitors', restored[1].id)
+        luaunit.assertIs('high', restored[1].direction)
     end)
 
-    test.case('UI characterization: clear restores opening defaults and presets refresh unified state once', function()
+    add_test('UI characterization: clear restores opening defaults and presets refresh unified state once', function()
         local requests, picker_closes = {}, 0
         local session = {
             filters={{id='skill:MINING', direction='high'}},
@@ -237,34 +244,34 @@ return function(test, repo_root)
                 picker_closes = picker_closes + 1
             end}},
             update_session_settings=function(_, settings)
-                test.assert_true(settings.filters == session.filters)
+                luaunit.assertEvalToTrue(settings.filters == session.filters)
             end,
             refresh_views=function(_, request)
                 table.insert(requests, request)
             end,
         }, {__index=main_window.SoulSearchWindow})
-        test.assert_true(window:clear_filters())
-        test.assert_equal(1, picker_closes)
-        test.assert_equal(1, #requests)
-        test.assert_equal('unit_scope:citizens', session.filters[1].id)
-        test.assert_equal('high', session.filters[1].direction)
-        test.assert_true(requests[1].active_filters)
-        test.assert_true(requests[1].pickers)
-        test.assert_true(requests[1].candidates)
-        test.assert_true(requests[1].results)
-        test.assert_true(window:apply_loaded_filter_preset({
+        luaunit.assertEvalToTrue(window:clear_filters())
+        luaunit.assertIs(1, picker_closes)
+        luaunit.assertIs(1, #requests)
+        luaunit.assertIs('unit_scope:citizens', session.filters[1].id)
+        luaunit.assertIs('high', session.filters[1].direction)
+        luaunit.assertEvalToTrue(requests[1].active_filters)
+        luaunit.assertEvalToTrue(requests[1].pickers)
+        luaunit.assertEvalToTrue(requests[1].candidates)
+        luaunit.assertEvalToTrue(requests[1].results)
+        luaunit.assertEvalToTrue(window:apply_loaded_filter_preset({
             {id='skill:MINING', direction='high'},
         }) == nil)
-        test.assert_equal(2, picker_closes)
-        test.assert_equal(2, #requests)
-        test.assert_equal('skill:MINING', session.filters[1].id)
-        test.assert_true(requests[2].active_filters)
-        test.assert_true(requests[2].pickers)
-        test.assert_true(requests[2].candidates)
-        test.assert_true(requests[2].results)
+        luaunit.assertIs(2, picker_closes)
+        luaunit.assertIs(2, #requests)
+        luaunit.assertIs('skill:MINING', session.filters[1].id)
+        luaunit.assertEvalToTrue(requests[2].active_filters)
+        luaunit.assertEvalToTrue(requests[2].pickers)
+        luaunit.assertEvalToTrue(requests[2].candidates)
+        luaunit.assertEvalToTrue(requests[2].results)
     end)
 
-    test.case('UI characterization: Main Window delegates through component APIs', function()
+    add_test('UI characterization: Main Window delegates through component APIs', function()
         local window = new_window()
         local calls = {}
         window.subviews.filter_panel_window = {
@@ -280,14 +287,14 @@ return function(test, repo_root)
         }
 
         window:refresh_active_filter_choices()
-        test.assert_equal('Filters: 0', calls.filter_count)
-    test.assert_equal('Use Add attribute, Add skill, or Add race.',
+        luaunit.assertIs('Filters: 0', calls.filter_count)
+    luaunit.assertIs('Use Add attribute, Add skill, or Add race.',
         calls.active.choices[1].text)
         window:update_available_filter_choices()
-        test.assert_equal('attribute', calls.picker.kind)
-        test.assert_equal('No matching attributes.', calls.picker.choices[1].text)
+        luaunit.assertIs('attribute', calls.picker.kind)
+        luaunit.assertIs('No matching attributes.', calls.picker.choices[1].text)
         window:update_available_unit_scope_choices()
-        test.assert_equal('unit_scope', calls.picker.kind)
+        luaunit.assertIs('unit_scope', calls.picker.kind)
 
         local result_calls = {}
         window.subviews.results_panel = {
@@ -302,27 +309,27 @@ return function(test, repo_root)
         }
         state.results = {{unit_id=1, name='Urist', profession='Miner'}}
         window:recompute_results()
-        test.assert_equal('Results (1)', result_calls.header[1])
-        test.assert_equal(1, result_calls.choices.selected)
+        luaunit.assertIs('Results (1)', result_calls.header[1])
+        luaunit.assertIs(1, result_calls.choices.selected)
 
         window.subviews.stats_panel = {
             set_subject=function(_, subject) calls.stats_subject = subject end,
         }
         local result = {unit_id=1}
         window:refresh_stats(result)
-        test.assert_true(calls.stats_subject == result)
+        luaunit.assertEvalToTrue(calls.stats_subject == result)
     end)
 
-    test.case('UI characterization: filter button owns its static tooltip', function()
+    add_test('UI characterization: filter button owns its static tooltip', function()
         local window = new_window()
-        test.assert_equal('Edit the current filters.',
+        luaunit.assertIs('Edit the current filters.',
             window.subviews.filters_button.tooltip)
-        test.assert_equal('Close', window.subviews.close_button.tooltip)
-        test.assert_equal('View the selected unit in the native Creatures panel.',
+        luaunit.assertIs('Close', window.subviews.close_button.tooltip)
+        luaunit.assertIs('View the selected unit in the native Creatures panel.',
             window.subviews.view_in_creatures_button.tooltip)
     end)
 
-    test.case('UI characterization: Creatures button dismisses then navigates by unit ID', function()
+    add_test('UI characterization: Creatures button dismisses then navigates by unit ID', function()
         local window = new_window()
         local log_start = #state.creatures_navigation_logs
         local events = {}
@@ -335,19 +342,19 @@ return function(test, repo_root)
 
         window.subviews.view_in_creatures_button.on_activate()
         table.insert(events, 'navigate:' .. state.creatures_navigation[1])
-        test.assert_sequence({'dismiss', 'navigate:42'}, events)
-        test.assert_equal(
+        luaunit.assertEquals({'dismiss', 'navigate:42'}, events)
+        luaunit.assertIs(
             'View in Creatures TextButton activated',
             state.creatures_navigation_logs[log_start + 1])
-        test.assert_equal(
+        luaunit.assertIs(
             'view_selected_unit_in_creatures entered',
             state.creatures_navigation_logs[log_start + 2])
-        test.assert_equal(
+        luaunit.assertIs(
             'selected result resolved to unit 42',
             state.creatures_navigation_logs[log_start + 3])
     end)
 
-    test.case('UI characterization: recompute retains selection by unit ID', function()
+    add_test('UI characterization: recompute retains selection by unit ID', function()
         local window = new_window()
         window.subviews.result_list:setChoices({
             {result={unit_id=20, name='Old selection'}},
@@ -357,37 +364,37 @@ return function(test, repo_root)
             {unit_id=20, name='Retained', profession='Carpenter'},
         }
         local selected = window:recompute_results()
-        test.assert_equal(20, selected.unit_id)
-        test.assert_equal(2, window.subviews.result_list.selected)
-        test.assert_equal('Results (2)', window.subviews.result_header.text)
-        test.assert_true(state.last_sort.results == state.results)
+        luaunit.assertIs(20, selected.unit_id)
+        luaunit.assertIs(2, window.subviews.result_list.selected)
+        luaunit.assertIs('Results (2)', window.subviews.result_header.text)
+        luaunit.assertEvalToTrue(state.last_sort.results == state.results)
     end)
 
-    test.case('UI characterization: result callbacks submit and sort exact payloads', function()
+    add_test('UI characterization: result callbacks submit and sort exact payloads', function()
         local window = new_window()
         local result = {unit_id=42, name='Urist', unit={position={x=1, y=2, z=3}}}
         window.subviews.result_list.on_submit(1, {result=result})
-        test.assert_sequence({1, 2, 3}, {
+        luaunit.assertEquals({1, 2, 3}, {
             state.revealed[1].x, state.revealed[1].y, state.revealed[1].z,
         })
 
         local requests = {}
         window.refresh_views=function(_, request) table.insert(requests, request) end
         window.subviews.result_list.on_select(1, {result=result})
-        test.assert_true(requests[1].stats)
-        test.assert_true(requests[1].result == result)
+        luaunit.assertEvalToTrue(requests[1].stats)
+        luaunit.assertEvalToTrue(requests[1].result == result)
         window.subviews.result_columns.on_change()
-        test.assert_equal('name', window.session:get_result_sort().key)
-        test.assert_false(window.session:get_result_sort().reverse)
-        test.assert_equal(1, window.session:get_result_sort().phase)
+        luaunit.assertIs('name', window.session:get_result_sort().key)
+        luaunit.assertEvalToFalse(window.session:get_result_sort().reverse)
+        luaunit.assertIs(1, window.session:get_result_sort().phase)
         window:cycle_result_sort('name')
-        test.assert_true(window.session:get_result_sort().reverse)
+        luaunit.assertEvalToTrue(window.session:get_result_sort().reverse)
         window:cycle_result_sort('name')
-        test.assert_nil(window.session:get_result_sort().key)
-        test.assert_equal(4, #requests)
+        luaunit.assertNil(window.session:get_result_sort().key)
+        luaunit.assertIs(4, #requests)
     end)
 
-    test.case('UI characterization: drag persistence is isolated by settings ID', function()
+    add_test('UI characterization: drag persistence is isolated by settings ID', function()
         local first = new_window({
             settings_id='first', explicit={}, frame={l=1, t=2, w=100, h=40},
             filters={},
@@ -401,32 +408,33 @@ return function(test, repo_root)
         state.settings_updates = {}
         first.frame_rect = {x1=11, y1=12, width=101, height=41}
         first:onDragBegin()
-        test.assert_sequence({11, 12, 101, 41},
+        luaunit.assertEquals({11, 12, 101, 41},
             {first.frame.l, first.frame.t, first.frame.w, first.frame.h})
-        test.assert_true(first:persist_frame_if_needed())
-        test.assert_false(second:persist_frame_if_needed())
+        luaunit.assertEvalToTrue(first:persist_frame_if_needed())
+        luaunit.assertEvalToFalse(second:persist_frame_if_needed())
         second.frame.w = 91
-        test.assert_true(second:persist_frame_if_needed())
-        test.assert_equal('first', state.settings_updates[1].id)
-        test.assert_equal('second', state.settings_updates[2].id)
+        luaunit.assertEvalToTrue(second:persist_frame_if_needed())
+        luaunit.assertIs('first', state.settings_updates[1].id)
+        luaunit.assertIs('second', state.settings_updates[2].id)
     end)
 
-    test.case('UI characterization: screen registration and cleanup are idempotent', function()
+    add_test('UI characterization: screen registration and cleanup are idempotent', function()
         local registry = state.screen_registry
         registry.clear()
-        test.assert_equal('soulsearch', main_screen.SoulSearchScreen.attrs.focus_path)
+        luaunit.assertIs('soulsearch', main_screen.SoulSearchScreen.attrs.focus_path)
         local persists = 0
         local screen = {window={persist_frame_if_needed=function()
             persists = persists + 1
         end}}
         setmetatable(screen, {__index=main_screen.SoulSearchScreen})
         screen:onShow()
-        test.assert_equal(1, registry.count())
-        test.assert_true(screen:cleanup())
-        test.assert_false(screen:cleanup())
+        luaunit.assertIs(1, registry.count())
+        luaunit.assertEvalToTrue(screen:cleanup())
+        luaunit.assertEvalToFalse(screen:cleanup())
         screen:onDismiss()
         screen:onDestroy()
-        test.assert_equal(1, persists)
-        test.assert_equal(0, registry.count())
+        luaunit.assertIs(1, persists)
+        luaunit.assertIs(0, registry.count())
     end)
-end
+
+return native_tests

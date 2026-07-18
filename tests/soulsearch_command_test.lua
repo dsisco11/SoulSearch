@@ -8,11 +8,18 @@ local function load_script(path, environment)
     return assert(loadfile(path, 't', environment))
 end
 
-return function(test, repo_root)
+local luaunit = require('luaunit')
+local repo_root = require('support.repo_root')
+
+local native_tests = {}
+
+local function add_test(name, callback)
+    native_tests['test ' .. name] = callback
+end
     local command_path = script_path(repo_root, 'src/scripts_modinstalled/soulsearch.lua')
     local gui_path = script_path(repo_root, 'src/scripts_modinstalled/gui/soulsearch.lua')
 
-    test.case('soulsearch command: normal invocation uses native imports without clearing or opening UI', function()
+    add_test('soulsearch command: normal invocation uses native imports without clearing or opening UI', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {}
@@ -43,13 +50,13 @@ return function(test, repo_root)
         })
         chunk()
 
-        test.assert_true(lifecycle.prepared)
-        test.assert_true(keybindings.ensured)
-        test.assert_equal(0, ui.open_count)
-        test.assert_equal(0, reload_commands)
+        luaunit.assertEvalToTrue(lifecycle.prepared)
+        luaunit.assertEvalToTrue(keybindings.ensured)
+        luaunit.assertIs(0, ui.open_count)
+        luaunit.assertIs(0, reload_commands)
     end)
 
-    test.case('soulsearch module load: bootstraps keybindings without loading the full runtime', function()
+    add_test('soulsearch module load: bootstraps keybindings without loading the full runtime', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {}
@@ -68,13 +75,13 @@ return function(test, repo_root)
         local chunk = load_script(command_path, environment)
         chunk()
 
-        test.assert_equal('function', type(environment.initialize))
-        test.assert_false(lifecycle.prepared)
-        test.assert_true(keybindings.ensured)
-        test.assert_true(environment.isEnabled())
+        luaunit.assertIs('function', type(environment.initialize))
+        luaunit.assertEvalToFalse(lifecycle.prepared)
+        luaunit.assertEvalToTrue(keybindings.ensured)
+        luaunit.assertEvalToTrue(environment.isEnabled())
     end)
 
-    test.case('soulsearch module load: preserves an explicit disabled state', function()
+    add_test('soulsearch module load: preserves an explicit disabled state', function()
         local requested = 0
         local environment = {
             bootstrap_enabled=false,
@@ -87,11 +94,11 @@ return function(test, repo_root)
         }
         load_script(command_path, environment)()
 
-        test.assert_false(environment.isEnabled())
-        test.assert_equal(0, requested)
+        luaunit.assertEvalToFalse(environment.isEnabled())
+        luaunit.assertIs(0, requested)
     end)
 
-    test.case('soulsearch module load: repeated scans leave setup idempotent', function()
+    add_test('soulsearch module load: repeated scans leave setup idempotent', function()
         local keybindings = {calls=0, added=0}
         function keybindings.ensure_default()
             keybindings.calls = keybindings.calls + 1
@@ -112,12 +119,12 @@ return function(test, repo_root)
         load_script(command_path, environment)()
         load_script(command_path, environment)()
 
-        test.assert_true(environment.isEnabled())
-        test.assert_equal(2, keybindings.calls)
-        test.assert_equal(1, keybindings.added)
+        luaunit.assertEvalToTrue(environment.isEnabled())
+        luaunit.assertIs(2, keybindings.calls)
+        luaunit.assertIs(1, keybindings.added)
     end)
 
-    test.case('soulsearch module load: unavailable setup fails soft without loading the runtime', function()
+    add_test('soulsearch module load: unavailable setup fails soft without loading the runtime', function()
         local requested = 0
         local environment = {
             dfhack_flags={module=true},
@@ -130,12 +137,12 @@ return function(test, repo_root)
         }
         local ok = pcall(load_script(command_path, environment))
 
-        test.assert_true(ok)
-        test.assert_true(environment.isEnabled())
-        test.assert_equal(1, requested)
+        luaunit.assertEvalToTrue(ok)
+        luaunit.assertEvalToTrue(environment.isEnabled())
+        luaunit.assertIs(1, requested)
     end)
 
-    test.case('soulsearch enable and disable flags only control bootstrap state', function()
+    add_test('soulsearch enable and disable flags only control bootstrap state', function()
         local keybindings = {calls=0}
         function keybindings.ensure_default()
             keybindings.calls = keybindings.calls + 1
@@ -150,16 +157,16 @@ return function(test, repo_root)
             end,
         }
         load_script(command_path, environment)()
-        test.assert_true(environment.isEnabled())
-        test.assert_equal(1, keybindings.calls)
+        luaunit.assertEvalToTrue(environment.isEnabled())
+        luaunit.assertIs(1, keybindings.calls)
 
         environment.dfhack_flags = {enable=true, enable_state=false}
         load_script(command_path, environment)()
-        test.assert_false(environment.isEnabled())
-        test.assert_equal(1, keybindings.calls)
+        luaunit.assertEvalToFalse(environment.isEnabled())
+        luaunit.assertIs(1, keybindings.calls)
     end)
 
-    test.case('soulsearch command: explicit initialization remains usable while bootstrap is disabled', function()
+    add_test('soulsearch command: explicit initialization remains usable while bootstrap is disabled', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {}
@@ -184,12 +191,12 @@ return function(test, repo_root)
         }
         load_script(command_path, environment)()
 
-        test.assert_false(environment.isEnabled())
-        test.assert_true(keybindings.ensured)
-        test.assert_true(lifecycle.prepared)
+        luaunit.assertEvalToFalse(environment.isEnabled())
+        luaunit.assertEvalToTrue(keybindings.ensured)
+        luaunit.assertEvalToTrue(lifecycle.prepared)
     end)
 
-    test.case('soulsearch command: manual setup retries an unavailable bootstrap result', function()
+    add_test('soulsearch command: manual setup retries an unavailable bootstrap result', function()
         local lifecycle = {}
         function lifecycle.prepare_for_world() lifecycle.prepared = true end
         local keybindings = {calls=0}
@@ -218,11 +225,11 @@ return function(test, repo_root)
         load_script(command_path, environment)()
         environment.initialize()
 
-        test.assert_equal(2, keybindings.calls)
-        test.assert_true(lifecycle.prepared)
+        luaunit.assertIs(2, keybindings.calls)
+        luaunit.assertEvalToTrue(lifecycle.prepared)
     end)
 
-    test.case('gui/soulsearch: initializes then opens without arguments', function()
+    add_test('gui/soulsearch: initializes then opens without arguments', function()
         local initialized = 0
         local ui = {open_count=0}
         function ui.open(...)
@@ -242,12 +249,12 @@ return function(test, repo_root)
         })
         chunk()
 
-        test.assert_equal(1, initialized)
-        test.assert_equal(1, ui.open_count)
-        test.assert_equal(0, #ui.opened_with)
+        luaunit.assertIs(1, initialized)
+        luaunit.assertIs(1, ui.open_count)
+        luaunit.assertIs(0, #ui.opened_with)
     end)
 
-    test.case('gui/soulsearch: remains a fallback while bootstrap is disabled or missed', function()
+    add_test('gui/soulsearch: remains a fallback while bootstrap is disabled or missed', function()
         local initialized, opened = 0, 0
         local chunk = load_script(gui_path, {
             reqscript=function(name)
@@ -265,11 +272,11 @@ return function(test, repo_root)
         })
         chunk()
 
-        test.assert_equal(1, initialized)
-        test.assert_equal(1, opened)
+        luaunit.assertIs(1, initialized)
+        luaunit.assertIs(1, opened)
     end)
 
-    test.case('soulsearch command: invalid arguments preserve the usage contract', function()
+    add_test('soulsearch command: invalid arguments preserve the usage contract', function()
         local usage
         local chunk = load_script(command_path, {
             dfhack_flags={},
@@ -279,11 +286,11 @@ return function(test, repo_root)
         })
         local ok = pcall(chunk, 'invalid')
 
-        test.assert_false(ok)
-        test.assert_equal('Usage: soulsearch [reload]', usage)
+        luaunit.assertEvalToFalse(ok)
+        luaunit.assertIs('Usage: soulsearch [reload]', usage)
     end)
 
-    test.case('soulsearch command: reload reconstructs from a fresh registry without opening UI', function()
+    add_test('soulsearch command: reload reconstructs from a fresh registry without opening UI', function()
         local registry_state = 'incomplete'
         local registry_runs = 0
         local events = {}
@@ -393,51 +400,52 @@ return function(test, repo_root)
         local chunk = load_script(command_path, environment)
         chunk('reload')
 
-        test.assert_sequence({
+        luaunit.assertEquals({
             'devel/clear-script-env',
             'internal/soulsearch/module_registry',
         }, events[1])
-        test.assert_sequence({
+        luaunit.assertEquals({
             'run_script',
             'internal/soulsearch/module_registry',
         }, events[2])
-        test.assert_sequence({'dismiss_all'}, events[3])
-        test.assert_sequence({'cancel_navigation'}, events[4])
-        test.assert_sequence({
+        luaunit.assertEquals({'dismiss_all'}, events[3])
+        luaunit.assertEquals({'cancel_navigation'}, events[4])
+        luaunit.assertEquals({
             'devel/clear-script-env',
             'internal/soulsearch/ui',
             'internal/soulsearch/creatures_menu_navigator',
             'internal/soulsearch/lifecycle',
         }, events[5])
-        test.assert_sequence({
+        luaunit.assertEquals({
             'devel/clear-script-env',
             'internal/soulsearch/module_registry',
         }, events[6])
-        test.assert_sequence({
+        luaunit.assertEquals({
             'run_script',
             'internal/soulsearch/module_registry',
         }, events[7])
-        test.assert_sequence({
+        luaunit.assertEquals({
             'devel/clear-script-env',
             'internal/soulsearch/new_module',
             'internal/soulsearch/lifecycle',
             'internal/soulsearch/ui',
         }, events[8])
-        test.assert_sequence({'run_script', 'internal/soulsearch/new_module'}, events[9])
-        test.assert_sequence({'run_script', 'internal/soulsearch/lifecycle'}, events[10])
-        test.assert_sequence({'run_script', 'internal/soulsearch/ui'}, events[11])
-        test.assert_sequence({'overlay_rescan'}, events[12])
-        test.assert_nil(environment.dfhack.internal.scripts[
+        luaunit.assertEquals({'run_script', 'internal/soulsearch/new_module'}, events[9])
+        luaunit.assertEquals({'run_script', 'internal/soulsearch/lifecycle'}, events[10])
+        luaunit.assertEquals({'run_script', 'internal/soulsearch/ui'}, events[11])
+        luaunit.assertEquals({'overlay_rescan'}, events[12])
+        luaunit.assertNil(environment.dfhack.internal.scripts[
             '/scripts/soulsearch-stats-overlay.lua'])
-        test.assert_nil(environment.dfhack.internal.scripts[
+        luaunit.assertNil(environment.dfhack.internal.scripts[
             '/scripts/soulsearch-creatures-overlay.lua'])
-        test.assert_sequence({'keybindings'}, events[13])
-        test.assert_sequence({'prepare'}, events[14])
-        test.assert_equal(1, old_ui.dismiss_count)
-        test.assert_equal(1, old_navigator.cancel_count)
-        test.assert_true(lifecycle.prepared)
-        test.assert_true(keybindings.ensured)
-        test.assert_equal(0, new_ui.open_count)
-        test.assert_false(environment.isEnabled())
+        luaunit.assertEquals({'keybindings'}, events[13])
+        luaunit.assertEquals({'prepare'}, events[14])
+        luaunit.assertIs(1, old_ui.dismiss_count)
+        luaunit.assertIs(1, old_navigator.cancel_count)
+        luaunit.assertEvalToTrue(lifecycle.prepared)
+        luaunit.assertEvalToTrue(keybindings.ensured)
+        luaunit.assertIs(0, new_ui.open_count)
+        luaunit.assertEvalToFalse(environment.isEnabled())
     end)
-end
+
+return native_tests

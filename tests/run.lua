@@ -15,7 +15,8 @@ package.path = table.concat({
 }, ';')
 
 local luaunit = require('luaunit')
-local compatibility = require('support.luaunit_compat')
+-- The migrated suite retains its established expected/actual argument order.
+luaunit.ORDER_ACTUAL_EXPECTED = false
 
 -- Run-UnitTests.ps1 supplies the deterministic, newline-delimited suite list
 -- through this project-neutral environment variable. LuaUnit CLI arguments are
@@ -23,22 +24,7 @@ local compatibility = require('support.luaunit_compat')
 local discovered_files = assert(os.getenv('DFHACK_LUA_TEST_FILES'),
     'DFHACK_LUA_TEST_FILES must be provided by Tools/Run-UnitTests.ps1')
 
-require('luaunit_setup_test')
-
 local normalized_tests_root = tests_root:gsub('\\', '/') .. '/'
-local metrics = {
-    suite_count=0,
-    case_count=0,
-    assertion_count=0,
-    assertion_counts={
-        ['true']=0,
-        ['false']=0,
-        ['nil']=0,
-        equal=0,
-        near=0,
-        sequence=0,
-    },
-}
 
 for path in discovered_files:gmatch('[^\r\n]+') do
     local normalized_path = path:gsub('\\', '/')
@@ -48,28 +34,14 @@ for path in discovered_files:gmatch('[^\r\n]+') do
 
     local relative_path = normalized_path:sub(#normalized_tests_root + 1)
     local module_name = relative_path:gsub('%.lua$', ''):gsub('/', '.')
-    if module_name ~= 'luaunit_setup_test' then
-        local register_suite = require(module_name)
-        assert(type(register_suite) == 'function',
-            module_name .. ' must return a suite registration function')
+    local suite = require(module_name)
+    assert(type(suite) == 'table',
+        module_name .. ' must return a LuaUnit test table')
 
-        metrics.suite_count = metrics.suite_count + 1
-        register_suite(compatibility.new(module_name, metrics), repo_root)
-    end
+    local global_name = 'Test_' .. module_name:gsub('[^%w]', '_')
+    assert(_G[global_name] == nil,
+        'duplicate LuaUnit suite name: ' .. global_name)
+    _G[global_name] = suite
 end
 
-local result = luaunit.LuaUnit.run()
-io.write(('Legacy compatibility: %d suite file(s), %d case(s), ' ..
-    '%d assertion(s) executed\n'):format(
-    metrics.suite_count,
-    metrics.case_count,
-    metrics.assertion_count))
-io.write(('Legacy assertions: true=%d, false=%d, nil=%d, equal=%d, ' ..
-    'near=%d, sequence=%d\n'):format(
-    metrics.assertion_counts['true'],
-    metrics.assertion_counts['false'],
-    metrics.assertion_counts['nil'],
-    metrics.assertion_counts.equal,
-    metrics.assertion_counts.near,
-    metrics.assertion_counts.sequence))
-os.exit(result)
+os.exit(luaunit.LuaUnit.run())
