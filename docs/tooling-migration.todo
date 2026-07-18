@@ -1,0 +1,323 @@
+# Generic tooling and LuaUnit migration plan
+
+## Objective
+
+Replace SoulSearch's existing `tools/` scripts with the reusable toolchain
+currently staged under `NewTools/`, migrate the complete pure-Lua test suite
+from the custom `tests/support/testlib.lua` framework to LuaUnit, and preserve
+SoulSearch's source, package, and live DFHack behavior through the cutover.
+
+The new `Build.ps1` behavior is the target contract. A default build must:
+
+- syntax-check production and test Lua with `luac`;
+- load optional machine-local configuration from `.env.local`;
+- resolve the mod ID from `src/info.txt`;
+- run `<mod-id> reload` through `dfhack-run.exe`; and
+- fail when either syntax validation or the live reload fails.
+
+`Publish.ps1` may deliberately call the build with `-LiveReload:$false` while
+constructing a package. That explicit publish-only override does not change the
+default interactive build contract.
+
+## Architectural decisions
+
+- Keep reusable mechanics in `tools/`; move SoulSearch-specific assertions into
+  SoulSearch tests instead of embedding them in generic packaging scripts.
+- Keep LuaUnit pinned to `3.5-1` in the repository-local `.luarocks/` tree.
+- Discover test files by the existing `test_*.lua` / `*_test.lua` convention;
+  support modules, fixtures, and `tests/run.lua` must not be treated as suites.
+- Make `tests/run.lua` derive the repository root from its own location instead
+  of interpreting the first LuaUnit argument as a path.
+- Replace the copied `DOTHIS_TEST_FILES` name with a project-neutral runner
+  contract. No copied script may retain DoThis or another sibling project's
+  name, paths, commands, or package assumptions.
+- Preserve test behavior and coverage during framework conversion. Passing
+  fewer assertions or silently omitting a suite is not a successful migration.
+- Keep source/package truth anchored to `src/`, including root `info.txt` and
+  `scripts_modinstalled/`.
+- Perform the final `NewTools/` to `tools/` replacement atomically after the new
+  entrypoints and migrated test runner are proven together.
+
+## Non-goals
+
+- Do not change SoulSearch production behavior merely to simplify tests.
+- Do not weaken DFHack stubs, module isolation, UI characterization, package
+  payload checks, or live smoke requirements.
+- Do not make LuaUnit or `.luarocks/` part of the published mod payload.
+- Do not remove live reload from the default build.
+- Do not treat a successful syntax check as proof that the LuaUnit suite,
+  package, or live UI is correct.
+
+## Phase 0 - Record the existing contracts and migration baseline
+
+☐ Inventory the old and new parameters, environment variables, external
+  dependencies, generated files, exit behavior, and callers for:
+  - `Build.ps1` and `Check-LuaSyntax.ps1`;
+  - `Test.ps1` and `Run-UnitTests.ps1`;
+  - `Publish.ps1` and `VerifyPackage.ps1`;
+  - `Common.ps1`.
+☐ Record that default live reload is an accepted requirement of the new
+  build, including the expected `DFHACK_RUNNER`,
+  `DFHACK_DWARF_FORTRESS_ROOT`, `DFHACK_LUAC`, and
+  `DFHACK_LUA_VERSION` configuration seams.
+☐ Run the current custom test suite and record its exact suite, case,
+  assertion, and failure totals where the current runner exposes them.
+☐ Run the current syntax-only build and record the exact production-file
+  count and compiler version.
+☐ Capture the current source manifest and the manifests of the expanded and
+  zip packages, including whether the zip has a package-root directory.
+☐ Record the existing project-specific package invariants currently checked
+  outside generic manifest equality, including:
+  - `info.txt` at the package root;
+  - `scripts_modinstalled/soulsearch.lua`;
+  - the `--@module=true` and `--@enable=true` annotations;
+  - `internal/soulsearch/keybindings.lua`.
+☐ Add the baseline results to the execution-evidence table before changing
+  the active `tools/` entrypoints.
+
+Exit gate: the pre-migration test coverage, syntax scope, package shape,
+SoulSearch-specific package invariants, and live-build target are explicit and
+recorded.
+
+## Phase 1 - Harden the reusable common, syntax, and build tools
+
+☐ Audit `NewTools/Common.ps1`, `Check-LuaSyntax.ps1`, and `Build.ps1` for
+  sibling-project names, paths, IDs, commands, and assumptions; remove every
+  project-specific leak.
+☐ Keep the new build defaults intact, especially `LiveReload=$true`,
+  `.env.local`, `src/info.txt`, and `<mod-id> reload`.
+☐ Reconcile `Build.ps1 -SourceDir` with syntax checking so a caller cannot
+  select one source tree for metadata while `Check-LuaSyntax.ps1` silently
+  validates another. Either pass explicit search roots into the syntax checker
+  or remove any parameter whose advertised behavior is not real.
+☐ Make syntax-check output distinguish production files from test/support
+  files and report accurate counts when `-IncludeTests` is active.
+☐ Verify explicit and environment-based compiler resolution, including the
+  configured Lua-version mismatch failure.
+☐ Verify `.env.local` parsing for comments, optional `export`, quoted values,
+  missing optional files, invalid entries, and precedence of process variables
+  over file values.
+☐ Verify DFHack runner resolution through an explicit path, a Dwarf Fortress
+  root, and PATH, with clear failures for missing runner files.
+☐ Verify reload output is printed, optionally captured to
+  `ReloadOutputPath`, and preserved in the failure report when reload exits
+  nonzero.
+☐ Add `.env.local` to `.gitignore`; add a safe example/template only if the
+  required variables cannot be documented clearly without one.
+
+Exit gate: the reusable build stack validates the intended files, retains all
+accepted defaults, contains no sibling-project leakage, and has focused proof
+for configuration and failure behavior.
+
+## Phase 2 - Establish the repo-local LuaUnit runner contract
+
+☐ Add `.luarocks/` to `.gitignore` and confirm it cannot enter `src/` or a
+  published package.
+☐ Keep LuaUnit pinned to `3.5-1`; check and install that exact version into
+  `.luarocks/` rather than accepting an arbitrary globally installed version.
+☐ Replace `DOTHIS_TEST_FILES` with a documented project-neutral mechanism
+  for passing the discovered suite list to `tests/run.lua`.
+☐ Make `tests/run.lua` derive `repo_root`, `tests/`, and
+  `src/scripts_modinstalled/` paths from its own location so LuaUnit CLI
+  arguments remain untouched.
+☐ Preserve the caller's existing `LUA_PATH` while adding the repo-local rock
+  path, test support path, and production-module path; restore process
+  environment variables on both success and failure.
+☐ Preserve passthrough of LuaUnit CLI arguments for targeted tests, output
+  modes, verbosity, and failure controls.
+☐ Ensure test discovery is deterministic, selects all current suite files,
+  and excludes `run.lua`, support modules, and fixtures.
+☐ Avoid terminating a parent PowerShell host unexpectedly when
+  `Run-UnitTests.ps1` is invoked from another tool; expose a reliable nonzero
+  process result without bypassing cleanup.
+☐ Add one LuaUnit smoke suite that proves dependency loading, repository-root
+  resolution, discovery, and a deliberate assertion failure path.
+
+Exit gate: `tools/Run-UnitTests.ps1` can bootstrap pinned LuaUnit and execute a
+discovered smoke suite with correct paths, arguments, cleanup, and exit status.
+
+## Phase 3 - Bridge the existing test suite onto LuaUnit
+
+☐ Introduce the smallest temporary compatibility adapter needed to map the
+  current `test.case` and assertion API onto LuaUnit without changing test
+  meaning.
+☐ Preserve the existing per-file registration boundary while the adapter is
+  active so every current suite continues to receive a valid repository root
+  and isolated harness state.
+☐ Map every custom assertion with equivalent failure semantics and useful
+  messages:
+  - true, false, and nil;
+  - exact equality;
+  - numeric tolerance;
+  - ordered sequence equality.
+☐ Make dynamic case names visible and uniquely identifiable in LuaUnit
+  output.
+☐ Execute all existing `*_test.lua` suites through the LuaUnit runner and
+  compare discovered file, case, and assertion totals with the Phase 0
+  baseline.
+☐ Deliberately fail one representative domain assertion and one harness/UI
+  assertion to prove failures are neither swallowed nor reported as passes;
+  revert only the deliberate failures after recording the proof.
+
+Exit gate: the complete pre-existing suite runs under LuaUnit with no omitted
+suites or weakened assertions, while production code remains unchanged.
+
+## Phase 4 - Convert suites to native LuaUnit and retire the custom framework
+
+☐ Convert domain/catalog/formatting suites to native LuaUnit structures and
+  assertions; run the full suite after the batch.
+☐ Convert candidate-provider, filter-state, preset, settings, search, and
+  lifecycle suites; run the full suite after the batch.
+☐ Convert module-loader, script-harness, DFHack-stub, and environment-heavy
+  suites while preserving per-test isolation and global restoration; run the
+  full suite after the batch.
+☐ Convert UI component, overlay, pointer, tooltip, geometry, refresh, and
+  characterization suites; run the full suite after the batch.
+☐ Replace the explicit suite registry in `tests/run.lua` with the proven
+  deterministic discovery contract.
+☐ Remove the temporary compatibility adapter and
+  `tests/support/testlib.lua` only after no suite requires them.
+☐ Search the complete `tests/` tree for old `test.case`, custom assertion,
+  suite-registration, and positional `repo_root` conventions; the result must
+  be empty except for intentional migration-history text in this plan.
+☐ Compare final suite/case/assertion coverage with the Phase 0 baseline and
+  explain any intentional count change in the execution evidence.
+
+Exit gate: every SoulSearch test is natively executed and reported by LuaUnit,
+the custom framework is gone, and the full suite retains baseline behavior and
+coverage.
+
+## Phase 5 - Migrate publishing and package verification
+
+☐ Audit `NewTools/Publish.ps1` and `VerifyPackage.ps1` for sibling-project
+  leakage and confirm all project identity comes from `src/info.txt` or
+  explicit parameters.
+☐ Reconcile `Publish.ps1 -SourceDir` with its build invocation so a custom
+  source selection is consistently validated, packaged, and verified.
+☐ Preserve the new publish behavior that calls the build with
+  `-LiveReload:$false`; publishing must not require or trigger a running game.
+☐ Record and adopt one intentional zip-root contract, then make
+  `Publish.ps1`, `VerifyPackage.ps1`, README installation instructions, and
+  tests agree on it.
+☐ Record whether the removed `NoRootFolder` and `NoExpandedFolder` options
+  have any remaining callers; either preserve a generic equivalent or update
+  every caller and document their removal.
+☐ Preserve byte-for-byte/SHA-256 manifest comparison between `src/`, the
+  expanded package, and the extracted zip, with useful missing, unexpected,
+  and differing-file diagnostics.
+☐ Move SoulSearch-specific bootstrap checks out of the generic verifier and
+  into focused project tests so generic verification does not weaken these
+  invariants:
+  - required `soulsearch.lua` annotations;
+  - keybinding bootstrap dependency;
+  - public command and required metadata presence.
+☐ Verify both repository-relative and absolute source/package paths.
+☐ Verify temporary staging/extraction directories are cleaned after success
+  and after forced verification failure.
+☐ Verify tests, tools, `.luarocks/`, `.env.local`, docs, and planning files
+  are absent from both package forms.
+
+Exit gate: publishing is reusable and non-live, both package forms exactly
+match the intended source payload, and SoulSearch-specific package guarantees
+remain covered by project tests.
+
+## Phase 6 - Perform the atomic toolchain cutover
+
+☐ Place the finalized `Build.ps1`, `Check-LuaSyntax.ps1`, `Common.ps1`,
+  `Run-UnitTests.ps1`, `Publish.ps1`, and `VerifyPackage.ps1` under `tools/`.
+☐ Remove obsolete `tools/Test.ps1` references only after
+  `tools/Run-UnitTests.ps1` passes the complete suite.
+☐ Remove `NewTools/` only after its finalized contents are present under
+  `tools/` and a manifest comparison confirms no accidental omissions.
+☐ Update `.vscode/tasks.json` so Build invokes the accepted default live
+  build and Unit Tests invokes `tools/Run-UnitTests.ps1`.
+☐ Update `README.md` and `tests/README.md` for:
+  - Lua, `luac`, LuaRocks, and DFHack runner prerequisites;
+  - `.env.local` and `DFHACK_*` configuration;
+  - default live build/reload behavior;
+  - LuaUnit bootstrap and argument passthrough;
+  - publish/package layout and installation.
+☐ Update active `.todo` files and durable docs that still name
+  `tools/Test.ps1` or describe the old syntax-only build contract.
+☐ Search the repository for old tool names, removed parameters, DoThis
+  identifiers, obsolete package-root claims, and stale command examples; fix
+  every actionable hit.
+☐ Preserve unrelated working-tree changes during the cutover.
+
+Exit gate: `tools/` is the sole toolchain location, all repository callers and
+documentation use the new contracts, and no copied-project leakage or stale
+entrypoint remains.
+
+## Phase 7 - Complete automated, package, and live validation
+
+☐ From a clean PowerShell process, run `tools/Run-UnitTests.ps1` with an
+  empty `.luarocks/` tree and record dependency bootstrap plus exact LuaUnit
+  results.
+☐ Run `tools/Run-UnitTests.ps1` again with the dependency already installed
+  and prove the pinned-version check is idempotent.
+☐ Run at least one targeted suite/case through forwarded LuaUnit arguments.
+☐ Run the default `tools/Build.ps1` against a configured live DFHack
+  instance and record:
+  - compiler/version and production/test syntax counts;
+  - resolved mod ID and reload command;
+  - reload exit status and relevant output.
+☐ Run the default build with `ReloadOutputPath` and verify the capture file
+  contains the observed DFHack output.
+☐ Run `tools/Publish.ps1`, then independently run
+  `tools/VerifyPackage.ps1` against the generated zip and expanded directory.
+☐ Compare generated manifests with `src/` and verify all exclusion and
+  SoulSearch bootstrap tests are green.
+☐ Run `git diff --check` and review the final diff for accidental generated
+  files, package artifacts, machine-local paths, or unrelated edits.
+☐ Complete a focused live fortress smoke after the build-triggered reload:
+  open SoulSearch, perform a representative search/filter interaction, close
+  it, and confirm no reload, module, overlay, or input regression.
+☐ Record every command and result in the execution-evidence table. Keep any
+  unavailable live scenario pending instead of treating automation as proof.
+
+Exit gate: clean-shell LuaUnit, accepted default live build, package creation,
+independent package verification, diff hygiene, and focused live SoulSearch
+behavior are all recorded and green.
+
+## Execution evidence
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Phase 0 custom-suite baseline | pending | |
+| Phase 0 syntax baseline | pending | |
+| Phase 0 package manifests/invariants | pending | |
+| Reusable common/syntax/build tools | pending | |
+| LuaUnit bootstrap and smoke failure proof | pending | |
+| Full suite through compatibility bridge | pending | |
+| Native LuaUnit conversion | pending | |
+| Generic publish/package verification | pending | |
+| Atomic `tools/` cutover and stale-reference audit | pending | |
+| Clean-tree LuaUnit bootstrap run | pending | |
+| Warm LuaUnit and targeted-test runs | pending | |
+| Default live build/reload | pending | |
+| Reload output capture | pending | |
+| Published zip and expanded package | pending | |
+| `git diff --check` and final diff audit | pending | |
+| Focused live fortress smoke | pending | |
+
+## Completion criteria
+
+This migration is complete only when:
+
+- `tools/` contains the sole supported generic toolchain and `NewTools/` is no
+  longer needed;
+- default `tools/Build.ps1` performs syntax validation plus successful live
+  `<mod-id> reload` using metadata from `src/info.txt`;
+- every SoulSearch pure-Lua test is discovered and executed natively by pinned
+  LuaUnit with no custom test framework remaining;
+- the final test coverage is reconciled with the pre-migration baseline;
+- publishing remains non-live and produces independently verified zip and
+  expanded packages that exactly match the intended `src/` payload;
+- SoulSearch-specific bootstrap/package invariants remain enforced by focused
+  project tests;
+- documentation, VS Code tasks, active plans, and command examples use only the
+  new entrypoints and parameters;
+- `.luarocks/`, `.env.local`, tests, tools, docs, and planning artifacts cannot
+  enter the package; and
+- the execution-evidence table records green automated, package, default live
+  build, and focused in-game gates.
