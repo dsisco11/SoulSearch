@@ -49,9 +49,10 @@ end
             'DODGING', 'DISCIPLINE',
             'AXE', 'DAGGER', 'MACE', 'SPEAR', 'PIKE', 'WHIP', 'WRESTLING',
             'LYING', 'LEADERSHIP', 'PERSUASION', 'CONVERSATION', 'INTIMIDATION',
-            'MILITARY_TACTICS', 'AMBUSHER', 'CRITICAL_THINKING', 'LOGIC',
+            'MILITARY_TACTICS', 'SNEAK', 'CRITICAL_THINKING', 'LOGIC',
             'READING', 'WRITING', 'TEACHING', 'POETRY', 'DANCE', 'MAKE_MUSIC',
-            'SING_MUSIC', 'SPEAKING'}))
+            'SING_MUSIC', 'SPEAKING', 'COMEDY', 'FLATTERY', 'CONSOLING',
+            'PACIFICATION'}))
 
     add_test('role presets: expose the researched roles in a stable order', function()
         local labels = {}
@@ -87,6 +88,12 @@ end
         luaunit.assertIs(true, contains(marksdwarf, 'physical:ENDURANCE'))
         local doctor = ids(assert(role_presets.get('doctor')))
         luaunit.assertIs(true, contains(doctor, 'mental:EMPATHY'))
+        local militia_commander = ids(assert(role_presets.get('militia_commander')))
+        luaunit.assertIs(true, contains(militia_commander, 'mental:INTUITION'))
+        luaunit.assertIs(true, contains(militia_commander, 'mental:SPATIAL_SENSE'))
+        luaunit.assertIs(true,
+            contains(militia_commander, 'mental:KINESTHETIC_SENSE'))
+        luaunit.assertIs(true, contains(militia_commander, 'mental:FOCUS'))
     end)
 
     add_test('role presets: separate complete combat presets and add dodging', function()
@@ -110,6 +117,11 @@ end
             first(3, ids(assert(role_presets.get('militia_commander')))))
         luaunit.assertIs(true, contains(ids(assert(role_presets.get('performer'))),
             'mental:MUSICALITY'))
+        local mayor = ids(assert(role_presets.get('mayor')))
+        luaunit.assertIs(true, contains(mayor, 'skill:COMEDY'))
+        luaunit.assertIs(true, contains(mayor, 'skill:CONSOLING'))
+        luaunit.assertIs(true, contains(mayor, 'skill:PACIFICATION'))
+        luaunit.assertIs(true, contains(mayor, 'mental:KINESTHETIC_SENSE'))
     end)
 
     add_test('role presets: resolve version-specific skill key fallbacks', function()

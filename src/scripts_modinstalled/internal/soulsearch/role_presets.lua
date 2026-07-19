@@ -11,6 +11,9 @@ local filter_defaults = reqscript('internal/soulsearch/filter_defaults')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
+-- Sources:
+-- https://dwarffortresswiki.org/index.php/Noble#Appointing_Administrators
+-- https://dwarffortresswiki.org/index.php/Attribute#Skills_by_associated_attributes
 -- Skill key fallbacks cover the small naming differences between DF versions.
 -- Attributes are ordered by the Wiki's A, then B, then C priority columns.
 local COMBAT_ATTRIBUTES = {
@@ -35,14 +38,14 @@ local LEADER_ATTRIBUTES = {
 local ROLE_ROWS = {
     {id='manager', label='Manager', skills={{'ORGANIZATION'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:SOCIAL_AWARENESS', 'mental:CREATIVITY'}},
     {id='bookkeeper', label='Bookkeeper', skills={{'RECORD_KEEPING'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:FOCUS'}},
-    {id='broker', label='Broker', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:INTUITION', 'mental:EMPATHY', 'mental:SOCIAL_AWARENESS', 'mental:LINGUISTIC_ABILITY'}},
+    {id='broker', label='Broker', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}, {'COMEDY'}, {'FLATTERY'}, {'LYING'}, {'INTIMIDATION'}, {'PERSUASION'}, {'CONVERSATION'}, {'CONSOLE', 'CONSOLING'}, {'PACIFY', 'PACIFICATION'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:INTUITION', 'mental:EMPATHY', 'mental:SOCIAL_AWARENESS', 'mental:LINGUISTIC_ABILITY'}},
     {id='chief_medical_dwarf', label='Chief Medical Dwarf', skills={{'DIAGNOSE', 'DIAGNOSIS'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:INTUITION'}},
     {id='interrogator', label='Interrogator', skills={{'JUDGING_INTENT'}}, attributes={'mental:EMPATHY', 'mental:SOCIAL_AWARENESS', 'mental:INTUITION'}},
     {id='doctor', label='Doctor', skills={{'DIAGNOSE', 'DIAGNOSIS'}, {'SURGERY'}, {'SET_BONE', 'BONE_SETTING'}, {'SUTURE', 'SUTURER'}, {'DRESS_WOUNDS', 'WOUND_DRESSER'}}, attributes={'mental:ANALYTICAL_ABILITY', 'physical:AGILITY', 'mental:KINESTHETIC_SENSE', 'physical:STRENGTH', 'mental:MEMORY', 'mental:SPATIAL_SENSE', 'mental:FOCUS', 'mental:INTUITION'}},
     {id='animal_trainer', label='Animal Trainer', skills={{'ANIMALTRAIN'}}, attributes={'physical:AGILITY', 'mental:EMPATHY', 'physical:TOUGHNESS', 'mental:PATIENCE', 'physical:ENDURANCE', 'mental:INTUITION'}},
     {id='trader', label='Trader', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}, {'LYING'}}, attributes=SOCIAL_ATTRIBUTES},
-    {id='mayor', label='Mayor', skills={{'LEADERSHIP'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
-    {id='expedition_leader', label='Expedition Leader', skills={{'LEADERSHIP'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
+    {id='mayor', label='Mayor', skills={{'LEADERSHIP'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'CONVERSATION'}, {'COMEDY'}, {'FLATTERY'}, {'LYING'}, {'INTIMIDATION'}, {'NEGOTIATION'}, {'CONSOLE', 'CONSOLING'}, {'PACIFY', 'PACIFICATION'}}, attributes=LEADER_ATTRIBUTES},
+    {id='expedition_leader', label='Expedition Leader', skills={{'LEADERSHIP'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'CONVERSATION'}, {'COMEDY'}, {'FLATTERY'}, {'LYING'}, {'INTIMIDATION'}, {'NEGOTIATION'}, {'CONSOLE', 'CONSOLING'}, {'PACIFY', 'PACIFICATION'}}, attributes=LEADER_ATTRIBUTES},
     {id='baron', label='Baron', skills={{'LEADERSHIP'}, {'NEGOTIATION'}, {'JUDGING_INTENT'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
     {id='count', label='Count', skills={{'LEADERSHIP'}, {'NEGOTIATION'}, {'JUDGING_INTENT'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
     {id='duke', label='Duke', skills={{'LEADERSHIP'}, {'NEGOTIATION'}, {'JUDGING_INTENT'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
@@ -54,11 +57,11 @@ local ROLE_ROWS = {
     {id='tavern_keeper', label='Tavern Keeper', skills={{'SPEAKING'}, {'CONVERSATION'}, {'JUDGING_INTENT'}}, attributes=SOCIAL_ATTRIBUTES},
     {id='dungeon_master', label='Dungeon Master', skills={{'ANIMALTRAIN'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}}, attributes=LEADER_ATTRIBUTES},
     {id='champion', label='Champion', skills={{'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}, {'LEADERSHIP'}}, attributes=COMBAT_ATTRIBUTES},
-    {id='messenger', label='Messenger', skills={{'CONVERSATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}}, attributes=SOCIAL_ATTRIBUTES},
+    {id='messenger', label='Messenger', skills={{'CONVERSATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'COMEDY'}, {'FLATTERY'}, {'LYING'}, {'INTIMIDATION'}, {'NEGOTIATION'}, {'CONSOLE', 'CONSOLING'}, {'PACIFY', 'PACIFICATION'}}, attributes=SOCIAL_ATTRIBUTES},
 }
 
 local COMBAT_ROWS = {
-    {id='militia_commander', label='Militia Commander', skills={{'LEADERSHIP'}, {'MILITARY_TACTICS'}, {'ORGANIZATION'}, {'AMBUSHER'}}, attributes=LEADER_ATTRIBUTES},
+    {id='militia_commander', label='Militia Commander', skills={{'LEADERSHIP'}, {'MILITARY_TACTICS'}, {'ORGANIZATION'}, {'SNEAK', 'AMBUSHER'}}, attributes=LEADER_ATTRIBUTES},
     {id='militia_captain', label='Militia Captain', skills={{'LEADERSHIP'}, {'MILITARY_TACTICS'}, {'ORGANIZATION'}}, attributes=LEADER_ATTRIBUTES},
     {id='soldier', label='Soldier', skills={{'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}, {'DISCIPLINE'}}, attributes=COMBAT_ATTRIBUTES},
     {id='axedwarf', label='Axedwarf', skills={{'AXE'}, {'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}}, attributes=COMBAT_ATTRIBUTES},
@@ -94,7 +97,10 @@ local SKILL_DEFAULTS = {
     CONVERSATION='conversationalist', WRITING='writer', READING='reader',
     TEACHING='teacher', CRITICAL_THINKING='critical_thinker', LOGIC='logician',
     POETRY='poet', DANCE='dancer', MAKE_MUSIC='musician', SING_MUSIC='musician',
-    SPEAKING='speaker',
+    SPEAKING='speaker', LEADERSHIP='leader', MILITARY_TACTICS='tactician',
+    AMBUSHER='ambusher', COMEDY='comedian', FLATTERY='flatterer',
+    CONSOLE='consoler', CONSOLING='consoler', PACIFY='pacifier',
+    PACIFICATION='pacifier',
 }
 
 ---@param catalog SoulSearchFilterCatalog

@@ -43,6 +43,31 @@ end
         }, ids(assert(defaults.get('mathematician'))))
     end)
 
+    add_test('built-in presets: cover every wiki soul attribute', function()
+        local actual = {}
+        for _, preset in ipairs(defaults.get_all()) do
+            for _, filter in ipairs(preset.filters) do
+                local attribute = filter.id:match('^mental:(.+)$')
+                if attribute then actual[attribute] = true end
+            end
+        end
+        luaunit.assertEquals({
+            ANALYTICAL_ABILITY=true,
+            CREATIVITY=true,
+            EMPATHY=true,
+            FOCUS=true,
+            INTUITION=true,
+            KINESTHETIC_SENSE=true,
+            LINGUISTIC_ABILITY=true,
+            MEMORY=true,
+            MUSICALITY=true,
+            PATIENCE=true,
+            SOCIAL_AWARENESS=true,
+            SPATIAL_SENSE=true,
+            WILLPOWER=true,
+        }, actual)
+    end)
+
     add_test('built-in presets: reads do not alias the catalog', function()
         local filters = assert(defaults.get('miner'))
         filters[1].id = 'physical:AGILITY'
