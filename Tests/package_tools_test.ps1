@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $publishScript = Join-Path $projectRoot 'tools\Publish.ps1'
 $verifyScript = Join-Path $projectRoot 'tools\VerifyPackage.ps1'
+$commonScript = Join-Path $projectRoot 'tools\Common.ps1'
 $fixtureRoot = Join-Path $projectRoot ".package-tools-test-$([guid]::NewGuid())"
 $sourceRoot = Join-Path $fixtureRoot 'source'
 $outputRoot = Join-Path $fixtureRoot 'output'
@@ -99,8 +100,8 @@ function New-FlatZip {
 }
 
 $oldRunner = [Environment]::GetEnvironmentVariable('DFHACK_RUNNER', 'Process')
-$oldDwarfFortressRoot = [Environment]::GetEnvironmentVariable(
-    'DWARF_FORTRESS_ROOT', 'Process')
+$oldDFHackRoot = [Environment]::GetEnvironmentVariable(
+    'DFHACK_ROOT', 'Process')
 
 try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -120,12 +121,26 @@ try {
     [IO.File]::WriteAllBytes((Join-Path $sourceRoot 'payload.bin'),
         [byte[]](0, 1, 2, 255))
 
+    . $commonScript
+    $separateDFHackRoot = Join-Path $fixtureRoot 'separate-dfhack-install'
+    $rootRunner = Join-Path $separateDFHackRoot 'hack\dfhack-run.exe'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $rootRunner) `
+        -Force | Out-Null
+    Set-Content -LiteralPath $rootRunner -Value 'fixture runner' -Encoding utf8
+    $resolvedRootRunner = Resolve-DFHackRunner -DFHackRoot $separateDFHackRoot
+    Assert-Condition ($resolvedRootRunner -eq (Resolve-Path $rootRunner).Path) `
+        'DFHack root did not resolve hack/dfhack-run.exe.'
+    Invoke-ExpectedFailure -MessagePattern 'missing-dfhack-root' -Action {
+        Resolve-DFHackRunner -DFHackRoot (
+            Join-Path $fixtureRoot 'missing-dfhack-root')
+    }
+
     # Invalid runner settings prove publishing does not attempt live reload.
     [Environment]::SetEnvironmentVariable(
         'DFHACK_RUNNER', (Join-Path $fixtureRoot 'missing-runner.exe'), 'Process')
     [Environment]::SetEnvironmentVariable(
-        'DWARF_FORTRESS_ROOT',
-        (Join-Path $fixtureRoot 'missing-df-root'),
+        'DFHACK_ROOT',
+        (Join-Path $fixtureRoot 'missing-dfhack-root'),
         'Process')
 
     $publishTemps = Get-TemporaryDirectories -Prefix 'DFHackModPublish-'
@@ -280,7 +295,7 @@ finally {
     [Environment]::SetEnvironmentVariable(
         'DFHACK_RUNNER', $oldRunner, 'Process')
     [Environment]::SetEnvironmentVariable(
-        'DWARF_FORTRESS_ROOT', $oldDwarfFortressRoot, 'Process')
+        'DFHACK_ROOT', $oldDFHackRoot, 'Process')
     if (Test-Path -LiteralPath $fixtureRoot) {
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
     }

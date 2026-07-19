@@ -595,6 +595,17 @@ for `Check-LuaSyntax.ps1` and
 `8A363DC0A6E9EB0E6329B48FD6143455711B519BFA6C523C1A591267A75A4565`
 for `Run-UnitTests.ps1`.
 
+Post-Phase 6 DFHack relocation follow-up (2026-07-18): live-runner discovery
+was decoupled from the Dwarf Fortress game root ahead of DFHack's separate-app
+layout. The current build accepts `DFHACK_ROOT` / `-DFHackRoot` and resolves
+`hack/dfhack-run.exe` beneath the DFHack installation root; the explicit
+`DFHACK_RUNNER` and PATH modes remain available. The historical Phase 0-3
+references to `DWARF_FORTRESS_ROOT` and `DwarfFortressRoot` above intentionally
+record the pre-relocation contract and are no longer current interfaces.
+`Tests/package_tools_test.ps1` now exercises a standalone DFHack-root fixture,
+and the README and VS Code workspace no longer locate DFHack through the Dwarf
+Fortress installation.
+
 ## Phase 7 - Complete automated, package, and live validation
 
 ☐ From a clean PowerShell process, run `tools/Run-UnitTests.ps1` with an
@@ -603,12 +614,12 @@ for `Run-UnitTests.ps1`.
 ☐ Run `tools/Run-UnitTests.ps1` again with the dependency already installed
   and prove the pinned-version check is idempotent.
 ☐ Run at least one targeted suite/case through forwarded LuaUnit arguments.
-☐ Run the default `tools/Build.ps1` against a configured live DFHack
+☑ Run the default `tools/Build.ps1` against a configured live DFHack
   instance and record:
   - compiler/version and production/test syntax counts;
   - resolved mod ID and reload command;
   - reload exit status and relevant output.
-☐ Run the default build with `ReloadOutputPath` and verify the capture file
+☑ Run the default build with `ReloadOutputPath` and verify the capture file
   contains the observed DFHack output.
 ☐ Run `tools/Publish.ps1`, then independently run
   `tools/VerifyPackage.ps1` against the generated zip and expanded directory.
@@ -641,8 +652,8 @@ behavior are all recorded and green.
 | Exact `NewTools/` -> `tools/` move and stale-reference audit | complete | 2026-07-18: pre/post six-file names, sizes, and SHA-256 hashes match exactly; old Build/Test set removed, `NewTools/` absent, sole `tools/` location passed 331 tests, targeted forwarding, 66/64 build, package fixtures, and standalone verification; live callers/docs updated and actionable stale/duplicate audit returned zero |
 | Clean-tree LuaUnit bootstrap run | pending | |
 | Warm LuaUnit and targeted-test runs | pending | |
-| Default live build/reload | pending | |
-| Reload output capture | pending | |
+| Default live build/reload | complete | 2026-07-18: `Tools/Build.ps1 -DFHackRoot <current DFHack install>` used the new root contract to resolve `hack/dfhack-run.exe`; Lua 5.4.6 checked 66 production and 64 test/support files, `soulsearch reload` exited 0, and the live runner returned the enabled DwarfDirect overlay diagnostics |
+| Reload output capture | complete | 2026-07-18: the same live build wrote its two observed DwarfDirect overlay lines to a temporary `ReloadOutputPath`; `Get-Content` matched the console output and the capture was removed afterward |
 | Published zip and expanded package | pending | |
 | `git diff --check` and final diff audit | pending | |
 | Focused live fortress smoke | pending | |

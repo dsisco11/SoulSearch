@@ -63,14 +63,16 @@ directly into `mods/`, and do not add a second wrapper folder such as
 ## Development Setup
 
 For local development without repeatedly copying files, add this line to
-`dfhack-config/script-paths.txt`:
+`script-paths.txt` in DFHack's configuration directory:
 
 ```text
 +D:/CODE/DFHack/SoulSearch/src/scripts_modinstalled
 ```
 
 The leading `+` tells DFHack to search this development copy before other script
-directories.
+directories. On DFHack versions that support the relocatable installation,
+`:lua print(dfhack.getConfigPath())` prints the active configuration directory;
+do not infer it from the Dwarf Fortress game path.
 
 If you add an enableable SoulSearch script while DFHack is already running,
 its initial module scan has already happened. For development recovery, run
@@ -90,13 +92,15 @@ repository root:
 ```text
 DFHACK_LUAC=C:\path\to\luac.exe
 DFHACK_LUA_VERSION=5.4
-DFHACK_RUNNER=C:\path\to\Dwarf Fortress\hack\dfhack-run.exe
-# Alternatively: DWARF_FORTRESS_ROOT=C:\path\to\Dwarf Fortress
+DFHACK_RUNNER=C:\path\to\DFHack\hack\dfhack-run.exe
+# Alternatively: DFHACK_ROOT=C:\path\to\DFHack
 ```
 
 Existing process environment variables take precedence. The same values can
 also be supplied through `-LuaCompiler`, `-RequiredLuaVersion`,
-`-DFHackRunner`, or `-DwarfFortressRoot`.
+`-DFHackRunner`, or `-DFHackRoot`. `DFHACK_ROOT` is the DFHack app/install
+root, not the Dwarf Fortress game root; the runner is resolved as
+`<DFHACK_ROOT>\hack\dfhack-run.exe`.
 
 Run the default build with:
 
@@ -240,9 +244,10 @@ Choose **Save preset** and enter a name in the prompt to save the complete
 ordered filter list, including unit-scope, race, and ranking filters with
 their directions; select a saved name and press Enter to replace the current
 filter list. A preset with no unit-scope filters restores unrestricted unit
-scope. Presets
-are stored as individual JSON files under DFHack's mod-state directory,
-`dfhack-config/mods/soulsearch/presets/`, so they survive mod updates.
+scope. Presets are stored as individual JSON files under SoulSearch's
+directory in DFHack's active mod-state path (`mods/soulsearch/presets/`
+beneath `dfhack.getConfigPath()`), so they survive mod updates and do not
+depend on the Dwarf Fortress installation layout.
 Custom presets are listed first. The same menu also includes role presets and skill presets;
 these are shipped configurations, not JSON files, with one preset for every current row in the
 Dwarf Fortress Wiki's primary (A), secondary (B), and tertiary (C)
@@ -269,7 +274,8 @@ DFHack has not added the mod's `scripts_modinstalled/` directory to its script
 paths yet.
 
 For development, the most reliable fix is to add this line to
-`dfhack-config/script-paths.txt` and restart DFHack:
+`script-paths.txt` beneath the path reported by
+`:lua print(dfhack.getConfigPath())`, then restart DFHack:
 
 ```text
 +D:/CODE/DFHack/SoulSearch/src/scripts_modinstalled
