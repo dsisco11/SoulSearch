@@ -72,7 +72,8 @@ The completed migration must:
 - Discovered LuaUnit suite files: 57.
 - Runtime tests: 332.
 - Current result: 328 passing and 4 failing.
-- LuaUnit assertion calls to convert: 1,518.
+- LuaUnit API calls to convert: 1,519 total, consisting of 1,518 assertions and
+  the deliberate `fail()` smoke call.
 - Current assertion inventory:
   - `assertIs`: 871;
   - `assertEvalToTrue`: 291;
@@ -85,10 +86,10 @@ The completed migration must:
   - `assertNotNil`: 1; and
   - `fail`: 1.
 - Existing failures in `Tests/search_test.lua`:
-  - `earlier selected filter receives priority bonus`;
-  - `full and partial matches remain in results`;
-  - `mixed stat kinds evaluate together`; and
-  - `raw score breaks exact weighted-score tie`.
+  - `ranking: earlier selected filter receives priority bonus`;
+  - `ranking: full and partial matches remain in results`;
+  - `ranking: mixed stat kinds evaluate together`; and
+  - `ranking: raw score breaks an exact weighted-score tie`.
 
 ## Assertion conversion contract
 
@@ -112,22 +113,162 @@ The completed migration must:
 
 ## Phase 0 - Reconfirm and record the migration baseline
 
-☐ Run the complete LuaUnit suite from a clean PowerShell process and record the
+☑ Run the complete LuaUnit suite from a clean PowerShell process and record the
   exact discovered-file, test, pass, and failure totals.
-☐ Confirm that the only failures are the four named search-ranking cases in the
+☑ Confirm that the only failures are the four named search-ranking cases in the
   planning baseline.
-☐ Record a sorted manifest of all 57 `*_test.lua` suites before any rename.
-☐ Re-run the assertion inventory and reconcile any drift from the 1,518-call
+☑ Record a sorted manifest of all 57 `*_test.lua` suites before any rename.
+☑ Re-run the assertion inventory and reconcile any drift from the 1,518-call
   planning count.
-☐ Record the current behavior of full-suite, targeted-test, opt-in smoke
+☑ Record the current behavior of full-suite, targeted-test, opt-in smoke
   failure, nonzero exit propagation, and environment restoration.
-☐ Record the current syntax-only build and package-tool results independently
+☑ Record the current syntax-only build and package-tool results independently
   from the unit-test result.
-☐ Add the commands, date, output totals, and any deviations to the execution
+☑ Add the commands, date, output totals, and any deviations to the execution
   evidence table at the end of this document.
 
 Exit gate: the checked-in baseline identifies every suite and assertion surface,
 and reproduces exactly the accepted 328-pass/four-failure state.
+
+Phase 0 recorded evidence (2026-07-18):
+
+- Commands ran in fresh `pwsh -NoProfile` child processes. The inherited Codex
+  process PATH did not include the installed Lua toolchain, so each successful
+  clean-process probe explicitly prepended
+  `C:\Users\Sisco\AppData\Local\Programs\Lua\bin`. A raw `pwsh -NoProfile`
+  invocation without that prerequisite failed before discovery with
+  `LuaRocks was not found on PATH.` This is recorded environment setup, not a
+  test-suite failure.
+- The principal baseline commands were:
+
+```powershell
+pwsh -NoProfile -Command "& {
+    `$env:PATH = 'C:\Users\Sisco\AppData\Local\Programs\Lua\bin;' + `$env:PATH
+    & '.\Tools\Run-UnitTests.ps1'
+}"
+
+pwsh -NoProfile -Command "& {
+    `$env:PATH = 'C:\Users\Sisco\AppData\Local\Programs\Lua\bin;' + `$env:PATH
+    & '.\Tools\Run-UnitTests.ps1' -v `
+        'Test_attributes_test.test attributes: physical above race median'
+}"
+
+pwsh -NoProfile -Command "& {
+    `$env:PATH = 'C:\Users\Sisco\AppData\Local\Programs\Lua\bin;' + `$env:PATH
+    `$env:LUAUNIT_SMOKE_FORCE_FAILURE = '1'
+    & '.\Tools\Run-UnitTests.ps1' -v `
+        'Test_luaunit_setup_test.test_opt_in_failure_path'
+}"
+
+pwsh -NoProfile -Command "& {
+    `$env:PATH = 'C:\Users\Sisco\AppData\Local\Programs\Lua\bin;' + `$env:PATH
+    & '.\Tools\Build.ps1' -LiveReload:`$false
+}"
+
+pwsh -NoProfile -Command "& {
+    `$env:PATH = 'C:\Users\Sisco\AppData\Local\Programs\Lua\bin;' + `$env:PATH
+    & '.\Tests\package_tools_test.ps1'
+}"
+```
+
+- The full test command ran 332 tests in 57 discovered files: 328 succeeded and
+  exactly four failed. LuaUnit returned code 4; the PowerShell runner restored
+  its process environment, threw `LuaUnit tests failed with exit code 4.`, and
+  the child process returned 1.
+- The four failure identities and locations were:
+  - `ranking: earlier selected filter receives priority bonus`
+    (`Tests/search_test.lua:234`);
+  - `ranking: full and partial matches remain in results`
+    (`Tests/search_test.lua:210`);
+  - `ranking: mixed stat kinds evaluate together`
+    (`Tests/search_test.lua:292`); and
+  - `ranking: raw score breaks an exact weighted-score tie`
+    (`Tests/search_test.lua:249`).
+- Targeting with `-v "Test_attributes_test.test attributes: physical above
+  race median"` ran exactly one test with one success and exit code 0.
+- With `LUAUNIT_SMOKE_FORCE_FAILURE=1`, targeting
+  `Test_luaunit_setup_test.test_opt_in_failure_path` ran exactly one test,
+  reported the intentional failure, made LuaUnit return 1, and made the direct
+  child runner return 1.
+- Independent sentinel probes set pre-existing `LUA_PATH` and `LUA_TEST_FILES`
+  values, then ran the targeted success and forced-failure paths. Both probes
+  reported `lua_path_restored=True` and `test_files_restored=True`; the failure
+  probe caught `LuaUnit tests failed with exit code 1.` only after restoration.
+- Static discovery used the runner's `(^test_.*|.*_test)\.lua$` convention and
+  produced this sorted 57-file manifest:
+
+```text
+Tests/active_unit_provider_test.lua
+Tests/attribute_descriptions_test.lua
+Tests/attributes_test.lua
+Tests/availability_test.lua
+Tests/candidate_filter_family_provider_test.lua
+Tests/candidate_pipeline_characterization_test.lua
+Tests/candidate_provider_test.lua
+Tests/creatures_menu_navigator_test.lua
+Tests/creatures_menu_overlay_test.lua
+Tests/creatures_menu_scope_test.lua
+Tests/filter_action_list_test.lua
+Tests/filter_constants_test.lua
+Tests/filter_defaults_test.lua
+Tests/filter_panel_test.lua
+Tests/filter_presets_test.lua
+Tests/filter_state_test.lua
+Tests/keybindings_test.lua
+Tests/lifecycle_test.lua
+Tests/luaunit_setup_test.lua
+Tests/matched_filters_panel_test.lua
+Tests/metadata_test.lua
+Tests/modal_panel_test.lua
+Tests/module_registry_test.lua
+Tests/package_contract_test.lua
+Tests/pointer_dispatcher_test.lua
+Tests/race_catalog_test.lua
+Tests/race_filter_provider_test.lua
+Tests/residents_test.lua
+Tests/results_panel_test.lua
+Tests/role_presets_test.lua
+Tests/screen_registry_test.lua
+Tests/script_harness_test.lua
+Tests/search_session_test.lua
+Tests/search_test.lua
+Tests/soulsearch_command_test.lua
+Tests/stats_layout_test.lua
+Tests/stats_overlay_test.lua
+Tests/stats_panel_test.lua
+Tests/stats_popover_test.lua
+Tests/stats_presenter_test.lua
+Tests/stats_sort_subject_test.lua
+Tests/text_match_test.lua
+Tests/tooltip_agent_test.lua
+Tests/ui_characterization_test.lua
+Tests/ui_format_test.lua
+Tests/ui_glyphs_test.lua
+Tests/ui_layout_test.lua
+Tests/ui_open_test.lua
+Tests/ui_refresh_test.lua
+Tests/ui_tooltip_test.lua
+Tests/unit_identity_test.lua
+Tests/unit_scope_catalog_test.lua
+Tests/unit_scope_filter_provider_test.lua
+Tests/unit_stats_list_test.lua
+Tests/widget_extensions_test.lua
+Tests/window_config_test.lua
+Tests/window_settings_test.lua
+```
+
+- The static inventory found 1,519 LuaUnit API calls: `assertIs` 871,
+  `assertEvalToTrue` 291, `assertEvalToFalse` 133, `assertEquals` 131,
+  `assertNil` 83, `assertAlmostEquals` 4, `assertStrContains` 2,
+  `assertNotStrContains` 2, `assertNotNil` 1, and `fail` 1. The planning total
+  of 1,518 had omitted the deliberate `fail()` call; the per-API inventory did
+  not drift.
+- `Tools/Build.ps1 -LiveReload:$false` passed with Lua 5.4.6 for 66 production
+  files and 64 test/support files.
+- `Tests/package_tools_test.ps1` returned 0 and reported
+  `Package tooling contract tests passed.` Its expected malformed-Lua fixture
+  emitted a syntax error as part of the negative-path coverage; the harness
+  accepted that failure and completed successfully.
 
 ## Phase 1 - Establish the repository-local Busted runner
 
@@ -347,8 +488,11 @@ search failures.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Phase 0 baseline manifest and assertion inventory | pending | |
-| Existing full-suite and known-failure reproduction | pending | |
+| Phase 0 baseline manifest and assertion inventory | complete | 2026-07-18: 57 sorted suites; 1,519 LuaUnit API calls (1,518 assertions plus one deliberate `fail`) |
+| Existing full-suite and known-failure reproduction | complete | 2026-07-18: clean `pwsh -NoProfile` child with installed Lua bin prepended ran 332 tests: 328 passed and only the four named `search_test.lua` cases failed |
+| Phase 0 targeted, forced-failure, and restoration baseline | complete | 2026-07-18: targeted case passed 1/1; smoke probe failed 1/1 and propagated nonzero; `LUA_PATH` and `LUA_TEST_FILES` restored after success and failure |
+| Phase 0 syntax-only build baseline | complete | 2026-07-18: Lua 5.4.6 checked 66 production and 64 test/support files |
+| Phase 0 package-tool baseline | complete | 2026-07-18: package tooling contract tests returned 0, including expected negative paths |
 | Busted and luasystem clean bootstrap | pending | |
 | Warm Busted dependency reuse | pending | |
 | Busted setup and opt-in failure smoke | pending | |
