@@ -16,7 +16,7 @@ local function add_test(name, callback)
 end
     local defaults = soulsearch_env.load_filter_defaults(repo_root)
 
-    add_test('built-in presets: expose every wiki skill-table row', function()
+    add_test('built-in presets: expose every explicit wiki skill row', function()
         local labels = {}
         for _, preset in ipairs(defaults.get_all()) do
             table.insert(labels, preset.label)
