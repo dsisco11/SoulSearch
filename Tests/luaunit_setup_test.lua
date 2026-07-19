@@ -13,7 +13,7 @@ function native_tests:test_dependency_and_repository_root()
 end
 
 function native_tests:test_discovery_contract()
-    local files = assert(os.getenv('DFHACK_LUA_TEST_FILES'),
+    local files = assert(os.getenv('LUA_TEST_FILES'),
         'runner did not provide discovered test files')
 
     luaunit.assertStrContains(files, 'luaunit_setup_test.lua')
@@ -23,7 +23,7 @@ function native_tests:test_discovery_contract()
 end
 
 function native_tests:test_opt_in_failure_path()
-    if os.getenv('DFHACK_LUAUNIT_SMOKE_FORCE_FAILURE') == '1' then
+    if os.getenv('LUAUNIT_SMOKE_FORCE_FAILURE') == '1' then
         luaunit.fail('intentional LuaUnit smoke failure')
     end
 end

@@ -5,6 +5,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$buildScript = Join-Path $projectRoot 'tools\Build.ps1'
 $publishScript = Join-Path $projectRoot 'tools\Publish.ps1'
 $verifyScript = Join-Path $projectRoot 'tools\VerifyPackage.ps1'
 $commonScript = Join-Path $projectRoot 'tools\Common.ps1'
@@ -23,6 +24,22 @@ function Assert-Condition {
 
     if (-not $Condition) {
         throw $Message
+    }
+}
+
+# @brief Restores a process environment variable to its exact prior state.
+# @param Name Environment variable name.
+# @param Value Prior value, or null when the variable was absent.
+function Restore-ProcessEnvironmentVariable {
+    param(
+        [Parameter(Mandatory)][string] $Name,
+        [AllowNull()][string] $Value
+    )
+
+    if ($null -eq $Value) {
+        Remove-Item -LiteralPath "Env:$Name" -ErrorAction SilentlyContinue
+    } else {
+        Set-Item -LiteralPath "Env:$Name" -Value $Value
     }
 }
 
@@ -102,6 +119,10 @@ function New-FlatZip {
 $oldRunner = [Environment]::GetEnvironmentVariable('DFHACK_RUNNER', 'Process')
 $oldDFHackRoot = [Environment]::GetEnvironmentVariable(
     'DFHACK_ROOT', 'Process')
+$oldLuaCompiler = [Environment]::GetEnvironmentVariable(
+    'LUA_COMPILER', 'Process')
+$oldRequiredLuaVersion = [Environment]::GetEnvironmentVariable(
+    'LUA_REQUIRED_VERSION', 'Process')
 
 try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -134,6 +155,26 @@ try {
         Resolve-DFHackRunner -DFHackRoot (
             Join-Path $fixtureRoot 'missing-dfhack-root')
     }
+
+    Remove-Item -LiteralPath Env:LUA_COMPILER -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath Env:LUA_REQUIRED_VERSION `
+        -ErrorAction SilentlyContinue
+    $neutralEnvFile = Join-Path $fixtureRoot 'neutral-lua.env'
+    $luaCompiler = (Get-Command luac.exe -ErrorAction Stop).Source
+    Set-Content -LiteralPath $neutralEnvFile -Encoding utf8 -Value @"
+LUA_COMPILER=$luaCompiler
+LUA_REQUIRED_VERSION=5.4
+"@
+    & $buildScript -SourceDir $sourceRoot -LiveReload:$false `
+        -EnvFile $neutralEnvFile
+    $importedLuaCompiler = [Environment]::GetEnvironmentVariable(
+        'LUA_COMPILER', 'Process')
+    Assert-Condition ($importedLuaCompiler -eq $luaCompiler) `
+        "Neutral Lua compiler environment setting was not imported; expected '$luaCompiler', got '$importedLuaCompiler'."
+    Assert-Condition (
+        [Environment]::GetEnvironmentVariable(
+            'LUA_REQUIRED_VERSION', 'Process') -eq '5.4') `
+        'Neutral required-version environment setting was not imported.'
 
     # Invalid runner settings prove publishing does not attempt live reload.
     [Environment]::SetEnvironmentVariable(
@@ -292,10 +333,11 @@ try {
     Write-Host 'Package tooling contract tests passed.'
 }
 finally {
-    [Environment]::SetEnvironmentVariable(
-        'DFHACK_RUNNER', $oldRunner, 'Process')
-    [Environment]::SetEnvironmentVariable(
-        'DFHACK_ROOT', $oldDFHackRoot, 'Process')
+    Restore-ProcessEnvironmentVariable -Name 'DFHACK_RUNNER' -Value $oldRunner
+    Restore-ProcessEnvironmentVariable -Name 'DFHACK_ROOT' -Value $oldDFHackRoot
+    Restore-ProcessEnvironmentVariable -Name 'LUA_COMPILER' -Value $oldLuaCompiler
+    Restore-ProcessEnvironmentVariable -Name 'LUA_REQUIRED_VERSION' `
+        -Value $oldRequiredLuaVersion
     if (Test-Path -LiteralPath $fixtureRoot) {
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
     }

@@ -10,7 +10,7 @@ Set-StrictMode -Version Latest
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $rockTree = Join-Path $projectRoot '.luarocks'
 $luaUnitVersion = '3.5-1'
-$testFileEnvironmentVariable = 'DFHACK_LUA_TEST_FILES'
+$testFileEnvironmentVariable = 'LUA_TEST_FILES'
 
 if (-not (Get-Command luarocks -ErrorAction SilentlyContinue)) {
     throw 'LuaRocks was not found on PATH.'
@@ -85,8 +85,7 @@ try {
         $luaPathEntries += $oldLuaPath
     }
     Set-Item -LiteralPath Env:LUA_PATH -Value ($luaPathEntries -join ';')
-    # Tests/run.lua consumes this newline-delimited discovered suite list. Keeping
-    # the contract DFHack-neutral lets the runner be reused by other Lua projects.
+    # Tests/run.lua consumes this neutral, newline-delimited discovered suite list.
     Set-Item -LiteralPath "Env:$testFileEnvironmentVariable" -Value ($testFiles -join "`n")
 
     & lua (Join-Path $projectRoot 'Tests/run.lua') @LuaUnitArgs

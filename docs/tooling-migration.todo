@@ -606,6 +606,18 @@ record the pre-relocation contract and are no longer current interfaces.
 and the README and VS Code workspace no longer locate DFHack through the Dwarf
 Fortress installation.
 
+Post-Phase 6 neutral-tooling follow-up (2026-07-18): reusable Lua build and
+test configuration no longer uses the DFHack namespace. `LUA_COMPILER` and
+`LUA_REQUIRED_VERSION` configure syntax checking, `LUA_TEST_FILES` carries the
+runner's deterministic discovery list, and `LUAUNIT_SMOKE_FORCE_FAILURE`
+controls the opt-in runner failure probe. `DFHACK_ROOT` and `DFHACK_RUNNER`
+remain intentionally scoped to the DFHack-specific live reload boundary. The
+historical `DFHACK_LUAC`, `DFHACK_LUA_VERSION`, and
+`DFHACK_LUA_TEST_FILES` references above record the superseded migration
+contract and are not accepted by the current tools. The package-tool fixture
+proved `.env` import through the neutral compiler/version names and preserved
+missing process variables as truly absent during cleanup.
+
 ## Phase 7 - Complete automated, package, and live validation
 
 ☐ From a clean PowerShell process, run `tools/Run-UnitTests.ps1` with an
@@ -613,7 +625,7 @@ Fortress installation.
   results.
 ☐ Run `tools/Run-UnitTests.ps1` again with the dependency already installed
   and prove the pinned-version check is idempotent.
-☐ Run at least one targeted suite/case through forwarded LuaUnit arguments.
+☑ Run at least one targeted suite/case through forwarded LuaUnit arguments.
 ☑ Run the default `tools/Build.ps1` against a configured live DFHack
   instance and record:
   - compiler/version and production/test syntax counts;
@@ -651,7 +663,7 @@ behavior are all recorded and green.
 | Generic publish/package verification | complete | 2026-07-18: real flat-root zip and expanded package matched all 67 source files by SHA-256; generic fixture passed metadata/explicit identity, custom-source non-live build, both path forms, precise manifest failures, wrapper/tamper rejection, and success/failure cleanup; 331 LuaUnit tests retained SoulSearch package invariants |
 | Exact `NewTools/` -> `tools/` move and stale-reference audit | complete | 2026-07-18: pre/post six-file names, sizes, and SHA-256 hashes match exactly; old Build/Test set removed, `NewTools/` absent, sole `tools/` location passed 331 tests, targeted forwarding, 66/64 build, package fixtures, and standalone verification; live callers/docs updated and actionable stale/duplicate audit returned zero |
 | Clean-tree LuaUnit bootstrap run | pending | |
-| Warm LuaUnit and targeted-test runs | pending | |
+| Warm LuaUnit and targeted-test runs | pending | 2026-07-18: the targeted neutral discovery suite passed 3/3 and the opt-in `LUAUNIT_SMOKE_FORCE_FAILURE` probe produced and propagated exactly one failure; the full warm run remains pending at 328/332 because of the four existing `Tests/search_test.lua` ranking failures |
 | Default live build/reload | complete | 2026-07-18: `Tools/Build.ps1 -DFHackRoot <current DFHack install>` used the new root contract to resolve `hack/dfhack-run.exe`; Lua 5.4.6 checked 66 production and 64 test/support files, `soulsearch reload` exited 0, and the live runner returned the enabled DwarfDirect overlay diagnostics |
 | Reload output capture | complete | 2026-07-18: the same live build wrote its two observed DwarfDirect overlay lines to a temporary `ReloadOutputPath`; `Get-Content` matched the console output and the capture was removed afterward |
 | Published zip and expanded package | pending | |

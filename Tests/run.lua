@@ -21,8 +21,8 @@ luaunit.ORDER_ACTUAL_EXPECTED = false
 -- Run-UnitTests.ps1 supplies the deterministic, newline-delimited suite list
 -- through this project-neutral environment variable. LuaUnit CLI arguments are
 -- deliberately left in arg so callers can target tests or select output modes.
-local discovered_files = assert(os.getenv('DFHACK_LUA_TEST_FILES'),
-    'DFHACK_LUA_TEST_FILES must be provided by Tools/Run-UnitTests.ps1')
+local discovered_files = assert(os.getenv('LUA_TEST_FILES'),
+    'LUA_TEST_FILES must be provided by Tools/Run-UnitTests.ps1')
 
 local normalized_tests_root = tests_root:gsub('\\', '/') .. '/'
 

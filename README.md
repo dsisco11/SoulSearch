@@ -90,8 +90,8 @@ Machine-local settings can be placed in an ignored `.env.local` file at the
 repository root:
 
 ```text
-DFHACK_LUAC=C:\path\to\luac.exe
-DFHACK_LUA_VERSION=5.4
+LUA_COMPILER=C:\path\to\luac.exe
+LUA_REQUIRED_VERSION=5.4
 DFHACK_RUNNER=C:\path\to\DFHack\hack\dfhack-run.exe
 # Alternatively: DFHACK_ROOT=C:\path\to\DFHack
 ```
@@ -101,6 +101,10 @@ also be supplied through `-LuaCompiler`, `-RequiredLuaVersion`,
 `-DFHackRunner`, or `-DFHackRoot`. `DFHACK_ROOT` is the DFHack app/install
 root, not the Dwarf Fortress game root; the runner is resolved as
 `<DFHACK_ROOT>\hack\dfhack-run.exe`.
+
+The Lua build settings and the test runner's internal `LUA_TEST_FILES`
+discovery contract are deliberately tool-neutral. Only live reload uses the
+`DFHACK_*` namespace because those paths identify DFHack itself.
 
 Run the default build with:
 
