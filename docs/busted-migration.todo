@@ -43,9 +43,11 @@ The completed migration must:
 - Rename `LUAUNIT_SMOKE_FORCE_FAILURE` to the neutral
   `UNIT_TEST_SMOKE_FORCE_FAILURE`. Do not replace `LUA_TEST_FILES` with another
   custom discovery variable; Busted owns final discovery.
-- Perform the conversion through a temporary dual-run period. Residual
-  `*_test.lua` suites run through LuaUnit and converted `*_spec.lua` files run
-  through Busted until all suites have moved.
+- Convert suites directly to Busted in fixed batches. During intermediate
+  phases, run and validate the specs converted so far; do not build a temporary
+  LuaUnit/Busted aggregate runner that will only be deleted later.
+- Use the Phase 0 file manifest, one-to-one case conversion, per-batch spec
+  manifests, and the final 57-spec/332-test result to detect omissions.
 - Preserve each current test description, dynamic case, assertion intent, and
   fixture boundary. Busted suite prefixes may add context, but existing case
   descriptions must not be rewritten merely for style.
@@ -60,6 +62,8 @@ The completed migration must:
 - Do not change production Lua behavior to make converted tests pass.
 - Do not diagnose or fix the four existing search-ranking defects here.
 - Do not retain a LuaUnit-shaped adapter implemented on top of Busted.
+- Do not add a temporary dual-framework runner or restore LuaUnit execution to
+  `Tools/Run-UnitTests.ps1`.
 - Do not mark known failures pending, skip them, filter them from the default
   run, or weaken their assertions.
 - Do not add Busted, `.busted`, `.luarocks/`, test files, or test support files
@@ -305,9 +309,9 @@ the process environment is restored.
 Phase 1 recorded evidence (2026-07-19):
 
 - `.busted` selects `_spec%.lua$`, `plainTerminal`, sorted files, and sorted
-  tests. With the 57 legacy `*_test.lua` suites still intentionally reserved
-  for Phase 2, default discovery ran only `Tests/busted_setup_spec.lua` and
-  reported `3 successes / 0 failures / 0 errors / 0 pending`.
+  tests. Before direct suite conversion begins in Phase 2, default discovery
+  runs only `Tests/busted_setup_spec.lua` and reports
+  `3 successes / 0 failures / 0 errors / 0 pending`.
 - `Tools/Run-UnitTests.ps1` now exposes neutral `TestRoot`, `SourceRoot`, and
   `DependencyRoot` parameters plus `$TestRunnerArgs`. Positional binding is
   disabled so an unrecognized token such as `--filter=loads the framework`
@@ -349,31 +353,13 @@ Phase 1 recorded evidence (2026-07-19):
   contract suite returned 0; its malformed-Lua diagnostic remained an expected
   negative-path result.
 - `Tests/run.lua`, `Tests/luaunit_setup_test.lua`, and every other LuaUnit suite
-  remain unchanged for the Phase 2 dual-framework bridge.
+  remain unchanged for direct conversion beginning in Phase 2.
 
-## Phase 2 - Add temporary dual-framework validation
+## Phase 2 - Convert setup, support-contract, and pure-domain suites
 
-☐ Keep `Tests/run.lua` and LuaUnit installation available only for residual
-  `*_test.lua` suites during the conversion.
-☐ Make the temporary runner discover residual LuaUnit suites and Busted specs
-  as disjoint sets by filename convention.
-☐ Run both sets sequentially even when the first framework reports a test
-  failure; capture each exit code and report the aggregate result afterward.
 ☐ Ensure the Busted setup spec replaces, rather than duplicates, the three
   cases in `luaunit_setup_test.lua`.
 ☐ Remove `luaunit_setup_test.lua` after the Busted smoke cases prove parity.
-☐ Add temporary reporting that exposes residual suite count, converted suite
-  count, total test count, and failures by name.
-☐ Verify the aggregate run still contains exactly 57 suites and 332 tests after
-  the first rename.
-☐ Verify targeted Busted execution and direct residual LuaUnit diagnostics are
-  both available during migration without becoming permanent public APIs.
-
-Exit gate: one suite runs natively under Busted, all remaining suites run under
-LuaUnit, and the aggregate result has no omissions, duplicates, or changed
-failure identities.
-
-## Phase 3 - Convert setup, support-contract, and pure-domain suites
 
 Convert these 18 remaining suites to native Busted specs:
 
@@ -394,14 +380,19 @@ For every suite:
 ☐ Preserve dynamic case generation, names, fixture inputs, execution order
   assumptions, and support-harness isolation.
 ☐ Run the converted spec directly while editing it.
-☐ Run the aggregate dual-framework gate after the complete batch.
-☐ Record converted/residual suite counts, 332 total tests, and the exact four
-  accepted failures.
+☐ After the batch, run all currently converted Busted specs and require every
+  case to pass; the four accepted `search` failures are not present until
+  `search` is converted in Phase 3.
+☐ Reconcile the Phase 0 manifest against the setup replacement and 18 renamed
+  suites, proving exactly 19 native specs with no duplicate or omitted suite.
+☐ Record the current Busted test total and the per-spec case names as the
+  conversion evidence for later final-count reconciliation.
 
 Exit gate: the setup spec plus all 18 named suites run natively under Busted;
-the residual LuaUnit suites and aggregate behavioral baseline remain intact.
+all converted cases pass, and their 19-file manifest maps one-to-one to the
+corresponding Phase 0 suites.
 
-## Phase 4 - Convert providers, filtering, and search suites
+## Phase 3 - Convert providers, filtering, and search suites
 
 Convert these 11 suites to native Busted specs:
 
@@ -421,13 +412,17 @@ Convert these 11 suites to native Busted specs:
   expectation.
 ☐ Verify `search_spec.lua` still reports the same four failures by exact name
   and that its other cases pass.
-☐ Run the aggregate dual-framework gate and record converted/residual suite
-  counts and the 332-test total.
+☐ Run all currently converted Busted specs and prove the only failures are the
+  four accepted `search` cases.
+☐ Reconcile the Phase 0 manifest for this batch and prove the repository now
+  contains exactly 30 native specs: the 19 from Phase 2 plus these 11.
+☐ Record the current Busted test total and per-spec case names for final-count
+  reconciliation.
 
 Exit gate: all provider, domain-scoring, candidate-pipeline, and search behavior
-is represented by native Busted specs, including the four accepted failures.
+is represented by 30 native Busted specs, with only the four accepted failures.
 
-## Phase 5 - Convert reusable UI and presentation suites
+## Phase 4 - Convert reusable UI and presentation suites
 
 Convert these 18 suites to native Busted specs:
 
@@ -445,14 +440,18 @@ Convert these 18 suites to native Busted specs:
 ☐ Preserve CP437 strings, formatted snapshots, panel geometry, pointer zones,
   tooltip wrapping, and sort-order expectations byte-for-byte.
 ☐ Keep dynamically generated presenter cases separately named and filterable.
-☐ Run each converted spec directly, then run the aggregate dual-framework gate.
-☐ Record converted/residual suite counts, 332 total tests, and the exact four
-  accepted failures.
+☐ Run each converted spec directly, then run all currently converted Busted
+  specs and require only the four accepted `search` failures.
+☐ Reconcile this batch against the Phase 0 manifest and prove the repository
+  now contains exactly 48 native specs: the prior 30 plus these 18.
+☐ Record the current Busted test total and per-spec case names for final-count
+  reconciliation.
 
 Exit gate: reusable UI models, widgets, layouts, presenters, and tooltip
-behavior run natively under Busted without snapshot or isolation drift.
+behavior run natively under 48 Busted specs without snapshot, case, or
+isolation drift.
 
-## Phase 6 - Convert integration and characterization suites
+## Phase 5 - Convert integration and characterization suites
 
 Convert the final 9 LuaUnit suites to native Busted specs:
 
@@ -467,19 +466,20 @@ Convert the final 9 LuaUnit suites to native Busted specs:
 ☐ Preserve the exact characterization case names and all current UI event,
   selection, refresh, cleanup, and persistence expectations.
 ☐ Run each converted spec directly.
-☐ Run the final dual-framework gate and prove there are 57 Busted specs, zero
-  residual LuaUnit suites, and exactly 332 tests.
-☐ Record the exact 328-pass/four-failure result before removing the legacy
-  runner.
+☐ Reconcile the complete spec manifest against Phase 0 and prove there are
+  exactly 57 native Busted specs: the prior 48 plus these final 9.
+☐ Run the complete Busted suite and prove it executes exactly 332 tests with
+  328 passes and only the four named `search` failures.
+☐ Reconcile the accumulated per-spec case names and totals from Phases 2-5
+  against the 332-test Phase 0 baseline.
 
-Exit gate: every unit-test suite is a native Busted spec and the temporary
-LuaUnit side of the aggregate runner discovers no suites.
+Exit gate: every baseline suite has one native Busted successor, all 332 tests
+execute, and the only failures are the four accepted `search` cases.
 
-## Phase 7 - Remove LuaUnit and finalize the runner contract
+## Phase 6 - Remove LuaUnit and finalize the runner contract
 
-☐ Remove the temporary dual-framework branches and reporting from
-  `Tools/Run-UnitTests.ps1`.
-☐ Remove LuaUnit version probes, installation, invocation, and error text.
+☐ Confirm `Tools/Run-UnitTests.ps1` contains no LuaUnit version probes,
+  installation, invocation, compatibility branches, or error text.
 ☐ Delete `Tests/run.lua` and remove the `LUA_TEST_FILES` discovery contract.
 ☐ Ensure the final runner always invokes Busted against the configured test
   root and forwards `$TestRunnerArgs` unchanged.
@@ -498,7 +498,7 @@ LuaUnit side of the aggregate runner discovers no suites.
 Exit gate: Busted is the only unit-test framework, the final runner contains no
 legacy path, and static searches find no active LuaUnit contract.
 
-## Phase 8 - Documentation, validation, and closeout
+## Phase 7 - Documentation, validation, and closeout
 
 ☐ Update `README.md` prerequisites and testing instructions to document Busted,
   the exact dependency pins, repository-local bootstrap, and the neutral
@@ -547,11 +547,10 @@ search failures.
 | Busted setup and opt-in failure smoke | complete | 2026-07-19: default discovery passed 3/3; filtered cases passed 1/1; opt-in case failed 1/1 and propagated exit code 1 through a host-safe throw |
 | Phase 1 Busted environment restoration | complete | 2026-07-19: sentinel `LUA_PATH` and `LUA_CPATH` values restored after targeted success and forced failure |
 | Phase 1 syntax and package regression | complete | 2026-07-19: Lua 5.4.6 checked 66 production and 65 test/support files; package-tool contracts returned 0; `git diff --check` passed |
-| Temporary dual-framework aggregate runner | pending | |
-| Phase 3 pure-domain conversion parity | pending | |
-| Phase 4 provider/search conversion parity | pending | |
-| Phase 5 UI/presentation conversion parity | pending | |
-| Phase 6 integration conversion parity | pending | |
+| Phase 2 pure-domain native conversion | pending | |
+| Phase 3 provider/search native conversion | pending | |
+| Phase 4 UI/presentation native conversion | pending | |
+| Phase 5 integration conversion and final parity | pending | |
 | Native Busted-only 332-test manifest | pending | |
 | Final 328-pass/four-known-failure result | pending | |
 | Targeted `--filter` execution | pending | |
