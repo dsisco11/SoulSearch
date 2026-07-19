@@ -2,14 +2,10 @@ local module_loader = require('support.module_loader')
 local soulsearch_env = require('support.soulsearch_env')
 local widget_harness = require('support.widget_harness')
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('tooltip agent', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
     local function load_agent(mouse)
         local dispatcher = soulsearch_env.load_pointer_dispatcher(repo_root, {
             screen={getMousePos=function() return mouse.x, mouse.y end},
@@ -54,7 +50,7 @@ end
         return view
     end
 
-    add_test('tooltip agent: reads only the selected target and current mutation', function()
+    it('tooltip agent: reads only the selected target and current mutation', function()
         local mouse = {x=2, y=2, samples=0}
         local agent_module = load_agent(mouse)
         local TooltipAgent = agent_module.TooltipAgent
@@ -65,17 +61,17 @@ end
         local agent = TooltipAgent.new(root({control}), renderer)
 
         agent:update()
-        luaunit.assertIs('Initial', renderer.text)
+        assert.are.equal('Initial', renderer.text)
         control.tooltip = 'Updated'
         agent:update()
-        luaunit.assertIs('Updated', renderer.text)
+        assert.are.equal('Updated', renderer.text)
         control.tooltip = ''
         agent:update()
-        luaunit.assertNil(renderer.text)
-        luaunit.assertIs(3, mouse.samples)
+        assert.is_nil(renderer.text)
+        assert.are.equal(3, mouse.samples)
     end)
 
-    add_test('tooltip agent: supplies the root parent rectangle to the renderer', function()
+    it('tooltip agent: supplies the root parent rectangle to the renderer', function()
         local mouse = {x=2, y=2, samples=0}
         local TooltipAgent = load_agent(mouse).TooltipAgent
         local renderer = {set_tooltip=function(self, _, _, _, parent_rect)
@@ -84,10 +80,10 @@ end
         local view = root({target(1, 1, 'Tip')})
         view.frame_parent_rect = {x1=0, y1=0, width=20, height=20}
         TooltipAgent.new(view, renderer):update()
-        luaunit.assertIs(view.frame_parent_rect, renderer.parent_rect)
+        assert.are.equal(view.frame_parent_rect, renderer.parent_rect)
     end)
 
-    add_test('tooltip agent: targets a native widget declared with static text', function()
+    it('tooltip agent: targets a native widget declared with static text', function()
         local mouse = {x=2, y=2, samples=0}
         local TooltipAgent = load_agent(mouse).TooltipAgent
         local widgets = native_widgets()
@@ -98,12 +94,12 @@ end
         local agent = TooltipAgent.new(root({button}), renderer)
 
         agent:update()
-        luaunit.assertIs('target', agent.pointer_context.result.kind)
-        luaunit.assertIs(button, agent.pointer_context.target)
-        luaunit.assertIs('Native static tooltip', renderer.text)
+        assert.are.equal('target', agent.pointer_context.result.kind)
+        assert.are.equal(button, agent.pointer_context.target)
+        assert.are.equal('Native static tooltip', renderer.text)
     end)
 
-    add_test('tooltip agent: presents terminal-owned dynamic text after pointer update', function()
+    it('tooltip agent: presents terminal-owned dynamic text after pointer update', function()
         local mouse = {x=2, y=2, samples=0}
         local TooltipAgent = load_agent(mouse).TooltipAgent
         local renderer = {set_tooltip=function(self, text) self.text = text end}
@@ -114,10 +110,10 @@ end
         local agent = TooltipAgent.new(root({control}), renderer)
 
         agent:update()
-        luaunit.assertIs('Local 1,1', renderer.text)
+        assert.are.equal('Local 1,1', renderer.text)
     end)
 
-    add_test('tooltip agent: hides for blocked and excluded targets without parent fallback', function()
+    it('tooltip agent: hides for blocked and excluded targets without parent fallback', function()
         local mouse = {x=2, y=2, samples=0}
         local TooltipAgent = load_agent(mouse).TooltipAgent
         local renderer = {set_tooltip=function(self, text) self.text = text end}
@@ -127,19 +123,19 @@ end
         parent.subviews = {child}
         local agent = TooltipAgent.new(root({parent}), renderer)
         agent:update()
-        luaunit.assertNil(renderer.text)
+        assert.is_nil(renderer.text)
 
         parent.pointer_policy = 'block'
         parent.subviews = {}
         agent:update()
-        luaunit.assertNil(renderer.text)
+        assert.is_nil(renderer.text)
 
         parent.pointer_policy = 'none'
         agent:update()
-        luaunit.assertNil(renderer.text)
+        assert.is_nil(renderer.text)
     end)
 
-    add_test('tooltip agent: rejects invalid text and keeps root state isolated', function()
+    it('tooltip agent: rejects invalid text and keeps root state isolated', function()
         local first_mouse = {x=2, y=2, samples=0}
         local second_mouse = {x=2, y=2, samples=0}
         local First = load_agent(first_mouse).TooltipAgent
@@ -152,14 +148,14 @@ end
         local second = Second.new(root({valid}), second_renderer)
 
         local ok, err = pcall(function() first:update() end)
-        luaunit.assertEvalToFalse(ok)
-        luaunit.assertEvalToTrue(tostring(err):find('tooltip must be a string', 1, true) ~= nil)
+        assert.is_falsy(ok)
+        assert.is_truthy(tostring(err):find('tooltip must be a string', 1, true) ~= nil)
         second:update()
-        luaunit.assertIs('Second root', second_renderer.text)
-        luaunit.assertNil(first_renderer.text)
+        assert.are.equal('Second root', second_renderer.text)
+        assert.is_nil(first_renderer.text)
     end)
 
-    add_test('tooltip agent: diagnostics expose resolver transitions and suppress stable samples', function()
+    it('tooltip agent: diagnostics expose resolver transitions and suppress stable samples', function()
         local mouse = {x=2, y=2, samples=0}
         local agent_module = load_agent(mouse)
         local TooltipAgent = agent_module.TooltipAgent
@@ -172,23 +168,23 @@ end
 
         agent:update()
         agent:update()
-        luaunit.assertIs(1, #messages)
-        luaunit.assertIs(1, #agent_module.get_debug_messages())
-        luaunit.assertEvalToTrue(messages[1]:find('sample=1 mouse=2,2 result=target', 1, true) ~= nil)
-        luaunit.assertEvalToTrue(messages[1]:find('path=root/diagnostic_control[1]', 1, true) ~= nil)
-        luaunit.assertEvalToTrue(messages[1]:find('tooltip="Diagnostic tooltip"', 1, true) ~= nil)
+        assert.are.equal(1, #messages)
+        assert.are.equal(1, #agent_module.get_debug_messages())
+        assert.is_truthy(messages[1]:find('sample=1 mouse=2,2 result=target', 1, true) ~= nil)
+        assert.is_truthy(messages[1]:find('path=root/diagnostic_control[1]', 1, true) ~= nil)
+        assert.is_truthy(messages[1]:find('tooltip="Diagnostic tooltip"', 1, true) ~= nil)
 
         mouse.x, mouse.y = 10, 10
         agent:update()
-        luaunit.assertIs(2, #messages)
-        luaunit.assertIs(2, #agent_module.get_debug_messages())
-        luaunit.assertEvalToTrue(messages[2]:find('sample=3 mouse=10,10 result=miss', 1, true) ~= nil)
-        luaunit.assertEvalToTrue(messages[2]:find('previous=diagnostic_control@', 1, true) ~= nil)
+        assert.are.equal(2, #messages)
+        assert.are.equal(2, #agent_module.get_debug_messages())
+        assert.is_truthy(messages[2]:find('sample=3 mouse=10,10 result=miss', 1, true) ~= nil)
+        assert.is_truthy(messages[2]:find('previous=diagnostic_control@', 1, true) ~= nil)
         local snapshot = agent_module.get_debug_messages()
         snapshot[1] = 'mutated'
-        luaunit.assertEvalToTrue(agent_module.get_debug_messages()[1] ~= 'mutated')
+        assert.is_truthy(agent_module.get_debug_messages()[1] ~= 'mutated')
         agent_module.clear_debug_messages()
-        luaunit.assertIs(0, #agent_module.get_debug_messages())
+        assert.are.equal(0, #agent_module.get_debug_messages())
     end)
 
-return native_tests
+end)

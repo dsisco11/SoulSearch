@@ -2,14 +2,10 @@ local module_loader = require('support.module_loader')
 local soulsearch_env = require('support.soulsearch_env')
 local widget_harness = require('support.widget_harness')
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('UI tooltip', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
     local function load_tooltip(state)
         local widgets = widget_harness.widgets({
             Widget={
@@ -56,48 +52,48 @@ end
         return environment.SoulSearchTooltip
     end
 
-    add_test('Tooltip renderer: renders supplied current text immediately and wraps it', function()
+    it('Tooltip renderer: renders supplied current text immediately and wraps it', function()
         local state = {mouse_x=1, mouse_y=1, width=22, height=10}
         local Tooltip = load_tooltip(state)
         local text = 'Difference from the attribute average.'
         local tooltip = Tooltip{}
-        luaunit.assertIs('Widget', tooltip.widget_kind)
+        assert.are.equal('Widget', tooltip.widget_kind)
         tooltip.frame_style = 'interior'
         local parent = {invalidate=function(self)
             self.invalidations = (self.invalidations or 0) + 1
         end}
         tooltip.parent_view = parent
         tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
-        luaunit.assertEvalToTrue(tooltip.visible)
-        luaunit.assertIs(1, parent.invalidations)
-        luaunit.assertIs(1, tooltip.layout_update_count)
+        assert.is_truthy(tooltip.visible)
+        assert.are.equal(1, parent.invalidations)
+        assert.are.equal(1, tooltip.layout_update_count)
 
         tooltip:render('first')
-        luaunit.assertIs('Difference from the\nattribute average.', tooltip.label.text)
-        luaunit.assertIs(1, tooltip.frame.l)
-        luaunit.assertIs(2, tooltip.frame.t)
-        luaunit.assertIs(21, tooltip.frame.w)
-        luaunit.assertIs(4, tooltip.frame.h)
-        luaunit.assertIs(1, tooltip.render_count)
-        luaunit.assertIs(1, tooltip.layout_update_count)
+        assert.are.equal('Difference from the\nattribute average.', tooltip.label.text)
+        assert.are.equal(1, tooltip.frame.l)
+        assert.are.equal(2, tooltip.frame.t)
+        assert.are.equal(21, tooltip.frame.w)
+        assert.are.equal(4, tooltip.frame.h)
+        assert.are.equal(1, tooltip.render_count)
+        assert.are.equal(1, tooltip.layout_update_count)
         local dc = {fill=function(self, rect, pen)
             self.fills = (self.fills or 0) + 1
             self.rect, self.pen = rect, pen
         end}
         tooltip:onRenderFrame(dc, 'tooltip-frame')
-        luaunit.assertIs(1, state.frame_paint_count)
-        luaunit.assertIs('interior', state.frame_style)
+        assert.are.equal(1, state.frame_paint_count)
+        assert.are.equal('interior', state.frame_style)
 
         text = 'Updated immediately.'
         tooltip:set_tooltip(text, state.mouse_x, state.mouse_y)
-        luaunit.assertIs(2, tooltip.layout_update_count)
+        assert.are.equal(2, tooltip.layout_update_count)
         tooltip:render('second')
-        luaunit.assertIs('Updated immediately.', tooltip.label.text)
-        luaunit.assertIs(2, tooltip.render_count)
-        luaunit.assertIs('second', tooltip.last_dc)
+        assert.are.equal('Updated immediately.', tooltip.label.text)
+        assert.are.equal(2, tooltip.render_count)
+        assert.are.equal('second', tooltip.last_dc)
     end)
 
-    add_test('Tooltip renderer: clamps placement and stays hidden without text', function()
+    it('Tooltip renderer: clamps placement and stays hidden without text', function()
         local state = {mouse_x=9, mouse_y=4, width=10, height=5}
         local Tooltip = load_tooltip(state)
         local tooltip = Tooltip{}
@@ -108,24 +104,24 @@ end
         tooltip:set_tooltip('Tip', state.mouse_x, state.mouse_y)
 
         tooltip:render('edge')
-        luaunit.assertIs(5, tooltip.frame.l)
-        luaunit.assertIs(2, tooltip.frame.t)
-        luaunit.assertIs(5, tooltip.frame.w)
-        luaunit.assertIs(3, tooltip.frame.h)
+        assert.are.equal(5, tooltip.frame.l)
+        assert.are.equal(2, tooltip.frame.t)
+        assert.are.equal(5, tooltip.frame.w)
+        assert.are.equal(3, tooltip.frame.h)
 
         tooltip:set_tooltip('', state.mouse_x, state.mouse_y)
-        luaunit.assertEvalToFalse(tooltip.visible)
-        luaunit.assertIs('', tooltip.label.text)
-        luaunit.assertIs(2, parent.invalidations)
+        assert.is_falsy(tooltip.visible)
+        assert.are.equal('', tooltip.label.text)
+        assert.are.equal(2, parent.invalidations)
         tooltip:render('empty')
-        luaunit.assertIs(1, tooltip.render_count)
+        assert.are.equal(1, tooltip.render_count)
 
         state.mouse_x = nil
         tooltip:set_tooltip('Hidden without a pointer', state.mouse_x, state.mouse_y)
-        luaunit.assertEvalToFalse(tooltip.visible)
-        luaunit.assertIs(3, parent.invalidations)
+        assert.is_falsy(tooltip.visible)
+        assert.are.equal(3, parent.invalidations)
         tooltip:render('no-pointer')
-        luaunit.assertIs(1, tooltip.render_count)
+        assert.are.equal(1, tooltip.render_count)
     end)
 
-return native_tests
+end)

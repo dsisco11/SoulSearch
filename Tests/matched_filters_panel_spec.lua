@@ -15,15 +15,11 @@ local function contains(texts, expected)
     return false
 end
 
-local luaunit = require('luaunit')
 local root = require('support.repo_root')
 
-local native_tests = {}
+describe('matched filters panel', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
-    add_test('matched filters panel: owns the selected-filter title and criteria list', function()
+    it('matched filters panel: owns the selected-filter title and criteria list', function()
         local MatchedFiltersPanel = env.load_matched_filters_panel(root)
         local panel = MatchedFiltersPanel{subject={row={}, filter_criteria={{
             label='Mining', kind='skill', direction='high', value=2.35,
@@ -31,13 +27,13 @@ end
         }}}}
 
         local texts = token_texts(panel.subviews.filters.text)
-        luaunit.assertIs('Selected filters', texts[1])
-        luaunit.assertEvalToTrue(contains(texts, '[+] '))
-        luaunit.assertIs(0, panel.subviews.filters.frame.b)
-        luaunit.assertIs(1, panel:get_height())
+        assert.are.equal('Selected filters', texts[1])
+        assert.is_truthy(contains(texts, '[+] '))
+        assert.are.equal(0, panel.subviews.filters.frame.b)
+        assert.are.equal(1, panel:get_height())
 
         panel:set_subject({row={}, filter_criteria={}})
-        luaunit.assertIs(0, panel:get_height())
+        assert.are.equal(0, panel:get_height())
     end)
 
-return native_tests
+end)

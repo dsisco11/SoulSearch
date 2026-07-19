@@ -1,14 +1,10 @@
 local soulsearch_env = require('support.soulsearch_env')
 local widget_harness = require('support.widget_harness')
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('filter action list', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
     local FilterActionList = soulsearch_env.load_filter_action_list(
         repo_root).FilterActionList
     local layout = soulsearch_env.load_ui_layout(repo_root)
@@ -22,17 +18,17 @@ end
         return list
     end
 
-    add_test('filter action list: setChoices retains the action snapshot', function()
+    it('filter action list: setChoices retains the action snapshot', function()
         local list = make_list(function() end)
         local choices = {{descriptor={id='attribute:strength'}}}
         list.base_set_choices_result = 'set'
-        luaunit.assertIs('set', list:setChoices(choices, 1))
-        luaunit.assertEvalToTrue(list.action_choices == choices)
-        luaunit.assertEvalToTrue(list.base_choices == choices)
-        luaunit.assertIs(1, list.base_selected)
+        assert.are.equal('set', list:setChoices(choices, 1))
+        assert.is_truthy(list.action_choices == choices)
+        assert.is_truthy(list.base_choices == choices)
+        assert.are.equal(1, list.base_selected)
     end)
 
-    add_test('filter action list: every action boundary dispatches metadata', function()
+    it('filter action list: every action boundary dispatches metadata', function()
         local calls = {}
         local list = make_list(function(id, action)
             table.insert(calls, id .. ':' .. action)
@@ -44,15 +40,15 @@ end
                 (index - 1) * layout.FILTER_ACTION_WIDTH
             for _, x in ipairs({left, left + layout.FILTER_ACTION_WIDTH - 1}) do
                 list.mouse_x = x
-                luaunit.assertEvalToTrue(list:onInput{_MOUSE_L=true})
-                luaunit.assertIs('attribute:strength:' .. action.callback,
+                assert.is_truthy(list:onInput{_MOUSE_L=true})
+                assert.are.equal('attribute:strength:' .. action.callback,
                     calls[#calls])
-                luaunit.assertIs(1, list.selected)
+                assert.are.equal(1, list.selected)
             end
         end
     end)
 
-    add_test('filter action list: scrolled row fallback uses visible offset', function()
+    it('filter action list: scrolled row fallback uses visible offset', function()
         local dispatched
         local list = make_list(function(id, action)
             dispatched = {id, action}
@@ -64,12 +60,12 @@ end
         list.mouse_index = nil
         list.mouse_x = layout.ACTIVE_FILTER_BUTTON_START_X
         list.mouse_y = 2
-        luaunit.assertEvalToTrue(list:onInput{_MOUSE_L=true})
-        luaunit.assertIs(6, list.selected)
-        luaunit.assertEquals({'attribute:agility', action.SET_HIGH}, dispatched)
+        assert.is_truthy(list:onInput{_MOUSE_L=true})
+        assert.are.equal(6, list.selected)
+        assert.are.same({'attribute:agility', action.SET_HIGH}, dispatched)
     end)
 
-    add_test('filter action list: native page top identifies the hovered action row', function()
+    it('filter action list: native page top identifies the hovered action row', function()
         local list = make_list(function() end)
         list:setChoices({
             {descriptor={id='attribute:strength'}},
@@ -79,47 +75,47 @@ end
         list.page_top = 3
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
 
-        luaunit.assertIs('Prefer high', list.tooltip)
+        assert.are.equal('Prefer high', list.tooltip)
     end)
 
-    add_test('filter action list: misses and incomplete rows delegate', function()
+    it('filter action list: misses and incomplete rows delegate', function()
         local calls = 0
         local list = make_list(function() calls = calls + 1 end)
         list:setChoices({{}}, 1)
         list.mouse_index, list.mouse_y = 1, 0
         list.mouse_x = layout.ACTIVE_FILTER_BUTTON_START_X - 1
-        luaunit.assertEvalToFalse(list:onInput{_MOUSE_L=true})
+        assert.is_falsy(list:onInput{_MOUSE_L=true})
         list.mouse_x = layout.ACTIVE_FILTER_BUTTON_START_X
-        luaunit.assertEvalToFalse(list:onInput{_MOUSE_L=true})
-        luaunit.assertIs(0, calls)
-        luaunit.assertIs(2, list.super_input_calls)
+        assert.is_falsy(list:onInput{_MOUSE_L=true})
+        assert.are.equal(0, calls)
+        assert.are.equal(2, list.super_input_calls)
     end)
 
-    add_test('filter action list: terminal pointer updates own action and descriptor text', function()
+    it('filter action list: terminal pointer updates own action and descriptor text', function()
         local list = make_list(function() end)
         list:setChoices({{descriptor={kind='trait', key='PATIENCE'}}}, 1)
         list:on_pointer_update(0, 0)
-        luaunit.assertIs('A personality trait that shapes behavior and social interaction.',
+        assert.are.equal('A personality trait that shapes behavior and social interaction.',
             list.tooltip)
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
-        luaunit.assertIs('Prefer high', list.tooltip)
+        assert.are.equal('Prefer high', list.tooltip)
 
         list:setChoices({{descriptor={kind='race', key='DWARF', behavior='candidate'}}}, 1)
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X, 0)
-        luaunit.assertIs('Include in results.', list.tooltip)
+        assert.are.equal('Include in results.', list.tooltip)
         list:on_pointer_update(layout.ACTIVE_FILTER_BUTTON_START_X +
             2 * layout.FILTER_ACTION_WIDTH, 0)
-        luaunit.assertIs(nil, list.tooltip)
+        assert.are.equal(nil, list.tooltip)
         list:on_pointer_update(0, 3)
-        luaunit.assertIs(nil, list.tooltip)
+        assert.are.equal(nil, list.tooltip)
 
         list:setChoices({{descriptor={kind='unit_scope', key='visitors',
             behavior='candidate'}}}, 1)
         list:on_pointer_update(0, 0)
-        luaunit.assertIs('Filters which active units are considered.', list.tooltip)
+        assert.are.equal('Filters which active units are considered.', list.tooltip)
     end)
 
-    add_test('filter action list: candidate move hit zones cannot dispatch', function()
+    it('filter action list: candidate move hit zones cannot dispatch', function()
         local calls = {}
         local list = make_list(function(id, action)
             table.insert(calls, id .. ':' .. action)
@@ -130,21 +126,21 @@ end
         local action_x = layout.ACTIVE_FILTER_BUTTON_START_X
         for _, index in ipairs({1, 2, 5}) do
             list.mouse_x = action_x + (index - 1) * layout.FILTER_ACTION_WIDTH
-            luaunit.assertEvalToTrue(list:onInput{_MOUSE_L=true})
+            assert.is_truthy(list:onInput{_MOUSE_L=true})
         end
-        luaunit.assertEquals({
+        assert.are.same({
             'unit_scope:visitors:' .. action.SET_HIGH,
             'unit_scope:visitors:' .. action.SET_LOW,
             'unit_scope:visitors:' .. action.REMOVE,
         }, calls)
         for _, index in ipairs({3, 4}) do
             list.mouse_x = action_x + (index - 1) * layout.FILTER_ACTION_WIDTH
-            luaunit.assertEvalToFalse(list:onInput{_MOUSE_L=true})
+            assert.is_falsy(list:onInput{_MOUSE_L=true})
         end
-        luaunit.assertIs(2, list.super_input_calls)
+        assert.are.equal(2, list.super_input_calls)
     end)
 
-    add_test('filter action list: dispatcher invokes class pointer method with local coordinates',
+    it('filter action list: dispatcher invokes class pointer method with local coordinates',
             function()
         local dispatcher = soulsearch_env.load_pointer_dispatcher(repo_root)
         local list = make_list(function() end)
@@ -164,10 +160,10 @@ end
         local result = dispatcher.PointerDispatcher.sample(context,
             3 + layout.ACTIVE_FILTER_BUTTON_START_X, 2)
 
-        luaunit.assertIs(list, result.target)
-        luaunit.assertIs(layout.ACTIVE_FILTER_BUTTON_START_X, result.x)
-        luaunit.assertIs(0, result.y)
-        luaunit.assertIs('Prefer high', list.tooltip)
+        assert.are.equal(list, result.target)
+        assert.are.equal(layout.ACTIVE_FILTER_BUTTON_START_X, result.x)
+        assert.are.equal(0, result.y)
+        assert.are.equal('Prefer high', list.tooltip)
     end)
 
-return native_tests
+end)

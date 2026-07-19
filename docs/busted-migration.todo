@@ -679,22 +679,165 @@ Convert these 18 suites to native Busted specs:
   `stats_sort_subject`, and `unit_stats_list`; and
 - `ui_format`, `ui_glyphs`, `ui_layout`, and `ui_tooltip`.
 
-☐ Apply the standard native-suite and assertion conversion to each named file.
-☐ Preserve widget harness construction and teardown boundaries without moving
+☑ Apply the standard native-suite and assertion conversion to each named file.
+☑ Preserve widget harness construction and teardown boundaries without moving
   shared mutable state between `it()` cases.
-☐ Preserve CP437 strings, formatted snapshots, panel geometry, pointer zones,
+☑ Preserve CP437 strings, formatted snapshots, panel geometry, pointer zones,
   tooltip wrapping, and sort-order expectations byte-for-byte.
-☐ Keep dynamically generated presenter cases separately named and filterable.
-☐ Run each converted spec directly, then run all currently converted Busted
+☑ Keep dynamically generated presenter cases separately named and filterable.
+☑ Run each converted spec directly, then run all currently converted Busted
   specs and require only the four accepted `search` failures.
-☐ Reconcile this batch against the Phase 0 manifest and prove the repository
+☑ Reconcile this batch against the Phase 0 manifest and prove the repository
   now contains exactly 48 native specs: the prior 30 plus these 18.
-☐ Record the current Busted test total and per-spec case names for final-count
+☑ Record the current Busted test total and per-spec case names for final-count
   reconciliation.
 
 Exit gate: reusable UI models, widgets, layouts, presenters, and tooltip
 behavior run natively under 48 Busted specs without snapshot, case, or
 isolation drift.
+
+Phase 4 recorded evidence (2026-07-19):
+
+- All 18 named files were renamed to `*_spec.lua` and converted directly to
+  `describe()`, `it()`, and Luassert. Static searches of all native specs found
+  no active `luaunit`, `native_tests`, or `add_test` references, and all 48
+  current specs passed direct Lua parsing.
+- Conversion reconciliation found 527 baseline assertions and 527 native
+  assertions, plus 86 baseline static case registrations and 86 native static
+  registrations. The generated presenter cases expand the batch to 89 runtime
+  cases and remain separately named and filterable.
+- A normalized file-by-file comparison reconstructed each spec from its
+  baseline file using only the declared suite, registration, and assertion
+  substitutions. All 18 matched exactly, proving harness construction,
+  snapshots, CP437 bytes, geometry, pointer zones, tooltip text, and sort data
+  did not drift during conversion.
+- Each Phase 4 spec passed in a direct isolated run. Per-spec runtime totals
+  are: `filter_action_list` 8; `filter_panel` 8; `matched_filters_panel` 1;
+  `modal_panel` 3; `pointer_dispatcher` 7; `results_panel` 3;
+  `tooltip_agent` 7; `widget_extensions` 5; `stats_layout` 1;
+  `stats_panel` 1; `stats_popover` 7; `stats_presenter` 10;
+  `stats_sort_subject` 2; `unit_stats_list` 1; `ui_format` 14;
+  `ui_glyphs` 1; `ui_layout` 8; and `ui_tooltip` 2.
+- The complete current Busted suite ran 258 tests and reported
+  `254 successes / 4 failures / 0 errors / 0 pending`. The only failures were
+  the four accepted `search` cases; no production or runner file changed.
+- Independent regression validation passed: Lua 5.4.6 parsed 66 production
+  files and 64 test/support files, the package-tool contract suite returned 0,
+  and `git diff --check` reported no errors.
+- The Phase 0 manifest reconciles to exactly 48 native specs: the 30 from
+  Phases 2 and 3 plus these 18. The nine remaining `*_test.lua` files belong to
+  Phase 5.
+- `--list` reported these exact native case names (suite prefixes included):
+
+```text
+[filter_action_list]
+filter action list filter action list: candidate move hit zones cannot dispatch
+filter action list filter action list: dispatcher invokes class pointer method with local coordinates
+filter action list filter action list: every action boundary dispatches metadata
+filter action list filter action list: misses and incomplete rows delegate
+filter action list filter action list: native page top identifies the hovered action row
+filter action list filter action list: scrolled row fallback uses visible offset
+filter action list filter action list: setChoices retains the action snapshot
+filter action list filter action list: terminal pointer updates own action and descriptor text
+[filter_panel]
+filter panel filter panel: initializer owns picker hierarchy and paint order
+filter panel filter panel: narrow update APIs own child choice updates
+filter panel filter panel: opening a searchable picker focuses its search field
+filter panel filter panel: picker lists own dynamic descriptor tooltips
+filter panel filter panel: picker modules export named window widget classes
+filter panel filter panel: picker submissions preserve descriptor and preset payloads
+filter panel filter panel: picker transition table is exclusive and closes cleanly
+filter panel filter panel: unit-scope picker query and repeated toggles retain its open state
+[matched_filters_panel]
+matched filters panel matched filters panel: owns the selected-filter title and criteria list
+[modal_panel]
+modal panel modal panel: child input wins before modal mouse handling
+modal panel modal panel: input capture and right-click dismissal are exact
+modal panel modal panel: open and close transitions are idempotent
+[pointer_dispatcher]
+pointer dispatcher pointer dispatcher: clipping, eligibility, none, and root isolation
+pointer dispatcher pointer dispatcher: evaluated ancestors and one mouse sample clear targets
+pointer dispatcher pointer dispatcher: nested modal blocks only its own frame
+pointer dispatcher pointer dispatcher: policies, reverse overlap, and local coordinates
+pointer dispatcher pointer dispatcher: target controls retain ownership over implementation children
+pointer dispatcher pointer dispatcher: transitions update terminal widgets and clear removed targets
+pointer dispatcher pointer dispatcher: windows block frames while preserving child targets
+[results_panel]
+results panel results panel: exposes narrow update, navigation, and declared header tooltips
+results panel results panel: owns the stable result view hierarchy
+results panel results panel: preserves query, selection, submission, and sort callbacks
+[tooltip_agent]
+tooltip agent tooltip agent: diagnostics expose resolver transitions and suppress stable samples
+tooltip agent tooltip agent: hides for blocked and excluded targets without parent fallback
+tooltip agent tooltip agent: presents terminal-owned dynamic text after pointer update
+tooltip agent tooltip agent: reads only the selected target and current mutation
+tooltip agent tooltip agent: rejects invalid text and keeps root state isolated
+tooltip agent tooltip agent: supplies the root parent rectangle to the renderer
+tooltip agent tooltip agent: targets a native widget declared with static text
+[widget_extensions]
+widget extensions widget extensions: every native-widget host imports the extension
+widget extensions widget extensions: incompatible pointer attribute fails clearly
+widget extensions widget extensions: incompatible tooltip attribute fails clearly
+widget extensions widget extensions: native descendants inherit declarative tooltip
+widget extensions widget extensions: pointer attributes use native class defaults and reload safely
+[stats_layout]
+stats layout stats layout: component geometry and hitboxes are stable
+[stats_panel]
+stats panel stats panel: host API and layout are isolated from terminal tooltip ownership
+[stats_popover]
+stats popover stats popout config: derives native and screen-relative usable frames
+stats popover stats popout config: keeps a positioned panel authoritative
+stats popover stats popout config: rejects malformed placement lists
+stats popover stats popout config: tries placement fallbacks in order
+stats popover stats popout: resolves a subject for the attached overlay
+stats popover stats popout: unavailable context takes precedence
+stats popover stats popout: validates current units before collection
+[stats_presenter]
+stats presenter Stats presenter: body preserves default section gaps
+stats presenter Stats presenter: column header remains separate from records
+stats presenter Stats presenter: delta ascending
+stats presenter Stats presenter: delta descending
+stats presenter Stats presenter: label ascending
+stats presenter Stats presenter: label descending
+stats presenter Stats presenter: no meaningful deviations produces no records
+stats presenter Stats presenter: notable values and default sections
+stats presenter Stats presenter: skills remain excluded
+stats presenter Stats presenter: ties use label then stable source order
+[stats_sort_subject]
+stats sort subject sort state: normalization and cycling preserve Stats semantics
+stats sort subject stats subject: row construction snapshots identity and criteria
+[unit_stats_list]
+unit stats list unit stats list: owns sortable records, scrolling, and declared header tooltips
+[ui_format]
+UI format Filter presenter: candidate filters do not consume ranking priority
+UI format Filter presenter: preset sections are stable
+UI format Filter presenter: selected, grouped, filtered, and empty choices
+UI format Result presenter: snapshots empty and sorted result displays
+UI format UI format: active filter snapshot uses metadata labels
+UI format UI format: candidate rows reuse plus and minus without movement
+UI format UI format: panel title rules use CP437 horizontal lines
+UI format UI format: picker snapshots preserve CP437 and category pens
+UI format UI format: result row snapshot preserves widths
+UI format UI format: selected filter tokens preserve direction and skill value
+UI format UI format: stats empty and fallback copy is generic to units
+UI format UI format: stats header and values preserve glyphs and padding
+UI format UI format: tooltip text wraps without truncation
+UI format UI format: unit scopes use the candidate color and action model
+[ui_glyphs]
+UI glyphs UI glyphs: CP437 definitions match their byte values
+[ui_layout]
+UI layout UI layout: baseline panel geometry is exact
+UI layout UI layout: candidate filter controls extend the filter panel in order
+UI layout UI layout: every filter action boundary maps from metadata
+UI layout UI layout: filter actions retain width and total zone
+UI layout UI layout: returned frames cannot mutate metadata
+UI layout UI layout: stats delta cells use the scrolling records
+UI layout UI layout: stats header boundaries are exact
+UI layout UI layout: stats labels exclude their values
+[ui_tooltip]
+UI tooltip Tooltip renderer: clamps placement and stays hidden without text
+UI tooltip Tooltip renderer: renders supplied current text immediately and wraps it
+```
 
 ## Phase 5 - Convert integration and characterization suites
 
@@ -794,7 +937,7 @@ search failures.
 | Phase 1 syntax and package regression | complete | 2026-07-19: Lua 5.4.6 checked 66 production and 65 test/support files; package-tool contracts returned 0; `git diff --check` passed |
 | Phase 2 pure-domain native conversion | complete | 2026-07-19: exactly 19 native specs and 90 cases; every spec passed alone and the full batch passed 90/90; syntax checked 66 production and 64 test/support files; package contracts and `git diff --check` passed |
 | Phase 3 provider/search native conversion | complete | 2026-07-19: 11 converted specs add 79 cases; exactly 30 native specs run 169 tests with 165 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
-| Phase 4 UI/presentation native conversion | pending | |
+| Phase 4 UI/presentation native conversion | complete | 2026-07-19: 18 converted specs add 89 passing cases; exactly 48 native specs run 258 tests with 254 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 5 integration conversion and final parity | pending | |
 | Native Busted-only 332-test manifest | pending | |
 | Final 328-pass/four-known-failure result | pending | |

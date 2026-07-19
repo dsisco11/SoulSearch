@@ -15,14 +15,10 @@ local function index_subviews(view, root)
     end
 end
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('filter panel', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
     local filter_panel, picker_modules = soulsearch_env.load_filter_panel(repo_root)
     local noop = function() end
 
@@ -57,14 +53,14 @@ end
         }
     end
 
-    add_test('filter panel: picker modules export named window widget classes', function()
-        luaunit.assertIs('table', type(picker_modules[
+    it('filter panel: picker modules export named window widget classes', function()
+        assert.are.equal('table', type(picker_modules[
             'internal/soulsearch/ui/searchable_picker'].SearchablePicker))
-        luaunit.assertIs('table', type(picker_modules[
+        assert.are.equal('table', type(picker_modules[
             'internal/soulsearch/ui/preset_picker'].PresetPicker))
     end)
 
-    add_test('filter panel: initializer owns picker hierarchy and paint order', function()
+    it('filter panel: initializer owns picker hierarchy and paint order', function()
         local state, calls = {panel=true, attribute=false, skill=false, race=false,
             scope=false, preset=false}, {}
         local inputs = make_inputs(state, calls)
@@ -72,8 +68,8 @@ end
             view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
             on_open=inputs.on_open_filter_panel,
             on_close=inputs.on_close_filter_panel_state, inputs=inputs}
-        luaunit.assertIs('filter_panel_window', panel.view_id)
-        luaunit.assertEquals({
+        assert.are.equal('filter_panel_window', panel.view_id)
+        assert.are.same({
             'close_filter_panel_button',
             'add_filter_button', 'add_skill_button', 'add_race_button',
             'clear_filters_button', 'preset_button', 'add_unit_scope_button', 'filter_list',
@@ -84,40 +80,40 @@ end
             for _, view in ipairs(panel.subviews) do table.insert(ids, view.view_id) end
             return ids
         end)())
-        luaunit.assertIs('preset_picker_window',
+        assert.are.equal('preset_picker_window',
             panel.subviews[#panel.subviews].view_id)
-        luaunit.assertIs('Reset filters', panel.subviews.clear_filters_button.label)
-        luaunit.assertIs('Close', panel.subviews.close_filter_panel_button.tooltip)
-        luaunit.assertIs('Add an attribute or trait to the ranking criteria.',
+        assert.are.equal('Reset filters', panel.subviews.clear_filters_button.label)
+        assert.are.equal('Close', panel.subviews.close_filter_panel_button.tooltip)
+        assert.are.equal('Add an attribute or trait to the ranking criteria.',
             panel.subviews.add_filter_button.tooltip)
-        luaunit.assertIs('Add a skill to the ranking criteria.',
+        assert.are.equal('Add a skill to the ranking criteria.',
             panel.subviews.add_skill_button.tooltip)
-        luaunit.assertIs('Add a race to the candidate scope.',
+        assert.are.equal('Add a race to the candidate scope.',
             panel.subviews.add_race_button.tooltip)
-        luaunit.assertIs('Save the current filters or load a custom, role, or skill preset.',
+        assert.are.equal('Save the current filters or load a custom, role, or skill preset.',
             panel.subviews.preset_button.tooltip)
         local attribute_picker = by_id(panel.subviews, 'available_filter_window')
         local preset_picker = by_id(panel.subviews, 'preset_picker_window')
-        luaunit.assertIs('Close', attribute_picker.subviews[1].tooltip)
-        luaunit.assertIs('Close', preset_picker.subviews[1].tooltip)
-        luaunit.assertIs('Save the current ordered filters under this preset name.',
+        assert.are.equal('Close', attribute_picker.subviews[1].tooltip)
+        assert.are.equal('Close', preset_picker.subviews[1].tooltip)
+        assert.are.equal('Save the current ordered filters under this preset name.',
             preset_picker.subviews[2].tooltip)
-        luaunit.assertIs('CUSTOM_T',
+        assert.are.equal('CUSTOM_T',
             by_id(panel.subviews, 'available_filter_window').subviews[2].key)
-        luaunit.assertIs('CUSTOM_K',
+        assert.are.equal('CUSTOM_K',
             by_id(panel.subviews, 'available_skill_window').subviews[2].key)
-        luaunit.assertIs('CUSTOM_G',
+        assert.are.equal('CUSTOM_G',
             by_id(panel.subviews, 'available_race_window').subviews[2].key)
-        luaunit.assertEvalToTrue(by_id(panel.subviews, 'filter_list').frame ~= nil)
-        luaunit.assertEvalToTrue(by_id(panel.subviews, 'available_filter_window').frame ~= nil)
-        luaunit.assertEvalToFalse(by_id(panel.subviews, 'available_filter_window').visible)
-        luaunit.assertEvalToTrue(by_id(panel.subviews, 'filter_list').visible())
+        assert.is_truthy(by_id(panel.subviews, 'filter_list').frame ~= nil)
+        assert.is_truthy(by_id(panel.subviews, 'available_filter_window').frame ~= nil)
+        assert.is_falsy(by_id(panel.subviews, 'available_filter_window').visible)
+        assert.is_truthy(by_id(panel.subviews, 'filter_list').visible())
         panel:toggle_picker('attribute')
-        luaunit.assertEvalToFalse(by_id(panel.subviews, 'filter_list').visible())
-        luaunit.assertEvalToTrue(by_id(panel.subviews, 'available_filter_window').visible)
+        assert.is_falsy(by_id(panel.subviews, 'filter_list').visible())
+        assert.is_truthy(by_id(panel.subviews, 'available_filter_window').visible)
     end)
 
-    add_test('filter panel: picker submissions preserve descriptor and preset payloads', function()
+    it('filter panel: picker submissions preserve descriptor and preset payloads', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)
         local panel = filter_panel.FilterPanel{
@@ -130,11 +126,11 @@ end
             1, {role_id='miner'})
         by_id(panel.subviews, 'available_unit_scope_window').subviews[3].on_submit(
             1, {descriptor={id='unit_scope:visitors'}})
-        luaunit.assertEquals({'attribute:strength', 'unit_scope:visitors'}, calls.toggled)
-        luaunit.assertIs('miner', calls.role)
+        assert.are.same({'attribute:strength', 'unit_scope:visitors'}, calls.toggled)
+        assert.are.equal('miner', calls.role)
     end)
 
-    add_test('filter panel: unit-scope picker query and repeated toggles retain its open state', function()
+    it('filter panel: unit-scope picker query and repeated toggles retain its open state', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)
         local panel = filter_panel.FilterPanel{
@@ -146,12 +142,12 @@ end
         picker.subviews[2].on_change('visit')
         picker.subviews[3].on_submit(1, {descriptor={id='unit_scope:visitors'}})
         picker.subviews[3].on_submit(1, {descriptor={id='unit_scope:visitors'}})
-        luaunit.assertIs('visit', calls.unit_scope_query)
-        luaunit.assertEquals({'unit_scope:visitors', 'unit_scope:visitors'}, calls.toggled)
-        luaunit.assertEvalToTrue(panel:is_picker_open('unit_scope'))
+        assert.are.equal('visit', calls.unit_scope_query)
+        assert.are.same({'unit_scope:visitors', 'unit_scope:visitors'}, calls.toggled)
+        assert.is_truthy(panel:is_picker_open('unit_scope'))
     end)
 
-    add_test('filter panel: narrow update APIs own child choice updates', function()
+    it('filter panel: narrow update APIs own child choice updates', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)
         local panel = filter_panel.FilterPanel{
@@ -172,13 +168,13 @@ end
         panel:set_picker_choices('race', {'race'}, 4)
         panel:set_picker_choices('unit_scope', {'scope'}, 5)
         panel:set_preset_choices({'preset'})
-        luaunit.assertEquals({'active'}, panel.subviews.filter_list.last_choices)
-        luaunit.assertEquals({'race'}, panel.subviews.available_race_list.last_choices)
-        luaunit.assertEquals({'preset'}, panel.subviews.preset_list.last_choices)
-        luaunit.assertEquals({'scope'}, panel.subviews.available_unit_scope_list.last_choices)
+        assert.are.same({'active'}, panel.subviews.filter_list.last_choices)
+        assert.are.same({'race'}, panel.subviews.available_race_list.last_choices)
+        assert.are.same({'preset'}, panel.subviews.preset_list.last_choices)
+        assert.are.same({'scope'}, panel.subviews.available_unit_scope_list.last_choices)
     end)
 
-    add_test('filter panel: picker transition table is exclusive and closes cleanly', function()
+    it('filter panel: picker transition table is exclusive and closes cleanly', function()
         local state, calls = {panel=false}, {}
         local inputs = make_inputs(state, calls)
         local refreshes = {}
@@ -187,26 +183,26 @@ end
             view_id='filter_panel_window', inputs=inputs}
         panel.setFocus=noop
         index_subviews(panel)
-        luaunit.assertEvalToFalse(panel.visible)
-        luaunit.assertEvalToTrue(panel:open())
-        luaunit.assertEvalToTrue(panel.visible)
+        assert.is_falsy(panel.visible)
+        assert.is_truthy(panel:open())
+        assert.is_truthy(panel.visible)
         for _, kind in ipairs({'attribute', 'skill', 'race', 'unit_scope', 'preset'}) do
-            luaunit.assertEvalToTrue(panel:toggle_picker(kind))
-            luaunit.assertEvalToTrue(panel:is_picker_open(kind))
-            luaunit.assertEvalToFalse(panel.subviews.filter_list.visible())
+            assert.is_truthy(panel:toggle_picker(kind))
+            assert.is_truthy(panel:is_picker_open(kind))
+            assert.is_falsy(panel.subviews.filter_list.visible())
         end
-        luaunit.assertEvalToTrue(panel:close_picker())
-        luaunit.assertEvalToFalse(panel:has_open_picker())
-        luaunit.assertEvalToTrue(panel.subviews.filter_list.visible())
+        assert.is_truthy(panel:close_picker())
+        assert.is_falsy(panel:has_open_picker())
+        assert.is_truthy(panel.subviews.filter_list.visible())
         panel:toggle_picker('race')
-        luaunit.assertEvalToTrue(panel:close())
-        luaunit.assertEvalToFalse(panel:is_open())
-        luaunit.assertEvalToFalse(panel.visible)
-        luaunit.assertEvalToFalse(panel:has_open_picker())
-        luaunit.assertIs(13, #refreshes)
+        assert.is_truthy(panel:close())
+        assert.is_falsy(panel:is_open())
+        assert.is_falsy(panel.visible)
+        assert.is_falsy(panel:has_open_picker())
+        assert.are.equal(13, #refreshes)
     end)
 
-    add_test('filter panel: opening a searchable picker focuses its search field', function()
+    it('filter panel: opening a searchable picker focuses its search field', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)
         local panel = filter_panel.FilterPanel{
@@ -230,12 +226,12 @@ end
             picker.subviews[case.search_id].setFocus = function(_, focused)
                 if focused then focus_count = focus_count + 1 end
             end
-            luaunit.assertEvalToTrue(panel:toggle_picker(case.kind))
-            luaunit.assertIs(1, focus_count)
+            assert.is_truthy(panel:toggle_picker(case.kind))
+            assert.are.equal(1, focus_count)
         end
     end)
 
-    add_test('filter panel: picker lists own dynamic descriptor tooltips', function()
+    it('filter panel: picker lists own dynamic descriptor tooltips', function()
         local state, calls = {panel=true}, {}
         local inputs = make_inputs(state, calls)
         local panel = filter_panel.FilterPanel{
@@ -248,7 +244,7 @@ end
         local attribute_list = by_id(panel.subviews,
             'available_filter_window').subviews[3]
         attribute_list.on_pointer_update(attribute_list, 0, 0)
-        luaunit.assertIs('A personality trait that shapes behavior and social interaction.',
+        assert.are.equal('A personality trait that shapes behavior and social interaction.',
             attribute_list.tooltip)
 
         panel:set_picker_choices('race', {
@@ -257,9 +253,9 @@ end
         local race_list = by_id(panel.subviews,
             'available_race_window').subviews[3]
         race_list.on_pointer_update(race_list, 0, 0)
-        luaunit.assertIs('Filters by a creatures race.', race_list.tooltip)
+        assert.are.equal('Filters by a creatures race.', race_list.tooltip)
         race_list.on_pointer_update(race_list, 0, 4)
-        luaunit.assertIs(nil, race_list.tooltip)
+        assert.are.equal(nil, race_list.tooltip)
     end)
 
-return native_tests
+end)
