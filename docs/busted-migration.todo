@@ -987,25 +987,56 @@ UI refresh UI refresh: selection or sort change refreshes only stats
 
 ## Phase 6 - Remove LuaUnit and finalize the runner contract
 
-☐ Confirm `Tools/Run-UnitTests.ps1` contains no LuaUnit version probes,
+☑ Confirm `Tools/Run-UnitTests.ps1` contains no LuaUnit version probes,
   installation, invocation, compatibility branches, or error text.
-☐ Delete `Tests/run.lua` and remove the `LUA_TEST_FILES` discovery contract.
-☐ Ensure the final runner always invokes Busted against the configured test
+☑ Delete `Tests/run.lua` and remove the `LUA_TEST_FILES` discovery contract.
+☑ Ensure the final runner always invokes Busted against the configured test
   root and forwards `$TestRunnerArgs` unchanged.
-☐ Ensure no suite requires or references LuaUnit and no suite returns a test
+☑ Ensure no suite requires or references LuaUnit and no suite returns a test
   table.
-☐ Ensure no discovered suite retains the `*_test.lua` naming convention.
-☐ Search tracked files for `luaunit`, `LuaUnit`, `native_tests`, `$LuaUnitArgs`,
+☑ Ensure no discovered suite retains the `*_test.lua` naming convention.
+☑ Search tracked files for `luaunit`, `LuaUnit`, `native_tests`, `$LuaUnitArgs`,
   `LUA_TEST_FILES`, and `LUAUNIT_SMOKE_FORCE_FAILURE`; reconcile every current
   occurrence.
-☐ Preserve historical LuaUnit evidence in `docs/tooling-migration.todo`, but
+☑ Preserve historical LuaUnit evidence in `docs/tooling-migration.todo`, but
   add a supersession note for its unfinished clean/warm LuaUnit gates and link
   to this migration.
-☐ Confirm the repository-local dependency tree is ignored and that a fresh
+☑ Confirm the repository-local dependency tree is ignored and that a fresh
   dependency root does not install LuaUnit transitively.
 
 Exit gate: Busted is the only unit-test framework, the final runner contains no
 legacy path, and static searches find no active LuaUnit contract.
+
+Phase 6 recorded evidence (2026-07-19):
+
+- `Tests/run.lua` was deleted. `Tools/Run-UnitTests.ps1` invokes the configured
+  Busted launcher against `TestRoot` and forwards `$TestRunnerArgs` unchanged;
+  it contains no LuaUnit branch, probe, install, invocation, or error text.
+- All 57 suite files use `*_spec.lua`; no `*_test.lua` Lua suite remains. Static
+  source/spec searches found zero `luaunit`, `native_tests`, `add_test`,
+  `LUA_TEST_FILES`, `LUAUNIT_SMOKE_FORCE_FAILURE`, or `$LuaUnitArgs` contracts.
+  Every suite ends as a native Busted file rather than returning a test table.
+- The ignored default `.luarocks/` tree had the obsolete standalone
+  `luaunit 3.5-1` rock removed. Its remaining framework roots are Busted
+  `2.3.0-1` and its required `luasystem 0.3.0-2`.
+- A fresh, temporary repository-local dependency root installed `luasystem
+  0.3.0-2`, Busted `2.3.0-1`, and Busted's dependencies, then ran the full
+  suite with the accepted `328 successes / 4 failures / 0 errors / 0 pending`
+  result. LuaRocks reported no installed `luaunit`; the temporary tree was
+  removed after the probe.
+- `docs/tooling-migration.todo` is not present in this checkout: commit
+  `af2793a` intentionally deleted it as unused. Its historical LuaUnit plan is
+  retained in Git history, and this document preserves the complete Phase 0
+  LuaUnit baseline plus the superseding Busted evidence. Therefore no obsolete
+  document was recreated solely to add a note.
+- The tracked-reference audit distinguishes active contracts from history and
+  scheduled documentation work. Historical mentions in this migration record
+  and `docs/revealed-unit-filtering.todo` are retained as evidence; the current
+  `README.md` and `Tests/README.md` LuaUnit instructions are the explicit
+  Phase 7 documentation tasks and are not active runner or suite contracts.
+- Lua 5.4.6 syntax validation passed for 66 production files and 63
+  test/support files after deleting the runner. The package-tool contract suite
+  and `git diff --check` also passed.
 
 ## Phase 7 - Documentation, validation, and closeout
 
@@ -1060,11 +1091,12 @@ search failures.
 | Phase 3 provider/search native conversion | complete | 2026-07-19: 11 converted specs add 79 cases; exactly 30 native specs run 169 tests with 165 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 4 UI/presentation native conversion | complete | 2026-07-19: 18 converted specs add 89 passing cases; exactly 48 native specs run 258 tests with 254 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 5 integration conversion and final parity | complete | 2026-07-19: final nine specs add 74 passing cases; exactly 57 native specs run 332 tests with 328 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
+| Phase 6 Busted-only runner and legacy-contract removal | complete | 2026-07-19: deleted `Tests/run.lua`; source/spec static search found zero legacy contracts; default and fresh dependency trees contain no LuaUnit; filtered runner execution passed 1/1 |
 | Native Busted-only 332-test manifest | pending | |
 | Final 328-pass/four-known-failure result | pending | |
 | Targeted `--filter` execution | pending | |
 | Environment restoration on success and failure | pending | |
-| Zero active LuaUnit contracts | pending | |
+| Zero active LuaUnit contracts | complete | 2026-07-19: runner, source, and specs have zero legacy-contract matches; remaining historical/current-documentation references are reconciled for Phase 7 |
 | Syntax-only build | pending | |
 | Package-tool and payload-exclusion checks | pending | |
 | Documentation and historical-plan supersession | pending | |
