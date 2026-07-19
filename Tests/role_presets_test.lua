@@ -26,9 +26,9 @@ local function make_catalog(keys)
         'ANALYTICAL_ABILITY', 'SOCIAL_AWARENESS', 'CREATIVITY', 'MEMORY',
         'FOCUS', 'INTUITION', 'EMPATHY', 'LINGUISTIC_ABILITY',
         'KINESTHETIC_SENSE', 'WILLPOWER', 'SPATIAL_SENSE', 'MUSICALITY', 'PATIENCE',
-    }) do by_id['mental_attribute:' .. key] = {} end
+    }) do by_id['mental:' .. key] = {} end
     for _, key in ipairs({'STRENGTH', 'AGILITY', 'TOUGHNESS', 'ENDURANCE'}) do
-        by_id['physical_attribute:' .. key] = {}
+        by_id['physical:' .. key] = {}
     end
     return {get_catalog=function() return {by_id=by_id} end}
 end
@@ -70,23 +70,23 @@ end
 
     add_test('role presets: put role skills before wiki-priority attributes', function()
         luaunit.assertEquals({'skill:ORGANIZATION',
-            'mental_attribute:ANALYTICAL_ABILITY',
-            'mental_attribute:SOCIAL_AWARENESS',
-            'mental_attribute:CREATIVITY'},
+            'mental:ANALYTICAL_ABILITY',
+            'mental:SOCIAL_AWARENESS',
+            'mental:CREATIVITY'},
             first(4, ids(assert(role_presets.get('manager')))))
         luaunit.assertEquals({'skill:CROSSBOW', 'skill:ARCHERY', 'skill:HAMMER',
             'skill:DODGING', 'skill:SHIELD', 'skill:ARMOR',
-            'physical_attribute:AGILITY', 'mental_attribute:SPATIAL_SENSE',
-            'mental_attribute:KINESTHETIC_SENSE', 'mental_attribute:FOCUS'},
+            'physical:AGILITY', 'mental:SPATIAL_SENSE',
+            'mental:KINESTHETIC_SENSE', 'mental:FOCUS'},
             first(10, ids(assert(role_presets.get('marksdwarf')))))
     end)
 
     add_test('role presets: merge each selected skill preset attributes', function()
         local marksdwarf = ids(assert(role_presets.get('marksdwarf')))
-        luaunit.assertIs(true, contains(marksdwarf, 'physical_attribute:TOUGHNESS'))
-        luaunit.assertIs(true, contains(marksdwarf, 'physical_attribute:ENDURANCE'))
+        luaunit.assertIs(true, contains(marksdwarf, 'physical:TOUGHNESS'))
+        luaunit.assertIs(true, contains(marksdwarf, 'physical:ENDURANCE'))
         local doctor = ids(assert(role_presets.get('doctor')))
-        luaunit.assertIs(true, contains(doctor, 'mental_attribute:EMPATHY'))
+        luaunit.assertIs(true, contains(doctor, 'mental:EMPATHY'))
     end)
 
     add_test('role presets: separate complete combat presets and add dodging', function()
@@ -109,7 +109,7 @@ end
             'skill:ORGANIZATION'},
             first(3, ids(assert(role_presets.get('militia_commander')))))
         luaunit.assertIs(true, contains(ids(assert(role_presets.get('performer'))),
-            'mental_attribute:MUSICALITY'))
+            'mental:MUSICALITY'))
     end)
 
     add_test('role presets: resolve version-specific skill key fallbacks', function()

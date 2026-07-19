@@ -114,12 +114,12 @@ end
             'skill:WRITING',
         }, descriptor_ids(catalog.groups.skills))
         luaunit.assertEquals({
-            'physical_attribute:AGILITY',
-            'physical_attribute:STRENGTH',
+            'physical:AGILITY',
+            'physical:STRENGTH',
         }, descriptor_ids(catalog.groups.physical_attributes))
         luaunit.assertEquals({
-            'mental_attribute:FOCUS',
-            'mental_attribute:WILLPOWER',
+            'mental:FOCUS',
+            'mental:WILLPOWER',
         }, descriptor_ids(catalog.groups.mental_attributes))
         luaunit.assertEquals({
             'trait:BRAVERY',
@@ -141,10 +141,10 @@ end
             'skill:SWORD',
             'skill:UNLISTED_SKILL',
             'skill:WRITING',
-            'physical_attribute:AGILITY',
-            'physical_attribute:STRENGTH',
-            'mental_attribute:FOCUS',
-            'mental_attribute:WILLPOWER',
+            'physical:AGILITY',
+            'physical:STRENGTH',
+            'mental:FOCUS',
+            'mental:WILLPOWER',
             'trait:BRAVERY',
             'trait:PATIENCE',
             'unit_scope:citizens',

@@ -28,6 +28,11 @@ local unit_scope_catalog = reqscript('internal/soulsearch/unit_scope_catalog')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
 
+local FILTER_ID_PREFIXES = {
+    physical_attribute='physical',
+    mental_attribute='mental',
+}
+
 ---@alias SoulSearchFilterBehavior 'candidate'|'ranking'
 ---@alias SoulSearchFilterKind SoulSearchStatKind|'race'
 
@@ -95,7 +100,7 @@ end
 ---@return SoulSearchFilterDescriptor
 local function make_descriptor(kind, key, label)
     return {
-        id=kind .. ':' .. key,
+        id=(FILTER_ID_PREFIXES[kind] or kind) .. ':' .. key,
         kind=kind,
         behavior=filter_constants.behavior.RANKING,
         key=key,

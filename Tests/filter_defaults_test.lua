@@ -31,22 +31,22 @@ end
 
     add_test('built-in presets: preserve wiki A, B, C priority order', function()
         luaunit.assertEquals({
-            'physical_attribute:AGILITY',
-            'mental_attribute:SPATIAL_SENSE',
-            'mental_attribute:KINESTHETIC_SENSE',
-            'mental_attribute:FOCUS',
+            'physical:AGILITY',
+            'mental:SPATIAL_SENSE',
+            'mental:KINESTHETIC_SENSE',
+            'mental:FOCUS',
         }, ids(assert(defaults.get('crossbowman'))))
         luaunit.assertEquals({
-            'mental_attribute:ANALYTICAL_ABILITY',
-            'mental_attribute:SPATIAL_SENSE',
-            'mental_attribute:MEMORY',
+            'mental:ANALYTICAL_ABILITY',
+            'mental:SPATIAL_SENSE',
+            'mental:MEMORY',
         }, ids(assert(defaults.get('mathematician'))))
     end)
 
     add_test('built-in presets: reads do not alias the catalog', function()
         local filters = assert(defaults.get('miner'))
-        filters[1].id = 'physical_attribute:AGILITY'
-        luaunit.assertIs('physical_attribute:STRENGTH',
+        filters[1].id = 'physical:AGILITY'
+        luaunit.assertIs('physical:STRENGTH',
             assert(defaults.get('miner'))[1].id)
         luaunit.assertNil(defaults.get('unknown'))
     end)

@@ -14,32 +14,32 @@ local filter_constants =
 -- Skill key fallbacks cover the small naming differences between DF versions.
 -- Attributes are ordered by the Wiki's A, then B, then C priority columns.
 local COMBAT_ATTRIBUTES = {
-    'physical_attribute:STRENGTH', 'physical_attribute:AGILITY',
-    'mental_attribute:KINESTHETIC_SENSE', 'physical_attribute:TOUGHNESS',
-    'mental_attribute:WILLPOWER', 'mental_attribute:SPATIAL_SENSE',
-    'physical_attribute:ENDURANCE',
+    'physical:STRENGTH', 'physical:AGILITY',
+    'mental:KINESTHETIC_SENSE', 'physical:TOUGHNESS',
+    'mental:WILLPOWER', 'mental:SPATIAL_SENSE',
+    'physical:ENDURANCE',
 }
 
 local SOCIAL_ATTRIBUTES = {
-    'mental_attribute:EMPATHY', 'mental_attribute:SOCIAL_AWARENESS',
-    'mental_attribute:LINGUISTIC_ABILITY', 'mental_attribute:INTUITION',
-    'mental_attribute:MEMORY',
+    'mental:EMPATHY', 'mental:SOCIAL_AWARENESS',
+    'mental:LINGUISTIC_ABILITY', 'mental:INTUITION',
+    'mental:MEMORY',
 }
 
 local LEADER_ATTRIBUTES = {
-    'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:WILLPOWER',
-    'mental_attribute:SOCIAL_AWARENESS', 'mental_attribute:EMPATHY',
-    'mental_attribute:LINGUISTIC_ABILITY', 'mental_attribute:MEMORY',
+    'mental:ANALYTICAL_ABILITY', 'mental:WILLPOWER',
+    'mental:SOCIAL_AWARENESS', 'mental:EMPATHY',
+    'mental:LINGUISTIC_ABILITY', 'mental:MEMORY',
 }
 
 local ROLE_ROWS = {
-    {id='manager', label='Manager', skills={{'ORGANIZATION'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:SOCIAL_AWARENESS', 'mental_attribute:CREATIVITY'}},
-    {id='bookkeeper', label='Bookkeeper', skills={{'RECORD_KEEPING'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:MEMORY', 'mental_attribute:FOCUS'}},
-    {id='broker', label='Broker', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:MEMORY', 'mental_attribute:INTUITION', 'mental_attribute:EMPATHY', 'mental_attribute:SOCIAL_AWARENESS', 'mental_attribute:LINGUISTIC_ABILITY'}},
-    {id='chief_medical_dwarf', label='Chief Medical Dwarf', skills={{'DIAGNOSE', 'DIAGNOSIS'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:MEMORY', 'mental_attribute:INTUITION'}},
-    {id='interrogator', label='Interrogator', skills={{'JUDGING_INTENT'}}, attributes={'mental_attribute:EMPATHY', 'mental_attribute:SOCIAL_AWARENESS', 'mental_attribute:INTUITION'}},
-    {id='doctor', label='Doctor', skills={{'DIAGNOSE', 'DIAGNOSIS'}, {'SURGERY'}, {'SET_BONE', 'BONE_SETTING'}, {'SUTURE', 'SUTURER'}, {'DRESS_WOUNDS', 'WOUND_DRESSER'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'physical_attribute:AGILITY', 'mental_attribute:KINESTHETIC_SENSE', 'physical_attribute:STRENGTH', 'mental_attribute:MEMORY', 'mental_attribute:SPATIAL_SENSE', 'mental_attribute:FOCUS', 'mental_attribute:INTUITION'}},
-    {id='animal_trainer', label='Animal Trainer', skills={{'ANIMALTRAIN'}}, attributes={'physical_attribute:AGILITY', 'mental_attribute:EMPATHY', 'physical_attribute:TOUGHNESS', 'mental_attribute:PATIENCE', 'physical_attribute:ENDURANCE', 'mental_attribute:INTUITION'}},
+    {id='manager', label='Manager', skills={{'ORGANIZATION'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:SOCIAL_AWARENESS', 'mental:CREATIVITY'}},
+    {id='bookkeeper', label='Bookkeeper', skills={{'RECORD_KEEPING'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:FOCUS'}},
+    {id='broker', label='Broker', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:INTUITION', 'mental:EMPATHY', 'mental:SOCIAL_AWARENESS', 'mental:LINGUISTIC_ABILITY'}},
+    {id='chief_medical_dwarf', label='Chief Medical Dwarf', skills={{'DIAGNOSE', 'DIAGNOSIS'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:MEMORY', 'mental:INTUITION'}},
+    {id='interrogator', label='Interrogator', skills={{'JUDGING_INTENT'}}, attributes={'mental:EMPATHY', 'mental:SOCIAL_AWARENESS', 'mental:INTUITION'}},
+    {id='doctor', label='Doctor', skills={{'DIAGNOSE', 'DIAGNOSIS'}, {'SURGERY'}, {'SET_BONE', 'BONE_SETTING'}, {'SUTURE', 'SUTURER'}, {'DRESS_WOUNDS', 'WOUND_DRESSER'}}, attributes={'mental:ANALYTICAL_ABILITY', 'physical:AGILITY', 'mental:KINESTHETIC_SENSE', 'physical:STRENGTH', 'mental:MEMORY', 'mental:SPATIAL_SENSE', 'mental:FOCUS', 'mental:INTUITION'}},
+    {id='animal_trainer', label='Animal Trainer', skills={{'ANIMALTRAIN'}}, attributes={'physical:AGILITY', 'mental:EMPATHY', 'physical:TOUGHNESS', 'mental:PATIENCE', 'physical:ENDURANCE', 'mental:INTUITION'}},
     {id='trader', label='Trader', skills={{'APPRAISAL'}, {'JUDGING_INTENT'}, {'NEGOTIATION'}, {'LYING'}}, attributes=SOCIAL_ATTRIBUTES},
     {id='mayor', label='Mayor', skills={{'LEADERSHIP'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
     {id='expedition_leader', label='Expedition Leader', skills={{'LEADERSHIP'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}, {'PERSUASION'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
@@ -48,9 +48,9 @@ local ROLE_ROWS = {
     {id='duke', label='Duke', skills={{'LEADERSHIP'}, {'NEGOTIATION'}, {'JUDGING_INTENT'}, {'CONVERSATION'}}, attributes=LEADER_ATTRIBUTES},
     {id='sheriff', label='Sheriff', skills={{'JUDGING_INTENT'}, {'INTIMIDATION'}, {'PERSUASION'}}, attributes=SOCIAL_ATTRIBUTES},
     {id='captain_of_the_guard', label='Captain of the Guard', skills={{'LEADERSHIP'}, {'MILITARY_TACTICS'}, {'JUDGING_INTENT'}, {'INTIMIDATION'}, {'PERSUASION'}}, attributes=LEADER_ATTRIBUTES},
-    {id='scholar', label='Scholar', skills={{'CRITICAL_THINKING'}, {'LOGIC'}, {'READING'}, {'WRITING'}, {'TEACHING'}}, attributes={'mental_attribute:ANALYTICAL_ABILITY', 'mental_attribute:CREATIVITY', 'mental_attribute:MEMORY', 'mental_attribute:FOCUS', 'mental_attribute:LINGUISTIC_ABILITY'}},
-    {id='scribe', label='Scribe', skills={{'WRITING'}, {'READING'}}, attributes={'mental_attribute:CREATIVITY', 'mental_attribute:MEMORY', 'mental_attribute:FOCUS', 'mental_attribute:LINGUISTIC_ABILITY'}},
-    {id='performer', label='Performer', skills={{'POETRY'}, {'DANCE'}, {'MAKE_MUSIC'}, {'SING_MUSIC'}, {'SPEAKING'}}, attributes={'mental_attribute:CREATIVITY', 'mental_attribute:MUSICALITY', 'mental_attribute:EMPATHY', 'mental_attribute:SOCIAL_AWARENESS', 'physical_attribute:AGILITY'}},
+    {id='scholar', label='Scholar', skills={{'CRITICAL_THINKING'}, {'LOGIC'}, {'READING'}, {'WRITING'}, {'TEACHING'}}, attributes={'mental:ANALYTICAL_ABILITY', 'mental:CREATIVITY', 'mental:MEMORY', 'mental:FOCUS', 'mental:LINGUISTIC_ABILITY'}},
+    {id='scribe', label='Scribe', skills={{'WRITING'}, {'READING'}}, attributes={'mental:CREATIVITY', 'mental:MEMORY', 'mental:FOCUS', 'mental:LINGUISTIC_ABILITY'}},
+    {id='performer', label='Performer', skills={{'POETRY'}, {'DANCE'}, {'MAKE_MUSIC'}, {'SING_MUSIC'}, {'SPEAKING'}}, attributes={'mental:CREATIVITY', 'mental:MUSICALITY', 'mental:EMPATHY', 'mental:SOCIAL_AWARENESS', 'physical:AGILITY'}},
     {id='tavern_keeper', label='Tavern Keeper', skills={{'SPEAKING'}, {'CONVERSATION'}, {'JUDGING_INTENT'}}, attributes=SOCIAL_ATTRIBUTES},
     {id='dungeon_master', label='Dungeon Master', skills={{'ANIMALTRAIN'}, {'ORGANIZATION'}, {'JUDGING_INTENT'}}, attributes=LEADER_ATTRIBUTES},
     {id='champion', label='Champion', skills={{'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}, {'LEADERSHIP'}}, attributes=COMBAT_ATTRIBUTES},
@@ -70,8 +70,8 @@ local COMBAT_ROWS = {
     {id='pikedwarf', label='Pikedwarf', skills={{'PIKE'}, {'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}}, attributes=COMBAT_ATTRIBUTES},
     {id='lasher', label='Lasher', skills={{'WHIP'}, {'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}}, attributes=COMBAT_ATTRIBUTES},
     {id='wrestler', label='Wrestler', skills={{'WRESTLING'}, {'MELEE_COMBAT'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}}, attributes=COMBAT_ATTRIBUTES},
-    {id='marksdwarf', label='Marksdwarf', skills={{'CROSSBOW'}, {'ARCHERY'}, {'HAMMER'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}}, attributes={'physical_attribute:AGILITY', 'mental_attribute:SPATIAL_SENSE', 'mental_attribute:KINESTHETIC_SENSE', 'mental_attribute:FOCUS'}},
-    {id='hunter', label='Hunter', skills={{'SNEAK'}, {'CROSSBOW'}, {'ARCHERY'}, {'DODGING'}}, attributes={'physical_attribute:AGILITY', 'mental_attribute:SPATIAL_SENSE', 'mental_attribute:KINESTHETIC_SENSE', 'mental_attribute:FOCUS'}},
+    {id='marksdwarf', label='Marksdwarf', skills={{'CROSSBOW'}, {'ARCHERY'}, {'HAMMER'}, {'DODGING'}, {'SHIELD'}, {'ARMOR'}}, attributes={'physical:AGILITY', 'mental:SPATIAL_SENSE', 'mental:KINESTHETIC_SENSE', 'mental:FOCUS'}},
+    {id='hunter', label='Hunter', skills={{'SNEAK'}, {'CROSSBOW'}, {'ARCHERY'}, {'DODGING'}}, attributes={'physical:AGILITY', 'mental:SPATIAL_SENSE', 'mental:KINESTHETIC_SENSE', 'mental:FOCUS'}},
     {id='hammerer', label='Hammerer', skills={{'HAMMER'}, {'DODGING'}}, attributes=COMBAT_ATTRIBUTES},
 }
 
