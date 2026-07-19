@@ -142,70 +142,66 @@ local function load_navigator(repo_root)
     return navigator, state
 end
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('creatures menu navigator', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
-    add_test('Creatures navigator: coroutine awaits each native UI stage', function()
+    it('Creatures navigator: coroutine awaits each native UI stage', function()
         local navigator, state = load_navigator(repo_root)
         state.units[40].native_mode = 1
         local target_page, target_list = selectable_page({10, 20, 30, 40, 50}, 3)
 
-        luaunit.assertEvalToTrue(navigator.show_unit(40))
-        luaunit.assertEvalToTrue(navigator.is_running())
-        luaunit.assertEvalToTrue(state.info.open)
-        luaunit.assertIs(17, state.info.current_mode)
-        luaunit.assertEvalToFalse(state.main_interface.view_sheets.open)
-        luaunit.assertIs('', state.creatures.search_string)
-        luaunit.assertIs(1, #state.native_inputs)
-        luaunit.assertIs(state.native_screen, state.native_inputs[1].screen)
-        luaunit.assertIs(41, state.native_inputs[1].key)
-        luaunit.assertIs(0, target_list.scroll)
+        assert.is_truthy(navigator.show_unit(40))
+        assert.is_truthy(navigator.is_running())
+        assert.is_truthy(state.info.open)
+        assert.are.equal(17, state.info.current_mode)
+        assert.is_falsy(state.main_interface.view_sheets.open)
+        assert.are.equal('', state.creatures.search_string)
+        assert.are.equal(1, #state.native_inputs)
+        assert.are.equal(state.native_screen, state.native_inputs[1].screen)
+        assert.are.equal(41, state.native_inputs[1].key)
+        assert.are.equal(0, target_list.scroll)
 
         -- The menu predicate does not advance while the native Tabs widget is
         -- absent, and each successful update crosses only one await boundary.
-        luaunit.assertEvalToTrue(state.repeater ~= nil)
-        luaunit.assertIs(2, state.repeater.delay)
-        luaunit.assertIs('frames', state.repeater.mode)
+        assert.is_truthy(state.repeater ~= nil)
+        assert.are.equal(2, state.repeater.delay)
+        assert.are.equal('frames', state.repeater.mode)
         state.run_timer()
-        luaunit.assertEvalToTrue(navigator.is_running())
+        assert.is_truthy(navigator.is_running())
         state.menu_built = true
         state.run_timer()
-        luaunit.assertEvalToTrue(navigator.is_running())
-        luaunit.assertIs(1, state.tabs.cur_idx)
-        luaunit.assertIs(1, state.creatures.current_mode)
+        assert.is_truthy(navigator.is_running())
+        assert.are.equal(1, state.tabs.cur_idx)
+        assert.are.equal(1, state.creatures.current_mode)
         -- The inactive Pets/Livestock page is populated only after the native
         -- mode has switched to it.
         state.pages['Pets/Livestock'] = target_page
-        luaunit.assertIs(0, target_list.scroll)
+        assert.are.equal(0, target_list.scroll)
         state.run_timer()
-        luaunit.assertIs(3, target_page.cursor_idx)
-        luaunit.assertIs(2, target_list.scroll)
-        luaunit.assertEvalToFalse(navigator.is_running())
-        luaunit.assertNil(state.repeater)
-        luaunit.assertIs(1, #state.schedule_requests)
-        luaunit.assertIs(2, state.schedule_requests[1].delay)
-        luaunit.assertIs('frames', state.schedule_requests[1].mode)
-        luaunit.assertIs(0, #state.printed)
+        assert.are.equal(3, target_page.cursor_idx)
+        assert.are.equal(2, target_list.scroll)
+        assert.is_falsy(navigator.is_running())
+        assert.is_nil(state.repeater)
+        assert.are.equal(1, #state.schedule_requests)
+        assert.are.equal(2, state.schedule_requests[1].delay)
+        assert.are.equal('frames', state.schedule_requests[1].mode)
+        assert.are.equal(0, #state.printed)
         local trace = table.concat(state.logs, '\n')
-        luaunit.assertEvalToTrue(trace:find('starting navigation for unit 40 using subtab 1', 1, true))
-        luaunit.assertEvalToTrue(trace:find('selected subtab 1', 1, true))
-        luaunit.assertEvalToTrue(trace:find('found unit 40', 1, true))
-        luaunit.assertEvalToTrue(trace:find('cursor_idx=3 scroll=2', 1, true))
-        luaunit.assertEvalToTrue(trace:find('navigation complete for unit 40', 1, true))
+        assert.is_truthy(trace:find('starting navigation for unit 40 using subtab 1', 1, true))
+        assert.is_truthy(trace:find('selected subtab 1', 1, true))
+        assert.is_truthy(trace:find('found unit 40', 1, true))
+        assert.is_truthy(trace:find('cursor_idx=3 scroll=2', 1, true))
+        assert.is_truthy(trace:find('navigation complete for unit 40', 1, true))
         local retained = navigator.get_log_messages()
-        luaunit.assertEquals(state.logs, retained)
+        assert.are.same(state.logs, retained)
         retained[1] = 'mutated'
-        luaunit.assertEvalToFalse(navigator.get_log_messages()[1] == 'mutated')
+        assert.is_falsy(navigator.get_log_messages()[1] == 'mutated')
         navigator.clear_log_messages()
-        luaunit.assertIs(0, #navigator.get_log_messages())
+        assert.are.equal(0, #navigator.get_log_messages())
     end)
 
-    add_test('Creatures navigator: already-open native panel is not toggled closed', function()
+    it('Creatures navigator: already-open native panel is not toggled closed', function()
         local navigator, state = load_navigator(repo_root)
         state.info.open = true
         state.info.current_mode = 17
@@ -213,35 +209,35 @@ end
         local page = selectable_page({10}, 3)
         state.pages['Citizens'] = page
 
-        luaunit.assertEvalToTrue(navigator.show_unit(10))
-        luaunit.assertIs(0, #state.native_inputs)
+        assert.is_truthy(navigator.show_unit(10))
+        assert.are.equal(0, #state.native_inputs)
         state.run_timer()
-        luaunit.assertEvalToTrue(navigator.is_running())
+        assert.is_truthy(navigator.is_running())
         state.run_timer()
-        luaunit.assertEvalToFalse(navigator.is_running())
-        luaunit.assertIs(0, #state.printed)
+        assert.is_falsy(navigator.is_running())
+        assert.are.equal(0, #state.printed)
     end)
 
-    add_test('Creatures navigator: visitors select and populate the Other tab', function()
+    it('Creatures navigator: visitors select and populate the Other tab', function()
         local navigator, state = load_navigator(repo_root)
         state.units[70].native_mode = 2
 
-        luaunit.assertEvalToTrue(navigator.show_unit(70))
+        assert.is_truthy(navigator.show_unit(70))
         state.menu_built = true
         state.run_timer()
-        luaunit.assertEvalToTrue(navigator.is_running())
-        luaunit.assertIs(2, state.tabs.cur_idx)
-        luaunit.assertIs(2, state.creatures.current_mode)
+        assert.is_truthy(navigator.is_running())
+        assert.are.equal(2, state.tabs.cur_idx)
+        assert.are.equal(2, state.creatures.current_mode)
 
         local target_page, target_list = selectable_page({60, 70, 80}, 1)
         state.pages['Other'] = target_page
         state.run_timer()
-        luaunit.assertIs(1, target_page.cursor_idx)
-        luaunit.assertIs(1, target_list.scroll)
-        luaunit.assertIs(0, #state.printed)
+        assert.are.equal(1, target_page.cursor_idx)
+        assert.are.equal(1, target_list.scroll)
+        assert.are.equal(0, #state.printed)
     end)
 
-    add_test('Creatures navigator: native widgets may reject absent unit fields', function()
+    it('Creatures navigator: native widgets may reject absent unit fields', function()
         local navigator, state = load_navigator(repo_root)
         local target_list = {
             children={
@@ -256,54 +252,54 @@ end
         }}
         state.pages['Citizens'] = selection_owner
 
-        luaunit.assertEvalToTrue(navigator.show_unit(20))
+        assert.is_truthy(navigator.show_unit(20))
         state.menu_built = true
         state.run_timer()
-        luaunit.assertEvalToTrue(navigator.is_running())
+        assert.is_truthy(navigator.is_running())
         state.run_timer()
-        luaunit.assertIs(1, selection_owner.cursor_idx)
-        luaunit.assertIs(1, target_list.scroll)
-        luaunit.assertIs(0, #state.printed)
+        assert.are.equal(1, selection_owner.cursor_idx)
+        assert.are.equal(1, target_list.scroll)
+        assert.are.equal(0, #state.printed)
     end)
 
-    add_test('Creatures navigator: a new request cancels the suspended flow', function()
+    it('Creatures navigator: a new request cancels the suspended flow', function()
         local navigator, state = load_navigator(repo_root)
-        luaunit.assertEvalToTrue(navigator.show_unit(10))
+        assert.is_truthy(navigator.show_unit(10))
         local old_callback = state.repeater.callback
-        luaunit.assertEvalToTrue(navigator.show_unit(20))
-        luaunit.assertIs(2, #state.schedule_requests)
+        assert.is_truthy(navigator.show_unit(20))
+        assert.are.equal(2, #state.schedule_requests)
         local current_repeater = state.repeater
         -- Even if an obsolete callback was already dispatched, it cannot
         -- advance or cancel the replacement flow.
         old_callback()
-        luaunit.assertEvalToTrue(navigator.is_running())
-        luaunit.assertEvalToTrue(current_repeater == state.repeater)
+        assert.is_truthy(navigator.is_running())
+        assert.is_truthy(current_repeater == state.repeater)
         state.menu_built = true
         local page = selectable_page({20}, 3)
         state.pages['Citizens'] = page
         state.run_timer()
-        luaunit.assertEvalToTrue(navigator.is_running())
+        assert.is_truthy(navigator.is_running())
         state.run_timer()
-        luaunit.assertEvalToFalse(navigator.is_running())
-        luaunit.assertEvalToFalse(navigator.cancel())
-        luaunit.assertIs(0, #state.printed)
+        assert.is_falsy(navigator.is_running())
+        assert.is_falsy(navigator.cancel())
+        assert.are.equal(0, #state.printed)
     end)
 
-    add_test('Creatures navigator: stalled awaits have a fixed update budget', function()
+    it('Creatures navigator: stalled awaits have a fixed update budget', function()
         local navigator, state = load_navigator(repo_root)
-        luaunit.assertEvalToFalse(navigator.show_unit(nil))
-        luaunit.assertIs('SoulSearch: no unit selected.', state.printed[1])
-        luaunit.assertEvalToTrue(navigator.show_unit(99))
+        assert.is_falsy(navigator.show_unit(nil))
+        assert.are.equal('SoulSearch: no unit selected.', state.printed[1])
+        assert.is_truthy(navigator.show_unit(99))
         for _ = 1, 120 do
             state.run_timer()
-            luaunit.assertEvalToTrue(navigator.is_running())
+            assert.is_truthy(navigator.is_running())
         end
         state.run_timer()
-        luaunit.assertEvalToFalse(navigator.is_running())
-        luaunit.assertNil(state.repeater)
-        luaunit.assertIs(
+        assert.is_falsy(navigator.is_running())
+        assert.is_nil(state.repeater)
+        assert.are.equal(
             'SoulSearch: unit 99 did not become available in the Creatures panel.',
             state.printed[2])
     end)
 
-return native_tests
+end)

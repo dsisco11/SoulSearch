@@ -848,21 +848,142 @@ Convert the final 9 LuaUnit suites to native Busted specs:
 - `screen_registry`, `soulsearch_command`, and `stats_overlay`; and
 - `ui_characterization`, `ui_open`, and `ui_refresh`.
 
-☐ Apply the standard native-suite and assertion conversion to each named file.
-☐ Preserve coroutine, reload, screen-registry, overlay, and command harness
+☑ Apply the standard native-suite and assertion conversion to each named file.
+☑ Preserve coroutine, reload, screen-registry, overlay, and command harness
   behavior without introducing framework-specific production seams.
-☐ Preserve the exact characterization case names and all current UI event,
+☑ Preserve the exact characterization case names and all current UI event,
   selection, refresh, cleanup, and persistence expectations.
-☐ Run each converted spec directly.
-☐ Reconcile the complete spec manifest against Phase 0 and prove there are
+☑ Run each converted spec directly.
+☑ Reconcile the complete spec manifest against Phase 0 and prove there are
   exactly 57 native Busted specs: the prior 48 plus these final 9.
-☐ Run the complete Busted suite and prove it executes exactly 332 tests with
+☑ Run the complete Busted suite and prove it executes exactly 332 tests with
   328 passes and only the four named `search` failures.
-☐ Reconcile the accumulated per-spec case names and totals from Phases 2-5
+☑ Reconcile the accumulated per-spec case names and totals from Phases 2-5
   against the 332-test Phase 0 baseline.
 
 Exit gate: every baseline suite has one native Busted successor, all 332 tests
 execute, and the only failures are the four accepted `search` cases.
+
+Phase 5 recorded evidence (2026-07-19):
+
+- All nine final files were renamed to `*_spec.lua` and converted to native
+  `describe()`, `it()`, and Luassert. Static searches found no active
+  `luaunit`, `native_tests`, or `add_test` references in any of the 57 specs;
+  all specs pass direct Lua parsing.
+- Conversion reconciliation found 439 baseline assertions and 439 native
+  assertions, plus 74 baseline static case registrations and 74 native static
+  registrations. Every Phase 5 spec passed in a direct isolated run.
+- A normalized file-by-file comparison reconstructed all nine specs from their
+  baseline files using only the declared suite, registration, and assertion
+  substitutions, plus the documented `_G.print` interception in `ui_open`.
+  All nine matched exactly.
+- `ui_open_spec.lua` explicitly replaces and restores `_G.print` while testing
+  the unavailable-context message. Busted executes the spec in an isolated
+  environment, while the loaded UI module resolves `print` through `_G`; this
+  narrowly preserves the legacy interception without a production seam.
+- The complete manifest contains exactly 57 native specs and no `*_test.lua`
+  suites. Phase runtime totals reconcile to the Phase 0 total: Phase 2 90,
+  Phase 3 79, Phase 4 89, and Phase 5 74, for 332 tests.
+- The complete Busted suite reported
+  `328 successes / 4 failures / 0 errors / 0 pending`. The only failures remain
+  `ranking: earlier selected filter receives priority bonus`,
+  `ranking: full and partial matches remain in results`,
+  `ranking: mixed stat kinds evaluate together`, and
+  `ranking: raw score breaks an exact weighted-score tie` in `search_spec.lua`.
+- Independent regression validation passed: Lua 5.4.6 parsed 66 production
+  files and 64 test/support files, the package-tool contract suite returned 0,
+  and `git diff --check` reported no errors.
+- Per-spec runtime totals are: `creatures_menu_navigator` 6;
+  `creatures_menu_overlay` 4; `creatures_menu_scope` 4; `screen_registry` 6;
+  `soulsearch_command` 12; `stats_overlay` 15; `ui_characterization` 15;
+  `ui_open` 4; and `ui_refresh` 8.
+- `--list` reported these exact native case names (suite prefixes included):
+
+```text
+[creatures_menu_navigator]
+creatures menu navigator Creatures navigator: a new request cancels the suspended flow
+creatures menu navigator Creatures navigator: already-open native panel is not toggled closed
+creatures menu navigator Creatures navigator: coroutine awaits each native UI stage
+creatures menu navigator Creatures navigator: native widgets may reject absent unit fields
+creatures menu navigator Creatures navigator: stalled awaits have a fixed update budget
+creatures menu navigator Creatures navigator: visitors select and populate the Other tab
+[creatures_menu_overlay]
+creatures menu overlay creatures menu overlay: docks below the Residents subtab
+creatures menu overlay creatures menu overlay: does not initialize SoulSearch without a supported tab
+creatures menu overlay creatures menu overlay: opens every current unified filter preset
+creatures menu overlay creatures menu overlay: registers a visible native button on supported tabs
+[creatures_menu_scope]
+creatures menu scope creatures menu scope: accepts live focus names and rejects unrelated contexts
+creatures menu scope creatures menu scope: maps supported tabs to explicit candidate presets
+creatures menu scope creatures menu scope: resolves the suffix-free Residents focus from vanilla tabs
+creatures menu scope creatures menu scope: returns fresh options and finds an underlying menu
+[screen_registry]
+screen registry screen registry: add is unique and snapshots are isolated
+screen registry screen registry: cascade wraps within screen bounds
+screen registry screen registry: overlapping frames cascade diagonally
+screen registry screen registry: removal is idempotent and order independent
+screen registry screen registry: snapshot iteration tolerates registry mutation
+screen registry screen registry: teardown-only screens do not affect placement
+[soulsearch_command]
+soulsearch command gui/soulsearch: initializes then opens without arguments
+soulsearch command gui/soulsearch: remains a fallback while bootstrap is disabled or missed
+soulsearch command soulsearch command: explicit initialization remains usable while bootstrap is disabled
+soulsearch command soulsearch command: invalid arguments preserve the usage contract
+soulsearch command soulsearch command: manual setup retries an unavailable bootstrap result
+soulsearch command soulsearch command: normal invocation uses native imports without clearing or opening UI
+soulsearch command soulsearch command: reload reconstructs from a fresh registry without opening UI
+soulsearch command soulsearch enable and disable flags only control bootstrap state
+soulsearch command soulsearch module load: bootstraps keybindings without loading the full runtime
+soulsearch command soulsearch module load: preserves an explicit disabled state
+soulsearch command soulsearch module load: repeated scans leave setup idempotent
+soulsearch command soulsearch module load: unavailable setup fails soft without loading the runtime
+[stats_overlay]
+stats overlay stats overlay: captures a persisted position before the unit card opens
+stats overlay stats overlay: collapse button hides and restores the panel in place
+stats overlay stats overlay: does not measure or report a closed unit card during layout
+stats overlay stats overlay: forwards per-instance placement fallbacks in order
+stats overlay stats overlay: keeps a repositioned panel authoritative
+stats overlay stats overlay: measures the vanilla unit-card tab strip
+stats overlay stats overlay: only reports a subject error once
+stats overlay stats overlay: reapplies child layout after restoring a persisted position
+stats overlay stats overlay: recognizes a unit card beneath a launcher screen
+stats overlay stats overlay: registration has stable static identity
+stats overlay stats overlay: renders its tooltip above the clipped popout
+stats overlay stats overlay: resolves tooltips while rendering
+stats overlay stats overlay: restores a persisted panel position
+stats overlay stats overlay: updates an attached panel for a unit card selection
+stats overlay stats overlay: uses a signature-free thin frame
+[ui_characterization]
+UI characterization UI characterization: Creatures button dismisses then navigates by unit ID
+UI characterization UI characterization: Main Window delegates through component APIs
+UI characterization UI characterization: adding a filter keeps its picker open
+UI characterization UI characterization: clear restores opening defaults and presets refresh unified state once
+UI characterization UI characterization: drag persistence is isolated by settings ID
+UI characterization UI characterization: every descendant ID is exposed at the root
+UI characterization UI characterization: filter button owns its static tooltip
+UI characterization UI characterization: opening filter defaults are captured by value
+UI characterization UI characterization: picker transitions close competing state
+UI characterization UI characterization: picker visibility is exclusive and unit-scope picker paints before presets
+UI characterization UI characterization: query focus position and cursor shortcuts are stable
+UI characterization UI characterization: recompute retains selection by unit ID
+UI characterization UI characterization: result callbacks submit and sort exact payloads
+UI characterization UI characterization: root and recursive child order is exact
+UI characterization UI characterization: screen registration and cleanup are idempotent
+[ui_open]
+UI open UI input: child handling precedes global fallback handling
+UI open UI open: scoped options construct one new screen
+UI open UI open: unavailable context prints reason without constructing a screen
+UI open UI reload teardown: dismisses zero, one, and multiple screens safely
+[ui_refresh]
+UI refresh UI refresh: candidate refresh precedes result recomputation
+UI refresh UI refresh: filter change refreshes each dependent view once
+UI refresh UI refresh: missing resident keeps and clamps list position
+UI refresh UI refresh: picker change never recomputes results
+UI refresh UI refresh: preset change never recomputes results
+UI refresh UI refresh: query or resident change recomputes once
+UI refresh UI refresh: result selection preserves unit identity
+UI refresh UI refresh: selection or sort change refreshes only stats
+```
 
 ## Phase 6 - Remove LuaUnit and finalize the runner contract
 
@@ -938,7 +1059,7 @@ search failures.
 | Phase 2 pure-domain native conversion | complete | 2026-07-19: exactly 19 native specs and 90 cases; every spec passed alone and the full batch passed 90/90; syntax checked 66 production and 64 test/support files; package contracts and `git diff --check` passed |
 | Phase 3 provider/search native conversion | complete | 2026-07-19: 11 converted specs add 79 cases; exactly 30 native specs run 169 tests with 165 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 4 UI/presentation native conversion | complete | 2026-07-19: 18 converted specs add 89 passing cases; exactly 48 native specs run 258 tests with 254 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
-| Phase 5 integration conversion and final parity | pending | |
+| Phase 5 integration conversion and final parity | complete | 2026-07-19: final nine specs add 74 passing cases; exactly 57 native specs run 332 tests with 328 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Native Busted-only 332-test manifest | pending | |
 | Final 328-pass/four-known-failure result | pending | |
 | Targeted `--filter` execution | pending | |
