@@ -272,35 +272,84 @@ Tests/window_settings_test.lua
 
 ## Phase 1 - Establish the repository-local Busted runner
 
-☐ Add `.busted` with `Tests`-appropriate `*_spec.lua` discovery, deterministic
+☑ Add `.busted` with `Tests`-appropriate `*_spec.lua` discovery, deterministic
   sorted files/tests, and plain-terminal output.
-☐ Extend `Tools/Run-UnitTests.ps1` with neutral test-root, source-root, and
+☑ Extend `Tools/Run-UnitTests.ps1` with neutral test-root, source-root, and
   dependency-root parameters while retaining the current defaults.
-☐ Rename `$LuaUnitArgs` to `$TestRunnerArgs` and preserve remaining-argument
+☑ Rename `$LuaUnitArgs` to `$TestRunnerArgs` and preserve remaining-argument
   passthrough.
-☐ Probe for exact `luasystem 0.3.0-2` and Busted `2.3.0-1` installations in the
+☑ Probe for exact `luasystem 0.3.0-2` and Busted `2.3.0-1` installations in the
   selected dependency root.
-☐ Install `luasystem 0.3.0-2` first and then Busted `2.3.0-1` when either exact
+☑ Install `luasystem 0.3.0-2` first and then Busted `2.3.0-1` when either exact
   dependency is absent; fail clearly on an unsuccessful install.
-☐ Construct dependency, test, and production entries for `LUA_PATH`.
-☐ Construct the repository-local native-module entries for `LUA_CPATH` so
+☑ Construct dependency, test, and production entries for `LUA_PATH`.
+☑ Construct the repository-local native-module entries for `LUA_CPATH` so
   luasystem can load its compiled module.
-☐ Preserve and restore the caller's `LUA_PATH` and `LUA_CPATH` values in all
+☑ Preserve and restore the caller's `LUA_PATH` and `LUA_CPATH` values in all
   success and failure paths.
-☐ Invoke the extensionless Busted launcher through the selected Lua executable
+☑ Invoke the extensionless Busted launcher through the selected Lua executable
   instead of relying on its file association.
-☐ Keep failure handling host-safe: capture the child exit code, restore the
+☑ Keep failure handling host-safe: capture the child exit code, restore the
   environment, and then throw from PowerShell without terminating the caller's
   host.
-☐ Add `Tests/busted_setup_spec.lua` with native Busted cases proving framework
+☑ Add `Tests/busted_setup_spec.lua` with native Busted cases proving framework
   loading, repository/source resolution, discovery, and the neutral opt-in
   failure path.
-☐ Verify a clean temporary dependency-root bootstrap, a warm repeat run, one
+☑ Verify a clean temporary dependency-root bootstrap, a warm repeat run, one
   `--filter` case, and the forced smoke failure.
 
 Exit gate: the Busted smoke spec can bootstrap and run from any working
 directory through `Tools/Run-UnitTests.ps1`, and failures propagate only after
 the process environment is restored.
+
+Phase 1 recorded evidence (2026-07-19):
+
+- `.busted` selects `_spec%.lua$`, `plainTerminal`, sorted files, and sorted
+  tests. With the 57 legacy `*_test.lua` suites still intentionally reserved
+  for Phase 2, default discovery ran only `Tests/busted_setup_spec.lua` and
+  reported `3 successes / 0 failures / 0 errors / 0 pending`.
+- `Tools/Run-UnitTests.ps1` now exposes neutral `TestRoot`, `SourceRoot`, and
+  `DependencyRoot` parameters plus `$TestRunnerArgs`. Positional binding is
+  disabled so an unrecognized token such as `--filter=loads the framework`
+  reaches Busted instead of being consumed as a path parameter.
+- A one-pass clean bootstrap ran from the sibling `CommonSense` working
+  directory against the absent temporary tree
+  `SoulSearch-Busted-Phase1-LuaRoot-20260719`. The runner created the tree,
+  installed `luasystem 0.3.0-2` first, installed Busted `2.3.0-1` second with
+  its dependencies, created the extensionless launcher, and passed all three
+  smoke cases.
+- Exact post-bootstrap probes with LuaRocks confirmed both requested versions.
+  The tree contained native `system/core.dll`, `term/core.dll`, and `lfs.dll`
+  modules under `lib/lua/5.4`, proving the configured `LUA_CPATH` layout.
+- This machine's global LuaRocks configuration incorrectly identifies
+  `luarocks.exe` as its Lua interpreter. The runner now passes the selected
+  Lua root and version explicitly to every LuaRocks probe/install. A clean run
+  proved that this removes the erroneous `luarocks.exe -e` diagnostics.
+- Correctly configured LuaRocks generates `bin/busted.bat` on Windows. To
+  preserve the phase's host-independent launch contract, the runner copies the
+  installed rock's extensionless command script to `bin/busted` when needed,
+  then invokes that script explicitly through the selected `lua.exe`.
+- A warm repeat against the clean tree emitted no install messages and again
+  passed 3/3. The verified temporary tree was then removed.
+- A default-root clean bootstrap installed the same exact pins into ignored
+  `.luarocks/`; its warm repeat passed 3/3 without reinstalling anything.
+- An arbitrary-working-directory run from `CommonSense` using default roots
+  and `--filter=resolves the repository` passed exactly 1/1. A separate run
+  with explicit absolute values for all three neutral root parameters and
+  `--filter=discovered only` also passed exactly 1/1.
+- With `UNIT_TEST_SMOKE_FORCE_FAILURE=1` and `--filter=propagates`, Busted
+  reported the intentional one-test failure and returned 1. The PowerShell
+  runner caught that code, restored its environment, and threw
+  `Unit tests failed with exit code 1.` without terminating the caller host.
+- Sentinel probes around both a targeted success and the forced failure
+  reported `lua_path_restored=True` and `lua_cpath_restored=True`.
+- PowerShell parsing, direct Lua parsing of `.busted` and the smoke spec, and
+  `git diff --check` passed. `Tools/Build.ps1 -LiveReload:$false` passed with
+  Lua 5.4.6 for 66 production and 65 test/support files. The package-tool
+  contract suite returned 0; its malformed-Lua diagnostic remained an expected
+  negative-path result.
+- `Tests/run.lua`, `Tests/luaunit_setup_test.lua`, and every other LuaUnit suite
+  remain unchanged for the Phase 2 dual-framework bridge.
 
 ## Phase 2 - Add temporary dual-framework validation
 
@@ -493,9 +542,11 @@ search failures.
 | Phase 0 targeted, forced-failure, and restoration baseline | complete | 2026-07-18: targeted case passed 1/1; smoke probe failed 1/1 and propagated nonzero; `LUA_PATH` and `LUA_TEST_FILES` restored after success and failure |
 | Phase 0 syntax-only build baseline | complete | 2026-07-18: Lua 5.4.6 checked 66 production and 64 test/support files |
 | Phase 0 package-tool baseline | complete | 2026-07-18: package tooling contract tests returned 0, including expected negative paths |
-| Busted and luasystem clean bootstrap | pending | |
-| Warm Busted dependency reuse | pending | |
-| Busted setup and opt-in failure smoke | pending | |
+| Busted and luasystem clean bootstrap | complete | 2026-07-19: absent temp tree created; exact luasystem 0.3.0-2 then Busted 2.3.0-1 installed; extensionless launcher created; smoke passed 3/3 |
+| Warm Busted dependency reuse | complete | 2026-07-19: temp and default `.luarocks` repeats passed 3/3 without install output; arbitrary working directory and explicit root parameters passed |
+| Busted setup and opt-in failure smoke | complete | 2026-07-19: default discovery passed 3/3; filtered cases passed 1/1; opt-in case failed 1/1 and propagated exit code 1 through a host-safe throw |
+| Phase 1 Busted environment restoration | complete | 2026-07-19: sentinel `LUA_PATH` and `LUA_CPATH` values restored after targeted success and forced failure |
+| Phase 1 syntax and package regression | complete | 2026-07-19: Lua 5.4.6 checked 66 production and 65 test/support files; package-tool contracts returned 0; `git diff --check` passed |
 | Temporary dual-framework aggregate runner | pending | |
 | Phase 3 pure-domain conversion parity | pending | |
 | Phase 4 provider/search conversion parity | pending | |
