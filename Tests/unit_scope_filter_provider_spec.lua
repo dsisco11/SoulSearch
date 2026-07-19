@@ -6,15 +6,11 @@ local function ids(units)
     return result
 end
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('unit scope filter provider', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
-    add_test('unit scope filter provider: applies the shared include and exclude algebra', function()
+    it('unit scope filter provider: applies the shared include and exclude algebra', function()
         local citizen, resident, visitor = {id=1}, {id=2}, {id=3}
         local dfhack = {units={
             isCitizen=function(unit) return unit == citizen end,
@@ -30,7 +26,7 @@ end
                 {id='unit_scope:fort_residents', direction='high'},
                 {id='unit_scope:citizens', direction='low'},
             })
-        luaunit.assertEquals({2}, ids(provider.get_units()))
+        assert.are.same({2}, ids(provider.get_units()))
     end)
 
-return native_tests
+end)

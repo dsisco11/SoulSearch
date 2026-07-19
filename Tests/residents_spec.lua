@@ -12,15 +12,11 @@ local function make_snapshot(overrides)
     return snapshot
 end
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('residents', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
-    add_test('residents: complete row transformation preserves current rules', function()
+    it('residents: complete row transformation preserves current rules', function()
         local residents = soulsearch_env.load_residents(repo_root)
         local snapshot = make_snapshot{
             unit={id=7},
@@ -34,39 +30,39 @@ end
             skills={{id=0, rating=2, experience=350}, {id=999, rating=20}},
         }
         local row = residents.build_resident_row(snapshot)
-        luaunit.assertIs(7, row.unit_id)
-        luaunit.assertIs('Urist "Strongpick"', row.name)
-        luaunit.assertIs('Miner', row.profession)
-        luaunit.assertIs(61, row.traits.PATIENCE)
-        luaunit.assertIs(900, row.mental_attributes.FOCUS)
-        luaunit.assertIs(1250, row.physical_attributes.STRENGTH)
+        assert.are.equal(7, row.unit_id)
+        assert.are.equal('Urist "Strongpick"', row.name)
+        assert.are.equal('Miner', row.profession)
+        assert.are.equal(61, row.traits.PATIENCE)
+        assert.are.equal(900, row.mental_attributes.FOCUS)
+        assert.are.equal(1250, row.physical_attributes.STRENGTH)
         -- Supported DFHack next-level cost is 500 + 100 * rating: 350/700.
-        luaunit.assertAlmostEquals(3.5, row.skills.MINING)
-        luaunit.assertNil(row.skills[999])
+        assert.near(3.5, row.skills.MINING, 2^-52)
+        assert.is_nil(row.skills[999])
     end)
 
-    add_test('residents: missing soul personality attributes and names fall back', function()
+    it('residents: missing soul personality attributes and names fall back', function()
         local residents = soulsearch_env.load_residents(repo_root)
         local row = residents.build_resident_row(make_snapshot{
             unit={id=9}, unit_id=9,
         })
-        luaunit.assertIs('Unit #9', row.name)
-        luaunit.assertIs('', row.profession)
-        luaunit.assertIs(0, #row.skills)
-        luaunit.assertNil(next(row.traits))
-        luaunit.assertNil(next(row.mental_attributes))
-        luaunit.assertNil(next(row.physical_attributes))
+        assert.are.equal('Unit #9', row.name)
+        assert.are.equal('', row.profession)
+        assert.are.equal(0, #row.skills)
+        assert.is_nil(next(row.traits))
+        assert.is_nil(next(row.mental_attributes))
+        assert.is_nil(next(row.physical_attributes))
     end)
 
-    add_test('residents: one available translation is retained', function()
+    it('residents: one available translation is retained', function()
         local residents = soulsearch_env.load_residents(repo_root)
         local row = residents.build_resident_row(make_snapshot{
             unit={id=10}, unit_id=10, english_name='The Smith',
         })
-        luaunit.assertIs('The Smith', row.name)
+        assert.are.equal('The Smith', row.name)
     end)
 
-    add_test('residents: skill-name cache reuses and explicitly resets', function()
+    it('residents: skill-name cache reuses and explicitly resets', function()
         local real_enums = soulsearch_env.load_df_enums(repo_root)
         local calls = 0
         local counted_enums = {
@@ -82,13 +78,13 @@ end
         }
         residents.build_resident_row(snapshot)
         residents.build_resident_row(snapshot)
-        luaunit.assertIs(1, calls)
+        assert.are.equal(1, calls)
         residents.reset_cache()
         residents.build_resident_row(snapshot)
-        luaunit.assertIs(2, calls)
+        assert.are.equal(2, calls)
     end)
 
-    add_test('resident collection: unnamed units use the game-readable name', function()
+    it('resident collection: unnamed units use the game-readable name', function()
         local unit = {id=12, status={}}
         local dfhack_stub = {
             isMapLoaded=function() return true end,
@@ -105,18 +101,18 @@ end
         }
         local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
         local rows = residents.collect_residents()
-        luaunit.assertIs(1, #rows)
-        luaunit.assertIs('Stray horse (Tame)', rows[1].name)
-        luaunit.assertIs('', rows[1].profession)
-        luaunit.assertNil(next(rows[1].traits))
+        assert.are.equal(1, #rows)
+        assert.are.equal('Stray horse (Tame)', rows[1].name)
+        assert.are.equal('', rows[1].profession)
+        assert.is_nil(next(rows[1].traits))
 
         dfhack_stub.units.getCitizens = function() error('citizen read failed') end
         local ok, err = pcall(residents.collect_residents)
-        luaunit.assertEvalToFalse(ok)
-        luaunit.assertEvalToTrue(tostring(err):find('citizen read failed', 1, true) ~= nil)
+        assert.is_falsy(ok)
+        assert.is_truthy(tostring(err):find('citizen read failed', 1, true) ~= nil)
     end)
 
-    add_test('resident collection: uses the citizen source and preserves its order', function()
+    it('resident collection: uses the citizen source and preserves its order', function()
         local citizen_args
         local first = {id=30, status={}}
         local second = {id=10, status={}}
@@ -138,13 +134,13 @@ end
         }
         local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
         local rows = residents.collect_residents()
-        luaunit.assertEquals({false, true}, citizen_args)
-        luaunit.assertEquals({30, 10}, {rows[1].unit_id, rows[2].unit_id})
-        luaunit.assertEquals({'Stray cat (Tame)', 'Stray dog (Tame)'},
+        assert.are.same({false, true}, citizen_args)
+        assert.are.same({30, 10}, {rows[1].unit_id, rows[2].unit_id})
+        assert.are.same({'Stray cat (Tame)', 'Stray dog (Tame)'},
             {rows[1].name, rows[2].name})
     end)
 
-    add_test('resident collection: snapshots only provider candidates and tolerates animals', function()
+    it('resident collection: snapshots only provider candidates and tolerates animals', function()
         local citizen = {id=30, status={}}
         local animal = {id=10, status={}}
         local dfhack_stub = {
@@ -163,19 +159,19 @@ end
         local rows = residents.collect_from_provider{
             get_units=function() return {animal, citizen} end,
         }
-        luaunit.assertEquals({10, 30}, {rows[1].unit_id, rows[2].unit_id})
-        luaunit.assertIs('War dog', rows[1].name)
-        luaunit.assertIs('', rows[1].profession)
-        luaunit.assertNil(next(rows[1].traits))
+        assert.are.same({10, 30}, {rows[1].unit_id, rows[2].unit_id})
+        assert.are.equal('War dog', rows[1].name)
+        assert.are.equal('', rows[1].profession)
+        assert.is_nil(next(rows[1].traits))
 
         local missing, err = residents.collect_from_provider{
             get_units=function() return nil, 'candidate source unavailable' end,
         }
-        luaunit.assertNil(missing)
-        luaunit.assertIs('candidate source unavailable', err)
+        assert.is_nil(missing)
+        assert.are.equal('candidate source unavailable', err)
     end)
 
-    add_test('resident collection: one-unit path preserves row semantics', function()
+    it('resident collection: one-unit path preserves row semantics', function()
         local unit = {id=42, status={}}
         local dfhack_stub = {
             units={
@@ -189,16 +185,16 @@ end
         }
         local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
         local row = residents.collect_units({unit})[1]
-        luaunit.assertIs(unit, row.unit)
-        luaunit.assertIs(42, row.unit_id)
-        luaunit.assertIs('Stray yak (Tame)', row.name)
-        luaunit.assertIs('', row.profession)
-        luaunit.assertNil(next(row.traits))
-        luaunit.assertNil(next(row.mental_attributes))
-        luaunit.assertNil(next(row.physical_attributes))
+        assert.are.equal(unit, row.unit)
+        assert.are.equal(42, row.unit_id)
+        assert.are.equal('Stray yak (Tame)', row.name)
+        assert.are.equal('', row.profession)
+        assert.is_nil(next(row.traits))
+        assert.is_nil(next(row.mental_attributes))
+        assert.is_nil(next(row.physical_attributes))
     end)
 
-    add_test('resident collection: collect_unit validates safely and preserves parity', function()
+    it('resident collection: collect_unit validates safely and preserves parity', function()
         local unit = {id=42, status={}}
         local printed = 0
         local dfhack_stub = {
@@ -217,26 +213,26 @@ end
         local residents = soulsearch_env.load_residents(repo_root, nil, dfhack_stub)
         local expected = residents.collect_units({unit})[1]
         local row, err = residents.collect_unit(unit)
-        luaunit.assertNil(err)
-        luaunit.assertIs(expected.unit_id, row.unit_id)
-        luaunit.assertIs(expected.name, row.name)
+        assert.is_nil(err)
+        assert.are.equal(expected.unit_id, row.unit_id)
+        assert.are.equal(expected.name, row.name)
         local invalid, invalid_err = residents.collect_unit({id=-1})
-        luaunit.assertNil(invalid)
-        luaunit.assertIs('SoulSearch requires a valid unit.', invalid_err)
+        assert.is_nil(invalid)
+        assert.are.equal('SoulSearch requires a valid unit.', invalid_err)
         local missing, missing_err = residents.collect_unit(nil)
-        luaunit.assertNil(missing)
-        luaunit.assertIs('SoulSearch requires a valid unit.', missing_err)
+        assert.is_nil(missing)
+        assert.are.equal('SoulSearch requires a valid unit.', missing_err)
         local raised, raised_err = residents.collect_unit(setmetatable({}, {
             __index=function() error('stale') end,
         }))
-        luaunit.assertNil(raised)
-        luaunit.assertIs('SoulSearch requires a valid unit.', raised_err)
-        luaunit.assertIs(0, printed)
+        assert.is_nil(raised)
+        assert.are.equal('SoulSearch requires a valid unit.', raised_err)
+        assert.are.equal(0, printed)
 
         dfhack_stub.isMapLoaded=function() return false end
         local unavailable, unavailable_err = residents.collect_unit(nil)
-        luaunit.assertNil(unavailable)
-        luaunit.assertIs('SoulSearch requires a loaded fortress map.', unavailable_err)
+        assert.is_nil(unavailable)
+        assert.are.equal('SoulSearch requires a loaded fortress map.', unavailable_err)
     end)
 
-return native_tests
+end)

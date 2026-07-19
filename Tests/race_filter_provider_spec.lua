@@ -25,15 +25,11 @@ local function filter(id, direction)
     return {id=id, direction=direction or 'high'}
 end
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('race filter provider', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
-    add_test('race provider: positives union and negatives subtract in source order', function()
+    it('race provider: positives union and negatives subtract in source order', function()
         local upstream_calls = 0
         local source = {
             {id=1, race=1, caste=0},
@@ -52,12 +48,12 @@ end
                 filter('race:raw:DWARF', 'low'),
             })
         local units, err = provider.get_units()
-        luaunit.assertNil(err)
-        luaunit.assertIs(1, upstream_calls)
-        luaunit.assertEquals({2, 3}, ids(units))
+        assert.is_nil(err)
+        assert.are.equal(1, upstream_calls)
+        assert.are.same({2, 3}, ids(units))
     end)
 
-    add_test('race provider: negative-only input excludes from the upstream scope', function()
+    it('race provider: negative-only input excludes from the upstream scope', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return {
                 {id=1, race=1, caste=0},
@@ -67,10 +63,10 @@ end
         end)
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {filter('race:raw:DWARF', 'low')})
-        luaunit.assertEquals({2, 3}, ids(provider.get_units()))
+        assert.are.same({2, 3}, ids(provider.get_units()))
     end)
 
-    add_test('race provider: exclusions support humanoids except dwarves and animals except dogs', function()
+    it('race provider: exclusions support humanoids except dwarves and animals except dogs', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return {
                 {id=1, race=1, caste=0},
@@ -84,32 +80,32 @@ end
                 filter('race:group:HUMANOIDS'),
                 filter('race:raw:DWARF', 'low'),
             })
-        luaunit.assertEquals({3}, ids(provider.get_units()))
+        assert.are.same({3}, ids(provider.get_units()))
 
         provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {
                 filter('race:group:TAMEABLE_ANIMALS'),
                 filter('race:raw:DOG', 'low'),
             })
-        luaunit.assertEquals({4}, ids(provider.get_units()))
+        assert.are.same({4}, ids(provider.get_units()))
     end)
 
-    add_test('race provider: upstream errors propagate without a partial set', function()
+    it('race provider: upstream errors propagate without a partial set', function()
         local upstream = soulsearch_env.load_candidate_provider(repo_root).new(function()
             return nil, 'scope unavailable'
         end)
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df()).new(
             upstream, {filter('race:group:HUMANOIDS')})
         local units, err = provider.get_units()
-        luaunit.assertNil(units)
-        luaunit.assertIs('scope unavailable', err)
+        assert.is_nil(units)
+        assert.are.equal('scope unavailable', err)
     end)
 
-    add_test('race provider: invalid upstream providers fail at construction', function()
+    it('race provider: invalid upstream providers fail at construction', function()
         local provider = soulsearch_env.load_race_filter_provider(repo_root, make_df())
         local ok, err = pcall(provider.new, {})
-        luaunit.assertEvalToFalse(ok)
-        luaunit.assertEvalToTrue(tostring(err):find('requires an upstream candidate provider', 1, true) ~= nil)
+        assert.is_falsy(ok)
+        assert.is_truthy(tostring(err):find('requires an upstream candidate provider', 1, true) ~= nil)
     end)
 
-return native_tests
+end)

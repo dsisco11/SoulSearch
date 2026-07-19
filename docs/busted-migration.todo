@@ -522,25 +522,150 @@ Convert these 11 suites to native Busted specs:
 - `unit_scope_filter_provider`, `search_session`, and `search`; and
 - `candidate_pipeline_characterization`.
 
-☐ Apply the standard native-suite and assertion conversion to each named file.
-☐ Preserve every generated attribute, skill, direction, scope, race, and
+☑ Apply the standard native-suite and assertion conversion to each named file.
+☑ Preserve every generated attribute, skill, direction, scope, race, and
   candidate matrix case as a separately reported Busted test.
-☐ Preserve module-loader and DFHack-stub isolation between tests.
-☐ Supply the former LuaUnit epsilon explicitly for all four approximate
+☑ Preserve module-loader and DFHack-stub isolation between tests.
+☑ Supply the former LuaUnit epsilon explicitly for all four approximate
   comparisons.
-☐ Convert `search` without modifying ranking production code or weakening any
+☑ Convert `search` without modifying ranking production code or weakening any
   expectation.
-☐ Verify `search_spec.lua` still reports the same four failures by exact name
+☑ Verify `search_spec.lua` still reports the same four failures by exact name
   and that its other cases pass.
-☐ Run all currently converted Busted specs and prove the only failures are the
+☑ Run all currently converted Busted specs and prove the only failures are the
   four accepted `search` cases.
-☐ Reconcile the Phase 0 manifest for this batch and prove the repository now
+☑ Reconcile the Phase 0 manifest for this batch and prove the repository now
   contains exactly 30 native specs: the 19 from Phase 2 plus these 11.
-☐ Record the current Busted test total and per-spec case names for final-count
+☑ Record the current Busted test total and per-spec case names for final-count
   reconciliation.
 
 Exit gate: all provider, domain-scoring, candidate-pipeline, and search behavior
 is represented by 30 native Busted specs, with only the four accepted failures.
+
+Phase 3 recorded evidence (2026-07-19):
+
+- All 11 named files were renamed to `*_spec.lua` and converted directly to
+  `describe()`, `it()`, and Luassert. Static searches of all native specs found
+  no active `luaunit`, `native_tests`, or `add_test` references.
+- Conversion reconciliation found 190 baseline assertions and 190 native
+  assertions, plus 54 baseline static case registrations and 54 native static
+  registrations. The generated matrices expand the batch to 79 runtime cases.
+- All four approximate comparisons use `assert.near` with the former LuaUnit
+  double-precision default epsilon supplied explicitly as `2^-52`.
+- Each spec was run directly. Ten specs passed cleanly. `search_spec.lua` ran
+  21 cases with 17 successes and exactly the four accepted failures:
+  `ranking: earlier selected filter receives priority bonus`,
+  `ranking: full and partial matches remain in results`,
+  `ranking: mixed stat kinds evaluate together`, and
+  `ranking: raw score breaks an exact weighted-score tie`.
+- The complete current Busted suite ran 169 tests and reported
+  `165 successes / 4 failures / 0 errors / 0 pending`. No production or runner
+  file changed, and no other case failed.
+- Independent regression validation passed: Lua 5.4.6 parsed 66 production
+  files and 64 test/support files, the package-tool contract suite returned 0,
+  and `git diff --check` reported no errors.
+- The Phase 0 manifest reconciles to exactly 30 native specs: the 19 Phase 2
+  specs plus these 11. The 27 remaining `*_test.lua` files belong to Phases 4
+  and 5.
+- Per-spec runtime totals are: `active_unit_provider` 2;
+  `candidate_provider` 2; `candidate_filter_family_provider` 3;
+  `race_filter_provider` 5; `attribute_descriptions` 2; `attributes` 27;
+  `residents` 9; `unit_scope_filter_provider` 1; `search_session` 5;
+  `search` 21; and `candidate_pipeline_characterization` 2.
+- `--list` reported these exact native case names (suite prefixes included):
+
+```text
+[active_unit_provider]
+active unit provider active unit provider: preserves source order and removes duplicates and inactive units
+active unit provider active unit provider: returns no partial candidates when unavailable
+[candidate_provider]
+candidate provider candidate provider: preserves the supplied collection contract
+candidate provider candidate provider: requires a collection function
+[candidate_filter_family_provider]
+candidate filter family provider candidate filter family: empty, positive, union, negative, and include-except behavior
+candidate filter family provider candidate filter family: ignores stale, duplicate, invalid, and other-kind filters
+candidate filter family provider candidate filter family: propagates upstream errors without partial candidates
+[race_filter_provider]
+race filter provider race provider: exclusions support humanoids except dwarves and animals except dogs
+race filter provider race provider: invalid upstream providers fail at construction
+race filter provider race provider: negative-only input excludes from the upstream scope
+race filter provider race provider: positives union and negatives subtract in source order
+race filter provider race provider: upstream errors propagate without a partial set
+[attribute_descriptions]
+attribute descriptions Attribute descriptions: explain known attributes and traits
+attribute descriptions Attribute descriptions: future enum values receive a fallback
+[attributes]
+attributes attributes tier: negative inside neutral tier
+attributes attributes tier: negative tier boundary
+attributes attributes tier: positive inside neutral tier
+attributes attributes tier: positive tier boundary
+attributes attributes tier: second negative tier boundary
+attributes attributes tier: second positive tier boundary
+attributes attributes: mental above race median
+attributes attributes: mental at race median
+attributes attributes: mental below race median
+attributes attributes: physical above race median
+attributes attributes: physical at race median
+attributes attributes: physical below race median
+attributes directions: mental high
+attributes directions: mental low
+attributes directions: neutral does not match high
+attributes directions: neutral does not match low
+attributes directions: physical high
+attributes directions: physical low
+attributes directions: trait high
+attributes directions: trait low
+attributes scores: missing values do not evaluate or match
+attributes scores: physical high and low clamp to one
+attributes skills: absent skill
+attributes skills: dabbling/progress skill
+attributes skills: high skill clamps score
+attributes traits: caste-aware baseline and tier distance
+attributes traits: default baseline fallback
+[residents]
+residents resident collection: collect_unit validates safely and preserves parity
+residents resident collection: one-unit path preserves row semantics
+residents resident collection: snapshots only provider candidates and tolerates animals
+residents resident collection: unnamed units use the game-readable name
+residents resident collection: uses the citizen source and preserves its order
+residents residents: complete row transformation preserves current rules
+residents residents: missing soul personality attributes and names fall back
+residents residents: one available translation is retained
+residents residents: skill-name cache reuses and explicitly resets
+[unit_scope_filter_provider]
+unit scope filter provider unit scope filter provider: applies the shared include and exclude algebra
+[search_session]
+search session Search session: candidate rows do not alias caller snapshots
+search session Search session: filter transitions preserve validated snapshots
+search session Search session: filters, queries, and sort are isolated
+search session Search session: multiple unit scopes remain candidate filters
+search session Search session: rows recompute and retain selected unit identity
+[search]
+search ranking: earlier selected filter receives priority bonus
+search ranking: full and partial matches remain in results
+search ranking: missing trait is omitted and absent skill supports low
+search ranking: mixed stat kinds evaluate together
+search ranking: name breaks complete score tie
+search ranking: raw score breaks an exact weighted-score tie
+search ranking: unit ID breaks complete score and name tie
+search result column sort: uses the selected column then relevance
+search result comparator: equal values do not reorder
+search result comparator: matched count
+search result comparator: raw score
+search result comparator: resident name
+search result comparator: unit ID
+search result comparator: weighted score
+search result model: contains only consumed presentation and sort data
+search search filters: candidate descriptors are ignored by the ranker
+search search filters: validates entries and keeps first valid duplicate
+search search query: case-insensitive query
+search search query: empty includes all and uses name then unit ID
+search search query: matching query
+search search query: nonmatching query
+[candidate_pipeline_characterization]
+candidate pipeline characterization candidate pipeline: end-to-end scope and race matrix
+candidate pipeline characterization candidate pipeline: ranking receives only the candidate-filtered rows
+```
 
 ## Phase 4 - Convert reusable UI and presentation suites
 
@@ -668,7 +793,7 @@ search failures.
 | Phase 1 Busted environment restoration | complete | 2026-07-19: sentinel `LUA_PATH` and `LUA_CPATH` values restored after targeted success and forced failure |
 | Phase 1 syntax and package regression | complete | 2026-07-19: Lua 5.4.6 checked 66 production and 65 test/support files; package-tool contracts returned 0; `git diff --check` passed |
 | Phase 2 pure-domain native conversion | complete | 2026-07-19: exactly 19 native specs and 90 cases; every spec passed alone and the full batch passed 90/90; syntax checked 66 production and 64 test/support files; package contracts and `git diff --check` passed |
-| Phase 3 provider/search native conversion | pending | |
+| Phase 3 provider/search native conversion | complete | 2026-07-19: 11 converted specs add 79 cases; exactly 30 native specs run 169 tests with 165 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 4 UI/presentation native conversion | pending | |
 | Phase 5 integration conversion and final parity | pending | |
 | Native Busted-only 332-test manifest | pending | |

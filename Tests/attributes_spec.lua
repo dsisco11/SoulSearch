@@ -1,13 +1,9 @@
 local soulsearch_env = require('support.soulsearch_env')
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('attributes', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
     local attributes = soulsearch_env.load_attributes(repo_root)
 
     local attribute_cases = {
@@ -44,12 +40,12 @@ end
     }
 
     for _, case in ipairs(attribute_cases) do
-        add_test('attributes: ' .. case.name, function()
+        it('attributes: ' .. case.name, function()
             local evaluation = attributes.evaluate(
                 case.kind, case.key, case.value, case.unit)
-            luaunit.assertIs(case.baseline, evaluation.baseline)
-            luaunit.assertIs(case.deviation, evaluation.deviation)
-            luaunit.assertIs(case.tier_distance, evaluation.tier_distance)
+            assert.are.equal(case.baseline, evaluation.baseline)
+            assert.are.equal(case.deviation, evaluation.deviation)
+            assert.are.equal(case.tier_distance, evaluation.tier_distance)
         end)
     end
 
@@ -62,28 +58,28 @@ end
         {name='second negative tier boundary', value=750, expected=2},
     }
     for _, case in ipairs(tier_cases) do
-        add_test('attributes tier: ' .. case.name, function()
+        it('attributes tier: ' .. case.name, function()
             local evaluation = attributes.evaluate(
                 'physical_attribute', 'STRENGTH', case.value, {race=1})
-            luaunit.assertIs(case.expected, evaluation.tier_distance)
+            assert.are.equal(case.expected, evaluation.tier_distance)
         end)
     end
 
-    add_test('traits: caste-aware baseline and tier distance', function()
+    it('traits: caste-aware baseline and tier distance', function()
         local unit = {trait_baselines={PATIENCE=60}}
         local evaluation = attributes.evaluate('trait', 'PATIENCE', 82, unit)
-        luaunit.assertIs(60, evaluation.baseline)
-        luaunit.assertIs(22, evaluation.deviation)
-        luaunit.assertIs(2, evaluation.tier_distance)
-        luaunit.assertIs(40, evaluation.high_score_scale)
-        luaunit.assertIs(60, evaluation.low_score_scale)
+        assert.are.equal(60, evaluation.baseline)
+        assert.are.equal(22, evaluation.deviation)
+        assert.are.equal(2, evaluation.tier_distance)
+        assert.are.equal(40, evaluation.high_score_scale)
+        assert.are.equal(60, evaluation.low_score_scale)
     end)
 
-    add_test('traits: default baseline fallback', function()
+    it('traits: default baseline fallback', function()
         local evaluation = attributes.evaluate('trait', 'PATIENCE', 40, {})
-        luaunit.assertIs(50, evaluation.baseline)
-        luaunit.assertIs(-10, evaluation.deviation)
-        luaunit.assertIs(1, evaluation.tier_distance)
+        assert.are.equal(50, evaluation.baseline)
+        assert.are.equal(-10, evaluation.deviation)
+        assert.are.equal(1, evaluation.tier_distance)
     end)
 
     local skill_cases = {
@@ -92,12 +88,12 @@ end
         {name='high skill clamps score', value=25, high=true, low=false, high_score=1, low_score=0},
     }
     for _, case in ipairs(skill_cases) do
-        add_test('skills: ' .. case.name, function()
+        it('skills: ' .. case.name, function()
             local evaluation = attributes.evaluate('skill', 'MINING', case.value, {})
-            luaunit.assertIs(case.high, attributes.matches_direction(evaluation, 'high'))
-            luaunit.assertIs(case.low, attributes.matches_direction(evaluation, 'low'))
-            luaunit.assertAlmostEquals(case.high_score, attributes.score_direction(evaluation, 'high'))
-            luaunit.assertAlmostEquals(case.low_score, attributes.score_direction(evaluation, 'low'))
+            assert.are.equal(case.high, attributes.matches_direction(evaluation, 'high'))
+            assert.are.equal(case.low, attributes.matches_direction(evaluation, 'low'))
+            assert.near(case.high_score, attributes.score_direction(evaluation, 'high'), 2^-52)
+            assert.near(case.low_score, attributes.score_direction(evaluation, 'low'), 2^-52)
         end)
     end
 
@@ -112,28 +108,28 @@ end
         {name='neutral does not match low', kind='physical_attribute', key='STRENGTH', value=1250, unit={race=1}, direction='low', expected=false},
     }
     for _, case in ipairs(direction_cases) do
-        add_test('directions: ' .. case.name, function()
+        it('directions: ' .. case.name, function()
             local evaluation = attributes.evaluate(
                 case.kind, case.key, case.value, case.unit)
-            luaunit.assertIs(
+            assert.are.equal(
                 case.expected,
                 attributes.matches_direction(evaluation, case.direction))
         end)
     end
 
-    add_test('scores: physical high and low clamp to one', function()
+    it('scores: physical high and low clamp to one', function()
         local high = attributes.evaluate(
             'physical_attribute', 'AGILITY', 7000, {race=1})
         local low = attributes.evaluate(
             'physical_attribute', 'AGILITY', -5000, {race=1})
-        luaunit.assertIs(1, attributes.score_direction(high, 'high'))
-        luaunit.assertIs(1, attributes.score_direction(low, 'low'))
+        assert.are.equal(1, attributes.score_direction(high, 'high'))
+        assert.are.equal(1, attributes.score_direction(low, 'low'))
     end)
 
-    add_test('scores: missing values do not evaluate or match', function()
-        luaunit.assertNil(attributes.evaluate('trait', 'PATIENCE', nil, {}))
-        luaunit.assertEvalToFalse(attributes.matches_direction(nil, 'high'))
-        luaunit.assertIs(0, attributes.score_direction(nil, 'low'))
+    it('scores: missing values do not evaluate or match', function()
+        assert.is_nil(attributes.evaluate('trait', 'PATIENCE', nil, {}))
+        assert.is_falsy(attributes.matches_direction(nil, 'high'))
+        assert.are.equal(0, attributes.score_direction(nil, 'low'))
     end)
 
-return native_tests
+end)
