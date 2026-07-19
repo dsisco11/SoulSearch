@@ -6,44 +6,40 @@ local function ids(filters)
     return result
 end
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('filter defaults', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
     local defaults = soulsearch_env.load_filter_defaults(repo_root)
 
-    add_test('built-in presets: expose every explicit wiki skill row', function()
+    it('built-in presets: expose every explicit wiki skill row', function()
         local labels = {}
         for _, preset in ipairs(defaults.get_all()) do
             table.insert(labels, preset.label)
         end
-        luaunit.assertIs(137, #labels)
-        luaunit.assertIs('Miner', labels[1])
-        luaunit.assertIs('Stone carver', labels[#labels])
-        luaunit.assertNil(defaults.get('scholar'))
-        luaunit.assertNil(defaults.get('sheriff'))
-        luaunit.assertNil(defaults.get('manager'))
+        assert.are.equal(137, #labels)
+        assert.are.equal('Miner', labels[1])
+        assert.are.equal('Stone carver', labels[#labels])
+        assert.is_nil(defaults.get('scholar'))
+        assert.is_nil(defaults.get('sheriff'))
+        assert.is_nil(defaults.get('manager'))
     end)
 
-    add_test('built-in presets: preserve wiki A, B, C priority order', function()
-        luaunit.assertEquals({
+    it('built-in presets: preserve wiki A, B, C priority order', function()
+        assert.are.same({
             'physical:AGILITY',
             'mental:SPATIAL_SENSE',
             'mental:KINESTHETIC_SENSE',
             'mental:FOCUS',
         }, ids(assert(defaults.get('crossbowman'))))
-        luaunit.assertEquals({
+        assert.are.same({
             'mental:ANALYTICAL_ABILITY',
             'mental:SPATIAL_SENSE',
             'mental:MEMORY',
         }, ids(assert(defaults.get('mathematician'))))
     end)
 
-    add_test('built-in presets: cover every wiki soul attribute', function()
+    it('built-in presets: cover every wiki soul attribute', function()
         local actual = {}
         for _, preset in ipairs(defaults.get_all()) do
             for _, filter in ipairs(preset.filters) do
@@ -51,7 +47,7 @@ end
                 if attribute then actual[attribute] = true end
             end
         end
-        luaunit.assertEquals({
+        assert.are.same({
             ANALYTICAL_ABILITY=true,
             CREATIVITY=true,
             EMPATHY=true,
@@ -68,12 +64,12 @@ end
         }, actual)
     end)
 
-    add_test('built-in presets: reads do not alias the catalog', function()
+    it('built-in presets: reads do not alias the catalog', function()
         local filters = assert(defaults.get('miner'))
         filters[1].id = 'physical:AGILITY'
-        luaunit.assertIs('physical:STRENGTH',
+        assert.are.equal('physical:STRENGTH',
             assert(defaults.get('miner'))[1].id)
-        luaunit.assertNil(defaults.get('unknown'))
+        assert.is_nil(defaults.get('unknown'))
     end)
 
-return native_tests
+end)

@@ -357,9 +357,9 @@ Phase 1 recorded evidence (2026-07-19):
 
 ## Phase 2 - Convert setup, support-contract, and pure-domain suites
 
-☐ Ensure the Busted setup spec replaces, rather than duplicates, the three
+☑ Ensure the Busted setup spec replaces, rather than duplicates, the three
   cases in `luaunit_setup_test.lua`.
-☐ Remove `luaunit_setup_test.lua` after the Busted smoke cases prove parity.
+☑ Remove `luaunit_setup_test.lua` after the Busted smoke cases prove parity.
 
 Convert these 18 remaining suites to native Busted specs:
 
@@ -371,26 +371,146 @@ Convert these 18 remaining suites to native Busted specs:
 
 For every suite:
 
-☐ Rename `Tests/<name>_test.lua` to `Tests/<name>_spec.lua`.
-☐ Remove `require('luaunit')`, the returned `native_tests` table, the local
+☑ Rename `Tests/<name>_test.lua` to `Tests/<name>_spec.lua`.
+☑ Remove `require('luaunit')`, the returned `native_tests` table, the local
   `add_test()` bridge, and the final suite-table return.
-☐ Register the file as a named `describe()` block and every existing case as a
+☑ Register the file as a named `describe()` block and every existing case as a
   native `it()` block.
-☐ Convert assertions according to the assertion conversion contract.
-☐ Preserve dynamic case generation, names, fixture inputs, execution order
+☑ Convert assertions according to the assertion conversion contract.
+☑ Preserve dynamic case generation, names, fixture inputs, execution order
   assumptions, and support-harness isolation.
-☐ Run the converted spec directly while editing it.
-☐ After the batch, run all currently converted Busted specs and require every
+☑ Run the converted spec directly while editing it.
+☑ After the batch, run all currently converted Busted specs and require every
   case to pass; the four accepted `search` failures are not present until
   `search` is converted in Phase 3.
-☐ Reconcile the Phase 0 manifest against the setup replacement and 18 renamed
+☑ Reconcile the Phase 0 manifest against the setup replacement and 18 renamed
   suites, proving exactly 19 native specs with no duplicate or omitted suite.
-☐ Record the current Busted test total and the per-spec case names as the
+☑ Record the current Busted test total and the per-spec case names as the
   conversion evidence for later final-count reconciliation.
 
 Exit gate: the setup spec plus all 18 named suites run natively under Busted;
 all converted cases pass, and their 19-file manifest maps one-to-one to the
 corresponding Phase 0 suites.
+
+Phase 2 recorded evidence (2026-07-19):
+
+- The three native `busted_setup_spec.lua` cases replace the three legacy setup
+  cases. `luaunit_setup_test.lua` was removed, so setup is not duplicated.
+- The 18 named LuaUnit files were renamed to native `*_spec.lua` files. Static
+  searches of all 19 specs found no `luaunit`, `native_tests`, or `add_test`
+  references, and direct Lua parsing succeeded for every spec.
+- Conversion reconciliation found 357 baseline assertions and 357 native
+  assertions, plus 83 baseline static case registrations and 83 native static
+  registrations. The generated `filter_state` matrix expands those static
+  registrations into five separately reported transition cases.
+- The Phase 0 manifest reconciles to exactly 19 native specs: setup plus the 18
+  named conversions. There are no missing or extra spec stems in this batch.
+- Every spec passed in an isolated filtered run. The per-spec runtime totals
+  were: setup 3; `script_harness` 2; `package_contract` 3; `availability` 1;
+  `filter_constants` 1; `filter_defaults` 4; `filter_state` 23;
+  `filter_presets` 5; `keybindings` 6; `lifecycle` 3; `metadata` 9;
+  `module_registry` 4; `race_catalog` 5; `role_presets` 6; `text_match` 1;
+  `unit_identity` 1; `unit_scope_catalog` 4; `window_config` 4; and
+  `window_settings` 5.
+- The full current Busted discovery ran 90 tests and reported
+  `90 successes / 0 failures / 0 errors / 0 pending`.
+- Independent regression validation passed: Lua 5.4.6 parsed 66 production
+  files and 64 test/support files, the package-tool contract suite returned 0,
+  and `git diff --check` reported no errors.
+- `--list` reported these exact native case names (suite prefixes included):
+
+```text
+availability availability: no map, wrong mode, and valid fortress have one policy
+Busted setup is discovered only through the spec filename convention
+Busted setup loads the framework and resolves the repository source root
+Busted setup propagates an opt-in failure
+filter constants filter constants: preserve serialized filter protocol values
+filter defaults built-in presets: cover every wiki soul attribute
+filter defaults built-in presets: expose every explicit wiki skill row
+filter defaults built-in presets: preserve wiki A, B, C priority order
+filter defaults built-in presets: reads do not alias the catalog
+filter presets filter presets: load returns an isolated filter copy
+filter presets filter presets: missing preset directory is an empty list
+filter presets filter presets: names are listed alphabetically and safely
+filter presets filter presets: preserve mixed candidate and ranking entries
+filter presets filter presets: save writes versioned JSON data
+filter state filter state add: defaults to high and duplicate is a no-op
+filter state filter state add: invalid ID and direction are no-ops
+filter state filter state behavior projections preserve ranking order and isolation
+filter state filter state direction: active changes and unchanged is a no-op
+filter state filter state direction: inactive filter is added atomically
+filter state filter state move: candidate filters never acquire ranking priority
+filter state filter state move: clamps first and last boundaries
+filter state filter state move: reorders and reports the new priority
+filter state filter state permits an empty candidate scope
+filter state filter state reads do not alias live state
+filter state filter state removes humanoids when another race is included
+filter state filter state replace validates and preserves preset order
+filter state filter state replace: legacy and stale race presets are cleaned
+filter state filter state search serialization preserves priority order
+filter state filter state transition: add appends a valid filter
+filter state filter state transition: clear ignores an empty state
+filter state filter state transition: clear removes every filter
+filter state filter state transition: remove deletes an active filter
+filter state filter state transition: remove ignores an inactive filter
+filter state filter state validation: skips stale duplicate and malformed entries
+filter state filter state: loading a scope-free preset replaces the complete filter list
+filter state filter state: shipped presets preserve only their ranking filters
+filter state filter state: unit-scope candidates cannot acquire ranking priority
+keybindings keybindings: adds the default when Ctrl-F is unclaimed
+keybindings keybindings: does not duplicate its existing Ctrl-F binding
+keybindings keybindings: does not replace another Ctrl-F binding
+keybindings keybindings: ignores bindings on other hotkeys
+keybindings keybindings: ignores malformed rows
+keybindings keybindings: unavailable APIs and add failures fail safely
+lifecycle attributes and descriptors: caches reuse then reset explicitly
+lifecycle lifecycle: cache resets occur once per world boundary
+lifecycle lifecycle: world changes retain settings until module reload
+metadata descriptor catalog: caches one catalog with indexed IDs
+metadata descriptor catalog: preserves group and flat ordering
+metadata descriptor catalog: rejects duplicate descriptor IDs
+metadata descriptor catalog: scopes and races are candidates and stats are ranking descriptors
+metadata descriptor catalog: selected-filter search does not traverse enums
+metadata df enums: excludes NONE and orders sparse numeric values
+metadata skill taxonomy: every fixture skill is explicit or fallback
+metadata skill taxonomy: preserves category order and aliases
+metadata skill taxonomy: reports fallback keys without printing
+module registry module registry: clear order is reverse dependency order
+module registry module registry: missing contracts fail clearly
+module registry module registry: pointer infrastructure has the reload contract
+module registry module registry: validates real contracts in dependency order
+package contract package contract: bootstrap annotations and dependency are present
+package contract package contract: public commands are present
+package contract package contract: required metadata is present
+race catalog race catalog: compound predicates use documented caste flags
+race catalog race catalog: compounds precede stable sorted individual IDs
+race catalog race catalog: duplicate creature IDs fail clearly and cache resets
+race catalog race catalog: missing raws and caste data never match
+race catalog race catalog: raw-vector order does not affect individual IDs
+role presets role presets: add the missing leadership, service, and culture roles
+role presets role presets: expose the researched roles in a stable order
+role presets role presets: merge each selected skill preset attributes
+role presets role presets: put role skills before wiki-priority attributes
+role presets role presets: resolve version-specific skill key fallbacks
+role presets role presets: separate complete combat presets and add dodging
+script harness script harness: missing fake dependencies fail explicitly
+script harness script harness: supplies only explicit dependencies and overrides
+text match text matching: nil and coercion contract
+unit identity unit identity: owns the unit name and title labels
+unit scope catalog unit scope catalog: livestock requires fort control and a livestock caste
+unit scope catalog unit scope catalog: pets use the DFHack pet predicate
+unit scope catalog unit scope catalog: preserves existing membership predicates
+unit scope catalog unit scope catalog: stable candidate descriptors have player-facing labels
+window config window config: all_active removes inherited unit scopes and malformed scalars do nothing
+window config window config: explicit filter scopes take precedence over a simultaneous legacy scalar
+window config window config: legacy scalar options become canonical scope filters without aliasing inputs
+window config window config: primary defaults retain only Humanoids
+window settings window settings: field updates merge the latest snapshot
+window settings window settings: identities are independent and clearable
+window settings window settings: missing and empty identities use default
+window settings window settings: snapshots and changes never alias callers
+window settings window settings: unknown fields never enter a snapshot
+```
 
 ## Phase 3 - Convert providers, filtering, and search suites
 
@@ -547,7 +667,7 @@ search failures.
 | Busted setup and opt-in failure smoke | complete | 2026-07-19: default discovery passed 3/3; filtered cases passed 1/1; opt-in case failed 1/1 and propagated exit code 1 through a host-safe throw |
 | Phase 1 Busted environment restoration | complete | 2026-07-19: sentinel `LUA_PATH` and `LUA_CPATH` values restored after targeted success and forced failure |
 | Phase 1 syntax and package regression | complete | 2026-07-19: Lua 5.4.6 checked 66 production and 65 test/support files; package-tool contracts returned 0; `git diff --check` passed |
-| Phase 2 pure-domain native conversion | pending | |
+| Phase 2 pure-domain native conversion | complete | 2026-07-19: exactly 19 native specs and 90 cases; every spec passed alone and the full batch passed 90/90; syntax checked 66 production and 64 test/support files; package contracts and `git diff --check` passed |
 | Phase 3 provider/search native conversion | pending | |
 | Phase 4 UI/presentation native conversion | pending | |
 | Phase 5 integration conversion and final parity | pending | |

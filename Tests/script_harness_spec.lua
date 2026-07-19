@@ -1,32 +1,28 @@
 local harness = require('support.script_harness')
 
-local luaunit = require('luaunit')
 local repo_root = require('support.repo_root')
 
-local native_tests = {}
+describe('script harness', function()
 
-local function add_test(name, callback)
-    native_tests['test ' .. name] = callback
-end
-    add_test('script harness: supplies only explicit dependencies and overrides', function()
+    it('script harness: supplies only explicit dependencies and overrides', function()
         local module = harness.load(repo_root, {
         source_path='Tests/fixtures/script_harness_target.lua',
             reqscript={['fixture/dependency']={value=2}},
             require_modules={['fixture.require']={value=3}},
             globals={global_offset=4},
         })
-        luaunit.assertIs(9, module.result)
+        assert.are.equal(9, module.result)
     end)
 
-    add_test('script harness: missing fake dependencies fail explicitly', function()
+    it('script harness: missing fake dependencies fail explicitly', function()
         local ok, err = pcall(harness.load, repo_root, {
         source_path='Tests/fixtures/script_harness_target.lua',
             reqscript={['fixture/dependency']={value=2}},
             require_modules={},
             globals={global_offset=4},
         })
-        luaunit.assertEvalToFalse(ok)
-        luaunit.assertEvalToTrue(tostring(err):find('unexpected require: fixture.require', 1, true) ~= nil)
+        assert.is_falsy(ok)
+        assert.is_truthy(tostring(err):find('unexpected require: fixture.require', 1, true) ~= nil)
     end)
 
-return native_tests
+end)
