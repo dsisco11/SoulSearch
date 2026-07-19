@@ -71,7 +71,7 @@ default interactive build contract.
   - `Common.ps1`.
 ☑ Record that default live reload is an accepted requirement of the new
   build, including the expected `DFHACK_RUNNER`,
-  `DFHACK_DWARF_FORTRESS_ROOT`, `DFHACK_LUAC`, and
+  `DWARF_FORTRESS_ROOT`, `DFHACK_LUAC`, and
   `DFHACK_LUA_VERSION` configuration seams.
 ☑ Run the current custom test suite and record its exact suite, case,
   assertion, and failure totals where the current runner exposes them.
@@ -105,7 +105,7 @@ output. This preserves the user's in-progress cutover changes.
 | Surface | Parameters and environment | Dependencies | Generated/process state | Exit behavior and callers |
 | --- | --- | --- | --- | --- |
 | Old `tools/Build.ps1` | `SourceDir=src/scripts_modinstalled`, `LuaPath=''`, `LuaMode=Auto|Luac|Lua`; no environment contract | `luac` candidates, with `lua`/`loadfile()` fallback | none | Collects all syntax failures, then throws; called by README/docs and the VS Code Build task, but not by the old publisher |
-| New `Build.ps1` | `LuaCompiler`, `RequiredLuaVersion`, `LiveReload=$true`, `SourceDir=src`, `DFHackRunner`, `DwarfFortressRoot`, `ReloadOutputPath`, `EnvFile=.env.local`; reads `DFHACK_LUAC`, `DFHACK_LUA_VERSION`, `DFHACK_RUNNER`, and `DFHACK_DWARF_FORTRESS_ROOT` directly or through `.env.local` | `Check-LuaSyntax.ps1`, `Common.ps1`, `luac.exe`, and `dfhack-run.exe` | optional reload-output file; imports missing process variables from `.env.local`; performs `<mod-id> reload` | Throws on missing tools/metadata, syntax failure, or reload failure; targeted by the VS Code Build task and called with `-LiveReload:$false` by the new publisher |
+| New `Build.ps1` | `LuaCompiler`, `RequiredLuaVersion`, `LiveReload=$true`, `SourceDir=src`, `DFHackRunner`, `DwarfFortressRoot`, `ReloadOutputPath`, `EnvFile=.env.local`; reads `DFHACK_LUAC`, `DFHACK_LUA_VERSION`, `DFHACK_RUNNER`, and `DWARF_FORTRESS_ROOT` directly or through `.env.local` | `Check-LuaSyntax.ps1`, `Common.ps1`, `luac.exe`, and `dfhack-run.exe` | optional reload-output file; imports missing process variables from `.env.local`; performs `<mod-id> reload` | Throws on missing tools/metadata, syntax failure, or reload failure; targeted by the VS Code Build task and called with `-LiveReload:$false` by the new publisher |
 | New `Check-LuaSyntax.ps1` | `LuaCompiler=$env:DFHACK_LUAC`, `RequiredLuaVersion=$env:DFHACK_LUA_VERSION`, `IncludeTests` | `luac.exe` or configured compiler | none | Throws on missing/wrong-version compiler and first syntax failure; called by new `Build.ps1` |
 | New `Common.ps1` | no script parameters; exports `Import-EnvironmentFile`, `Get-ModInfo`, and `Resolve-DFHackRunner` | PowerShell/.NET only | may set previously absent process environment variables | Helper functions throw on invalid env entries, metadata, or runner resolution; dot-sourced by new Build and Publish |
 | Old `tools/Test.ps1` | `LuaPath=''`; no environment contract | explicit/discovered `lua` interpreter | none | Throws on missing runner/interpreter or nonzero test exit; called by README, `Tests/README.md`, and active feature plans |
@@ -130,7 +130,7 @@ Repository caller audit at this baseline:
 The accepted target is the new default Build contract: syntax-check production
 and test Lua, load optional `.env.local`, read the mod ID from `src/info.txt`,
 and run `<mod-id> reload`. `DFHACK_RUNNER` or
-`DFHACK_DWARF_FORTRESS_ROOT` locates the runner; `DFHACK_LUAC` selects the
+`DWARF_FORTRESS_ROOT` locates the runner; `DFHACK_LUAC` selects the
 compiler; `DFHACK_LUA_VERSION` optionally enforces its version.
 
 #### Executed test and syntax baseline

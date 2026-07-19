@@ -100,7 +100,7 @@ function New-FlatZip {
 
 $oldRunner = [Environment]::GetEnvironmentVariable('DFHACK_RUNNER', 'Process')
 $oldDwarfFortressRoot = [Environment]::GetEnvironmentVariable(
-    'DFHACK_DWARF_FORTRESS_ROOT', 'Process')
+    'DWARF_FORTRESS_ROOT', 'Process')
 
 try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -124,7 +124,7 @@ try {
     [Environment]::SetEnvironmentVariable(
         'DFHACK_RUNNER', (Join-Path $fixtureRoot 'missing-runner.exe'), 'Process')
     [Environment]::SetEnvironmentVariable(
-        'DFHACK_DWARF_FORTRESS_ROOT',
+        'DWARF_FORTRESS_ROOT',
         (Join-Path $fixtureRoot 'missing-df-root'),
         'Process')
 
@@ -280,7 +280,7 @@ finally {
     [Environment]::SetEnvironmentVariable(
         'DFHACK_RUNNER', $oldRunner, 'Process')
     [Environment]::SetEnvironmentVariable(
-        'DFHACK_DWARF_FORTRESS_ROOT', $oldDwarfFortressRoot, 'Process')
+        'DWARF_FORTRESS_ROOT', $oldDwarfFortressRoot, 'Process')
     if (Test-Path -LiteralPath $fixtureRoot) {
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
     }

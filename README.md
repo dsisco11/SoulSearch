@@ -91,7 +91,7 @@ repository root:
 DFHACK_LUAC=C:\path\to\luac.exe
 DFHACK_LUA_VERSION=5.4
 DFHACK_RUNNER=C:\path\to\Dwarf Fortress\hack\dfhack-run.exe
-# Alternatively: DFHACK_DWARF_FORTRESS_ROOT=C:\path\to\Dwarf Fortress
+# Alternatively: DWARF_FORTRESS_ROOT=C:\path\to\Dwarf Fortress
 ```
 
 Existing process environment variables take precedence. The same values can
@@ -172,13 +172,13 @@ before reloading, so you do not need to close them manually; run
 
 ## Usage
 
-| Command | Arguments | Purpose |
-| --- | --- | --- |
-| `soulsearch` | none | Explicitly initialize runtime state and seed the default `Ctrl-F` binding if that hotkey is unclaimed, without opening the UI. |
-| `soulsearch reload` | none | Dismiss SoulSearch screens and rebuild the runtime module generation. |
-| `gui/soulsearch` | none | Initialize if needed, then open a SoulSearch window. |
-| `enable soulsearch` | none | Enable automatic bootstrap for the current DFHack session and retry first-run setup. |
-| `disable soulsearch` | none | Disable only automatic bootstrap for the current DFHack session. Existing bindings and explicit commands remain available. |
+| Command              | Arguments | Purpose                                                                                                                        |
+| -------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `soulsearch`         | none      | Explicitly initialize runtime state and seed the default `Ctrl-F` binding if that hotkey is unclaimed, without opening the UI. |
+| `soulsearch reload`  | none      | Dismiss SoulSearch screens and rebuild the runtime module generation.                                                          |
+| `gui/soulsearch`     | none      | Initialize if needed, then open a SoulSearch window.                                                                           |
+| `enable soulsearch`  | none      | Enable automatic bootstrap for the current DFHack session and retry first-run setup.                                           |
+| `disable soulsearch` | none      | Disable only automatic bootstrap for the current DFHack session. Existing bindings and explicit commands remain available.     |
 
 For normal use, install the mod, start or restart DFHack, load a fortress, and
 press `Ctrl-F`. No manual initialization command is required.

@@ -5,7 +5,7 @@ param(
     [bool] $LiveReload = $true,
     [string] $SourceDir = 'src',
     [string] $DFHackRunner = $env:DFHACK_RUNNER,
-    [string] $DwarfFortressRoot = $env:DFHACK_DWARF_FORTRESS_ROOT,
+    [string] $DwarfFortressRoot = $env:DWARF_FORTRESS_ROOT,
     [string] $ReloadOutputPath,
     [string] $EnvFile = '.env.local'
 )
@@ -31,7 +31,7 @@ Import-EnvironmentFile -Path $resolvedEnvFile -AllowMissing
 $processLuaCompiler = [Environment]::GetEnvironmentVariable('DFHACK_LUAC', 'Process')
 $processRequiredLuaVersion = [Environment]::GetEnvironmentVariable('DFHACK_LUA_VERSION', 'Process')
 $processDFHackRunner = [Environment]::GetEnvironmentVariable('DFHACK_RUNNER', 'Process')
-$processDwarfFortressRoot = [Environment]::GetEnvironmentVariable('DFHACK_DWARF_FORTRESS_ROOT', 'Process')
+$processDwarfFortressRoot = [Environment]::GetEnvironmentVariable('DWARF_FORTRESS_ROOT', 'Process')
 
 if (-not $LuaCompiler) {
     $LuaCompiler = if ($processLuaCompiler) {
