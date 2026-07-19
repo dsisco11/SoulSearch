@@ -82,8 +82,8 @@ rescan modules. A normal packaged installation does not require either command.
 ## Validation and publishing
 
 The local tools require PowerShell 7. Install Lua 5.4 with `luac` on PATH for
-build validation, and install LuaRocks on PATH for the LuaUnit runner. The
-default build also requires a running DFHack instance and either
+build validation, and install LuaRocks on PATH for the repository-local Busted
+test runner. The default build also requires a running DFHack instance and either
 `dfhack-run.exe` on PATH or an explicitly configured runner.
 
 Machine-local settings can be placed in an ignored `.env.local` file at the
@@ -102,9 +102,10 @@ also be supplied through `-LuaCompiler`, `-RequiredLuaVersion`,
 root, not the Dwarf Fortress game root; the runner is resolved as
 `<DFHACK_ROOT>\hack\dfhack-run.exe`.
 
-The Lua build settings and the test runner's internal `LUA_TEST_FILES`
-discovery contract are deliberately tool-neutral. Only live reload uses the
-`DFHACK_*` namespace because those paths identify DFHack itself.
+The Lua build settings and the test runner's `TestRoot`, `SourceRoot`, and
+`DependencyRoot` parameters are deliberately tool-neutral. Busted owns final
+spec discovery. Only live reload uses the `DFHACK_*` namespace because those
+paths identify DFHack itself.
 
 Run the default build with:
 
@@ -121,24 +122,26 @@ the default live reload explicitly:
 .\tools\Build.ps1 -LuaCompiler "C:\path\to\luac.exe" -RequiredLuaVersion 5.4
 ```
 
-Run the native LuaUnit suites with:
+Run the native Busted specs with:
 
 ```powershell
 .\tools\Run-UnitTests.ps1
 ```
 
-The runner installs pinned LuaUnit 3.5-1 into the ignored `.luarocks/` tree when
-needed. Remaining arguments pass directly to LuaUnit, so verbosity, output,
-failure controls, suites, and individual cases can be selected, for example:
+The runner bootstraps Busted 2.3.0-1 and its required `luasystem 0.3.0-2` into
+the ignored repository-local `.luarocks/` tree when needed. `.busted` discovers
+sorted `*_spec.lua` files and runs their cases in deterministic order. Remaining
+arguments pass directly to Busted, so output and targeted filters can be
+selected, for example:
 
 ```powershell
-.\tools\Run-UnitTests.ps1 -v
-.\tools\Run-UnitTests.ps1 -v "Test_package_contract_test.test package contract: required metadata is present"
+.\tools\Run-UnitTests.ps1 --filter="resolves the repository"
 ```
 
-These tests cover domain rules, filter transitions, ranking, formatting,
-layout, module lifecycle, resident snapshots, and package contracts. They do
-not replace an in-game smoke pass.
+The complete suite currently reports 328 successes and four known
+search-ranking failures. These tests cover domain rules, filter transitions,
+ranking, formatting, layout, module lifecycle, resident snapshots, and package
+contracts. They do not replace an in-game smoke pass.
 
 Create a distributable zip with:
 

@@ -6,20 +6,33 @@ Run the suites from the repository root with:
 .\tools\Run-UnitTests.ps1
 ```
 
-Lua and LuaRocks must be available on PATH. The entrypoint installs pinned
-LuaUnit 3.5-1 into the ignored `.luarocks/` tree when absent, discovers sorted
-`test_*.lua` and `*_test.lua` files, and forwards all remaining arguments to
-LuaUnit. For example:
+Lua and LuaRocks must be available on PATH. The entrypoint bootstraps Busted
+2.3.0-1 and its required `luasystem 0.3.0-2` into the ignored repository-local
+`.luarocks/` tree when absent. `.busted` discovers sorted `*_spec.lua` files
+and runs cases in deterministic order. All remaining arguments pass directly to
+Busted. For example, run one selected case with:
 
 ```powershell
-.\tools\Run-UnitTests.ps1 -v
-.\tools\Run-UnitTests.ps1 -v "Test_attributes_test.test attributes: physical above race median"
+.\tools\Run-UnitTests.ps1 --filter="resolves the repository"
 ```
 
-`Tests/run.lua` publishes each discovered native test table under a
-deterministic module-derived name. Test failures print the case name,
-expected/actual context, and a traceback; any failure produces a nonzero
-process result after the runner restores its temporary environment values.
+The complete suite currently reports 328 successes and four known search-ranking
+failures. Busted prints the case name, expected/actual context, and traceback;
+any failure produces a nonzero process result after the runner restores its
+temporary `LUA_PATH` and `LUA_CPATH` values.
+
+To exercise the opt-in runner-failure path, set the neutral smoke variable and
+target the setup spec. This intentionally reports one failure and returns a
+nonzero result:
+
+```powershell
+$env:UNIT_TEST_SMOKE_FORCE_FAILURE = '1'
+try {
+    .\tools\Run-UnitTests.ps1 --filter=propagates
+} finally {
+    Remove-Item Env:UNIT_TEST_SMOKE_FORCE_FAILURE -ErrorAction SilentlyContinue
+}
+```
 
 Tests load the production Lua files directly with an isolated environment. The
 environment stubs only the external APIs needed by the modules under test:

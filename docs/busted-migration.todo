@@ -1040,38 +1040,74 @@ Phase 6 recorded evidence (2026-07-19):
 
 ## Phase 7 - Documentation, validation, and closeout
 
-☐ Update `README.md` prerequisites and testing instructions to document Busted,
+☑ Update `README.md` prerequisites and testing instructions to document Busted,
   the exact dependency pins, repository-local bootstrap, and the neutral
   runner entrypoint.
-☐ Update `Tests/README.md` with the `*_spec.lua` convention, full-run command,
+☑ Update `Tests/README.md` with the `*_spec.lua` convention, full-run command,
   `--filter` example, deterministic discovery behavior, and forced smoke
   failure variable.
-☐ Confirm `.vscode/tasks.json` still invokes the unchanged neutral
+☑ Confirm `.vscode/tasks.json` still invokes the unchanged neutral
   `Tools/Run-UnitTests.ps1` entrypoint.
-☐ From an empty temporary dependency root, run the final Busted runner and
+☑ From an empty temporary dependency root, run the final Busted runner and
   record exact dependency versions plus the 328-pass/four-failure result.
-☐ Repeat from the populated dependency root and prove no reinstall occurs.
-☐ Run one targeted spec case through `--filter` and record the selected test.
-☐ Run the opt-in smoke failure and prove the runner propagates a nonzero exit
+☑ Repeat from the populated dependency root and prove no reinstall occurs.
+☑ Run one targeted spec case through `--filter` and record the selected test.
+☑ Run the opt-in smoke failure and prove the runner propagates a nonzero exit
   only after restoring `LUA_PATH` and `LUA_CPATH`.
-☐ Run the final static legacy-contract searches and record zero active-code
+☑ Run the final static legacy-contract searches and record zero active-code
   matches.
-☐ Run `Tools/Build.ps1 -LiveReload:$false` and record syntax-validation results.
-☐ Run the package-tool tests and verify `.busted`, `.luarocks/`, `Tests/`, and
+☑ Run `Tools/Build.ps1 -LiveReload:$false` and record syntax-validation results.
+☑ Run the package-tool tests and verify `.busted`, `.luarocks/`, `Tests/`, and
   test dependencies do not enter the published payload.
-☐ Reconcile the final sorted spec manifest against the Phase 0 suite manifest:
+☑ Reconcile the final sorted spec manifest against the Phase 0 suite manifest:
   every baseline stem must have exactly one corresponding `*_spec.lua` file,
   except that `luaunit_setup_test.lua` is intentionally replaced by the
   framework-neutral contract in `busted_setup_spec.lua`.
-☐ Record why live DFHack proof is not required: no production or installed-mod
+☑ Record why live DFHack proof is not required: no production or installed-mod
   behavior changed.
-☐ Complete every evidence row below and mark the migration complete only when
+☑ Complete every evidence row below and mark the migration complete only when
   all phase exit gates are satisfied.
 
 Exit gate: documentation describes only the finalized Busted workflow; fresh,
 warm, targeted, forced-failure, syntax, and package validations are recorded;
 and the exact accepted unit-test result is 328 passing with the same four named
 search failures.
+
+Phase 7 recorded evidence (2026-07-19):
+
+- `README.md` and `Tests/README.md` now document only the neutral
+  `Tools/Run-UnitTests.ps1` entrypoint, Busted `2.3.0-1`, required
+  `luasystem 0.3.0-2`, the ignored repository-local `.luarocks/` tree,
+  deterministic `*_spec.lua` discovery, `--filter`, and the neutral
+  `UNIT_TEST_SMOKE_FORCE_FAILURE` probe. `.vscode/tasks.json` still invokes the
+  unchanged neutral entrypoint.
+- A fresh dependency root installed exact `luasystem 0.3.0-2`, Busted
+  `2.3.0-1`, and Busted dependencies, with no LuaUnit. It ran the final suite
+  as `328 successes / 4 failures / 0 errors / 0 pending`; the four failures are
+  the accepted named `search` ranking cases. A warm repeat from that populated
+  root produced the same result with no install output. The temporary root was
+  removed after validation.
+- `--filter="resolves the repository"` selected and passed exactly one setup
+  case. With `UNIT_TEST_SMOKE_FORCE_FAILURE=1` and `--filter=propagates`, the
+  runner reported exactly one intentional failure, threw
+  `Unit tests failed with exit code 1.`, and restored sentinel `LUA_PATH` and
+  `LUA_CPATH` values before throwing. The targeted success path restored the
+  same sentinels.
+- Final static searches found zero active legacy contracts in `Tools/`, `src/`,
+  `Tests/`, `README.md`, and `Tests/README.md`: no LuaUnit import, assertion,
+  runner, test table, discovery variable, old smoke variable, or legacy suite
+  filename remains. The migration document retains its Phase 0 LuaUnit history
+  as intentional historical evidence only.
+- The sorted final manifest contains 57 `*_spec.lua` files and zero
+  `*_test.lua` Lua suites. It maps one-to-one to the Phase 0 57-file manifest,
+  with only `luaunit_setup_test.lua` replaced by `busted_setup_spec.lua`.
+- `Tools/Build.ps1 -LiveReload:$false` passed with Lua 5.4.6 for 66 production
+  and 63 test/support files. `Tests/package_tools_test.ps1` passed. A direct
+  publish/verify probe created a 72-entry payload with zero `.busted`,
+  `.luarocks`, `Tests/`, `Tools/`, runner, or LuaUnit entries.
+- No live DFHack proof is required: this migration changes only local test
+  tooling, test files, and documentation. It does not alter production source,
+  the installed mod payload, or runtime behavior.
 
 ## Execution evidence
 
@@ -1092,14 +1128,14 @@ search failures.
 | Phase 4 UI/presentation native conversion | complete | 2026-07-19: 18 converted specs add 89 passing cases; exactly 48 native specs run 258 tests with 254 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 5 integration conversion and final parity | complete | 2026-07-19: final nine specs add 74 passing cases; exactly 57 native specs run 332 tests with 328 passes and only the four accepted `search` failures; syntax, package contracts, and `git diff --check` passed |
 | Phase 6 Busted-only runner and legacy-contract removal | complete | 2026-07-19: deleted `Tests/run.lua`; source/spec static search found zero legacy contracts; default and fresh dependency trees contain no LuaUnit; filtered runner execution passed 1/1 |
-| Native Busted-only 332-test manifest | pending | |
-| Final 328-pass/four-known-failure result | pending | |
-| Targeted `--filter` execution | pending | |
-| Environment restoration on success and failure | pending | |
+| Native Busted-only 332-test manifest | complete | 2026-07-19: 57 sorted native specs map one-to-one to Phase 0; Busted runs exactly 332 cases |
+| Final 328-pass/four-known-failure result | complete | 2026-07-19: fresh, warm, and final default-root runs reported 328 successes, four named accepted search failures, zero errors, and zero pending |
+| Targeted `--filter` execution | complete | 2026-07-19: `--filter="resolves the repository"` selected and passed exactly one Busted setup case |
+| Environment restoration on success and failure | complete | 2026-07-19: sentinel `LUA_PATH` and `LUA_CPATH` values were restored after targeted success and the one-case forced failure |
 | Zero active LuaUnit contracts | complete | 2026-07-19: runner, source, and specs have zero legacy-contract matches; remaining historical/current-documentation references are reconciled for Phase 7 |
-| Syntax-only build | pending | |
-| Package-tool and payload-exclusion checks | pending | |
-| Documentation and historical-plan supersession | pending | |
+| Syntax-only build | complete | 2026-07-19: Lua 5.4.6 checked 66 production and 63 test/support files |
+| Package-tool and payload-exclusion checks | complete | 2026-07-19: contract suite passed; direct published payload had 72 entries and zero test/tool/dependency artifacts |
+| Documentation and historical-plan supersession | complete | 2026-07-19: README files document only Busted; deleted historical tooling plan is retained in Git and superseded by this migration record |
 
 ## Completion criteria
 
