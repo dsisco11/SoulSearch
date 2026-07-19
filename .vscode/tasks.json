@@ -10,7 +10,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\tools\\Build.ps1"
+                "${workspaceFolder}\\Tools\\Build.ps1"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -30,7 +30,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}\\tools\\Run-UnitTests.ps1"
+                "${workspaceFolder}\\Tools\\Run-UnitTests.ps1"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
