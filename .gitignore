@@ -1,5 +1,6 @@
 dist/*
 .env.local
+.test-results/
 .luarocks/
 /luarocks.bat
 /lua.bat
