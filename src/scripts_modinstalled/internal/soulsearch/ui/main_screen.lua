@@ -24,10 +24,11 @@ SoulSearchScreen.ATTRS {
 
 function SoulSearchScreen:init()
     self.window = SoulSearchWindow{
+        view_id='window',
         settings_id=self.settings_id,
         settings=self.settings,
     }
-    self.tooltip = SoulSearchTooltip{}
+    self.tooltip = SoulSearchTooltip{view_id='tooltip'}
     self:addviews{self.window, self.tooltip}
     -- Temporary resolver instrumentation for diagnosing live hover-state
     -- oscillation. The agent suppresses consecutive identical samples.
