@@ -10,15 +10,15 @@ Keep pure search, filtering, sorting, formatting, persistence, and catalog
 rules in the existing Busted suite. Component specs should verify visible
 behavior and native interaction instead of duplicating those unit assertions.
 
-## Test Layout
+## Phase 1 - Test Layout
 
-- [ ] Store ordinary component specs under `tests/components/`.
-- [ ] Name live specs `*_spec.ds.lua` so default DwarfSpec discovery finds them.
-- [ ] Store reusable factories under `tests/components/support/` as ordinary
+- [x] Store ordinary component specs under `tests/components/`.
+- [x] Name live tests `*.ds.lua` so default DwarfSpec discovery finds them.
+- [x] Reserve `tests/components/support/` for reusable factories as ordinary
       `.lua` modules that are not discovered as specs.
-- [ ] Add `tests/dwarfspec/config.lua` only if project-wide timeout or discovery
-      settings differ from DwarfSpec defaults.
-- [ ] Confirm `dwarfspec list` discovers every component spec without loading
+- [x] Keep `tests/dwarfspec/config.lua` absent because the default recursive
+      `*.ds.lua` discovery and default wait settings match this project.
+- [x] Confirm `dwarfspec list` discovers every component spec without loading
       or executing it.
 
 ## Shared Support
@@ -36,7 +36,7 @@ behavior and native interaction instead of duplicating those unit assertions.
 
 ## Filter Action List
 
-Target: `tests/components/filter_action_list_spec.ds.lua`
+Target: `tests/components/filter_action_list.ds.lua`
 
 - [ ] Clicking each visible action zone dispatches the correct filter ID and action.
 - [ ] Disabled priority actions do not dispatch at list boundaries.
@@ -47,7 +47,7 @@ Target: `tests/components/filter_action_list_spec.ds.lua`
 
 ## Modal Panels And Pickers
 
-Target: `tests/components/pickers_spec.ds.lua`
+Target: `tests/components/pickers.ds.lua`
 
 - [ ] Opening a modal panel makes it visible and gives it focus.
 - [ ] Opening a searchable picker focuses its search field.
@@ -65,7 +65,7 @@ Target: `tests/components/pickers_spec.ds.lua`
 
 ## Filter Panel
 
-Target: `tests/components/filter_panel_spec.ds.lua`
+Target: `tests/components/filter_panel.ds.lua`
 
 - [ ] Opening the panel renders active filters and refreshes picker choices.
 - [ ] Attribute, skill, race, unit-scope, and preset buttons open the correct picker.
@@ -81,7 +81,7 @@ Target: `tests/components/filter_panel_spec.ds.lua`
 
 ## Results Panel
 
-Target: `tests/components/results_panel_spec.ds.lua`
+Target: `tests/components/results_panel.ds.lua`
 
 - [ ] Typing in Search invokes `on_query` and preserves the displayed text.
 - [ ] Clicking a result changes selection and invokes `on_select` with that result.
@@ -96,7 +96,7 @@ Target: `tests/components/results_panel_spec.ds.lua`
 
 ## Unit Information
 
-Target: `tests/components/unit_info_panel_spec.ds.lua`
+Target: `tests/components/unit_info_panel.ds.lua`
 
 - [ ] A subject renders its unit name and title.
 - [ ] A subject renders its matched-filter heading and criteria.
@@ -116,7 +116,7 @@ Target: `tests/components/unit_info_panel_spec.ds.lua`
 
 ## Complete SoulSearch Screen
 
-Target: `tests/components/main_screen_spec.ds.lua`
+Target: `tests/components/main_screen.ds.lua`
 
 - [ ] The complete screen mounts through `ds.mount()` and completes a real render.
 - [ ] Search initially owns focus and the result list accepts navigation input.
@@ -135,7 +135,7 @@ Target: `tests/components/main_screen_spec.ds.lua`
 
 ## Stats Overlay Component
 
-Target: `tests/components/stats_overlay_spec.ds.lua`
+Target: `tests/components/stats_overlay.ds.lua`
 
 - [ ] The isolated overlay receives its normal enable, update, input, render, and disable lifecycle.
 - [ ] A valid live unit renders identity and stats.
@@ -151,7 +151,7 @@ Target: `tests/components/stats_overlay_spec.ds.lua`
 
 ## Creatures Overlay Component
 
-Target: `tests/components/creatures_overlay_spec.ds.lua`
+Target: `tests/components/creatures_overlay.ds.lua`
 
 - [ ] The isolated overlay mounts through `ds.mount()` and completes a real render.
 - [ ] The launch button is visible for the Residents tab.
@@ -168,7 +168,7 @@ Keep these specs separate from ordinary component discovery and select them
 explicitly because they exercise external DFHack registration and persisted
 overlay state.
 
-Target: `tests/integration/overlay_registration_spec.ds.lua`
+Target: `tests/integration/overlay_registration.ds.lua`
 
 - [ ] Stage the stats overlay script with `ds.stage_overlay_registration()`.
 - [ ] Stage the Creatures overlay script with `ds.stage_overlay_registration()`.
@@ -205,7 +205,7 @@ Target: `tests/integration/overlay_registration_spec.ds.lua`
 
 | Date | DFHack | DwarfSpec | Command | Result | Notes |
 | --- | --- | --- | --- | --- | --- |
-| | | | `dwarfspec list` | Pending | Discovery inventory |
-| | | | `dwarfspec run` | Pending | Ordinary component suite |
+| 2026-07-21 | N/A | 0.1.0 | `dwarfspec list` | Pass | Discovered `tests/components/component_setup.ds.lua` without loading tests |
+| 2026-07-21 | Installed host | 0.1.0 | `dwarfspec run` | Pass | Initial component setup spec: 1/1 success; full suite gate remains open |
 | | | | Explicit overlay integration selector | Pending | Registration boundary |
 | | | | `busted` | Pending | Native unit regression suite |

@@ -1,0 +1,8 @@
+describe('SoulSearch component test setup', function()
+    it('provides the DwarfSpec component API', function()
+        assert.is_table(ds)
+        assert.is_function(ds.mount)
+        assert.is_function(ds.get)
+        assert.is_function(ds.unmount)
+    end)
+end)
