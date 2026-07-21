@@ -1,0 +1,211 @@
+# SoulSearch DwarfSpec Component Testing
+
+## Objective
+
+Create live DwarfSpec coverage for SoulSearch behavior that depends on the real
+DFHack widget tree, renderer, focus system, pointer routing, complete-screen
+lifecycle, or overlay lifecycle.
+
+Keep pure search, filtering, sorting, formatting, persistence, and catalog
+rules in the existing Busted suite. Component specs should verify visible
+behavior and native interaction instead of duplicating those unit assertions.
+
+## Test Layout
+
+- [ ] Store ordinary component specs under `tests/components/`.
+- [ ] Name live specs `*_spec.ds.lua` so default DwarfSpec discovery finds them.
+- [ ] Store reusable factories under `tests/components/support/` as ordinary
+      `.lua` modules that are not discovered as specs.
+- [ ] Add `tests/dwarfspec/config.lua` only if project-wide timeout or discovery
+      settings differ from DwarfSpec defaults.
+- [ ] Confirm `dwarfspec list` discovers every component spec without loading
+      or executing it.
+
+## Shared Support
+
+- [ ] Add deterministic result, filter-choice, preset-choice, and stats-subject
+      factories.
+- [ ] Add a callback recorder for asserting rendered user interactions without
+      replacing native widgets.
+- [ ] Add a live-unit helper that selects a valid unit without mutating it.
+- [ ] Add stable `view_id` values to the main screen's window and tooltip
+      children so DwarfSpec can traverse them without `subject:raw()`.
+- [ ] Use `subject:raw()` only for native state that DwarfSpec does not expose.
+- [ ] Ensure every spec relies on DwarfSpec-owned cleanup and leaves no screen,
+      overlay, pointer state, or persisted configuration behind.
+
+## Filter Action List
+
+Target: `tests/components/filter_action_list_spec.ds.lua`
+
+- [ ] Clicking each visible action zone dispatches the correct filter ID and action.
+- [ ] Disabled priority actions do not dispatch at list boundaries.
+- [ ] Hovering an action displays its dynamic tooltip.
+- [ ] Hovering a descriptor displays the descriptor tooltip.
+- [ ] Action hit-testing remains correct after scrolling.
+- [ ] Clicking outside a complete action row delegates without dispatching.
+
+## Modal Panels And Pickers
+
+Target: `tests/components/pickers_spec.ds.lua`
+
+- [ ] Opening a modal panel makes it visible and gives it focus.
+- [ ] Opening a searchable picker focuses its search field.
+- [ ] Typing in a picker invokes its query callback with the rendered text.
+- [ ] Submitting a picker item passes the correct descriptor.
+- [ ] Submitting a picker item leaves the picker open for repeated selection.
+- [ ] Right-clicking inside an open modal dismisses it after child input has priority.
+- [ ] The close button dismisses the picker and releases focus.
+- [ ] An open modal consumes pointer input that would otherwise reach controls underneath it.
+- [ ] Attribute rows display attribute descriptions when hovered.
+- [ ] Race rows display the race-filter tooltip when hovered.
+- [ ] Unit-scope rows display the candidate-scope tooltip when hovered.
+- [ ] Preset submission routes custom, default, and role choices correctly.
+- [ ] Saving a preset invokes the save callback while preserving entered search text.
+
+## Filter Panel
+
+Target: `tests/components/filter_panel_spec.ds.lua`
+
+- [ ] Opening the panel renders active filters and refreshes picker choices.
+- [ ] Attribute, skill, race, unit-scope, and preset buttons open the correct picker.
+- [ ] Opening one picker closes the currently open picker.
+- [ ] Closing the filter panel also closes its active picker.
+- [ ] Selecting a picker item updates the rendered active-filter list.
+- [ ] Direction controls update the rendered filter direction.
+- [ ] Priority controls move the rendered filter row in the expected direction.
+- [ ] Remove controls remove the rendered filter row.
+- [ ] Reset filters clears the list and updates the active-filter counter.
+- [ ] Keyboard shortcuts perform the same actions as corresponding buttons.
+- [ ] Picker content renders above and receives input before the list beneath it.
+
+## Results Panel
+
+Target: `tests/components/results_panel_spec.ds.lua`
+
+- [ ] Typing in Search invokes `on_query` and preserves the displayed text.
+- [ ] Clicking a result changes selection and invokes `on_select` with that result.
+- [ ] Up and Down move the result cursor without requiring an initial click.
+- [ ] Submitting a row invokes `on_submit` with the selected result.
+- [ ] Replacing choices preserves the requested selected row.
+- [ ] Clicking each column header dispatches its declared sort column.
+- [ ] Repeated header clicks visibly cycle ascending, descending, and unsorted indicators.
+- [ ] Changing sort indicators does not disturb result selection.
+- [ ] Hovering each column header displays its declared tooltip.
+- [ ] Resizing preserves header alignment, list geometry, and scrolling.
+
+## Unit Information
+
+Target: `tests/components/unit_info_panel_spec.ds.lua`
+
+- [ ] A subject renders its unit name and title.
+- [ ] A subject renders its matched-filter heading and criteria.
+- [ ] A subject renders its meaningful stat records.
+- [ ] Replacing the subject refreshes identity, matched filters, and stats.
+- [ ] Clearing the subject clears all subject-dependent content.
+- [ ] Matched-filter content changes its section height without overlap.
+- [ ] Clicking Stat cycles stat-name ordering and its visible indicator.
+- [ ] Clicking Delta cycles value ordering and its visible indicator.
+- [ ] Stat sort state remains independent from result sorting.
+- [ ] Hovering a stat label displays its attribute description.
+- [ ] Hovering a delta value displays the baseline-difference tooltip.
+- [ ] A constrained viewport renders a usable scrollbar and aligned columns.
+- [ ] Adaptive columns account for a visible scrollbar.
+- [ ] Resizing reflows identity, matched filters, and stats without clipping.
+- [ ] Resetting view state restores the requested sort and first visible row.
+
+## Complete SoulSearch Screen
+
+Target: `tests/components/main_screen_spec.ds.lua`
+
+- [ ] The complete screen mounts through `ds.mount()` and completes a real render.
+- [ ] Search initially owns focus and the result list accepts navigation input.
+- [ ] Typing a query changes the visible result set.
+- [ ] Selecting another result refreshes the unit information panel.
+- [ ] Opening the filter panel gives its modal controls input priority.
+- [ ] Adding or removing a filter recomputes visible rankings.
+- [ ] Loading a preset refreshes filters, candidates, results, and stats once.
+- [ ] Result sorting and stat sorting operate independently.
+- [ ] Hovering buttons, headers, filter actions, and stats displays the correct tooltip.
+- [ ] A modal picker's tooltip takes precedence over controls underneath it.
+- [ ] Dragging and resizing retain stable geometry during the mount.
+- [ ] Closing the screen persists eligible frame changes once.
+- [ ] Dismissal unregisters the screen and restores normal input ownership.
+- [ ] Cleanup remains idempotent when dismissal and destruction both occur.
+
+## Stats Overlay Component
+
+Target: `tests/components/stats_overlay_spec.ds.lua`
+
+- [ ] The isolated overlay receives its normal enable, update, input, render, and disable lifecycle.
+- [ ] A valid live unit renders identity and stats.
+- [ ] Changing the live unit refreshes the rendered subject.
+- [ ] Losing the unit-card subject hides or clears stale unit content.
+- [ ] Collapse hides the panel while retaining its deployment control.
+- [ ] Expand restores the panel at its prior position.
+- [ ] Collapse and expand arrows point in the correct direction for docking.
+- [ ] Alternate viewport sizes preserve docking and usable panel geometry.
+- [ ] Stat sorting works through real pointer input.
+- [ ] Header and body tooltips render above the clipped popout.
+- [ ] Unmount disables and removes the overlay without retaining UI state.
+
+## Creatures Overlay Component
+
+Target: `tests/components/creatures_overlay_spec.ds.lua`
+
+- [ ] The isolated overlay mounts through `ds.mount()` and completes a real render.
+- [ ] The launch button is visible for the Residents tab.
+- [ ] The launch button is visible for the Pets/Livestock tab.
+- [ ] The launch button is visible for the supported Other-unit tab.
+- [ ] Unsupported tabs keep the overlay hidden and do not initialize a search.
+- [ ] Clicking the launch button opens SoulSearch with the correct candidate scope.
+- [ ] Repeated layout updates keep the button docked below the native tab.
+- [ ] Unmount disables and removes the overlay cleanly.
+
+## Overlay Registration Integration
+
+Keep these specs separate from ordinary component discovery and select them
+explicitly because they exercise external DFHack registration and persisted
+overlay state.
+
+Target: `tests/integration/overlay_registration_spec.ds.lua`
+
+- [ ] Stage the stats overlay script with `ds.stage_overlay_registration()`.
+- [ ] Stage the Creatures overlay script with `ds.stage_overlay_registration()`.
+- [ ] Verify `OVERLAY_WIDGETS` discovery and rescan registration.
+- [ ] Verify enablement and disablement through the real overlay framework.
+- [ ] Verify focus filtering against the supported native screens.
+- [ ] Verify configured positioning is applied by the real overlay framework.
+- [ ] Verify cleanup restores `overlay.json` byte for byte.
+- [ ] Verify cleanup removes only unchanged, run-owned staged scripts.
+- [ ] Verify a final rescan leaves no staged registration behind.
+
+## Explicit Exclusions
+
+- [ ] Do not duplicate pure search scoring and ranking assertions.
+- [ ] Do not duplicate filter catalog, preset, or role mapping assertions.
+- [ ] Do not duplicate sort-state transition-table assertions.
+- [ ] Do not duplicate presenter string-formatting assertions.
+- [ ] Do not mutate fortress units merely to prepare component fixtures.
+- [ ] Do not use isolated overlay mounts to claim real registration coverage.
+- [ ] Do not treat mocked Busted widget tests as live DwarfSpec evidence.
+
+## Verification
+
+- [ ] `dwarfspec list` reports every ordinary component spec.
+- [ ] `dwarfspec run` passes the complete ordinary component suite.
+- [ ] Each explicitly selected overlay-registration integration spec passes.
+- [ ] `busted` continues to pass the native unit suite.
+- [ ] The Lua build and syntax validation continues to pass.
+- [ ] A deliberately failing component example still cleans up its mounted UI.
+- [ ] No run leaves screens, overlays, staged scripts, or modified configuration behind.
+- [ ] Record DFHack version, DwarfSpec version, viewport, command, result, and date.
+
+## Execution Evidence
+
+| Date | DFHack | DwarfSpec | Command | Result | Notes |
+| --- | --- | --- | --- | --- | --- |
+| | | | `dwarfspec list` | Pending | Discovery inventory |
+| | | | `dwarfspec run` | Pending | Ordinary component suite |
+| | | | Explicit overlay integration selector | Pending | Registration boundary |
+| | | | `busted` | Pending | Native unit regression suite |
