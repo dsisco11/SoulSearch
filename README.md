@@ -1,15 +1,10 @@
 # SoulSearch
 
-SoulSearch is a DFHack mod that searches fortress units by race, personality
-traits, attributes, and skills. Race filters define the candidate set; the
-other filters are ordered relevance criteria, so partial matches remain visible
-while units matching more and higher-priority criteria rank first.
-
-SoulSearch is implemented as Lua-only DFHack commands. DFHack automatically
-performs its minimal first-run bootstrap after installation; `soulsearch`
-performs explicit runtime setup, and `gui/soulsearch` opens the UI. Native C++
-plugin code remains out of scope unless profiling later identifies a real
-performance requirement.
+SoulSearch is a DFHack plugin that provides a powerful search and filtering interface based on attributes for units in Dwarf Fortress.  
+It allows users to quickly find and manage units based on various criteria, allowing users to find which units have the best propensity for a particular role or job according to thair attributes and skill levels.  
+Finally, no more checking each unit one by one to find the best candidates for a particular role or job, SoulSearch allows you to search for candidates according to the specific traits you desire!  
+It also allows you to create and save custom search filters for future use, making it easy to quickly find the units you need without having to manually set up the search criteria each time.  
+Additionally, SoulSearch provides a set of default search filters for common use cases, such as finding the strongest or most skilled units, making it easy to get started with the plugin.
 
 ## Status
 
