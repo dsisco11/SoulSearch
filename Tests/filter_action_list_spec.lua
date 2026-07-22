@@ -140,6 +140,22 @@ describe('filter action list', function()
         assert.are.equal(2, list.super_input_calls)
     end)
 
+    it('filter action list: boundary priority actions cannot dispatch', function()
+        local calls = 0
+        local list = make_list(function() calls = calls + 1 end)
+        list:setChoices({{descriptor={id='trait:patience'}, action_state={
+            can_move_up=false, can_move_down=false,
+        }}}, 1)
+        list.mouse_index, list.mouse_y = 1, 0
+        for _, index in ipairs({3, 4}) do
+            list.mouse_x = layout.ACTIVE_FILTER_BUTTON_START_X +
+                (index - 1) * layout.FILTER_ACTION_WIDTH
+            assert.is_falsy(list:onInput{_MOUSE_L=true})
+        end
+        assert.are.equal(0, calls)
+        assert.are.equal(2, list.super_input_calls)
+    end)
+
     it('filter action list: dispatcher invokes class pointer method with local coordinates',
             function()
         local dispatcher = soulsearch_env.load_pointer_dispatcher(repo_root)

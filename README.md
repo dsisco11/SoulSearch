@@ -133,7 +133,7 @@ selected, for example:
 .\tools\Run-UnitTests.ps1 --filter="resolves the repository"
 ```
 
-The complete suite currently reports 333 successes and four known
+The complete suite currently reports 334 successes and four known
 search-ranking failures. These tests cover domain rules, filter transitions,
 ranking, formatting, layout, module lifecycle, resident snapshots, and package
 contracts. They do not replace an in-game smoke pass.

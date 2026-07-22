@@ -36,7 +36,14 @@ function present_active(descriptors, filters)
         if direction then table.insert(choices, {
             text=ui_format.format_active_filter_choice(descriptor, direction,
                 selected[descriptor.id .. ':priority'], priority_count),
-            descriptor=descriptor, search_key=descriptor.label}) end
+            descriptor=descriptor,
+            action_state={
+                can_move_up=selected[descriptor.id .. ':priority'] and
+                    selected[descriptor.id .. ':priority'] > 1 or false,
+                can_move_down=selected[descriptor.id .. ':priority'] and
+                    selected[descriptor.id .. ':priority'] < priority_count or false,
+            },
+            search_key=descriptor.label}) end
     end
     if #choices == 0 then table.insert(choices, {
         text='Use Add attribute, Add skill, or Add race.'}) end

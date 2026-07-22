@@ -54,8 +54,18 @@ end
 
 local function is_action_enabled(choice, action)
     local descriptor = choice and choice.descriptor
-    return not (descriptor and descriptor.behavior == CANDIDATE and
-        (action.callback == ACTION.MOVE_UP or action.callback == ACTION.MOVE_DOWN))
+    if descriptor and descriptor.behavior == CANDIDATE and
+            (action.callback == ACTION.MOVE_UP or action.callback == ACTION.MOVE_DOWN) then
+        return false
+    end
+    local state = choice and choice.action_state
+    if action.callback == ACTION.MOVE_UP and state and state.can_move_up ~= nil then
+        return state.can_move_up
+    end
+    if action.callback == ACTION.MOVE_DOWN and state and state.can_move_down ~= nil then
+        return state.can_move_down
+    end
+    return true
 end
 
 function FilterActionList:on_pointer_update(x, y)
