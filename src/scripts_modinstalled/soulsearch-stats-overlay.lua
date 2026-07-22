@@ -271,6 +271,12 @@ function SoulSearchStatsOverlay:render(dc)
 end
 
 function SoulSearchStatsOverlay:update_subject(unit)
+    if not unit then
+        self.unit_id = nil
+        self.subject_error = nil
+        self.subviews.window.subviews.stats_panel:set_subject(nil)
+        return
+    end
     if self.unit_id == unit.id then return end
     local subject, err = popover.get_subject(unit)
     if not subject then
@@ -294,8 +300,7 @@ function SoulSearchStatsOverlay:overlay_onupdate()
         self.needs_layout = false
         self:updateLayout()
     end
-    local unit = get_unit_card_unit()
-    if unit then self:update_subject(unit) end
+    self:update_subject(get_unit_card_unit())
     return false
 end
 

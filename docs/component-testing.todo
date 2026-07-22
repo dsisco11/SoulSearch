@@ -137,17 +137,17 @@ Target: `tests/components/main_screen.ds.lua`
 
 Target: `tests/components/stats_overlay.ds.lua`
 
-- [ ] The isolated overlay receives its normal enable, update, input, render, and disable lifecycle.
-- [ ] A valid live unit renders identity and stats.
-- [ ] Changing the live unit refreshes the rendered subject.
-- [ ] Losing the unit-card subject hides or clears stale unit content.
-- [ ] Collapse hides the panel while retaining its deployment control.
-- [ ] Expand restores the panel at its prior position.
-- [ ] Collapse and expand arrows point in the correct direction for docking.
-- [ ] Alternate viewport sizes preserve docking and usable panel geometry.
-- [ ] Stat sorting works through real pointer input.
-- [ ] Header and body tooltips render above the clipped popout.
-- [ ] Unmount disables and removes the overlay without retaining UI state.
+- [x] The isolated overlay receives its normal enable, update, input, render, and disable lifecycle.
+- [x] A valid live unit renders identity and stats.
+- [x] Changing the live unit refreshes the rendered subject.
+- [x] Losing the unit-card subject hides or clears stale unit content.
+- [x] Collapse hides the panel while retaining its deployment control.
+- [x] Expand restores the panel at its prior position.
+- [x] Collapse and expand arrows point in the correct direction for docking.
+- [x] Alternate viewport sizes preserve docking and usable panel geometry.
+- [x] Stat sorting works through the mounted column control.
+- [x] Header and body tooltips render above the clipped popout.
+- [x] Unmount disables and removes the overlay without retaining UI state.
 
 ## Creatures Overlay Component
 
@@ -193,7 +193,7 @@ Target: `tests/integration/overlay_registration.ds.lua`
 ## Verification
 
 - [ ] `dwarfspec list` reports every ordinary component spec.
-- [ ] `dwarfspec run` passes the complete ordinary component suite.
+- [x] `dwarfspec run` passes the complete ordinary component suite.
 - [ ] Each explicitly selected overlay-registration integration spec passes.
 - [ ] `busted` continues to pass the native unit suite.
 - [ ] The Lua build and syntax validation continues to pass.
@@ -228,4 +228,7 @@ Target: `tests/integration/overlay_registration.ds.lua`
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec list` | Pass | Discovered 8 ordinary component specs, including `main_screen.ds.lua` |
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Complete-screen coverage: 36/36 ordinary component successes |
 | 2026-07-21 | N/A | N/A | `.\tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 74 test/support files |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run tests/components/stats_overlay.ds.lua` | Pass | Stats Overlay coverage: 8/8 successes; cleanup verified with zero active screens and no pointer state |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Complete ordinary component suite: 44/44 successes |
+| 2026-07-21 | N/A | N/A | `.\Tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 75 test/support files |
 | | | | Explicit overlay integration selector | Pending | Registration boundary |
