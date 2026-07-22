@@ -27,6 +27,8 @@ end
 ---@field inputs SoulSearchFilterPanelInputs
 FilterPanel = defclass(FilterPanel, ModalPanelWindow)
 
+---Initializes filter controls, active-filter rendering, and child pickers.
+---@param info table filter panel construction parameters
 function FilterPanel:init(info)
     info.on_open = function()
         self.inputs.on_refresh{pickers=true, presets=true}
