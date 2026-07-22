@@ -94,25 +94,25 @@ Target: `tests/components/results_panel.ds.lua`
 - [x] Hovering each column header displays its declared tooltip.
 - [x] Resizing preserves header alignment, list geometry, and scrolling.
 
-## Unit Information
+## Phase 7 - Unit Information
 
 Target: `tests/components/unit_info_panel.ds.lua`
 
-- [ ] A subject renders its unit name and title.
-- [ ] A subject renders its matched-filter heading and criteria.
-- [ ] A subject renders its meaningful stat records.
-- [ ] Replacing the subject refreshes identity, matched filters, and stats.
-- [ ] Clearing the subject clears all subject-dependent content.
-- [ ] Matched-filter content changes its section height without overlap.
-- [ ] Clicking Stat cycles stat-name ordering and its visible indicator.
-- [ ] Clicking Delta cycles value ordering and its visible indicator.
-- [ ] Stat sort state remains independent from result sorting.
-- [ ] Hovering a stat label displays its attribute description.
-- [ ] Hovering a delta value displays the baseline-difference tooltip.
-- [ ] A constrained viewport renders a usable scrollbar and aligned columns.
-- [ ] Adaptive columns account for a visible scrollbar.
-- [ ] Resizing reflows identity, matched filters, and stats without clipping.
-- [ ] Resetting view state restores the requested sort and first visible row.
+- [x] A subject renders its unit name and title.
+- [x] A subject renders its matched-filter heading and criteria.
+- [x] A subject renders its meaningful stat records.
+- [x] Replacing the subject refreshes identity, matched filters, and stats.
+- [x] Clearing the subject clears all subject-dependent content.
+- [x] Matched-filter content changes its section height without overlap.
+- [x] Clicking Stat cycles stat-name ordering and its visible indicator.
+- [x] Clicking Delta cycles value ordering and its visible indicator.
+- [x] Stat sort state remains independent from result sorting.
+- [x] Hovering a stat label displays its attribute description.
+- [x] Hovering a delta value displays the baseline-difference tooltip.
+- [x] A constrained viewport renders a usable scrollbar and aligned columns.
+- [x] Adaptive columns account for a visible scrollbar.
+- [x] Resizing reflows identity, matched filters, and stats without clipping.
+- [x] Resetting view state restores the requested sort and first visible row.
 
 ## Complete SoulSearch Screen
 
@@ -222,4 +222,7 @@ Target: `tests/integration/overlay_registration.ds.lua`
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec list` | Pass | Discovered 6 ordinary component specs, including `results_panel.ds.lua` |
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Results Panel coverage: 28/28 ordinary component successes |
 | 2026-07-21 | N/A | N/A | `.\tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 72 test/support files |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec list` | Pass | Discovered 7 ordinary component specs, including `unit_info_panel.ds.lua` |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Unit Information coverage: 32/32 ordinary component successes |
+| 2026-07-21 | N/A | N/A | `.\tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 73 test/support files |
 | | | | Explicit overlay integration selector | Pending | Registration boundary |

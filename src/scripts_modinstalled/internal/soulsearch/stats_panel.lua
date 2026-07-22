@@ -17,6 +17,8 @@ UnitInfoPanel.ATTRS{
     on_sort_change=DEFAULT_NIL,
 }
 
+---Initializes identity, matched-filter, and sortable-stat subpanels.
+---@param info table unit information construction parameters
 function UnitInfoPanel:init(info)
     self.subject, self.sort, self.on_sort_change = info.subject, info.sort, info.on_sort_change
     self.on_layout = function(frame_body) self:layout_contents(frame_body) end
