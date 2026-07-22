@@ -20,6 +20,8 @@ local sortable_header = reqscript('internal/soulsearch/ui/sortable_header')
 ---@field inputs SoulSearchResultsPanelInputs
 ResultsPanel = defclass(ResultsPanel, widgets.Panel)
 
+---Initializes result search, column headers, and selectable result rows.
+---@param info table results panel construction parameters
 function ResultsPanel:init(info)
     self.inputs = info.inputs
     local inputs = self.inputs

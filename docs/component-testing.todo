@@ -79,20 +79,20 @@ Target: `tests/components/filter_panel.ds.lua`
 - [x] Keyboard shortcuts perform the same actions as corresponding buttons.
 - [x] Picker content renders above and receives input before the list beneath it.
 
-## Results Panel
+## Phase 6 - Results Panel
 
 Target: `tests/components/results_panel.ds.lua`
 
-- [ ] Typing in Search invokes `on_query` and preserves the displayed text.
-- [ ] Clicking a result changes selection and invokes `on_select` with that result.
-- [ ] Up and Down move the result cursor without requiring an initial click.
-- [ ] Submitting a row invokes `on_submit` with the selected result.
-- [ ] Replacing choices preserves the requested selected row.
-- [ ] Clicking each column header dispatches its declared sort column.
-- [ ] Repeated header clicks visibly cycle ascending, descending, and unsorted indicators.
-- [ ] Changing sort indicators does not disturb result selection.
-- [ ] Hovering each column header displays its declared tooltip.
-- [ ] Resizing preserves header alignment, list geometry, and scrolling.
+- [x] Typing in Search invokes `on_query` and preserves the displayed text.
+- [x] Clicking a result changes selection and invokes `on_select` with that result.
+- [x] Up and Down move the result cursor without requiring an initial click.
+- [x] Submitting a row invokes `on_submit` with the selected result.
+- [x] Replacing choices preserves the requested selected row.
+- [x] Clicking each column header dispatches its declared sort column.
+- [x] Repeated header clicks visibly cycle ascending, descending, and unsorted indicators.
+- [x] Changing sort indicators does not disturb result selection.
+- [x] Hovering each column header displays its declared tooltip.
+- [x] Resizing preserves header alignment, list geometry, and scrolling.
 
 ## Unit Information
 
@@ -219,4 +219,7 @@ Target: `tests/integration/overlay_registration.ds.lua`
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec list` | Pass | Discovered 5 ordinary component specs, including `filter_panel.ds.lua` |
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Filter Panel coverage and prior action-list interactions: 24/24 ordinary component successes |
 | 2026-07-21 | N/A | N/A | `.\tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 71 test/support files |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec list` | Pass | Discovered 6 ordinary component specs, including `results_panel.ds.lua` |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Results Panel coverage: 28/28 ordinary component successes |
+| 2026-07-21 | N/A | N/A | `.\tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 72 test/support files |
 | | | | Explicit overlay integration selector | Pending | Registration boundary |
