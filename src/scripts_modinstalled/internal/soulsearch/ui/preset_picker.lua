@@ -20,6 +20,8 @@ local ModalPanelWindow =
 ---@field inputs SoulSearchPresetPickerInputs
 PresetPicker = defclass(PresetPicker, ModalPanelWindow)
 
+---Initializes the preset picker controls and selection routing.
+---@param info table picker construction parameters
 function PresetPicker:init(info)
     info.initial_focus_view_id = 'preset_search_field'
     PresetPicker.super.init(self, info)

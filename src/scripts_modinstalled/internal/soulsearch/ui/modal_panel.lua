@@ -16,6 +16,8 @@ ModalPanelWindow.ATTRS{
     pointer_policy='block',
 }
 
+---Initializes closed modal state and optional lifecycle callbacks.
+---@param info table modal construction parameters
 function ModalPanelWindow:init(info)
     self.on_open = info.on_open
     self.on_close = info.on_close
@@ -56,11 +58,15 @@ end
 ---@return boolean
 function ModalPanelWindow:onInput(keys)
     if not self.opened then return false end
-    if ModalPanelWindow.super.onInput(self, keys) then return true end
-
-    if keys._MOUSE_R and self:getMouseFramePos() then
+    if keys._MOUSE_R then
+        -- Give a focused child the first chance to consume a contextual click.
+        if type(self.inputToSubviews) == 'function' and
+                self:inputToSubviews(keys) then
+            return true
+        end
         self:close()
         return true
     end
+    if ModalPanelWindow.super.onInput(self, keys) then return true end
     return self:getMouseFramePos() ~= nil
 end

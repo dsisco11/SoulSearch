@@ -39,6 +39,8 @@ local FILTER_KIND_RACE = filter_constants.kind.RACE
 ---@field inputs SoulSearchSearchablePickerInputs
 SearchablePicker = defclass(SearchablePicker, ModalPanelWindow)
 
+---Initializes the picker and its searchable list controls.
+---@param info table picker construction parameters
 function SearchablePicker:init(info)
     local config = assert(PICKER_CONFIGS[info.kind], 'unknown searchable picker kind')
     info.initial_focus_view_id = config.search_id
