@@ -6,3 +6,4 @@ dist/*
 /lua.bat
 /lua_modules
 /.luarocks
+.env
