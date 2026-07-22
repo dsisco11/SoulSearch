@@ -168,17 +168,17 @@ Keep these specs separate from ordinary component discovery and select them
 explicitly because they exercise external DFHack registration and persisted
 overlay state.
 
-Target: `tests/integration/overlay_registration.ds.lua`
+Target: `tests/integration/overlay_registration.integration.lua`
 
-- [ ] Stage the stats overlay script with `ds.stage_overlay_registration()`.
-- [ ] Stage the Creatures overlay script with `ds.stage_overlay_registration()`.
-- [ ] Verify `OVERLAY_WIDGETS` discovery and rescan registration.
-- [ ] Verify enablement and disablement through the real overlay framework.
-- [ ] Verify focus filtering against the supported native screens.
-- [ ] Verify configured positioning is applied by the real overlay framework.
-- [ ] Verify cleanup restores `overlay.json` byte for byte.
-- [ ] Verify cleanup removes only unchanged, run-owned staged scripts.
-- [ ] Verify a final rescan leaves no staged registration behind.
+- [x] Stage the stats overlay script with `ds.stage_overlay_registration()`.
+- [x] Stage the Creatures overlay script with `ds.stage_overlay_registration()`.
+- [x] Verify `OVERLAY_WIDGETS` discovery and rescan registration.
+- [x] Verify enablement and disablement through the real overlay framework.
+- [x] Verify focus filtering against the supported native screens.
+- [x] Verify configured positioning is applied by the real overlay framework.
+- [x] Verify cleanup restores `overlay.json` byte for byte.
+- [x] Verify cleanup removes only unchanged, run-owned staged scripts.
+- [x] Verify a final rescan leaves no staged registration behind.
 
 ## Explicit Exclusions
 
@@ -194,7 +194,7 @@ Target: `tests/integration/overlay_registration.ds.lua`
 
 - [ ] `dwarfspec list` reports every ordinary component spec.
 - [x] `dwarfspec run` passes the complete ordinary component suite.
-- [ ] Each explicitly selected overlay-registration integration spec passes.
+- [x] Each explicitly selected overlay-registration integration spec passes.
 - [ ] `busted` continues to pass the native unit suite.
 - [ ] The Lua build and syntax validation continues to pass.
 - [ ] A deliberately failing component example still cleans up its mounted UI.
@@ -233,5 +233,9 @@ Target: `tests/integration/overlay_registration.ds.lua`
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run tests/components/creatures_overlay.ds.lua` | Pass | Creatures Overlay coverage: 5/5 successes |
 | 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Complete ordinary component suite: 49/49 successes |
 | 2026-07-21 | N/A | N/A | `.\Tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 76 test/support files |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run --test-glob '*.integration.lua'` | Pass | Staged both overlays; registration, focus filters, enable/disable, and configured positions verified; `overlay.json` SHA-256 unchanged; no staged scripts remain |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec list` | Pass | Ordinary discovery excludes the separately selected integration spec |
+| 2026-07-21 | Installed host | 0.1.2-1 | `dwarfspec run` | Pass | Complete ordinary component suite: 49/49 successes |
+| 2026-07-21 | N/A | N/A | `.\Tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 77 test/support files |
 | 2026-07-21 | N/A | N/A | `.\Tools\Build.ps1 -LiveReload $false` | Pass | Lua 5.4.6 parsed 66 production and 75 test/support files |
 | | | | Explicit overlay integration selector | Pending | Registration boundary |
