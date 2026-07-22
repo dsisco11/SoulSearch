@@ -20,7 +20,12 @@ dependencies = {
 }
 
 test_dependencies = {
+    "busted >= 2.0",
     "dwarfspec ~> 0.1",
+}
+
+test = {
+    type = "busted",
 }
 
 build = {
