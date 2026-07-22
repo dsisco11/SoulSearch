@@ -1,6 +1,8 @@
 --@ module=true
 
 ---@class SoulSearchResidentRow
+---Historical name retained for compatibility. Its structure supports any
+---compatible df.unit, not only a fortress resident.
 ---@field unit df.unit
 ---@field unit_id integer
 ---@field name string
@@ -23,6 +25,7 @@
 ---@field skills df.unit_skill[]|nil
 
 local df_enums = reqscript('internal/soulsearch/df_enums')
+local availability = reqscript('internal/soulsearch/availability')
 
 local skill_name_by_id
 
@@ -205,6 +208,21 @@ function collect_units(units)
     return rows
 end
 
+---@param unit any
+---@return integer|nil unit_id
+---@return string|nil error
+function validate_unit_reference(unit)
+    if type(unit) ~= 'table' and type(unit) ~= 'userdata' then
+        return nil, 'SoulSearch requires a valid unit.'
+    end
+    local ok, unit_id = pcall(function() return unit.id end)
+    if not ok or type(unit_id) ~= 'number' or unit_id < 0 or
+            unit_id ~= math.floor(unit_id) then
+        return nil, 'SoulSearch requires a valid unit.'
+    end
+    return unit_id, nil
+end
+
 ---Collects and snapshots units from an already-scoped candidate provider.
 ---@param provider SoulSearchCandidateProvider
 ---@return SoulSearchResidentRow[]|nil rows
@@ -226,13 +244,7 @@ end
 ---Gets the reason resident data cannot currently be collected.
 ---@return string|nil
 function get_unavailable_reason()
-    if not dfhack.isMapLoaded() then
-        return 'SoulSearch requires a loaded fortress map.'
-    end
-    if not dfhack.world.isFortressMode() then
-        return 'SoulSearch only works in fortress mode.'
-    end
-    return nil
+    return availability.get_unavailable_reason()
 end
 
 ---Collects searchable rows for fortress citizens.
@@ -245,4 +257,17 @@ function collect_residents()
     end
 
     return collect_units(dfhack.units.getCitizens(false, true))
+end
+
+---Collects one compatible unit without scanning a candidate scope.
+---@param unit any
+---@return SoulSearchResidentRow|nil row
+---@return string|nil error
+function collect_unit(unit)
+    local reason = get_unavailable_reason()
+    if reason then return nil, reason end
+    local unit_id, err = validate_unit_reference(unit)
+    if not unit_id then return nil, err end
+    local rows = collect_units({unit})
+    return rows[1], nil
 end

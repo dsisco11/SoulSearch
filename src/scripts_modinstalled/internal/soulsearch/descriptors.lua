@@ -13,6 +13,7 @@
 ---@field traits SoulSearchFilterDescriptor[]
 ---@field mental_attributes SoulSearchFilterDescriptor[]
 ---@field physical_attributes SoulSearchFilterDescriptor[]
+---@field unit_scopes SoulSearchFilterDescriptor[]
 ---@field races SoulSearchFilterDescriptor[]
 
 ---@class SoulSearchFilterCatalog
@@ -23,8 +24,14 @@
 local df_enums = reqscript('internal/soulsearch/df_enums')
 local skill_categories = reqscript('internal/soulsearch/skill_categories')
 local race_catalog = reqscript('internal/soulsearch/race_catalog')
+local unit_scope_catalog = reqscript('internal/soulsearch/unit_scope_catalog')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
+
+local FILTER_ID_PREFIXES = {
+    physical_attribute='physical',
+    mental_attribute='mental',
+}
 
 ---@alias SoulSearchFilterBehavior 'candidate'|'ranking'
 ---@alias SoulSearchFilterKind SoulSearchStatKind|'race'
@@ -93,7 +100,7 @@ end
 ---@return SoulSearchFilterDescriptor
 local function make_descriptor(kind, key, label)
     return {
-        id=kind .. ':' .. key,
+        id=(FILTER_ID_PREFIXES[kind] or kind) .. ':' .. key,
         kind=kind,
         behavior=filter_constants.behavior.RANKING,
         key=key,
@@ -162,6 +169,7 @@ local function build_catalog()
             'mental_attribute', df.mental_attribute_type),
         physical_attributes=make_enum_descriptors(
             'physical_attribute', df.physical_attribute_type),
+        unit_scopes=unit_scope_catalog.get_descriptors(),
         races=race_catalog.get_descriptors(),
     }
     local flat = {}
@@ -173,6 +181,7 @@ local function build_catalog()
     index_descriptors(flat, by_id, groups.physical_attributes)
     index_descriptors(flat, by_id, groups.mental_attributes)
     index_descriptors(flat, by_id, groups.traits)
+    index_descriptors(flat, by_id, groups.unit_scopes)
     index_descriptors(flat, by_id, groups.races)
 
     return {groups=groups, flat=flat, by_id=by_id}

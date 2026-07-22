@@ -1,0 +1,250 @@
+# Revealed-unit filtering implementation plan
+
+## Objective
+
+Restrict every SoulSearch window to units that DFHack considers revealed to the
+player, including exclusion of ambushers/sneaking units and units on unrevealed
+map tiles. Represent this mandatory rule as an implicit candidate filter that
+participates in the normal provider pipeline without appearing in filter
+management UI or user-owned filter state.
+
+## Confirmed DFHack semantics
+
+- `dfhack.units.isVisible(unit)` only checks whether the unit is on a visible
+  map tile and explicitly does not account for sneaking.
+- `dfhack.units.isHidden(unit)` is DFHack's combined "hidden to the player"
+  predicate. It accounts for ambushing/sneaking, works in every game mode,
+  falls back to map-tile visibility when appropriate, preserves DFHack's
+  fortress-controlled-unit rules, and follows outer containers for caged
+  units.
+- The DFHack `spectate` plugin uses `not dfhack.units.isHidden(unit)` as its
+  player-visible unit filter.
+- SoulSearch will therefore define `is_revealed(unit)` as
+  `not dfhack.units.isHidden(unit)`. Do not combine it with
+  `dfhack.units.isVisible(unit)` unless live validation proves that SoulSearch
+  intentionally needs stricter semantics than DFHack's own player-knowledge
+  rule.
+
+Source evidence in the adjacent DFHack 53.15-r1 checkout:
+
+- `library/include/modules/Units.h`: `isVisible()` and `isHidden()` contracts.
+- `library/modules/Units.cpp`: implementations of both predicates.
+- `docs/dev/Lua API.rst`: Lua-facing behavior.
+- `plugins/lua/spectate.lua`: existing Lua plugin usage.
+
+## Architectural decisions
+
+- Name the descriptor metadata `ui_hidden`, not `hidden`, to avoid ambiguity
+  with `dfhack.units.isHidden()`.
+- Keep `ui_hidden` and `implicit` as separate concepts:
+  - `ui_hidden` controls presentation and user-management access.
+  - the implicit-filter collection controls mandatory activation.
+- Keep implicit filters separate from `FilterState`. User filters remain the
+  only filters that are counted, edited, reset, saved in presets, or persisted
+  in window settings.
+- `SearchSession:get_candidate_filters()` may return user candidate filters plus
+  implicit candidate filters. Existing public/user filter accessors must not
+  expose implicit filters.
+- Add a distinct `unit_visibility` candidate-filter family. Do not put the
+  revealed descriptor in `unit_scope`: positive filters within one candidate
+  family are OR-combined, while visibility must be AND-composed with unit-scope
+  and race families.
+- Compose providers in this order:
+  `active -> unit visibility -> unit scope -> race -> resident snapshot`.
+- Preserve the existing snapshot/refresh model. Automatically polling for
+  units that become revealed while a window remains open is a separate feature.
+
+## Non-goals
+
+- Do not implement independent line-of-sight, viewport, announcement, or combat
+  detection algorithms.
+- Do not expose a user option for including hidden units.
+- Do not persist the mandatory revealed-unit rule in presets or window settings.
+- Do not reinterpret secret identities or curse concealment as map visibility.
+- Do not change the OR-within-family / AND-between-providers candidate semantics.
+- Do not add periodic candidate refreshes as part of this work.
+
+## Phase 0 - Lock down contracts and current behavior
+
+☐ Add characterization coverage for every current filter-management surface
+  before changing descriptor presentation:
+  - active filter choices;
+  - attribute, skill, race, and unit-scope pickers;
+  - the main-window active-filter count;
+  - reset, preset save/load, and window-settings persistence.
+☐ Add or extend `search_session_test.lua` coverage that distinguishes ranking
+  filters, candidate filters, and the public ordered filter list.
+☐ Add or extend candidate-pipeline characterization proving that unit-scope and
+  race providers are AND-composed while positive filters within one family are
+  OR-combined.
+☐ Record the baseline local test and build results in the execution-evidence
+  table before beginning Phase 1.
+
+Exit gate: tests describe the current user-filter state, presentation, preset,
+and candidate-composition boundaries without changing behavior.
+
+## Phase 1 - Add hidden-filter presentation capability
+
+☐ Extend `SoulSearchFilterDescriptor` with optional `ui_hidden: boolean` metadata;
+  omitted/false must preserve all existing descriptor behavior.
+☐ Add one shared descriptor predicate/helper for determining whether a filter
+  is user-manageable. Do not duplicate raw `descriptor.ui_hidden` checks across
+  unrelated UI owners.
+☐ Update `filter_presenter` so hidden descriptors are omitted defensively from:
+  - the active-filter list;
+  - generic available-filter pickers;
+  - skill choices and category headings;
+  - race choices and group spacing;
+  - unit-scope choices through the generic presenter.
+☐ Ensure a result containing only hidden filters uses the same empty-state text
+  as a result with no user filters.
+☐ Make filter-management actions reject hidden descriptor IDs, even if invoked
+  programmatically rather than through a picker.
+☐ Count only user-manageable filters in the main-window `Filters: N` label.
+☐ Add focused tests to `filter_presenter_test.lua`, `filter_state_test.lua`, and
+  `filter_panel_test.lua` for hidden and ordinary descriptors together.
+
+Exit gate: a hidden descriptor can exist in the catalog without appearing or
+being mutable anywhere in the filter-management UI, and all ordinary filters
+retain their current behavior.
+
+## Phase 2 - Isolate and verify DFHack revealed-unit detection
+
+☐ Add a small world-facing module, e.g. `unit_visibility.lua`, with a single
+  `is_revealed(unit)` predicate implemented as
+  `not dfhack.units.isHidden(unit)`.
+☐ Keep DFHack access inside that module so provider tests do not need to know
+  about raw unit flags or map designations.
+☐ Add unit tests with a stubbed `dfhack.units.isHidden()` proving direct
+  true/false delegation and one call per evaluated unit.
+☐ Document why `dfhack.units.isVisible()` is insufficient and why SoulSearch
+  delegates fortress-controlled and caged-unit semantics to DFHack.
+
+Exit gate: revealed-unit semantics are represented by one tested predicate with
+no candidate-pipeline or UI changes yet.
+
+## Phase 3 - Add the mandatory implicit visibility filter
+
+☐ Add `unit_visibility` to `SoulSearchFilterKind` and the filter constants.
+☐ Add a unit-visibility descriptor catalog/group containing exactly one
+  candidate descriptor:
+  - id: `unit_visibility:revealed`;
+  - label: `Revealed to player`;
+  - behavior: `candidate`;
+  - `ui_hidden=true`.
+☐ Register the descriptor in the immutable global descriptor catalog and verify
+  ID uniqueness, flat lookup, cache reset, and group membership.
+☐ Add an immutable implicit-filter collection that selects
+  `unit_visibility:revealed` in the positive/high direction for every search
+  session.
+☐ Keep implicit filters outside `FilterState`; expose a session accessor used
+  only by candidate-pipeline construction.
+☐ Make `SearchSession:get_candidate_filters()` return a fresh combined list of
+  implicit and user candidate filters without allowing callers to mutate either
+  source collection.
+☐ Confirm the following operations affect only user filters and cannot remove,
+  duplicate, serialize, or expose the implicit visibility filter:
+  - clear/reset;
+  - replace/load preset;
+  - save preset;
+  - window-settings update/reopen;
+  - active-filter count and active-filter choice generation.
+☐ Add session, filter-state, preset, settings, descriptor, and UI tests for
+  these invariants.
+
+Exit gate: every new search session owns the revealed-unit constraint, while
+all existing user-facing filter APIs behave as if the implicit filter were not
+part of editable state.
+
+## Phase 4 - Compose visibility into candidate collection
+
+☐ Add `unit_visibility_filter_provider.lua` following the existing candidate
+  filter-family provider boundary and using `unit_visibility.is_revealed()` as
+  its matcher.
+☐ Insert the visibility provider immediately after `active_unit_provider` and
+  before unit-scope and race providers in `SoulSearchWindow:refresh_candidates()`.
+☐ Ensure the provider preserves upstream ordering, unit de-duplication, and
+  upstream error propagation.
+☐ Add focused provider tests covering:
+  - revealed units included;
+  - hidden units excluded;
+  - hidden units excluded even when they match a positive unit scope;
+  - hidden units excluded even when they match a positive race filter;
+  - revealed units still subject to unit-scope exclusions and race filters;
+  - malformed or absent user filters do not disable visibility enforcement.
+☐ Extend `candidate_pipeline_characterization_test.lua` with the complete
+  `active -> visibility -> unit scope -> race` composition.
+☐ Extend main-window/UI characterization to prove initial collection, manual
+  candidate refresh, filter changes, preset loads, and reset all retain the
+  visibility provider.
+
+Exit gate: no candidate can reach resident snapshot construction when DFHack
+reports that unit as hidden, regardless of user filter state.
+
+## Phase 5 - Automated validation and documentation
+
+☐ Run the complete Lua test suite with `tools/Run-UnitTests.ps1` and record the exact
+  test result.
+☐ Run `tools/Build.ps1` and record the exact build result.
+☐ Verify the built package contains every new production module and no test or
+  planning artifacts outside the intended package shape.
+☐ Update durable LuaDoc/comments for the implicit-filter and visibility-provider
+  invariants; avoid phase-history narration in production code.
+☐ Update `docs/project.todo` only after the automated exit gates are green;
+  keep the item open if live proof remains outstanding.
+
+Exit gate: all local automated checks are green and the packaged code matches
+the source implementation.
+
+## Phase 6 - Live DFHack verification
+
+☐ Install/build the current checkout and run `soulsearch reload`; record any
+  failure by its actual stack-trace owner rather than assuming SoulSearch caused
+  it.
+☐ Verify an ordinary revealed citizen, pet/livestock animal, visitor, wildlife
+  unit, and hostile can appear when their user filters allow them.
+☐ Verify a unit in an unrevealed map region does not appear.
+☐ Verify an ambusher/sneaking unit does not appear before detection and can
+  appear after DF reveals it and SoulSearch performs its normal candidate
+  refresh/reopen flow.
+☐ Verify a fortress-controlled and a caged unit behave consistently with the
+  native UI and `dfhack.units.isHidden()`.
+☐ Verify Reset filters, loading a preset, opening scoped Creatures-menu windows,
+  and opening multiple SoulSearch windows never expose a hidden unit or display
+  the implicit filter.
+☐ Verify the active-filter count, active-filter list, every picker, and saved
+  preset payload contain only user filters.
+☐ Record the live commands, observations, and any unavailable scenario in the
+  execution-evidence table.
+
+Exit gate: live DFHack behavior demonstrates both stealth and unrevealed-map
+exclusion without regressions to scoped windows or user filter management.
+
+## Execution evidence
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Phase 0 characterization | pending | |
+| Phase 1 hidden-filter capability | pending | |
+| Phase 2 visibility predicate | pending | |
+| Phase 3 implicit filter state | pending | |
+| Phase 4 candidate composition | pending | |
+| Full Lua test suite | pending | |
+| Build/package verification | pending | |
+| Live ordinary-unit coverage | pending | |
+| Live unrevealed-tile coverage | pending | |
+| Live ambusher before/after detection | pending | |
+| Live scoped/multi-window coverage | pending | |
+
+## Completion criteria
+
+This plan is complete only when:
+
+- every SoulSearch candidate pipeline applies the implicit revealed-unit filter;
+- `dfhack.units.isHidden()` is the sole authority for player-hidden semantics;
+- hidden descriptors never enter user management, counts, presets, or settings;
+- reset, preset, scoped-window, and multi-window paths cannot bypass the rule;
+- focused, characterization, full-suite, build, package, and live DFHack gates
+  are recorded above;
+- the corresponding `docs/project.todo` item is marked done with a reference to
+  this evidence.

@@ -78,9 +78,11 @@ end
 function get_frames()
     local frames = {}
     for _, screen in ipairs(screens) do
-        local frame = screen.window and screen.window.frame
-        if type(frame) == 'table' and frame.l and frame.t and frame.w and frame.h then
-            table.insert(frames, copy_frame(frame))
+        if not screen.exclude_from_placement then
+            local frame = screen.window and screen.window.frame
+            if type(frame) == 'table' and frame.l and frame.t and frame.w and frame.h then
+                table.insert(frames, copy_frame(frame))
+            end
         end
     end
     return frames

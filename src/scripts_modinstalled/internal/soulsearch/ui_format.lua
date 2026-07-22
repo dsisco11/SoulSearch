@@ -1,6 +1,7 @@
 --@ module=true
 
 local layout = reqscript('internal/soulsearch/ui_layout')
+local stats_layout = reqscript('internal/soulsearch/stats_layout')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 local filter_constants =
     reqscript('internal/soulsearch/filter_constants').FILTER_CONSTANTS
@@ -73,24 +74,14 @@ function format_result_columns(sort_key, sort_reverse)
         'Unit ID' .. marker('unit_id'))
 end
 
----@param label string
----@return string
-function format_unit_scope_control(label)
-    return 'Include: ' .. label
-end
-
----@param label string
----@param selected boolean
----@return string
-function format_unit_scope_choice(label, selected)
-    return (selected and glyphs.CP437_ARROW_RIGHT or ' ') .. ' ' .. label
-end
-
 ---@param descriptor SoulSearchFilterDescriptor|SoulSearchFilterCriterion
 ---@return dfhack.color|dfhack.pen
 function get_category_pen(descriptor)
     if descriptor.kind == filter_constants.kind.RACE then
         return COLOR_LIGHTCYAN
+    end
+    if descriptor.kind == filter_constants.kind.UNIT_SCOPE then
+        return COLOR_CYAN
     end
     if descriptor.kind == 'skill' then return COLOR_YELLOW end
     if descriptor.kind == 'physical_attribute' then return COLOR_LIGHTGREEN end
@@ -153,7 +144,7 @@ end
 ---@return table[]
 function format_active_filter_choice(
         descriptor, mode, priority_index, priority_count)
-    local is_race = descriptor.kind == filter_constants.kind.RACE
+    local is_candidate = descriptor.behavior == filter_constants.behavior.CANDIDATE
     local state = {
         high_selected=mode == FILTER_HIGH,
         low_selected=mode == FILTER_LOW,
@@ -175,8 +166,9 @@ function format_active_filter_choice(
     for _, action in ipairs(layout.FILTER_ACTIONS) do
         local pen = COLOR_DARKGREY
         local label = action.label
-        if is_race then
-            if action.callback == 'move_up' or action.callback == 'move_down' then
+        if is_candidate then
+            if action.callback == layout.FILTER_ACTION.MOVE_UP or
+                    action.callback == layout.FILTER_ACTION.MOVE_DOWN then
                 label = '   '
             end
         end
@@ -184,7 +176,7 @@ function format_active_filter_choice(
             pen = COLOR_LIGHTGREEN
         elseif action.pen_rule == 'low_selected' and state.low_selected then
             pen = COLOR_LIGHTRED
-        elseif not is_race and action.pen_rule == 'enabled' and
+        elseif not is_candidate and action.pen_rule == 'enabled' and
                 state[action.enabled_rule] then
             pen = COLOR_WHITE
         elseif action.pen_rule == 'remove' then
@@ -196,16 +188,23 @@ function format_active_filter_choice(
 end
 
 ---@param descriptor SoulSearchFilterDescriptor
+---@param selected boolean|nil
 ---@return table[]
-function format_available_filter_choice(descriptor)
-    return {{text=descriptor.label, pen=get_category_pen(descriptor)}}
+function format_available_filter_choice(descriptor, selected)
+    return {
+        {text=(selected and glyphs.CP437_ARROW_RIGHT or ' ') .. '  ',
+            pen=selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
+        {text=descriptor.label, pen=get_category_pen(descriptor)},
+    }
 end
 
 ---@param descriptor SoulSearchFilterDescriptor
+---@param selected boolean|nil
 ---@return table[]
-function format_available_skill_choice(descriptor)
+function format_available_skill_choice(descriptor, selected)
     return {
-        {text=glyphs.CP437_ARROW_RIGHT .. ' ', pen=COLOR_DARKGREY},
+        {text=(selected and glyphs.CP437_ARROW_RIGHT or ' ') .. '  ',
+            pen=selected and COLOR_LIGHTGREEN or COLOR_DARKGREY},
         {text=descriptor.label, pen=get_category_pen(descriptor)},
     }
 end
@@ -228,17 +227,17 @@ function append_stats_column_header_tokens(tokens, sort_key, sort_reverse)
     local label_header = 'Stat' .. marker('label')
     local value_header = 'Delta' .. marker('value')
     table.insert(tokens, {
-        text=('%-' .. layout.STATS_VALUE_COLUMN_X .. 's'):format(label_header),
+        text=('%-' .. stats_layout.VALUE_COLUMN_X .. 's'):format(label_header),
         pen=COLOR_GREY,
     })
     table.insert(tokens, {text=value_header, pen=COLOR_GREY})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, {
-        text=glyphs.CP437_HORIZONTAL_LINE:rep(layout.STATS_LABEL_WIDTH),
+        text=glyphs.CP437_HORIZONTAL_LINE:rep(stats_layout.LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
     table.insert(tokens, {
-        text=(' '):rep(layout.STATS_VALUE_COLUMN_X - layout.STATS_LABEL_WIDTH),
+        text=(' '):rep(stats_layout.VALUE_COLUMN_X - stats_layout.LABEL_WIDTH),
         pen=COLOR_DARKGREY,
     })
     table.insert(tokens, {
@@ -248,9 +247,13 @@ end
 
 ---@param tokens table[]
 ---@param record SoulSearchStatsRecord
-function append_attribute_record_tokens(tokens, record)
+---@param columns table|nil
+function append_attribute_record_tokens(tokens, record, columns)
+    local label_width = columns and columns.label_width or stats_layout.LABEL_WIDTH
+    local label_inset = columns and columns.label_inset or 2
     table.insert(tokens, {
-        text=('  %-' .. layout.STATS_LABEL_WIDTH .. 's '):format(record.label),
+        text=(('%s%%-%ds '):format((' '):rep(label_inset), label_width)):format(
+            record.label),
         pen=record.pen,
     })
     table.insert(tokens, {
@@ -292,18 +295,18 @@ function append_selected_filter_section_tokens(tokens, filter_criteria)
     table.insert(tokens, NEWLINE)
 end
 
----@param result SoulSearchResult|nil
+---@param subject SoulSearchStatsSubject|nil
 ---@return table[]
-function format_stats_header(result)
+function format_stats_header(subject)
     local tokens = {}
-    if not result or not result.row then
-        return {{text='No resident selected.', pen=COLOR_DARKGREY}}
+    if not subject or not subject.row then
+        return {{text='No unit selected.', pen=COLOR_DARKGREY}}
     end
-    table.insert(tokens, {text=result.name or 'Unknown resident', pen=COLOR_WHITE})
+    table.insert(tokens, {text=subject.name or 'Unknown unit', pen=COLOR_WHITE})
     table.insert(tokens, NEWLINE)
-    table.insert(tokens, {text=result.profession or '', pen=COLOR_DARKGREY})
+    table.insert(tokens, {text=subject.profession or '', pen=COLOR_DARKGREY})
     table.insert(tokens, NEWLINE)
     table.insert(tokens, NEWLINE)
-    append_selected_filter_section_tokens(tokens, result.filter_criteria)
+    append_selected_filter_section_tokens(tokens, subject.filter_criteria)
     return tokens
 end

@@ -1,0 +1,261 @@
+local soulsearch_env = require('support.soulsearch_env')
+
+local function by_id(views, id)
+    for _, view in ipairs(views or {}) do
+        if view.view_id == id then return view end
+    end
+end
+
+local function index_subviews(view, root)
+    root = root or view
+    for _, child in ipairs(view.subviews or {}) do
+        view.subviews[child.view_id] = child
+        root.subviews[child.view_id] = child
+        index_subviews(child, root)
+    end
+end
+
+local repo_root = require('support.repo_root')
+
+describe('filter panel', function()
+
+    local filter_panel, picker_modules = soulsearch_env.load_filter_panel(repo_root)
+    local noop = function() end
+
+    local function make_inputs(state, calls)
+        return {
+            is_filter_panel_open=function() return state.panel end,
+            on_open_filter_panel=function() state.panel = true end,
+            on_close_filter_panel_state=function() state.panel = false end,
+            on_close_filter_panel=noop,
+            is_attribute_picker_open=function() return state.attribute end,
+            is_skill_picker_open=function() return state.skill end,
+            is_race_picker_open=function() return state.race end,
+            on_toggle_attribute_picker=noop, on_toggle_skill_picker=noop,
+            on_toggle_race_picker=noop, on_clear=noop, on_refresh=noop,
+            is_preset_picker_open=function() return state.preset end,
+            on_toggle_preset_picker=noop, on_close_preset_picker=noop,
+            on_preset_query=function(text) calls.preset_query = text end,
+            on_save_preset=function() calls.saved = true end,
+            on_load_preset=function(name) calls.preset = name end,
+            on_load_default_preset=function(id) calls.default = id end,
+            on_load_role_preset=function(id) calls.role = id end,
+            on_close_picker=noop,
+            on_attribute_query=function(text) calls.attribute_query = text end,
+            on_skill_query=function(text) calls.skill_query = text end,
+            on_race_query=function(text) calls.race_query = text end,
+            on_unit_scope_query=function(text) calls.unit_scope_query = text end,
+            on_toggle_filter=function(id)
+                calls.toggled = calls.toggled or {}
+                table.insert(calls.toggled, id)
+            end,
+            on_filter_action=function(id, action) calls.action = {id, action} end,
+        }
+    end
+
+    it('filter panel: picker modules export named window widget classes', function()
+        assert.are.equal('table', type(picker_modules[
+            'internal/soulsearch/ui/searchable_picker'].SearchablePicker))
+        assert.are.equal('table', type(picker_modules[
+            'internal/soulsearch/ui/preset_picker'].PresetPicker))
+    end)
+
+    it('filter panel: initializer owns picker hierarchy and paint order', function()
+        local state, calls = {panel=true, attribute=false, skill=false, race=false,
+            scope=false, preset=false}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        assert.are.equal('filter_panel_window', panel.view_id)
+        assert.are.same({
+            'close_filter_panel_button',
+            'add_filter_button', 'add_skill_button', 'add_race_button',
+            'clear_filters_button', 'preset_button', 'add_unit_scope_button', 'filter_list',
+            'available_filter_window', 'available_race_window',
+            'available_unit_scope_window', 'available_skill_window', 'preset_picker_window',
+        }, (function()
+            local ids = {}
+            for _, view in ipairs(panel.subviews) do table.insert(ids, view.view_id) end
+            return ids
+        end)())
+        assert.are.equal('preset_picker_window',
+            panel.subviews[#panel.subviews].view_id)
+        assert.are.equal('Reset filters', panel.subviews.clear_filters_button.label)
+        assert.are.equal('Close', panel.subviews.close_filter_panel_button.tooltip)
+        assert.are.equal('Add an attribute or trait to the ranking criteria.',
+            panel.subviews.add_filter_button.tooltip)
+        assert.are.equal('Add a skill to the ranking criteria.',
+            panel.subviews.add_skill_button.tooltip)
+        assert.are.equal('Add a race to the candidate scope.',
+            panel.subviews.add_race_button.tooltip)
+        assert.are.equal('Save the current filters or load a custom, role, or skill preset.',
+            panel.subviews.preset_button.tooltip)
+        local attribute_picker = by_id(panel.subviews, 'available_filter_window')
+        local preset_picker = by_id(panel.subviews, 'preset_picker_window')
+        assert.are.equal('Close', attribute_picker.subviews[1].tooltip)
+        assert.are.equal('Close', preset_picker.subviews[1].tooltip)
+        assert.are.equal('Save the current ordered filters under this preset name.',
+            preset_picker.subviews[2].tooltip)
+        assert.are.equal('CUSTOM_T',
+            by_id(panel.subviews, 'available_filter_window').subviews[2].key)
+        assert.are.equal('CUSTOM_K',
+            by_id(panel.subviews, 'available_skill_window').subviews[2].key)
+        assert.are.equal('CUSTOM_G',
+            by_id(panel.subviews, 'available_race_window').subviews[2].key)
+        assert.is_truthy(by_id(panel.subviews, 'filter_list').frame ~= nil)
+        assert.is_truthy(by_id(panel.subviews, 'available_filter_window').frame ~= nil)
+        assert.is_falsy(by_id(panel.subviews, 'available_filter_window').visible)
+        assert.is_truthy(by_id(panel.subviews, 'filter_list').visible())
+        panel:toggle_picker('attribute')
+        assert.is_falsy(by_id(panel.subviews, 'filter_list').visible())
+        assert.is_truthy(by_id(panel.subviews, 'available_filter_window').visible)
+    end)
+
+    it('filter panel: picker submissions preserve descriptor and preset payloads', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        by_id(panel.subviews, 'available_filter_window').subviews[3].on_submit(
+            1, {descriptor={id='attribute:strength'}})
+        by_id(panel.subviews, 'preset_picker_window').subviews[4].on_submit(
+            1, {role_id='miner'})
+        by_id(panel.subviews, 'available_unit_scope_window').subviews[3].on_submit(
+            1, {descriptor={id='unit_scope:visitors'}})
+        assert.are.same({'attribute:strength', 'unit_scope:visitors'}, calls.toggled)
+        assert.are.equal('miner', calls.role)
+    end)
+
+    it('filter panel: unit-scope picker query and repeated toggles retain its open state', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        panel:toggle_picker('unit_scope')
+        local picker = by_id(panel.subviews, 'available_unit_scope_window')
+        picker.subviews[2].on_change('visit')
+        picker.subviews[3].on_submit(1, {descriptor={id='unit_scope:visitors'}})
+        picker.subviews[3].on_submit(1, {descriptor={id='unit_scope:visitors'}})
+        assert.are.equal('visit', calls.unit_scope_query)
+        assert.are.same({'unit_scope:visitors', 'unit_scope:visitors'}, calls.toggled)
+        assert.is_truthy(panel:is_picker_open('unit_scope'))
+    end)
+
+    it('filter panel: narrow update APIs own child choice updates', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        index_subviews(panel)
+        local function choices(view, values, selected)
+            view.last_choices, view.last_selected = values, selected
+        end
+        for _, id in ipairs({'filter_list', 'available_filter_list',
+                'available_skill_list', 'available_race_list', 'available_unit_scope_list', 'preset_list'}) do
+            panel.subviews[id].setChoices = choices
+        end
+        panel:set_active_filter_choices({'active'}, 1)
+        panel:set_picker_choices('attribute', {'attribute'}, 2)
+        panel:set_picker_choices('skill', {'skill'}, 3)
+        panel:set_picker_choices('race', {'race'}, 4)
+        panel:set_picker_choices('unit_scope', {'scope'}, 5)
+        panel:set_preset_choices({'preset'})
+        assert.are.same({'active'}, panel.subviews.filter_list.last_choices)
+        assert.are.same({'race'}, panel.subviews.available_race_list.last_choices)
+        assert.are.same({'preset'}, panel.subviews.preset_list.last_choices)
+        assert.are.same({'scope'}, panel.subviews.available_unit_scope_list.last_choices)
+    end)
+
+    it('filter panel: picker transition table is exclusive and closes cleanly', function()
+        local state, calls = {panel=false}, {}
+        local inputs = make_inputs(state, calls)
+        local refreshes = {}
+        inputs.on_refresh=function(request) table.insert(refreshes, request) end
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', inputs=inputs}
+        panel.setFocus=noop
+        index_subviews(panel)
+        assert.is_falsy(panel.visible)
+        assert.is_truthy(panel:open())
+        assert.is_truthy(panel.visible)
+        for _, kind in ipairs({'attribute', 'skill', 'race', 'unit_scope', 'preset'}) do
+            assert.is_truthy(panel:toggle_picker(kind))
+            assert.is_truthy(panel:is_picker_open(kind))
+            assert.is_falsy(panel.subviews.filter_list.visible())
+        end
+        assert.is_truthy(panel:close_picker())
+        assert.is_falsy(panel:has_open_picker())
+        assert.is_truthy(panel.subviews.filter_list.visible())
+        panel:toggle_picker('race')
+        assert.is_truthy(panel:close())
+        assert.is_falsy(panel:is_open())
+        assert.is_falsy(panel.visible)
+        assert.is_falsy(panel:has_open_picker())
+        assert.are.equal(13, #refreshes)
+    end)
+
+    it('filter panel: opening a searchable picker focuses its search field', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        local cases = {
+            {kind='attribute', search_id='attribute_search_field'},
+            {kind='skill', search_id='skill_search_field'},
+            {kind='race', search_id='race_search_field'},
+            {kind='unit_scope', search_id='unit_scope_search_field'},
+            {kind='preset', search_id='preset_search_field'},
+        }
+        for _, case in ipairs(cases) do
+            local picker = by_id(panel.subviews, ({
+                attribute='available_filter_window', skill='available_skill_window',
+                race='available_race_window', unit_scope='available_unit_scope_window',
+                preset='preset_picker_window',
+            })[case.kind])
+            local focus_count = 0
+            picker.subviews[case.search_id].setFocus = function(_, focused)
+                if focused then focus_count = focus_count + 1 end
+            end
+            assert.is_truthy(panel:toggle_picker(case.kind))
+            assert.are.equal(1, focus_count)
+        end
+    end)
+
+    it('filter panel: picker lists own dynamic descriptor tooltips', function()
+        local state, calls = {panel=true}, {}
+        local inputs = make_inputs(state, calls)
+        local panel = filter_panel.FilterPanel{
+            view_id='filter_panel_window', is_open=inputs.is_filter_panel_open,
+            on_open=inputs.on_open_filter_panel,
+            on_close=inputs.on_close_filter_panel_state, inputs=inputs}
+        panel:set_picker_choices('attribute', {
+            {descriptor={kind='trait', key='PATIENCE'}},
+        }, 1)
+        local attribute_list = by_id(panel.subviews,
+            'available_filter_window').subviews[3]
+        attribute_list.on_pointer_update(attribute_list, 0, 0)
+        assert.are.equal('A personality trait that shapes behavior and social interaction.',
+            attribute_list.tooltip)
+
+        panel:set_picker_choices('race', {
+            {descriptor={kind='race', key='DWARF'}},
+        }, 1)
+        local race_list = by_id(panel.subviews,
+            'available_race_window').subviews[3]
+        race_list.on_pointer_update(race_list, 0, 0)
+        assert.are.equal('Filters by a creatures race.', race_list.tooltip)
+        race_list.on_pointer_update(race_list, 0, 4)
+        assert.are.equal(nil, race_list.tooltip)
+    end)
+
+end)

@@ -19,18 +19,19 @@ FILTER_CONSTANTS.behavior = {
 ---@enum SoulSearchFilterKind
 FILTER_CONSTANTS.kind = {
     RACE='race',
+    UNIT_SCOPE='unit_scope',
 }
 
 ---@enum SoulSearchUnitScope
 FILTER_CONSTANTS.unit_scope = {
-    ALL_ACTIVE='all_active',
+    id_prefix='unit_scope:',
     CITIZENS='citizens',
     FORT_RESIDENTS='fort_residents',
-    CITIZENS_AND_PETS='citizens_and_pets',
+    LIVESTOCK='livestock',
+    PETS='pets',
     VISITORS='visitors',
+    WILDLIFE='wildlife',
 }
-FILTER_CONSTANTS.default_unit_scope =
-    FILTER_CONSTANTS.unit_scope.CITIZENS
 
 FILTER_CONSTANTS.race = {
     group_id_prefix='race:group:',

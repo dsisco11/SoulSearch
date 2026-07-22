@@ -1,0 +1,102 @@
+--@ module=true
+
+local filter_state = reqscript('internal/soulsearch/filter_state')
+local search = reqscript('internal/soulsearch/search')
+local sort_state = reqscript('internal/soulsearch/sort_state')
+
+local SearchSession = {}
+SearchSession.__index = SearchSession
+
+---@enum SoulSearchQueryKind
+SEARCH_QUERY_KIND = {
+    RESULT='result',
+    ATTRIBUTE='attribute',
+    SKILL='skill',
+    RACE='race',
+    UNIT_SCOPE='unit_scope',
+    PRESET='preset',
+}
+
+local QUERY_FIELDS = {
+    [SEARCH_QUERY_KIND.RESULT]='query',
+    [SEARCH_QUERY_KIND.ATTRIBUTE]='attribute_query',
+    [SEARCH_QUERY_KIND.SKILL]='skill_query',
+    [SEARCH_QUERY_KIND.RACE]='race_query',
+    [SEARCH_QUERY_KIND.UNIT_SCOPE]='unit_scope_query',
+    [SEARCH_QUERY_KIND.PRESET]='preset_query',
+}
+
+local RESULT_SORT_SPEC = sort_state.new_spec({'name', 'profession', 'unit_id'})
+
+local function copy_rows(rows)
+    local copy = {}
+    for index, row in ipairs(rows or {}) do
+        local row_copy = {}
+        for key, value in pairs(row) do row_copy[key] = value end
+        copy[index] = row_copy
+    end
+    return copy
+end
+
+---@param settings {filters: SoulSearchSelectedFilter[], result_sort: table}
+---@return SearchSession
+function new(settings)
+    return setmetatable({filter_state=filter_state.new(settings.filters),
+        result_sort=sort_state.normalize(settings.result_sort, RESULT_SORT_SPEC),
+        query='', attribute_query='', skill_query='', race_query='', unit_scope_query='', preset_query='',
+        rows={}, results={}, selected_unit_id=nil, selected_index=1}, SearchSession)
+end
+
+function SearchSession:get_filters() return filter_state.get_filters(self.filter_state) end
+function SearchSession:get_ranking_filters() return filter_state.get_ranking_filters(self.filter_state) end
+function SearchSession:get_candidate_filters() return filter_state.get_candidate_filters(self.filter_state) end
+function SearchSession:filter_count() return filter_state.count(self.filter_state) end
+function SearchSession:get_filter_priority(id) return filter_state.get_priority(self.filter_state, id) end
+function SearchSession:contains_filter(id) return filter_state.contains(self.filter_state, id) end
+function SearchSession:get_filter_direction(id) return filter_state.get_direction(self.filter_state, id) end
+function SearchSession:get_result_sort()
+    return sort_state.normalize(self.result_sort, RESULT_SORT_SPEC)
+end
+
+function SearchSession:set_query(kind, text)
+    local field = QUERY_FIELDS[kind]
+    if not field then return false end
+    text = tostring(text or '')
+    if self[field] == text then return false end
+    self[field] = text
+    return true
+end
+
+function SearchSession:replace_rows(rows)
+    self.rows = copy_rows(rows)
+end
+
+function SearchSession:set_selected_result(result, index)
+    self.selected_unit_id = result and result.unit_id or nil
+    self.selected_index = index or self.selected_index
+end
+
+function SearchSession:recompute_results()
+    self.results = search.apply(self.rows, {query=self.query,
+        selected_filters=self:get_ranking_filters()})
+    search.sort_results(self.results, self.result_sort.key, self.result_sort.reverse)
+    local index = math.max(1, math.min(self.selected_index, #self.results))
+    if self.selected_unit_id then
+        for i, result in ipairs(self.results) do
+            if result.unit_id == self.selected_unit_id then index = i break end
+        end
+    end
+    return self.results, index
+end
+
+function SearchSession:cycle_sort(column)
+    self.result_sort = sort_state.next(self.result_sort, column, RESULT_SORT_SPEC)
+    return self:get_result_sort()
+end
+
+function SearchSession:add_filter(id) return filter_state.add(self.filter_state, id) end
+function SearchSession:remove_filter(id) return filter_state.remove(self.filter_state, id) end
+function SearchSession:clear_filters() return filter_state.clear(self.filter_state) end
+function SearchSession:replace_filters(filters) return filter_state.replace(self.filter_state, filters) end
+function SearchSession:set_filter_direction(id, direction) return filter_state.set_direction(self.filter_state, id, direction) end
+function SearchSession:move_filter(id, delta) return filter_state.move(self.filter_state, id, delta) end

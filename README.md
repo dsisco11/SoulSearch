@@ -1,37 +1,38 @@
 # SoulSearch
 
-SoulSearch is a DFHack mod that searches fortress units by race, personality
-traits, attributes, and skills. Race filters define the candidate set; the
-other filters are ordered relevance criteria, so partial matches remain visible
-while units matching more and higher-priority criteria rank first.
-
-SoulSearch is implemented as the Lua-only DFHack command `soulsearch`. Native
-C++ plugin code remains out of scope unless profiling later identifies a real
-performance requirement.
+SoulSearch is a DFHack plugin that provides a powerful search and filtering interface based on attributes for units in Dwarf Fortress.  
+It allows users to quickly find and manage units based on various criteria, allowing users to find which units have the best propensity for a particular role or job according to thair attributes and skill levels.  
+Finally, no more checking each unit one by one to find the best candidates for a particular role or job, SoulSearch allows you to search for candidates according to the specific traits you desire!  
+It also allows you to create and save custom search filters for future use, making it easy to quickly find the units you need without having to manually set up the search criteria each time.  
+Additionally, SoulSearch provides a set of default search filters for common use cases, such as finding the strongest or most skilled units, making it easy to get started with the plugin.
 
 ## Status
 
 The current implementation includes:
 
 - `info.txt` contains Dwarf Fortress/DFHack mod metadata.
-- `scripts_modinstalled/soulsearch.lua` defines the public DFHack command.
+- `scripts_modinstalled/soulsearch.lua` defines the automatic bootstrap,
+  runtime setup, and reload command; `scripts_modinstalled/gui/soulsearch.lua`
+  defines the GUI command.
 - `scripts_modinstalled/internal/soulsearch/` contains private support modules.
 - Resident collection reads stable DFHack APIs into compact snapshots of names,
   professions, traits, attributes, and skills. Position is intentionally read
   live only when zooming.
 - The immutable descriptor catalog owns filter metadata; `filter_state.lua`
   owns ordered `{id, direction}` state for the loaded script session.
-- Unit-scope and race-filter candidate providers choose units before snapshots;
-  `search.apply()` receives only ranking filters and returns relevance-ranked
-  results.
+- Unit-scope and race filters are first-class candidate filters. They choose
+  units before snapshots; `search.apply()` receives only ranking filters and
+  returns relevance-ranked results.
 - `ui.lua` composes the window and coordinates events; formatting, layout,
   components, refresh dispatch, and Stats presentation have dedicated modules.
-- `soulsearch` opens the panel with name search, race Include/Exclude scope
+- `gui/soulsearch` opens the panel with name search, race Include/Exclude scope
   filters, ordered high/low ranking filters, JSON-backed filter presets,
   ranked results, Stats, refresh, zoom, and close controls.
 
-The command currently validates fortress mode and opens the resident search
-panel.
+On a normal installation, SoulSearch automatically seeds its default keybinding
+without opening a window. `soulsearch` explicitly initializes keybindings and
+world-scoped caches without opening a window. `gui/soulsearch` validates
+fortress mode and opens the resident search panel.
 
 ## Installation
 
@@ -45,52 +46,97 @@ installed path must look like this:
 ```text
 mods/SoulSearch/info.txt
 mods/SoulSearch/scripts_modinstalled/soulsearch.lua
+mods/SoulSearch/scripts_modinstalled/gui/soulsearch.lua
 ```
 
-If you extract the release zip, make sure the extraction tool does not add an
-extra wrapper folder such as `mods/SoulSearch-0.1.0/SoulSearch/info.txt`.
+The release zip uses a flat-root contract: `info.txt` and
+`scripts_modinstalled/` are at the archive root. Create `mods/SoulSearch/` and
+extract the archive contents into that folder. Do not extract the flat archive
+directly into `mods/`, and do not add a second wrapper folder such as
+`mods/SoulSearch/SoulSearch/info.txt`.
 
 ## Development Setup
 
 For local development without repeatedly copying files, add this line to
-`dfhack-config/script-paths.txt`:
+`script-paths.txt` in DFHack's configuration directory:
 
 ```text
 +D:/CODE/DFHack/SoulSearch/src/scripts_modinstalled
 ```
 
 The leading `+` tells DFHack to search this development copy before other script
-directories.
+directories. On DFHack versions that support the relocatable installation,
+`:lua print(dfhack.getConfigPath())` prints the active configuration directory;
+do not infer it from the Dwarf Fortress game path.
+
+If you add an enableable SoulSearch script while DFHack is already running,
+its initial module scan has already happened. For development recovery, run
+`enable` with no arguments or `:lua require('script-manager').reload()` to
+rescan modules. A normal packaged installation does not require either command.
 
 ## Validation and publishing
 
-Run the syntax-only Lua build check with:
+The local tools require PowerShell 7. Install Lua 5.4 with `luac` on PATH for
+build validation, and install LuaRocks on PATH for the repository-local Busted
+test runner. The default build also requires a running DFHack instance and either
+`dfhack-run.exe` on PATH or an explicitly configured runner.
+
+Machine-local settings can be placed in an ignored `.env.local` file at the
+repository root:
+
+```text
+LUA_COMPILER=C:\path\to\luac.exe
+LUA_REQUIRED_VERSION=5.4
+DFHACK_RUNNER=C:\path\to\DFHack\hack\dfhack-run.exe
+# Alternatively: DFHACK_ROOT=C:\path\to\DFHack
+```
+
+Existing process environment variables take precedence. The same values can
+also be supplied through `-LuaCompiler`, `-RequiredLuaVersion`,
+`-DFHackRunner`, or `-DFHackRoot`. `DFHACK_ROOT` is the DFHack app/install
+root, not the Dwarf Fortress game root; the runner is resolved as
+`<DFHACK_ROOT>\hack\dfhack-run.exe`.
+
+The Lua build settings and the test runner's `TestRoot`, `SourceRoot`, and
+`DependencyRoot` parameters are deliberately tool-neutral. Busted owns final
+spec discovery. Only live reload uses the `DFHACK_*` namespace because those
+paths identify DFHack itself.
+
+Run the default build with:
 
 ```powershell
 .\tools\Build.ps1
 ```
 
-The build checks every `.lua` file under `src/scripts_modinstalled/` for syntax
-errors using `luac -p`, or `lua` with `loadfile()` if `luac` is not available.
-Install Lua on PATH or pass a specific executable path:
+It syntax-checks production and test Lua, reads the mod ID from `src/info.txt`,
+and runs `soulsearch reload` through DFHack. A syntax-only build must opt out of
+the default live reload explicitly:
 
 ```powershell
-.\tools\Build.ps1 -LuaPath "C:\path\to\luac.exe"
-.\tools\Build.ps1 -LuaPath "C:\path\to\lua.exe" -LuaMode Lua
+.\tools\Build.ps1 -LiveReload:$false
+.\tools\Build.ps1 -LuaCompiler "C:\path\to\luac.exe" -RequiredLuaVersion 5.4
 ```
 
-This checks Lua syntax only. It does not exercise DFHack APIs, widgets, or game
-state.
-
-Run pure Lua tests with:
+Run the native Busted specs with:
 
 ```powershell
-.\tools\Test.ps1
+.\tools\Run-UnitTests.ps1
 ```
 
-The tests cover domain rules, filter transitions, ranking, formatting, layout,
-module lifecycle, resident snapshot transformation, and package-independent
-logic. They do not replace an in-game smoke pass.
+The runner bootstraps Busted 2.3.0-1 and its required `luasystem 0.3.0-2` into
+the ignored repository-local `.luarocks/` tree when needed. `.busted` discovers
+sorted `*_spec.lua` files and runs their cases in deterministic order. Remaining
+arguments pass directly to Busted, so output and targeted filters can be
+selected, for example:
+
+```powershell
+.\tools\Run-UnitTests.ps1 --filter="resolves the repository"
+```
+
+The complete suite currently reports 334 successes and four known
+search-ranking failures. These tests cover domain rules, filter transitions,
+ranking, formatting, layout, module lifecycle, resident snapshots, and package
+contracts. They do not replace an in-game smoke pass.
 
 Create a distributable zip with:
 
@@ -102,6 +148,14 @@ Create a distributable zip with:
 then verifies both contain exactly the payload under `src/`: root `info.txt`,
 the public command, and every runtime Lua module, with no tests or docs. The
 expanded folder can be copied directly into the Dwarf Fortress `mods/` folder.
+Publishing calls the build with `-LiveReload:$false`, so it does not require or
+contact a running game. The package can be verified independently with:
+
+```powershell
+.\tools\VerifyPackage.ps1 -SourceDir src `
+    -ZipPath dist\SoulSearch-0.1.0.zip `
+    -ExpandedPath dist\SoulSearch
+```
 
 Run the interactive fortress-mode smoke checklist separately in
 [`docs/ui-baseline.md`](docs/ui-baseline.md). That is the gate for visual
@@ -113,38 +167,73 @@ For development reloads, use:
 soulsearch reload
 ```
 
-Normal `soulsearch` execution validates the retained internal-module contracts.
+Normal `soulsearch` execution validates the retained internal-module contracts,
+seeds the default GUI keybinding when needed, and prepares world-scoped caches
+without opening a window.
 `soulsearch reload` clears runtime modules in reverse dependency order, runs
 them again in dependency order, then validates the rebuilt set so a UI does not
 retain mixed module generations. It dismisses every open SoulSearch window
-before reloading, so you do not need to close them manually.
+before reloading, so you do not need to close them manually; run
+`gui/soulsearch` afterward to open a fresh window.
 
 ## Usage
 
-After DFHack can see the script path, run:
+| Command              | Arguments | Purpose                                                                                                                        |
+| -------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `soulsearch`         | none      | Explicitly initialize runtime state and seed the default `Ctrl-F` binding if that hotkey is unclaimed, without opening the UI. |
+| `soulsearch reload`  | none      | Dismiss SoulSearch screens and rebuild the runtime module generation.                                                          |
+| `gui/soulsearch`     | none      | Initialize if needed, then open a SoulSearch window.                                                                           |
+| `enable soulsearch`  | none      | Enable automatic bootstrap for the current DFHack session and retry first-run setup.                                           |
+| `disable soulsearch` | none      | Disable only automatic bootstrap for the current DFHack session. Existing bindings and explicit commands remain available.     |
+
+For normal use, install the mod, start or restart DFHack, load a fortress, and
+press `Ctrl-F`. No manual initialization command is required.
+
+Use `soulsearch` only for explicit runtime setup or recovery after an
+incomplete first-run attempt:
 
 ```text
 soulsearch
 ```
 
-The first manual SoulSearch launch in a DFHack session adds the default
-`Ctrl-F@dwarfmode/Default` binding when no existing binding runs a SoulSearch
-command. Use `gui/keybinds` to change or remove it, then save from that screen
-to persist your choice across DFHack restarts.
+You can always open the window directly with:
 
-The command opens a new SoulSearch panel in fortress mode. Repeated command or
-`Ctrl-F` invocations create additional windows; only one DFHack `ZScreen` has
-keyboard focus at a time. By default, each new panel's unit scope is
-**Citizens** and its candidate race scope is **Humanoids**.
-Click **Edit filters** to open the filter panel. Use its **Search** dropdown
-to choose between Citizens, Residents, Visitors, and All units. The active
-scope is marked in the dropdown list. Use **Add race filter** to
-include another race or creature type, or
-exclude a race from the included candidates. Race filters use `[+]` to Include
-and `[-]` to Exclude and do not participate in ranking order. Use the Search
-filters list to add traits, attributes, and skills such as `Agility`; set their
-high/low directions and priorities with the controls beside each selected
-filter. Click a result-list column header (Name, Unit ID, or Profession) to
+```text
+gui/soulsearch
+```
+
+Automatic bootstrap adds `Ctrl-F@dwarfmode/Default -> gui/soulsearch` whenever
+that exact hotkey is unclaimed. It never replaces another command's `Ctrl-F`
+binding. If you want a different SoulSearch hotkey, configure it with
+`gui/keybinds`; an existing `Ctrl-F` assignment remains authoritative.
+
+`disable soulsearch` does not delete bindings, close existing SoulSearch
+windows, or block explicit `soulsearch` and `gui/soulsearch` commands. Its
+state is session-only; the automatic bootstrap is active again after a cold
+DFHack restart. SoulSearch overlays have separate global overlay-framework and
+saved widget-state ownership; manage their enablement and position with
+`gui/control-panel` or `gui/overlay`.
+
+`gui/soulsearch` opens a new SoulSearch panel in fortress mode. Repeated GUI
+command or `Ctrl-F` invocations create additional windows; only one DFHack
+`ZScreen` has keyboard focus at a time. A new primary panel starts with the
+positive **Humanoids** race filter and no unit-scope filter. No unit-scope
+filters means **All units**; removing Humanoids therefore exposes every active
+unit.
+
+Click **Edit filters** to open the filter panel. Use **Add unit scope filter**
+to add Citizens, Residents, Citizens and pets, Livestock, Pets, Visitors, or Wildlife. To search
+wildlife from a primary window, remove its initial **Humanoids** race filter.
+Multiple positive
+unit scopes are combined with OR semantics; negative scope filters mean
+**All units except** the selected scopes. Add race filters independently:
+positive races are ORed within the race family, negative races exclude matches,
+and the final candidate set is the intersection of the unit-scope and race
+families. Candidate filters use `[+]` to Include and `[-]` to Exclude and do
+not participate in ranking order. Use the attribute and skill filter menus to
+add ranking criteria such as `Agility`; set their high/low directions and
+priorities with the controls beside each selected filter. Click a result-list
+column header (Name, Unit ID, or Profession) to
 sort it ascending, click again for descending, and click a third time to
 restore relevance ranking. Arrows indicate the active column and direction.
 SoulSearch restores its last window position and size when reopened during the
@@ -153,11 +242,14 @@ The search field filters result names only. Press `z` or Enter on a selected
 result to center and highlight that unit on the fortress map.
 
 Select **Filter presets** in the Search filters panel to open the preset menu.
-Choose **Save preset** and enter a name in the prompt to save the current race
-scope, ranking-filter order, and directions; select a saved name and press
-Enter to load it. Presets
-are stored as individual JSON files under DFHack's mod-state directory,
-`dfhack-config/mods/soulsearch/presets/`, so they survive mod updates.
+Choose **Save preset** and enter a name in the prompt to save the complete
+ordered filter list, including unit-scope, race, and ranking filters with
+their directions; select a saved name and press Enter to replace the current
+filter list. A preset with no unit-scope filters restores unrestricted unit
+scope. Presets are stored as individual JSON files under SoulSearch's
+directory in DFHack's active mod-state path (`mods/soulsearch/presets/`
+beneath `dfhack.getConfigPath()`), so they survive mod updates and do not
+depend on the Dwarf Fortress installation layout.
 Custom presets are listed first. The same menu also includes role presets and skill presets;
 these are shipped configurations, not JSON files, with one preset for every current row in the
 Dwarf Fortress Wiki's primary (A), secondary (B), and tertiary (C)
@@ -165,16 +257,27 @@ associated-attribute table; see
 [`docs/preset-defaults.md`](docs/preset-defaults.md) for the mappings.
 Use the preset menu's Search field to find a built-in skill or saved preset.
 
+When the vanilla **Creatures** menu is open, the **Open SoulSearch** overlay
+button is docked at the menu's bottom center. It opens a separate scoped
+window for the active **Residents**, **Pets/Livestock**, or **Other** tab. The
+Residents preset applies Residents plus Humanoids; Pets/Livestock applies
+Citizens and pets plus Tameable Animals; Other applies Visitors with no race
+restriction. These are ordinary candidate filters before ranking.
+The overlay is enabled by default and can be disabled independently through
+DFHack's overlay controls.
+
 See [`docs/race-filtering.md`](docs/race-filtering.md) for the compound creature
 types and implementation notes on candidate scope.
 
 ## Troubleshooting
 
-If DFHack says `soulsearch` is not a recognized command, DFHack has not added
-the mod's `scripts_modinstalled/` directory to its script paths yet.
+If DFHack says `soulsearch` or `gui/soulsearch` is not a recognized command,
+DFHack has not added the mod's `scripts_modinstalled/` directory to its script
+paths yet.
 
 For development, the most reliable fix is to add this line to
-`dfhack-config/script-paths.txt` and restart DFHack:
+`script-paths.txt` beneath the path reported by
+`:lua print(dfhack.getConfigPath())`, then restart DFHack:
 
 ```text
 +D:/CODE/DFHack/SoulSearch/src/scripts_modinstalled

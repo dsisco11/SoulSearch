@@ -1,0 +1,15 @@
+return {
+    default = {
+        ROOT = {'tests'},
+        lpath = table.concat({
+            './tests/?.lua',
+            './tests/?/init.lua',
+            './src/scripts_modinstalled/?.lua',
+            './src/scripts_modinstalled/?/init.lua',
+        }, ';'),
+        output = 'plainTerminal',
+        pattern = '_spec%.lua$',
+        ['sort-files'] = true,
+        ['sort-tests'] = true,
+    },
+}

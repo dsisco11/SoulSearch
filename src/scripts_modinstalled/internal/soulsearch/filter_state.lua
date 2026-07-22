@@ -11,7 +11,6 @@ local FILTER_HIGH = filter_constants.direction.HIGH
 local FILTER_LOW = filter_constants.direction.LOW
 local FILTER_BEHAVIOR_CANDIDATE = filter_constants.behavior.CANDIDATE
 local FILTER_BEHAVIOR_RANKING = filter_constants.behavior.RANKING
-local DEFAULT_RACE_FILTER_ID = filter_constants.default_race_filter_id
 
 ---@type table<SoulSearchFilterState, SoulSearchSelectedFilter[]>
 local filters_by_state = setmetatable({}, {__mode='k'})
@@ -68,29 +67,6 @@ local function validate(filters)
                 not seen[filter.id] then
             seen[filter.id] = true
             table.insert(valid, {id=filter.id, direction=filter.direction})
-        end
-    end
-    local has_positive_race = false
-    local default_race
-    for _, filter in ipairs(valid) do
-        local descriptor = catalog.by_id[filter.id]
-        if descriptor and descriptor.behavior == FILTER_BEHAVIOR_CANDIDATE and
-                filter.direction == FILTER_HIGH then
-            has_positive_race = true
-            break
-        end
-        if filter.id == DEFAULT_RACE_FILTER_ID then default_race = filter end
-    end
-    if not has_positive_race then
-        if default_race then
-            -- A single filter ID cannot hold both directions. Restoring the
-            -- default inclusion is the only non-duplicating representation.
-            default_race.direction = FILTER_HIGH
-        else
-            table.insert(valid, 1, {
-                id=DEFAULT_RACE_FILTER_ID,
-                direction=FILTER_HIGH,
-            })
         end
     end
     return valid
