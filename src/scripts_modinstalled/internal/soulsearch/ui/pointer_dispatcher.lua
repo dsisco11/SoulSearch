@@ -3,7 +3,29 @@
 -- Generic pointer targeting deliberately has no tooltip dependency. Tooltip
 -- presentation consumes PointerContext in Phase 3.
 
+local POINTER_POLICY = {
+    TARGET='target',
+    PASS='pass',
+    BLOCK='block',
+    NONE='none',
+}
+local reqscript_fn = rawget(_G, 'reqscript')
+
+if type(reqscript_fn) == 'function' then
+    local ok, pointer = pcall(reqscript_fn, 'dwarfui/pointer')
+    if ok and type(pointer) == 'table' and type(pointer.PointerPolicy) == 'table' then
+        POINTER_POLICY.TARGET = pointer.PointerPolicy.TARGET
+        POINTER_POLICY.PASS = pointer.PointerPolicy.PASS
+        POINTER_POLICY.BLOCK = pointer.PointerPolicy.BLOCK
+        POINTER_POLICY.NONE = pointer.PointerPolicy.NONE
+    end
+end
+
 local VALID_POLICIES = {
+    [POINTER_POLICY.TARGET]=true,
+    [POINTER_POLICY.PASS]=true,
+    [POINTER_POLICY.BLOCK]=true,
+    [POINTER_POLICY.NONE]=true,
     target=true,
     pass=true,
     block=true,
@@ -55,15 +77,18 @@ local function resolve_view(view, x, y)
     local inside_frame = frame_contains(view, x, y)
     if not inside_body and not inside_frame then return miss() end
 
-    local policy = view.pointer_policy or 'target'
+    local policy = view.pointer_policy or POINTER_POLICY.TARGET
     assert(VALID_POLICIES[policy],
-        'invalid pointer_policy ' .. tostring(policy) .. '; expected target, pass, block, or none.')
-    if policy == 'none' then return miss() end
+        'invalid pointer_policy ' .. tostring(policy) ..
+        '; expected target, pass, block, none, or a DwarfUI PointerPolicy member.')
+    if policy == 'none' or policy == POINTER_POLICY.NONE then return miss() end
 
     -- A target is a terminal control. This keeps a composite control (for
     -- example, TextButton or List) responsible for its own tooltip instead
     -- of letting an undecorated implementation child steal the target.
-    if policy == 'target' and inside_body then return targeted(view, x, y) end
+    if (policy == 'target' or policy == POINTER_POLICY.TARGET) and inside_body then
+        return targeted(view, x, y)
+    end
 
     if inside_body then
         local subviews = view.subviews or {}
@@ -73,7 +98,9 @@ local function resolve_view(view, x, y)
         end
     end
 
-    if policy == 'block' and inside_frame then return blocked(view) end
+    if (policy == 'block' or policy == POINTER_POLICY.BLOCK) and inside_frame then
+        return blocked(view)
+    end
     return miss()
 end
 

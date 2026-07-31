@@ -1,6 +1,24 @@
 --@ module=true
 
 local widgets = require('gui.widgets')
+local reqscript_fn = rawget(_G, 'reqscript')
+
+local POINTER_POLICY = {
+    TARGET='target',
+    PASS='pass',
+    BLOCK='block',
+    NONE='none',
+}
+
+if type(reqscript_fn) == 'function' then
+    local ok, pointer = pcall(reqscript_fn, 'dwarfui/pointer')
+    if ok and type(pointer) == 'table' and type(pointer.PointerPolicy) == 'table' then
+        POINTER_POLICY.TARGET = pointer.PointerPolicy.TARGET
+        POINTER_POLICY.PASS = pointer.PointerPolicy.PASS
+        POINTER_POLICY.BLOCK = pointer.PointerPolicy.BLOCK
+        POINTER_POLICY.NONE = pointer.PointerPolicy.NONE
+    end
+end
 
 local function install_attribute(class, name, default, description)
     local attrs = assert(class and class.ATTRS,
@@ -34,7 +52,7 @@ function install_pointer_attributes()
     local text_button = assert(widgets.TextButton,
         'SoulSearch requires gui.widgets.TextButton for pointer attributes.')
 
-    changed = install_attribute(widget, 'pointer_policy', 'target',
+    changed = install_attribute(widget, 'pointer_policy', POINTER_POLICY.TARGET,
         'gui.widgets.Widget') or changed
     changed = install_attribute(widget, 'on_pointer_enter', DEFAULT_NIL,
         'gui.widgets.Widget') or changed
@@ -42,15 +60,15 @@ function install_pointer_attributes()
         'gui.widgets.Widget') or changed
     changed = install_attribute(widget, 'on_pointer_leave', DEFAULT_NIL,
         'gui.widgets.Widget') or changed
-    changed = install_attribute(panel, 'pointer_policy', 'pass',
+    changed = install_attribute(panel, 'pointer_policy', POINTER_POLICY.PASS,
         'gui.widgets.Panel') or changed
-    changed = install_attribute(window, 'pointer_policy', 'block',
+    changed = install_attribute(window, 'pointer_policy', POINTER_POLICY.BLOCK,
         'gui.widgets.Window') or changed
     -- TextButton is a Panel that delegates input to an internal HotkeyLabel.
     -- It is nevertheless the public control that declares the tooltip, so it
     -- must remain the terminal pointer target rather than its implementation
     -- child.
-    changed = install_attribute(text_button, 'pointer_policy', 'target',
+    changed = install_attribute(text_button, 'pointer_policy', POINTER_POLICY.TARGET,
         'gui.widgets.TextButton') or changed
     return changed
 end

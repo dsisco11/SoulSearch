@@ -9,6 +9,25 @@ local SoulSearchTooltip =
     reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
+local function try_load_dwarfui_tooltip_registration()
+    local reqscript_fn = rawget(_G, 'reqscript')
+    if type(reqscript_fn) ~= 'function' then return nil end
+    for _, name in ipairs({
+            'dwarfui/tooltip/api',
+            'dwarfui/tooltip/registration',
+        }) do
+        local ok, module = pcall(reqscript_fn, name)
+        if ok and type(module) == 'table' then
+            return module
+        end
+    end
+    return nil
+end
+
+-- Phase 1 migration boundary: probe DwarfUI tooltip registration at load time
+-- without changing SoulSearch tooltip ownership yet.
+local DWARFUI_TOOLTIP_REGISTRATION = try_load_dwarfui_tooltip_registration()
+
 local function tooltip_debug_log(message)
     dfhack.println(message)
 end
@@ -23,6 +42,7 @@ SoulSearchScreen.ATTRS {
 }
 
 function SoulSearchScreen:init()
+    self.dwarfui_tooltip_registration = DWARFUI_TOOLTIP_REGISTRATION
     self.window = SoulSearchWindow{
         view_id='window',
         settings_id=self.settings_id,

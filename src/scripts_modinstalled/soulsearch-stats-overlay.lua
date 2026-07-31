@@ -11,6 +11,25 @@ local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitSt
 local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
 local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
+local function try_load_dwarfui_tooltip_registration()
+    local reqscript_fn = rawget(_G, 'reqscript')
+    if type(reqscript_fn) ~= 'function' then return nil end
+    for _, name in ipairs({
+            'dwarfui/tooltip/api',
+            'dwarfui/tooltip/registration',
+        }) do
+        local ok, module = pcall(reqscript_fn, name)
+        if ok and type(module) == 'table' then
+            return module
+        end
+    end
+    return nil
+end
+
+-- Phase 1 migration boundary: probe DwarfUI tooltip registration at load time
+-- without changing overlay tooltip ownership yet.
+local DWARFUI_TOOLTIP_REGISTRATION = try_load_dwarfui_tooltip_registration()
+
 UNIT_CARD_FOCUS = 'dwarfmode/ViewSheets/UNIT'
 WIDGET_KEY = 'soulsearch_stats'
 
@@ -152,6 +171,7 @@ SoulSearchStatsOverlay.ATTRS{
 }
 
 function SoulSearchStatsOverlay:init()
+    self.dwarfui_tooltip_registration = DWARFUI_TOOLTIP_REGISTRATION
     self.tooltip = Tooltip{}
     self.collapsed = false
     self:addviews{

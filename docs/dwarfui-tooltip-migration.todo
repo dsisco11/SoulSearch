@@ -71,17 +71,40 @@ Exit gate: baseline behavior and automated check results are recorded.
 
 ## Phase 1 - Adopt DwarfUI tooltip dependency boundary
 
-☐ Add DwarfUI tooltip registration dependency where SoulSearch currently owns
+☑ Add DwarfUI tooltip registration dependency where SoulSearch currently owns
 tooltip rendering lifecycle.
-☐ Ensure SoulSearch relies on DwarfUI widget extension contracts (tooltip and
+☑ Ensure SoulSearch relies on DwarfUI widget extension contracts (tooltip and
 pointer attributes) rather than custom local tooltip stack ownership.
-☐ Confirm DwarfUI runtime contract availability for local development:
-  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip.lua)
-  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip_registration.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip_registration.lua)
+☑ Confirm DwarfUI runtime contract availability for local development:
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/api.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/api.lua)
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/registration.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/registration.lua)
   - [../DwarfUI/src/scripts_modinstalled/dwarfui/widget_extensions.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/widget_extensions.lua)
 
 Exit gate: SoulSearch code paths can reference DwarfUI tooltip APIs without
 requiring legacy renderer ownership.
+
+### Phase 1 execution evidence (2026-07-31)
+
+- Implemented dependency boundary probes in current tooltip-owner roots:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
+  - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
+- Implemented DwarfUI-compatible pointer policy contract adoption in SoulSearch
+widget extensions:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua](../src/scripts_modinstalled/internal/soulsearch/ui/widget_extensions.lua)
+- Implemented dual-compatibility pointer resolution so SoulSearch accepts both
+legacy string policies and DwarfUI enum policy members:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/pointer_dispatcher.lua](../src/scripts_modinstalled/internal/soulsearch/ui/pointer_dispatcher.lua)
+- DwarfUI local runtime contract availability confirmed from sibling project:
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/api.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/api.lua)
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/registration.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip/registration.lua)
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/widget_extensions.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/widget_extensions.lua)
+- Validation note:
+  - Unit-test runner still reports the known baseline failures from
+    [../tests/search_spec.lua](../tests/search_spec.lua) and
+    [../tests/component_support_spec.lua](../tests/component_support_spec.lua);
+    no new Phase 1-specific regression signature was introduced.
+  - DwarfUI tooltip module reorganization was incorporated by preferring
+    `dwarfui/tooltip/api` and `dwarfui/tooltip/registration` only.
 
 ## Phase 2 - Migrate root ownership from local renderer to registration
 
