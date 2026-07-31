@@ -8,27 +8,18 @@ local config = reqscript('internal/soulsearch/stats_popover_config')
 local popover = reqscript('internal/soulsearch/stats_popover')
 local glyphs = reqscript('internal/soulsearch/ui_glyphs')
 local UnitStatsList = reqscript('internal/soulsearch/ui/unit_stats_list').UnitStatsList
-local Tooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
-local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
+local dwarfui_tooltip = reqscript('dwarfui/tooltip/api')
 
-local function try_load_dwarfui_tooltip_registration()
-    local reqscript_fn = rawget(_G, 'reqscript')
-    if type(reqscript_fn) ~= 'function' then return nil end
-    for _, name in ipairs({
-            'dwarfui/tooltip/api',
-            'dwarfui/tooltip/registration',
-        }) do
-        local ok, module = pcall(reqscript_fn, name)
-        if ok and type(module) == 'table' then
-            return module
-        end
+local function walk_subviews(root, visit, seen)
+    if not root or type(root) ~= 'table' then return end
+    seen = seen or {}
+    if seen[root] then return end
+    seen[root] = true
+    visit(root)
+    for _, child in ipairs(root.subviews or {}) do
+        walk_subviews(child, visit, seen)
     end
-    return nil
 end
-
--- Phase 1 migration boundary: probe DwarfUI tooltip registration at load time
--- without changing overlay tooltip ownership yet.
-local DWARFUI_TOOLTIP_REGISTRATION = try_load_dwarfui_tooltip_registration()
 
 UNIT_CARD_FOCUS = 'dwarfmode/ViewSheets/UNIT'
 WIDGET_KEY = 'soulsearch_stats'
@@ -171,8 +162,6 @@ SoulSearchStatsOverlay.ATTRS{
 }
 
 function SoulSearchStatsOverlay:init()
-    self.dwarfui_tooltip_registration = DWARFUI_TOOLTIP_REGISTRATION
-    self.tooltip = Tooltip{}
     self.collapsed = false
     self:addviews{
         widgets.Window{
@@ -198,11 +187,19 @@ function SoulSearchStatsOverlay:init()
             tooltip='Expand the SoulSearch stats view.', visible=false,
             on_click=function() self:set_collapsed(false) end},
     }
-    -- Unlike the main SoulSearch screen, this is an offset and tightly
-    -- clipped overlay. Render its tooltip separately, after the panel, so it
-    -- can use screen-relative coordinates and extend beyond the popout.
-    self.tooltip.parent_view = self
-    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
+    self:register_tooltips()
+end
+
+function SoulSearchStatsOverlay:register_tooltips()
+    walk_subviews(self, function(view)
+        dwarfui_tooltip.register(view)
+    end)
+end
+
+function SoulSearchStatsOverlay:unregister_tooltips()
+    walk_subviews(self, function(view)
+        dwarfui_tooltip.unregister(view)
+    end)
 end
 
 function SoulSearchStatsOverlay:set_collapsed(collapsed)
@@ -280,14 +277,16 @@ function SoulSearchStatsOverlay:preUpdateLayout(parent_rect)
     self.needs_layout = self.needs_layout or changed
 end
 
-function SoulSearchStatsOverlay:onRenderFrame(dc, rect)
-    self.tooltip_agent:update()
-    SoulSearchStatsOverlay.super.onRenderFrame(self, dc, rect)
+function SoulSearchStatsOverlay:overlay_onenable()
+    self:register_tooltips()
 end
 
-function SoulSearchStatsOverlay:render(dc)
-    SoulSearchStatsOverlay.super.render(self, dc)
-    if self.tooltip.visible then self.tooltip:render(dc) end
+function SoulSearchStatsOverlay:overlay_ondisable()
+    self:unregister_tooltips()
+end
+
+function SoulSearchStatsOverlay:onDestroy()
+    self:unregister_tooltips()
 end
 
 function SoulSearchStatsOverlay:update_subject(unit)

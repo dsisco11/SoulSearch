@@ -108,17 +108,37 @@ legacy string policies and DwarfUI enum policy members:
 
 ## Phase 2 - Migrate root ownership from local renderer to registration
 
-☐ Remove SoulSearch root-level `self.tooltip` and `self.tooltip_agent`
+☑ Remove SoulSearch root-level `self.tooltip` and `self.tooltip_agent`
 construction from:
   - [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
   - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
-☐ Remove per-frame tooltip update calls currently executed during render.
-☐ Register tooltip-bearing controls with DwarfUI under the appropriate root.
-☐ Verify main screen and overlay both resolve to the correct presentation
+☑ Remove per-frame tooltip update calls currently executed during render.
+☑ Register tooltip-bearing controls with DwarfUI under the appropriate root.
+☑ Verify main screen and overlay both resolve to the correct presentation
 surface under DwarfUI transport selection.
 
 Exit gate: SoulSearch no longer instantiates `SoulSearchTooltip` or
 `TooltipAgent` in active UI roots.
+
+### Phase 2 execution evidence (2026-07-31)
+
+- Main screen migration completed:
+  - removed `ui_tooltip` and `tooltip_agent` root ownership;
+  - removed render-loop tooltip update;
+  - added DwarfUI registration/unregistration over the window subtree.
+  - file: [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
+- Stats overlay migration completed:
+  - removed `ui_tooltip` and `tooltip_agent` root ownership;
+  - removed overlay-local tooltip repaint path;
+  - added DwarfUI registration/unregistration over overlay subtree;
+  - wired registration to `init`, `overlay_onenable`, `overlay_ondisable`, and
+    `onDestroy` lifecycle points.
+  - file: [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
+- Verification snapshot:
+  - no remaining root references to `ui_tooltip`, `tooltip_agent`,
+    `self.tooltip`, `self.tooltip_agent`, or `tooltip_agent:update()` in the
+    two migrated roots;
+  - both roots now use `dwarfui/tooltip/api` registration calls.
 
 ## Phase 3 - Preserve and validate dynamic tooltip semantics
 
