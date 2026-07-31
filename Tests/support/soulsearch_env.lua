@@ -919,11 +919,9 @@ function M.load_ui_open_guard(repo_root, unavailable_reason)
         ['internal/soulsearch/residents']=residents,
         ['internal/soulsearch/filter_constants']=filter_constants,
         ['internal/soulsearch/ui_layout']=layout,
-        ['internal/soulsearch/ui_tooltip']={
-            SoulSearchTooltip=function(info) return info end,
-        },
-        ['internal/soulsearch/ui/tooltip_agent']={
-            TooltipAgent={new=function() return {update=function() end} end},
+        ['dwarfui/tooltip/api']={
+            register=function() return true end,
+            unregister=function() return true end,
         },
         ['internal/soulsearch/screen_registry']=screen_registry,
         ['internal/soulsearch/window_config']=window_config,
@@ -1148,14 +1146,17 @@ function M.load_ui_characterization(repo_root)
                 return info
             end,
         },
-        ['internal/soulsearch/ui_tooltip']={
-            SoulSearchTooltip=function(info)
-                info.widget_kind = 'SoulSearchTooltip'
-                return info
+        ['dwarfui/tooltip/api']={
+            register=function(view)
+                state.tooltip_registered = (state.tooltip_registered or 0) + 1
+                state.last_registered_view = view
+                return true
             end,
-        },
-        ['internal/soulsearch/ui/tooltip_agent']={
-            TooltipAgent={new=function() return {update=function() end} end},
+            unregister=function(view)
+                state.tooltip_unregistered = (state.tooltip_unregistered or 0) + 1
+                state.last_unregistered_view = view
+                return true
+            end,
         },
         ['internal/soulsearch/ui_glyphs']={CP437_VERTICAL_LINE=179},
         ['internal/soulsearch/filter_constants']={FILTER_CONSTANTS={
@@ -1485,6 +1486,20 @@ function M.load_stats_overlay(repo_root, options)
             if name == 'internal/soulsearch/ui/widget_extensions' then return {} end
             if name == 'internal/soulsearch/stats_popover_config' then return config end
             if name == 'internal/soulsearch/stats_popover' then return popover end
+            if name == 'dwarfui/tooltip/api' then
+                return {
+                    register=function(view)
+                        state.tooltip_registers = (state.tooltip_registers or 0) + 1
+                        state.last_registered_tooltip_view = view
+                        return true
+                    end,
+                    unregister=function(view)
+                        state.tooltip_unregisters = (state.tooltip_unregisters or 0) + 1
+                        state.last_unregistered_tooltip_view = view
+                        return true
+                    end,
+                }
+            end
             if name == 'internal/soulsearch/ui_glyphs' then
                 return {CP437_ARROW_RIGHT=string.char(16), CP437_ARROW_LEFT=string.char(17),
                     CP437_ARROW_UP=string.char(24), CP437_ARROW_DOWN=string.char(25),
@@ -1493,14 +1508,6 @@ function M.load_stats_overlay(repo_root, options)
             end
             if name == 'internal/soulsearch/ui/unit_stats_list' then
                 return {UnitStatsList=stats_panel}
-            end
-            if name == 'internal/soulsearch/ui_tooltip' then
-                return {SoulSearchTooltip=function(info) return info end}
-            end
-            if name == 'internal/soulsearch/ui/tooltip_agent' then
-                return {TooltipAgent={new=function() return {update=function()
-                    state.tooltip_updates=(state.tooltip_updates or 0)+1
-                end} end}}
             end
             error('unexpected reqscript: ' .. name)
         end,

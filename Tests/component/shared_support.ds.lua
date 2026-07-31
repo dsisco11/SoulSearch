@@ -1,6 +1,6 @@
 local widgets = require('gui.widgets')
-local fixtures = require('tests.components.support.fixtures')
-local live_unit = require('tests.components.support.live_unit')
+local fixtures = require('component.support.fixtures')
+local live_unit = require('component.support.live_unit')
 
 ---@class tests.SoulSearchSupportPanel: widgets.Panel
 local SupportPanel = defclass(nil, widgets.Panel)

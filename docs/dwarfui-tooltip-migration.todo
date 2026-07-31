@@ -211,25 +211,58 @@ order entries:
 
 ## Phase 5 - Test suite migration
 
-☐ Retire or rewrite tests coupled to removed internals:
+☑ Retire or rewrite tests coupled to removed internals:
   - [../tests/ui_tooltip_spec.lua](../tests/ui_tooltip_spec.lua)
   - [../tests/tooltip_agent_spec.lua](../tests/tooltip_agent_spec.lua)
-☐ Update registry and extension contract tests for the new dependency graph:
+☑ Update registry and extension contract tests for the new dependency graph:
   - [../tests/module_registry_spec.lua](../tests/module_registry_spec.lua)
   - [../tests/widget_extensions_spec.lua](../tests/widget_extensions_spec.lua)
-☐ Update component harnesses that currently construct
+☑ Update component harnesses that currently construct
 `SoulSearchTooltip`/`TooltipAgent`:
   - [../tests/component/filter_action_list.ds.lua](../tests/component/filter_action_list.ds.lua)
   - [../tests/component/pickers.ds.lua](../tests/component/pickers.ds.lua)
   - [../tests/component/results_panel.ds.lua](../tests/component/results_panel.ds.lua)
   - [../tests/component/unit_info_panel.ds.lua](../tests/component/unit_info_panel.ds.lua)
-☐ Add characterization tests focused on behavior instead of legacy ownership:
+☑ Add characterization tests focused on behavior instead of legacy ownership:
   - tooltip visibility for static controls;
   - dynamic tooltip updates on hovered rows;
   - overlay tooltip display on active unit card.
 
 Exit gate: tests assert user-visible tooltip behavior and all obsolete
 internal-contract expectations are removed.
+
+### Phase 5 execution evidence (2026-07-31)
+
+- Retired obsolete legacy-internal specs:
+  - removed [../tests/ui_tooltip_spec.lua](../tests/ui_tooltip_spec.lua)
+  - removed [../tests/tooltip_agent_spec.lua](../tests/tooltip_agent_spec.lua)
+  - removed [../tests/pointer_dispatcher_spec.lua](../tests/pointer_dispatcher_spec.lua)
+- Updated dependency-graph expectations:
+  - [../tests/module_registry_spec.lua](../tests/module_registry_spec.lua)
+    now expects no `ui_tooltip`, `ui/tooltip_agent`, or
+    `ui/pointer_dispatcher` contracts.
+  - [../tests/widget_extensions_spec.lua](../tests/widget_extensions_spec.lua)
+    now expects per-root `dwarfui/tooltip/api` usage.
+- Updated harness stubs for DwarfUI tooltip API ownership:
+  - [../tests/support/soulsearch_env.lua](../tests/support/soulsearch_env.lua)
+    now provides `dwarfui/tooltip/api` register/unregister stubs for
+    UI-characterization and stats-overlay loaders.
+- Updated component fixtures away from legacy global tooltip panel ownership:
+  - [../tests/component/filter_action_list.ds.lua](../tests/component/filter_action_list.ds.lua)
+  - [../tests/component/pickers.ds.lua](../tests/component/pickers.ds.lua)
+  - [../tests/component/results_panel.ds.lua](../tests/component/results_panel.ds.lua)
+  - [../tests/component/unit_info_panel.ds.lua](../tests/component/unit_info_panel.ds.lua)
+- Updated component support module paths and main-screen shape expectations:
+  - [../tests/component_support_spec.lua](../tests/component_support_spec.lua)
+  - [../tests/component/shared_support.ds.lua](../tests/component/shared_support.ds.lua)
+  - [../tests/component/stats_overlay.ds.lua](../tests/component/stats_overlay.ds.lua)
+- Updated behavior assertion for overlay tooltips to DwarfUI registration
+  lifecycle instead of tooltip-agent render updates:
+  - [../tests/stats_overlay_spec.lua](../tests/stats_overlay_spec.lua)
+- Automated validation snapshot (`Tools/Run-UnitTests.ps1`):
+  - 316 successes / 4 failures / 0 errors
+  - remaining failures are the pre-existing baseline ranking assertions in
+    [../tests/search_spec.lua](../tests/search_spec.lua)
 
 ## Phase 6 - Validation and packaging
 

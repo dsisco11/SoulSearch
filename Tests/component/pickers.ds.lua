@@ -5,10 +5,6 @@ local SearchablePicker =
 local PresetPicker = reqscript('internal/soulsearch/ui/preset_picker').PresetPicker
 local ModalPanelWindow =
     reqscript('internal/soulsearch/ui/modal_panel').ModalPanelWindow
-local SoulSearchTooltip =
-    reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
-local TooltipAgent =
-    reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 local pointer_adapter = require('dwarfspec.automation.pointer_adapter')
 
 ---@class tests.RightClickConsumer: widgets.Panel
@@ -68,8 +64,7 @@ function SearchablePickerScreen:init()
             on_submit=inputs.on_submit,
         },
     }
-    self.tooltip = SoulSearchTooltip{view_id='tooltip'}
-    self:addviews{self.underlay, self.open_button, self.picker, self.tooltip}
+    self:addviews{self.underlay, self.open_button, self.picker}
     self.picker:addviews{
         RightClickConsumer{view_id='right_click_consumer',
             frame={l=12, t=1, w=10, h=1},
@@ -77,14 +72,6 @@ function SearchablePickerScreen:init()
         BlankModalArea{view_id='modal_blank', frame={l=0, t=1, w=8, h=1}},
     }
     self.picker:set_choices(self.choices, 1)
-    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
-end
-
----Updates the production tooltip agent after each screen render.
----@param dc dfhack.pen_array
-function SearchablePickerScreen:onRender(dc)
-    self.tooltip_agent:update()
-    SearchablePickerScreen.super.onRender(self, dc)
 end
 
 ---Returns IDs for one searchable-picker kind.

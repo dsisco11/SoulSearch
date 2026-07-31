@@ -1,4 +1,4 @@
-local live_unit = require('tests.components.support.live_unit')
+local live_unit = require('component.support.live_unit')
 local popover = reqscript('internal/soulsearch/stats_popover')
 local StatsOverlay = reqscript('soulsearch-stats-overlay').SoulSearchStatsOverlay
 

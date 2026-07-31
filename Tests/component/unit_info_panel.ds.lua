@@ -1,8 +1,6 @@
 local gui = require('gui')
-local fixtures = require('tests.components.support.fixtures')
+local fixtures = require('component.support.fixtures')
 local UnitInfoPanel = reqscript('internal/soulsearch/stats_panel').UnitInfoPanel
-local SoulSearchTooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
-local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
 ---@class tests.UnitInfoPanelScreen: gui.ZScreen
 ---@field panel UnitInfoPanel
@@ -13,16 +11,7 @@ UnitInfoPanelScreen.ATTRS{focus_path='soulsearch/unit-info-panel-test'}
 function UnitInfoPanelScreen:init()
     self.panel = UnitInfoPanel{view_id='unit_info', frame={l=0, t=0, w=64, h=14},
         subject=fixtures.stats_subject(), sort={key='value', reverse=true, phase=1}}
-    self.tooltip = SoulSearchTooltip{view_id='tooltip'}
-    self:addviews{self.panel, self.tooltip}
-    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
-end
-
----Updates production tooltip state after each screen render.
----@param dc dfhack.pen_array
-function UnitInfoPanelScreen:onRender(dc)
-    self.tooltip_agent:update()
-    UnitInfoPanelScreen.super.onRender(self, dc)
+    self:addviews{self.panel}
 end
 
 ---Mounts the unit-information component fixture.

@@ -1,5 +1,5 @@
-local fixtures = require('components.support.fixtures')
-local live_unit = require('components.support.live_unit')
+local fixtures = require('component.support.fixtures')
+local live_unit = require('component.support.live_unit')
 local module_loader = require('support.module_loader')
 local repo_root = require('support.repo_root')
 local widget_harness = require('support.widget_harness')
@@ -20,11 +20,9 @@ local function load_main_screen()
                 return info
             end,
         },
-        ['internal/soulsearch/ui_tooltip']={
-            SoulSearchTooltip=function(info) return info end,
-        },
-        ['internal/soulsearch/ui/tooltip_agent']={
-            TooltipAgent={new=function() return {update=function() end} end},
+        ['dwarfui/tooltip/api']={
+            register=function() return true end,
+            unregister=function() return true end,
         },
     }
     return module_loader.load(repo_root,
@@ -112,8 +110,8 @@ describe('component support', function()
         local screen = main_screen.SoulSearchScreen{settings={}}
 
         assert.equals('window', screen.window.view_id)
-        assert.equals('tooltip', screen.tooltip.view_id)
         assert.equals(screen.window, screen.subviews.window)
-        assert.equals(screen.tooltip, screen.subviews.tooltip)
+        assert.is_nil(screen.tooltip)
+        assert.is_nil(screen.subviews.tooltip)
     end)
 end)

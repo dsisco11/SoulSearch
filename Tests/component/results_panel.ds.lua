@@ -1,7 +1,5 @@
 local gui = require('gui')
 local ResultsPanel = reqscript('internal/soulsearch/ui/results_panel').ResultsPanel
-local SoulSearchTooltip = reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
-local TooltipAgent = reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 
 ---@class tests.ResultsPanelScreen: gui.ZScreen
 ---@field panel ResultsPanel
@@ -10,25 +8,16 @@ local ResultsPanelScreen = defclass(nil, gui.ZScreen)
 ResultsPanelScreen.ATTRS{callbacks=DEFAULT_NIL,
     focus_path='soulsearch/results-panel-test'}
 
----Builds the production Results Panel and its tooltip renderer.
+---Builds the production Results Panel.
 function ResultsPanelScreen:init()
     self.panel = ResultsPanel{view_id='results_panel',
         frame={l=0, t=0, w=64, h=14}, inputs=self.callbacks}
-    self.tooltip = SoulSearchTooltip{view_id='tooltip'}
-    self:addviews{self.panel, self.tooltip}
+    self:addviews{self.panel}
     self.panel:set_choices({
         {text='Ada', result={unit_id=1, name='Ada'}},
         {text='Borin', result={unit_id=2, name='Borin'}},
         {text='Cera', result={unit_id=3, name='Cera'}},
     }, 1)
-    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
-end
-
----Updates production tooltip state after each screen render.
----@param dc dfhack.pen_array
-function ResultsPanelScreen:onRender(dc)
-    self.tooltip_agent:update()
-    ResultsPanelScreen.super.onRender(self, dc)
 end
 
 ---Creates spies for ResultsPanel host callbacks.
@@ -97,7 +86,7 @@ describe('SoulSearch Results Panel', function()
             local header = ds.get('results_panel/' .. case[1])
             header:hover()
             ds.wait_frames(1)
-            assert.equals(case[2], ds.get('tooltip'):raw().tooltip_text)
+            assert.equals(case[2], header:raw().tooltip)
         end
     end)
 end)

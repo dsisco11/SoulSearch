@@ -25,10 +25,10 @@ describe('module registry', function()
         local candidate_index, active_index, family_index, scope_filter_index, state_index, config_index
         local screen_registry_index, stats_layout_index, stats_config_index
         local residents_index, stats_presenter_index, stats_list_index
-        local stats_panel_index, tooltip_index, popover_index
+        local stats_panel_index, popover_index
         local race_filter_index, layout_index, modal_index, action_list_index
         local format_index, filter_panel_index, results_panel_index
-        local extensions_index, pointer_index, tooltip_agent_index
+        local extensions_index
         local main_window_index, main_screen_index, ui_index
         for index, name in ipairs(calls) do
             if name == 'internal/soulsearch/filter_constants' then
@@ -67,8 +67,6 @@ describe('module registry', function()
                 stats_presenter_index = index
             elseif name == 'internal/soulsearch/ui/unit_stats_list' then
                 stats_list_index = index
-            elseif name == 'internal/soulsearch/ui_tooltip' then
-                tooltip_index = index
             elseif name == 'internal/soulsearch/stats_popover' then
                 popover_index = index
             elseif name == 'internal/soulsearch/race_filter_provider' then
@@ -81,10 +79,6 @@ describe('module registry', function()
                 modal_index = index
             elseif name == 'internal/soulsearch/ui/widget_extensions' then
                 extensions_index = index
-            elseif name == 'internal/soulsearch/ui/pointer_dispatcher' then
-                pointer_index = index
-            elseif name == 'internal/soulsearch/ui/tooltip_agent' then
-                tooltip_agent_index = index
             elseif name == 'internal/soulsearch/ui/filter_action_list' then
                 action_list_index = index
             elseif name == 'internal/soulsearch/ui/filter_panel' then
@@ -119,15 +113,11 @@ describe('module registry', function()
         assert.is_truthy(residents_index < popover_index)
         assert.is_truthy(stats_list_index < popover_index)
         assert.is_truthy(stats_panel_index < popover_index)
-        assert.is_truthy(tooltip_index < popover_index)
         assert.is_truthy(screen_registry_index < popover_index)
         assert.is_truthy(layout_index < modal_index)
         assert.is_truthy(layout_index < format_index)
         assert.is_truthy(constants_index < format_index)
         assert.is_truthy(format_index < extensions_index)
-        assert.is_truthy(extensions_index < pointer_index)
-        assert.is_truthy(pointer_index < tooltip_agent_index)
-        assert.is_truthy(tooltip_agent_index < tooltip_index)
         assert.is_truthy(extensions_index < modal_index)
         assert.is_truthy(format_index < filter_panel_index)
         assert.is_truthy(format_index < results_panel_index)
@@ -137,7 +127,6 @@ describe('module registry', function()
         assert.is_truthy(filter_panel_index < main_window_index)
         assert.is_truthy(results_panel_index < main_window_index)
         assert.is_truthy(stats_panel_index < main_window_index)
-        assert.is_truthy(tooltip_index < main_window_index)
         assert.is_truthy(main_window_index < main_screen_index)
         assert.is_truthy(main_screen_index < ui_index)
         assert.is_truthy(loaded['internal/soulsearch/search'].apply ~= nil)
@@ -166,15 +155,14 @@ describe('module registry', function()
         assert.is_truthy(tostring(err):find('missing entries()', 1, true) ~= nil)
     end)
 
-    it('module registry: pointer infrastructure has the reload contract', function()
+    it('module registry: widget extensions keep the reload contract', function()
         local contracts = {}
         for _, spec in ipairs(registry.MODULES) do contracts[spec.name] = spec.contract end
         assert.are.equal('install_pointer_attributes',
             contracts['internal/soulsearch/ui/widget_extensions'])
-        assert.are.equal('PointerDispatcher',
-            contracts['internal/soulsearch/ui/pointer_dispatcher'])
-        assert.are.equal('TooltipAgent',
-            contracts['internal/soulsearch/ui/tooltip_agent'])
+        assert.is_nil(contracts['internal/soulsearch/ui/pointer_dispatcher'])
+        assert.is_nil(contracts['internal/soulsearch/ui/tooltip_agent'])
+        assert.is_nil(contracts['internal/soulsearch/ui_tooltip'])
     end)
 
     it('module registry: clear order is reverse dependency order', function()

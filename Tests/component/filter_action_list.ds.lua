@@ -1,10 +1,6 @@
 local gui = require('gui')
 local FilterActionList =
     reqscript('internal/soulsearch/ui/filter_action_list').FilterActionList
-local SoulSearchTooltip =
-    reqscript('internal/soulsearch/ui_tooltip').SoulSearchTooltip
-local TooltipAgent =
-    reqscript('internal/soulsearch/ui/tooltip_agent').TooltipAgent
 local ui_layout = reqscript('internal/soulsearch/ui_layout')
 
 ---@class tests.FilterActionListScreen: gui.ZScreen
@@ -21,24 +17,15 @@ FilterActionListScreen.ATTRS{
     focus_path='soulsearch/filter-action-list-test',
 }
 
----Builds a real filter list and tooltip renderer for pointer interaction tests.
+---Builds a real filter list for pointer interaction tests.
 function FilterActionListScreen:init()
     self.list = FilterActionList{
         view_id='filter_list',
         frame={l=0, t=0, w=self.list_width, h=self.list_height},
         on_filter_action=self.callbacks.on_filter_action,
     }
-    self.tooltip = SoulSearchTooltip{view_id='tooltip'}
-    self:addviews{self.list, self.tooltip}
+    self:addviews{self.list}
     self.list:setChoices(self.choices, 1)
-    self.tooltip_agent = TooltipAgent.new(self, self.tooltip)
-end
-
----Updates the production tooltip agent after each screen render.
----@param dc dfhack.pen_array
-function FilterActionListScreen:onRender(dc)
-    self.tooltip_agent:update()
-    FilterActionListScreen.super.onRender(self, dc)
 end
 
 ---Builds one ordinary ranking-filter choice.
@@ -149,7 +136,7 @@ describe('SoulSearch Filter Action List', function()
         mount_action_list(1, {candidate_choice('unit_scope:visitors')})
         ds.get('filter_list'):hover()
         ds.wait_frames(1)
-        assert.equals('Include in results.', ds.get('tooltip'):raw().tooltip_text)
+        assert.equals('Include in results.', ds.get('filter_list'):raw().tooltip)
         ds.unmount()
 
         mount_list(21, {ranking_choice('trait:PATIENCE', 'Patience')})
@@ -157,7 +144,7 @@ describe('SoulSearch Filter Action List', function()
         ds.wait_frames(1)
         assert.equals(
             'A personality trait that shapes behavior and social interaction.',
-            ds.get('tooltip'):raw().tooltip_text)
+            ds.get('filter_list'):raw().tooltip)
     end)
 
     it('targets the correct action row after native scrolling', function()

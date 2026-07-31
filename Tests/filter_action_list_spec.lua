@@ -156,30 +156,4 @@ describe('filter action list', function()
         assert.are.equal(2, list.super_input_calls)
     end)
 
-    it('filter action list: dispatcher invokes class pointer method with local coordinates',
-            function()
-        local dispatcher = soulsearch_env.load_pointer_dispatcher(repo_root)
-        local list = make_list(function() end)
-        list:setChoices({{descriptor={kind='trait', key='PATIENCE'}}}, 1)
-        list.visible, list.active, list.pointer_policy = true, true, 'target'
-        list.subviews = {}
-        widget_harness.set_frame(list, 3, 2, 40, 4)
-        local root = {
-            visible=true,
-            active=true,
-            pointer_policy='target',
-            subviews={list},
-        }
-        widget_harness.set_frame(root, 0, 0, 50, 10)
-
-        local context = dispatcher.PointerContext.new(root)
-        local result = dispatcher.PointerDispatcher.sample(context,
-            3 + layout.ACTIVE_FILTER_BUTTON_START_X, 2)
-
-        assert.are.equal(list, result.target)
-        assert.are.equal(layout.ACTIVE_FILTER_BUTTON_START_X, result.x)
-        assert.are.equal(0, result.y)
-        assert.are.equal('Prefer high', list.tooltip)
-    end)
-
 end)

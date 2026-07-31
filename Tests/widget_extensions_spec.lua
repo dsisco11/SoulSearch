@@ -80,7 +80,6 @@ describe('widget extensions', function()
 
     it('widget extensions: every native-widget host imports the extension', function()
         local sources = {
-            'src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua',
             'src/scripts_modinstalled/internal/soulsearch/stats_panel.lua',
             'src/scripts_modinstalled/soulsearch-stats-overlay.lua',
             'src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua',
@@ -102,12 +101,6 @@ describe('widget extensions', function()
                 "reqscript('internal/soulsearch/ui/widget_extensions')", 1, true) ~= nil,
                 'missing direct widget extension import: ' .. relative_path)
         end
-        local tooltip_file = assert(io.open(repo_root ..
-            '/src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua', 'r'))
-        local tooltip_source = tooltip_file:read('*a')
-        tooltip_file:close()
-        assert.is_truthy(tooltip_source:find("pointer_policy='none'", 1, true) ~= nil,
-            'tooltip renderer must exclude its subtree from pointer targeting')
         for _, relative_path in ipairs({
                 'src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua',
                 'src/scripts_modinstalled/soulsearch-stats-overlay.lua',
@@ -116,8 +109,8 @@ describe('widget extensions', function()
             local source = file:read('*a')
             file:close()
             assert.is_truthy(source:find(
-                "reqscript('internal/soulsearch/ui/tooltip_agent')", 1, true) ~= nil,
-                'missing per-root tooltip agent: ' .. relative_path)
+                "reqscript('dwarfui/tooltip/api')", 1, true) ~= nil,
+                'missing per-root DwarfUI tooltip API: ' .. relative_path)
         end
     end)
 

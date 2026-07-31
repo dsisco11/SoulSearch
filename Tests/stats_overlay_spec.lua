@@ -193,23 +193,21 @@ describe('stats overlay', function()
         assert.are.equal(1, #state.errors)
     end)
 
-    it('stats overlay: resolves tooltips while rendering', function()
+    it('stats overlay: registers and unregisters tooltip targets through DwarfUI', function()
         local overlay, state = env.load_stats_overlay(root,
             {focuses={'dwarfmode/ViewSheets/UNIT'}})
         local widget = overlay.SoulSearchStatsOverlay{}
-        widget:onRenderFrame(nil, nil)
-        assert.are.equal(1, state.tooltip_updates)
-    end)
+        assert.is_truthy((state.tooltip_registers or 0) > 0)
+        local initial_registers = state.tooltip_registers or 0
 
-    it('stats overlay: renders its tooltip above the clipped popout', function()
-        local overlay = env.load_stats_overlay(root,
-            {focuses={'dwarfmode/ViewSheets/UNIT'}})
-        local widget = overlay.SoulSearchStatsOverlay{}
-        widget.tooltip.visible = true
-        widget.tooltip.render = function() widget.tooltip_rendered = true end
-        widget:render('screen')
-        assert.is_truthy(widget.tooltip_rendered)
-        assert.are.equal(widget, widget.tooltip.parent_view)
+        widget:overlay_ondisable()
+        assert.is_truthy((state.tooltip_unregisters or 0) >= initial_registers)
+
+        widget:overlay_onenable()
+        assert.is_truthy((state.tooltip_registers or 0) > initial_registers)
+
+        widget:onDestroy()
+        assert.is_truthy((state.tooltip_unregisters or 0) > initial_registers)
     end)
 
     it('stats overlay: collapse button hides and restores the panel in place', function()
