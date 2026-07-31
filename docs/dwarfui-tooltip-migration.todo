@@ -1,0 +1,131 @@
+# DwarfUI tooltip migration plan
+
+## Objective
+
+Remove SoulSearch's legacy tooltip renderer and per-root tooltip agent, then
+migrate all tooltip behavior to DwarfUI's standardized registration-driven
+tooltip system.
+
+## Linked documentation
+
+- DwarfUI public tooltip API and runtime behavior:
+  [../DwarfUI/README.md](../DwarfUI/README.md)
+- DwarfUI tooltip registration architecture decision:
+  [../DwarfUI/Docs/tooltip-registration-decision.md](../DwarfUI/Docs/tooltip-registration-decision.md)
+- SoulSearch project history and prior tooltip changes:
+  [project.todo](project.todo)
+
+## Phase 0 - Baseline and guardrails
+
+☐ Capture baseline tooltip behavior in SoulSearch before code changes:
+  - main screen static tooltips;
+  - dynamic row-hover tooltips in filter actions;
+  - dynamic row-hover tooltips in pickers;
+  - dynamic stat-list label and delta tooltips;
+  - stats-overlay tooltip behavior.
+☐ Record baseline local checks:
+  - `Tools/Run-UnitTests.ps1` result;
+  - `Tools/Build.ps1` result.
+☐ Snapshot legacy tooltip entry points and dependencies:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
+  - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua](../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua](../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/module_registry.lua](../src/scripts_modinstalled/internal/soulsearch/module_registry.lua)
+
+Exit gate: baseline behavior and automated check results are recorded.
+
+## Phase 1 - Adopt DwarfUI tooltip dependency boundary
+
+☐ Add DwarfUI tooltip registration dependency where SoulSearch currently owns
+tooltip rendering lifecycle.
+☐ Ensure SoulSearch relies on DwarfUI widget extension contracts (tooltip and
+pointer attributes) rather than custom local tooltip stack ownership.
+☐ Confirm DwarfUI runtime contract availability for local development:
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip.lua)
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip_registration.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/tooltip_registration.lua)
+  - [../DwarfUI/src/scripts_modinstalled/dwarfui/widget_extensions.lua](../DwarfUI/src/scripts_modinstalled/dwarfui/widget_extensions.lua)
+
+Exit gate: SoulSearch code paths can reference DwarfUI tooltip APIs without
+requiring legacy renderer ownership.
+
+## Phase 2 - Migrate root ownership from local renderer to registration
+
+☐ Remove SoulSearch root-level `self.tooltip` and `self.tooltip_agent`
+construction from:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
+  - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
+☐ Remove per-frame tooltip update calls currently executed during render.
+☐ Register tooltip-bearing controls with DwarfUI under the appropriate root.
+☐ Verify main screen and overlay both resolve to the correct presentation
+surface under DwarfUI transport selection.
+
+Exit gate: SoulSearch no longer instantiates `SoulSearchTooltip` or
+`TooltipAgent` in active UI roots.
+
+## Phase 3 - Preserve and validate dynamic tooltip semantics
+
+☐ Keep static tooltip strings intact and confirm visibility after migration.
+☐ Validate dynamic tooltip mutation under pointer update for:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua](../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua)
+☐ Confirm tooltip text providers remain correct:
+  - [../src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua](../src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua)
+  - [race-filtering.md](race-filtering.md)
+
+Exit gate: static and dynamic tooltips match pre-migration behavior.
+
+## Phase 4 - Remove obsolete SoulSearch tooltip modules
+
+☐ Remove legacy module files:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua](../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua](../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua)
+☐ Remove legacy debug script:
+  - [../src/scripts_modinstalled/soulsearch-tooltip-log.lua](../src/scripts_modinstalled/soulsearch-tooltip-log.lua)
+☐ Update module registry and reload ordering to remove legacy contracts:
+  - [../src/scripts_modinstalled/internal/soulsearch/module_registry.lua](../src/scripts_modinstalled/internal/soulsearch/module_registry.lua)
+☐ Keep or remove local pointer infrastructure only if still required by
+non-tooltip behavior; document the decision.
+
+Exit gate: no production code path imports legacy tooltip modules.
+
+## Phase 5 - Test suite migration
+
+☐ Retire or rewrite tests coupled to removed internals:
+  - [../tests/ui_tooltip_spec.lua](../tests/ui_tooltip_spec.lua)
+  - [../tests/tooltip_agent_spec.lua](../tests/tooltip_agent_spec.lua)
+☐ Update registry and extension contract tests for the new dependency graph:
+  - [../tests/module_registry_spec.lua](../tests/module_registry_spec.lua)
+  - [../tests/widget_extensions_spec.lua](../tests/widget_extensions_spec.lua)
+☐ Update component harnesses that currently construct
+`SoulSearchTooltip`/`TooltipAgent`:
+  - [../tests/component/filter_action_list.ds.lua](../tests/component/filter_action_list.ds.lua)
+  - [../tests/component/pickers.ds.lua](../tests/component/pickers.ds.lua)
+  - [../tests/component/results_panel.ds.lua](../tests/component/results_panel.ds.lua)
+  - [../tests/component/unit_info_panel.ds.lua](../tests/component/unit_info_panel.ds.lua)
+☐ Add characterization tests focused on behavior instead of legacy ownership:
+  - tooltip visibility for static controls;
+  - dynamic tooltip updates on hovered rows;
+  - overlay tooltip display on active unit card.
+
+Exit gate: tests assert user-visible tooltip behavior and all obsolete
+internal-contract expectations are removed.
+
+## Phase 6 - Validation and packaging
+
+☐ Run full automated checks:
+  - `Tools/Run-UnitTests.ps1`
+  - `Tools/Build.ps1`
+☐ Verify package and runtime load/reload do not reference removed tooltip
+modules.
+☐ Verify key runtime scenarios manually in Dwarf Fortress:
+  - SoulSearch main screen;
+  - stats overlay on unit card;
+  - filter and picker hover tooltips;
+  - result and stat column header tooltips.
+☐ Update [project.todo](project.todo) with completion status only after exit
+gates pass.
+
+Exit gate: migration is complete, legacy tooltip system is removed, and
+DwarfUI tooltips are the only active tooltip system in SoulSearch.
