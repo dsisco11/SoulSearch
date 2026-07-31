@@ -35,14 +35,6 @@ MODULES = {
         contract='install_pointer_attributes',
     },
     {
-        name='internal/soulsearch/ui/pointer_dispatcher',
-        contract='PointerDispatcher', contract_type='table',
-    },
-    {
-        name='internal/soulsearch/ui/tooltip_agent',
-        contract='TooltipAgent', contract_type='table',
-    },
-    {
         name='internal/soulsearch/ui/modal_panel',
         contract='ModalPanelWindow', contract_type='table',
     },
@@ -99,10 +91,6 @@ MODULES = {
     {name='internal/soulsearch/filter_presets', contract='list'},
     {name='internal/soulsearch/search', contract='apply'},
     {name='internal/soulsearch/search_session', contract='new'},
-    {
-        name='internal/soulsearch/ui_tooltip',
-        contract='SoulSearchTooltip', contract_type='table',
-    },
     {name='internal/soulsearch/ui_refresh', contract='apply'},
     {name='internal/soulsearch/residents', contract='collect_from_provider'},
     {

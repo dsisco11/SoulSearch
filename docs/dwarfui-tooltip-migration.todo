@@ -177,17 +177,37 @@ Exit gate: static and dynamic tooltips match pre-migration behavior.
 
 ## Phase 4 - Remove obsolete SoulSearch tooltip modules
 
-☐ Remove legacy module files:
+☑ Remove legacy module files:
   - [../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua](../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua)
   - [../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua](../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua)
-☐ Remove legacy debug script:
+☑ Remove legacy debug script:
   - [../src/scripts_modinstalled/soulsearch-tooltip-log.lua](../src/scripts_modinstalled/soulsearch-tooltip-log.lua)
-☐ Update module registry and reload ordering to remove legacy contracts:
+☑ Update module registry and reload ordering to remove legacy contracts:
   - [../src/scripts_modinstalled/internal/soulsearch/module_registry.lua](../src/scripts_modinstalled/internal/soulsearch/module_registry.lua)
-☐ Keep or remove local pointer infrastructure only if still required by
+☑ Keep or remove local pointer infrastructure only if still required by
 non-tooltip behavior; document the decision.
 
 Exit gate: no production code path imports legacy tooltip modules.
+
+### Phase 4 execution evidence (2026-07-31)
+
+- Removed legacy tooltip module files:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua](../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua](../src/scripts_modinstalled/internal/soulsearch/ui/tooltip_agent.lua)
+- Removed legacy tooltip diagnostics script:
+  - [../src/scripts_modinstalled/soulsearch-tooltip-log.lua](../src/scripts_modinstalled/soulsearch-tooltip-log.lua)
+- Updated module registry to remove obsolete tooltip contracts and loading
+order entries:
+  - [../src/scripts_modinstalled/internal/soulsearch/module_registry.lua](../src/scripts_modinstalled/internal/soulsearch/module_registry.lua)
+- Pointer infrastructure decision:
+  - Removed [../src/scripts_modinstalled/internal/soulsearch/ui/pointer_dispatcher.lua](../src/scripts_modinstalled/internal/soulsearch/ui/pointer_dispatcher.lua).
+  - Rationale: no remaining production consumer required local pointer
+    dispatch once tooltip ownership moved to DwarfUI (`dwarfui/tooltip/api`),
+    and no non-tooltip production feature referenced this module.
+- Verification snapshot:
+  - production search for `ui_tooltip`, `ui/tooltip_agent`,
+    `ui/pointer_dispatcher`, and `soulsearch-tooltip-log` returned no
+    remaining runtime imports.
 
 ## Phase 5 - Test suite migration
 
