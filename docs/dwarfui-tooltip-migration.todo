@@ -17,16 +17,16 @@ tooltip system.
 
 ## Phase 0 - Baseline and guardrails
 
-☐ Capture baseline tooltip behavior in SoulSearch before code changes:
+☑ Capture baseline tooltip behavior in SoulSearch before code changes:
   - main screen static tooltips;
   - dynamic row-hover tooltips in filter actions;
   - dynamic row-hover tooltips in pickers;
   - dynamic stat-list label and delta tooltips;
   - stats-overlay tooltip behavior.
-☐ Record baseline local checks:
+☑ Record baseline local checks:
   - `Tools/Run-UnitTests.ps1` result;
   - `Tools/Build.ps1` result.
-☐ Snapshot legacy tooltip entry points and dependencies:
+☑ Snapshot legacy tooltip entry points and dependencies:
   - [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
   - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
   - [../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua](../src/scripts_modinstalled/internal/soulsearch/ui_tooltip.lua)
@@ -34,6 +34,40 @@ tooltip system.
   - [../src/scripts_modinstalled/internal/soulsearch/module_registry.lua](../src/scripts_modinstalled/internal/soulsearch/module_registry.lua)
 
 Exit gate: baseline behavior and automated check results are recorded.
+
+### Phase 0 execution evidence (2026-07-31)
+
+- Baseline tooltip behavior characterization sources:
+  - main screen static tooltip ownership and agent lifecycle:
+    [../tests/tooltip_agent_spec.lua](../tests/tooltip_agent_spec.lua)
+  - static header tooltips:
+    [../tests/results_panel_spec.lua](../tests/results_panel_spec.lua)
+    [../tests/unit_stats_list_spec.lua](../tests/unit_stats_list_spec.lua)
+  - dynamic filter-action row hover tooltip updates:
+    [../tests/filter_action_list_spec.lua](../tests/filter_action_list_spec.lua)
+    [../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua)
+  - dynamic picker row hover tooltip updates:
+    [../tests/filter_panel_spec.lua](../tests/filter_panel_spec.lua)
+    [../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua](../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua)
+  - dynamic stat-list label and delta tooltip updates:
+    [../tests/component/unit_info_panel.ds.lua](../tests/component/unit_info_panel.ds.lua)
+    [../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua)
+  - stats-overlay tooltip behavior:
+    [../tests/stats_overlay_spec.lua](../tests/stats_overlay_spec.lua)
+    [../tests/component/stats_overlay.ds.lua](../tests/component/stats_overlay.ds.lua)
+
+- Baseline local checks:
+  - Unit Tests task: failed
+    - summary: 329 successes / 4 failures / 1 error
+    - failing file group: [../tests/search_spec.lua](../tests/search_spec.lua)
+    - error file: [../tests/component_support_spec.lua](../tests/component_support_spec.lua)
+    - status: baseline captured, failures are pre-migration and must not be
+      conflated with tooltip migration regressions.
+  - Build task: failed
+    - syntax phase: passed for 66 production files and 77 test/support files
+    - blocking error: missing dfhack-run.exe in tooling environment
+    - status: baseline captured; build pipeline requires DFHack runner
+      configuration before full pass can succeed.
 
 ## Phase 1 - Adopt DwarfUI tooltip dependency boundary
 
