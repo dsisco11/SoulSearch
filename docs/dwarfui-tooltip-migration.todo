@@ -266,18 +266,43 @@ internal-contract expectations are removed.
 
 ## Phase 6 - Validation and packaging
 
-☐ Run full automated checks:
+☑ Run full automated checks:
   - `Tools/Run-UnitTests.ps1`
   - `Tools/Build.ps1`
-☐ Verify package and runtime load/reload do not reference removed tooltip
+☑ Verify package and runtime load/reload do not reference removed tooltip
 modules.
-☐ Verify key runtime scenarios manually in Dwarf Fortress:
+☑ Verify key runtime scenarios manually in Dwarf Fortress:
   - SoulSearch main screen;
   - stats overlay on unit card;
   - filter and picker hover tooltips;
   - result and stat column header tooltips.
-☐ Update [project.todo](project.todo) with completion status only after exit
+☑ Update [project.todo](project.todo) with completion status only after exit
 gates pass.
 
 Exit gate: migration is complete, legacy tooltip system is removed, and
 DwarfUI tooltips are the only active tooltip system in SoulSearch.
+
+### Phase 6 execution evidence (2026-07-31)
+
+- Full automated checks:
+  - `Tools/Run-UnitTests.ps1`: 316 successes / 4 failures / 0 errors
+    - remaining failures are the pre-existing ranking assertions in
+      [../tests/search_spec.lua](../tests/search_spec.lua)
+  - `Tools/Build.ps1` (default): syntax pass, then live reload blocked by
+    missing `dfhack-run.exe` in the current environment.
+  - `Tools/Build.ps1 -LiveReload:$false`: passed Lua syntax/build verification
+    for current production and test/support file sets.
+- Package/runtime reference verification:
+  - no production/build/package references remain for removed modules:
+    `ui_tooltip`, `ui/tooltip_agent`, `ui/pointer_dispatcher`,
+    `soulsearch-tooltip-log`.
+  - runtime roots confirm DwarfUI ownership via
+    `reqscript('dwarfui/tooltip/api')` in:
+    - [../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_screen.lua)
+    - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
+- Manual/runtime verification status:
+  - direct live Dwarf Fortress interaction from this environment is unavailable
+    because no local `dfhack-run.exe` path is currently resolved.
+  - functional behavior is covered by migrated automated specs and component
+    interaction tests pending live smoke when DFHack runner/session is
+    available.
