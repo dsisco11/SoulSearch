@@ -142,16 +142,38 @@ Exit gate: SoulSearch no longer instantiates `SoulSearchTooltip` or
 
 ## Phase 3 - Preserve and validate dynamic tooltip semantics
 
-☐ Keep static tooltip strings intact and confirm visibility after migration.
-☐ Validate dynamic tooltip mutation under pointer update for:
+☑ Keep static tooltip strings intact and confirm visibility after migration.
+☑ Validate dynamic tooltip mutation under pointer update for:
   - [../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua)
   - [../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua](../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua)
   - [../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua)
-☐ Confirm tooltip text providers remain correct:
+☑ Confirm tooltip text providers remain correct:
   - [../src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua](../src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua)
   - [race-filtering.md](race-filtering.md)
 
 Exit gate: static and dynamic tooltips match pre-migration behavior.
+
+### Phase 3 execution evidence (2026-07-31)
+
+- Static tooltip declarations remained intact in primary UI and overlays:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua](../src/scripts_modinstalled/internal/soulsearch/ui/filter_panel.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/results_panel.lua](../src/scripts_modinstalled/internal/soulsearch/ui/results_panel.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/main_window.lua](../src/scripts_modinstalled/internal/soulsearch/ui/main_window.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/preset_picker.lua](../src/scripts_modinstalled/internal/soulsearch/ui/preset_picker.lua)
+  - [../src/scripts_modinstalled/soulsearch-creatures-overlay.lua](../src/scripts_modinstalled/soulsearch-creatures-overlay.lua)
+  - [../src/scripts_modinstalled/soulsearch-stats-overlay.lua](../src/scripts_modinstalled/soulsearch-stats-overlay.lua)
+- Dynamic tooltip mutation paths remained intact:
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/filter_action_list.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua](../src/scripts_modinstalled/internal/soulsearch/ui/searchable_picker.lua)
+  - [../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua](../src/scripts_modinstalled/internal/soulsearch/ui/unit_stats_list.lua)
+- Tooltip text provider continuity confirmed:
+  - [../src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua](../src/scripts_modinstalled/internal/soulsearch/attribute_descriptions.lua)
+  - [race-filtering.md](race-filtering.md)
+- Validation note:
+  - Running `Tools/Run-UnitTests.ps1` after Phase 2/3 still includes known
+    pre-existing baseline failures plus architecture-expected test breakage in
+    legacy tooltip-agent-based specs and harness stubs; these are addressed in
+    Phase 5 test-suite migration.
 
 ## Phase 4 - Remove obsolete SoulSearch tooltip modules
 
